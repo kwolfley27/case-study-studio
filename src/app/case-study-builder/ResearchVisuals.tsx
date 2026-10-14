@@ -1,0 +1,15 @@
+import { MessageSquare, Hand, Puzzle, Layers } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import type { CaseStudySection } from './model';
+import { EditableText as Text } from './EditableText';
+const icons=[MessageSquare,Hand,Puzzle,Layers];
+function Radar({values}:{values:string}) {
+ const reduce=useReducedMotion(); const numbers=values.split(',').slice(0,6).map(v=>Math.min(5,Math.max(0,Number(v)||0)));
+ const points=(scale:number)=>Array.from({length:6},(_,i)=>{const a=i*Math.PI/3-Math.PI/2;return `${100+Math.cos(a)*70*scale},${100+Math.sin(a)*70*scale}`}).join(' ');
+ const data=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3-Math.PI/2;return `${100+Math.cos(a)*70*(numbers[i]||0)/5},${100+Math.sin(a)*70*(numbers[i]||0)/5}`}).join(' ');
+ return <svg viewBox="0 0 200 200" role="img" aria-label={`Radar chart. Scores out of five: ${numbers.join(', ')}`}><g fill="none" stroke="currentColor" opacity=".15">{[.2,.4,.6,.8,1].map(v=><polygon key={v} points={points(v)}/>)}{Array.from({length:6},(_,i)=><line key={i} x1="100" y1="100" x2={100+Math.cos(i*Math.PI/3-Math.PI/2)*70} y2={100+Math.sin(i*Math.PI/3-Math.PI/2)*70}/>)}</g><motion.polygon points={data} fill="var(--csb-accent)" fillOpacity=".3" stroke="var(--csb-accent)" initial={reduce?false:{opacity:0,scale:.7}} whileInView={{opacity:1,scale:1}} viewport={{once:true}} transition={{duration:.8}}/>{Array.from({length:6},(_,i)=><text key={i} x={100+Math.cos(i*Math.PI/3-Math.PI/2)*87} y={104+Math.sin(i*Math.PI/3-Math.PI/2)*87} textAnchor="middle" fontSize="10" fill="currentColor">{i+1}</text>)}</svg>;
+}
+export function ResearchVisual({section}:{section:CaseStudySection}) {
+ const reduce=useReducedMotion();
+ return <>{section.kind==='competitors'&&<div className="csb-radar-criteria"><strong>Criteria 1–6 · Scores 0–5</strong><Text field="criteria" value={section.criteria||"Usability, Accessibility, Personalization, Integration, Guidance, Value"}/></div>}<div className={`csb-research csb-research-${section.kind}`} style={{'--columns':section.columns||3} as React.CSSProperties}>{section.items.map((item,index)=>{const Icon=icons[index%4];return <motion.div key={index} className="csb-research-card" initial={reduce?false:{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:index*.08}}>{section.kind==='columns'&&<span className="csb-research-icon"><Icon size={25} strokeWidth={1.3}/></span>}{section.kind==='problem'&&<small>0{index+1}</small>}<h3><Text field={`items.${index}.title`} value={item.title}/></h3>{section.kind==='competitors'&&<Radar values={item.value||''}/>}<p><Text field={`items.${index}.detail`} value={item.detail}/></p>{['columns','gap','competitors'].includes(section.kind)&&<div className="csb-research-evidence">{section.kind==='gap'&&<span aria-hidden="true">↓</span>}<Text field={`items.${index}.value`} value={item.value||''}/></div>}</motion.div>})}{section.kind==='gap'&&<div className="csb-gap-conclusion"><span>↓</span><strong>Shared unmet need</strong><p><Text field="body" value={section.body}/></p></div>}</div></>;
+}
