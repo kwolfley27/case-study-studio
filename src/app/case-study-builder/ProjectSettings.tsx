@@ -48,9 +48,9 @@ export function ProjectSettings({ study, update, pickBgImage }: { study: Builder
       <p className="csb-ps-label">Frame</p>
       <Seg label="Hero image frame" value={hero.frame} onChange={frame => setHero({ frame })} options={[
         { v: 'none', l: 'None', icon: <Ban size={15} strokeWidth={1.6} />, hint: hero.style === 'immersive' ? 'No frame: a transparent PNG floats' : 'No frame' },
-        { v: 'phone', l: 'Phone', icon: <Smartphone size={15} strokeWidth={1.6} /> },
-        { v: 'laptop', l: 'Laptop', icon: <Laptop size={15} strokeWidth={1.6} /> },
-        { v: 'desktop', l: 'Desktop', icon: <Monitor size={15} strokeWidth={1.6} /> },
+        { v: 'phone', l: 'iPhone', icon: <Smartphone size={15} strokeWidth={1.6} /> },
+        { v: 'laptop', l: 'MacBook', icon: <Laptop size={15} strokeWidth={1.6} /> },
+        { v: 'desktop', l: 'iMac', icon: <Monitor size={15} strokeWidth={1.6} /> },
         { v: 'browser', l: 'Browser', icon: <AppWindow size={15} strokeWidth={1.6} /> },
       ]} />
       <p className="csb-ps-hint">Click the image in the header to add or replace your screen.</p>

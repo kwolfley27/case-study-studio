@@ -10,7 +10,7 @@ type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 const ICONS: Record<SectionKind, Icon> = {
   coverHero: LayoutTemplate, details: Info, timeline: CalendarRange, empathy: Brain, persona: UserRound, journey: Route, problem: Target,
   findings: ListOrdered, methods: FlaskConical, interviews: MessagesSquare, quotes: Quote, survey: BarChart3, metrics: Hash, affinity: StickyNote,
-  aeiou: Eye, abtest: Columns2, taskSuccess: CircleCheck, roadmap: CalendarRange, flowCompare: GitCompare, userFlow: Workflow, flowDiff: GitCompare, featureCompare: ListChecks, positioning: Grid2x2, prototype: MousePointerClick, screenRecording: Video, wireframes: Frame, fullMedia: Image,
+  aeiou: Eye, abtest: Columns2, taskSuccess: CircleCheck, roadmap: CalendarRange, flowCompare: GitCompare, userFlow: Workflow, jtbd: Target, flowDiff: GitCompare, featureCompare: ListChecks, positioning: Grid2x2, prototype: MousePointerClick, screenRecording: Video, wireframes: Frame, fullMedia: Image,
   gallery: Images, carousel: GalleryHorizontal, showcase: Component, screenFocus: Smartphone, screenStory: Smartphone, screenStrip: Smartphone,
   annotated: ScanSearch, flow: Workflow, comparison: ArrowLeftRight, narrative: AlignLeft, rows: Rows3, columns: Columns3, competitors: Users,
   gap: Crosshair, issueFlow: GitBranch,
