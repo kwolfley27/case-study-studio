@@ -54,7 +54,9 @@ function curve(values: number[]) {
 
 export function JourneyMap({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
-  const expressive = useExpressive();
+  // In the editor everything shows at once (no scroll reveal), so it's easy to edit.
+  const editing = !!useContext(EditingContext).edit;
+  const expressive = useExpressive() && !editing;
   const stages = section.items.slice(0, 6);
   const n = Math.max(1, stages.length);
   const values = stages.map(s => Number(s.value) || 50);
@@ -93,8 +95,8 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
                 <rect x="0" y="80" width={W} height="40" className="csb-jm-zone is-neg" />
                 {Array.from({ length: n - 1 }, (_, i) => <line key={i} x1={(i + 1) * 100} x2={(i + 1) * 100} y1="0" y2="120" className="csb-jm-col" vectorEffect="non-scaling-stroke" />)}
                 <line x1="0" x2={W} y1="60" y2="60" className="csb-jm-base" vectorEffect="non-scaling-stroke" />
-                {expressive ? <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" style={{ pathLength: progress }} />
-                  : <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" initial={reduce ? false : { pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true, amount: .4 }} transition={{ duration: 1.3, ease: 'easeInOut' }} />}
+                {editing ? <path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" /> : expressive ? <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" style={{ pathLength: progress }} />
+                  : <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" initial={reduce || editing ? false : { pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true, amount: .4 }} transition={{ duration: 1.3, ease: 'easeInOut' }} />}
               </svg>
               {values.map((v, i) => <motion.div key={i} className={`csb-jm-point is-${sentiment(v)} ${i === lowest ? 'is-lowest' : ''}`} style={{ left: `${(i + .5) / n * 100}%`, top: `${Y(v) / 120 * 100}%` }} initial={false} animate={{ opacity: show(i) ? 1 : 0, scale: show(i) ? 1 : .6 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
                 <Face mood={sentiment(v) as 'pos' | 'neu' | 'neg'} />

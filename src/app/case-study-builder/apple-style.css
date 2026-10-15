@@ -1250,3 +1250,40 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-af-unsorted ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:14px}
 .csb-variant-dark :is(.csb-af-green h3,.csb-af-pink h4,.csb-af-blue){color:var(--t-paper,#fdfcfc)!important}
 .csb-variant-dark .csb-af-note::after{box-shadow:0 9px 12px rgba(0,0,0,.5)}
+
+/* ---------- Annotated screen: Apple-style callouts ---------- */
+.csb-apple-annotated{align-items:stretch;--annot-stacked:0}
+.csb-apple-annotation-side{position:relative;display:block!important;min-height:100%}
+.csb-apple-annotation-side>div{position:absolute;left:0;right:0;top:0;padding:0!important;border:0!important;transition:top .35s cubic-bezier(.22,1,.36,1)}
+.csb-apple-annotation-side>div small{display:none}
+.csb-apple-annotation-side h3{margin:0 0 4px!important;font-size:17px!important;font-weight:500!important;line-height:1.3;letter-spacing:.005em;color:var(--t-ink,#000)}
+.csb-apple-annotation-side p{margin:0;font-size:15px!important;line-height:1.45!important;letter-spacing:.01em;color:var(--t-muted,#777169)!important}
+.csb-apple-annotation-side:first-child>div p{margin-left:auto;max-width:260px}
+.csb-apple-annotation-side:last-child>div p{max-width:260px}
+.csb-apple-annotation-side>div.is-active h3{color:var(--t-ink,#000)}
+.csb-annot-lines path{stroke:color-mix(in srgb,var(--t-ink,#000) 32%,transparent)!important;stroke-width:1!important}
+.csb-annot-pin{width:11px!important;height:11px!important;margin:-5.5px 0 0 -5.5px!important;background:var(--t-ink,#000)!important;color:transparent!important;box-shadow:0 0 0 3px #fdfcfcee,0 1px 3px #0000002e!important}
+.csb-annot-pin b{display:none}
+.is-editing .csb-annot-pin{width:20px!important;height:20px!important;margin:-10px 0 0 -10px!important}
+.is-editing .csb-annot-pin b{display:block;color:#fdfcfc;font:500 10.5px/1 var(--brand-body,"Inter",ui-sans-serif,system-ui,sans-serif)}
+.is-editing .csb-annot-pin:hover,.csb-annot-pin:focus-visible{box-shadow:0 0 0 3px #fdfcfc,0 0 0 5px #0000002e!important}
+@container (max-width:700px){
+  .csb-apple-annotated{--annot-stacked:1}
+  .csb-apple-annotation-side>div{position:static;margin-bottom:22px;text-align:left!important}
+  .csb-apple-annotation-side>div small{display:inline-grid;place-items:center;width:20px;height:20px;margin-bottom:6px;border-radius:50%;background:var(--t-ink,#000)!important;color:#fdfcfc!important;font:500 10.5px/1 var(--brand-body,"Inter",ui-sans-serif,system-ui,sans-serif)!important}
+  .csb-apple-annotation-side:first-child>div p{margin-left:0}
+  .csb-annot-pin{width:20px!important;height:20px!important;margin:-10px 0 0 -10px!important}.csb-annot-pin b{display:block;color:#fdfcfc;font:500 10.5px/1 var(--brand-body,"Inter",ui-sans-serif,system-ui,sans-serif)}
+}
+
+/* Timeline bars: flat, no shadow */
+.csb-wt-chip{box-shadow:none!important}
+
+/* Journey map: Apple-minimal stage headers and tidy emotion labels */
+.csb-jm-stage,.csb-jm-stage.is-first{clip-path:none!important;background:none!important;border-radius:0!important;margin-left:0!important;padding:4px 14px 16px!important;border-left:1px solid var(--t-line2,#ebe8e4)!important}
+.csb-jm-stage small{padding-left:0!important;font:400 11.5px/1 var(--ed-mono,ui-monospace,monospace)!important;letter-spacing:.06em;color:var(--t-muted,#a59f97)!important}
+.csb-jm-stage h3{padding-left:0!important;margin:6px 0 0!important;font:300 clamp(18px,2cqw,22px)/1.2 var(--brand-display,var(--ed-display,"Inter",ui-sans-serif,system-ui,sans-serif))!important;letter-spacing:-.015em;color:var(--t-ink,#000)!important}
+.csb-jm-label strong{font-weight:500!important}
+.csb-jm-word,.csb-jm-word *{white-space:nowrap!important}
+.csb-jm-word{width:max-content}
+.csb-jm-scope{border-radius:16px!important}
+.csb-jm-quotes li>*{display:inline!important}

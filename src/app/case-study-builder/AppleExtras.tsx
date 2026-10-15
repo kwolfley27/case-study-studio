@@ -229,27 +229,44 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   const anchors = useRef<Array<HTMLDivElement | null>>([]);
   const [drag, setDrag] = useState<{ k: number; point: [number, number] } | null>(null);
   const [paths, setPaths] = useState<string[]>([]);
+  const [tops, setTops] = useState<number[]>([]);
+  const sideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const points = notes.map((item, k) => drag?.k === k ? drag.point : parsePoint(item.point, k));
   const key = points.map(p => p.join(',')).join('|');
 
-  // Draw a line from each callout's edge to its dot on the screen.
+  // Place each label level with its dot (Apple-style), keep labels from overlapping,
+  // then draw a straight hairline from the label to the dot.
   useLayoutEffect(() => {
     const measure = () => {
       const box = wrap.current?.getBoundingClientRect(); const screenBox = phone.current?.getBoundingClientRect();
       if (!box || !screenBox) return;
+      const stacked = getComputedStyle(wrap.current!).getPropertyValue('--annot-stacked').trim() === '1';
+      if (stacked) { setTops([]); setPaths([]); return; }
+      const next: number[] = [];
+      for (const side of [0, 1]) {
+        const ids = points.map((_, k) => k).filter(k => (k < 3 ? 0 : 1) === side && anchors.current[k]);
+        const sideEl = sideRefs.current[side]; const sideTop = sideEl ? sideEl.getBoundingClientRect().top : box.top;
+        const want = ids.map(k => ({ k, y: screenBox.top - sideTop + screenBox.height * points[k][1] / 100 - 12, h: anchors.current[k]!.offsetHeight }));
+        want.sort((p, q) => p.y - q.y);
+        let floor = -Infinity;
+        for (const w of want) { const y = Math.max(w.y, floor); next[w.k] = y; floor = y + w.h + 28; }
+      }
+      setTops(next);
       setPaths(points.map(([x, y], k) => {
-        const el = anchors.current[k]; if (!el) return '';
-        const r = el.getBoundingClientRect(); const left = k < 3;
-        const ax = (left ? r.right : r.left) - box.left; const ay = r.bottom - box.top;
+        const el = anchors.current[k]; if (!el || next[k] === undefined) return '';
+        const sideEl = sideRefs.current[k < 3 ? 0 : 1]; if (!sideEl) return '';
+        const sr = sideEl.getBoundingClientRect(); const left = k < 3;
+        const ly = sr.top - box.top + next[k] + 12;
+        const lx = left ? sr.right - box.left + 14 : sr.left - box.left - 14;
         const px = screenBox.left - box.left + screenBox.width * x / 100; const py = screenBox.top - box.top + screenBox.height * y / 100;
-        const edge = (left ? screenBox.left - 14 : screenBox.right + 14) - box.left;
-        return `M${ax.toFixed(1)},${ay.toFixed(1)} H${edge.toFixed(1)} L${px.toFixed(1)},${py.toFixed(1)}`;
+        return Math.abs(py - ly) < 1 ? `M${lx.toFixed(1)},${ly.toFixed(1)} H${px.toFixed(1)}` : `M${lx.toFixed(1)},${ly.toFixed(1)} H${((left ? screenBox.left - 18 : screenBox.right + 18) - box.left).toFixed(1)} L${px.toFixed(1)},${py.toFixed(1)}`;
       }));
     };
     measure();
     const observer = new ResizeObserver(measure);
     if (wrap.current) observer.observe(wrap.current);
     if (phone.current) observer.observe(phone.current);
+    anchors.current.forEach(el => el && observer.observe(el));
     return () => observer.disconnect();
   }, [key, notes.length]);
 
@@ -268,19 +285,19 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
     const next = ({ ArrowLeft: [x - step, y], ArrowRight: [x + step, y], ArrowUp: [x, y - step], ArrowDown: [x, y + step] } as Record<string, number[]>)[event.key];
     if (!next || !edit) return; event.preventDefault(); edit(`items.${k + 1}.point`, `${Math.min(98, Math.max(2, next[0]))},${Math.min(98, Math.max(2, next[1]))}`);
   };
-  const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''}><small>0{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
+  const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''} style={tops[k] !== undefined ? { top: tops[k] } : undefined}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
 
   return <div className={`csb-apple-annotated ${edit ? 'is-editing' : ''}`} ref={wrap}>
-    <div className="csb-apple-annotation-side">{notes.slice(0, 3).map((item, i) => note(item, i))}</div>
+    <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[0] = el; }}>{notes.slice(0, 3).map((item, i) => note(item, i))}</div>
     <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
       <span className="csb-apple-annotated-island" />
       {screen?.image ? <img src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>Designed screen</strong><span>700 × 1440 · designed media</span></div>}
       {points.map(([x, y], k) => <span key={k} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
         role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
-        onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}>{k + 1}</span>)}
+        onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}><b>{k + 1}</b></span>)}
     </div>
-    <div className="csb-apple-annotation-side">{notes.slice(3, 6).map((item, i) => note(item, i + 3))}</div>
+    <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[1] = el; }}>{notes.slice(3, 6).map((item, i) => note(item, i + 3))}</div>
     <svg className="csb-annot-lines" aria-hidden="true">{paths.map((d, k) => d && <motion.path key={k} d={d} initial={reduce ? false : { pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 1 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .9, delay: .3 + k * .1, ease: [0.22, 1, 0.36, 1] }} />)}</svg>
-    {edit && <p className="csb-annot-hint">Drag the numbered dots to point at the right spot on the screen</p>}
+    {edit && <p className="csb-annot-hint">Drag a dot to the spot it describes; its label follows.</p>}
   </div>;
 }
