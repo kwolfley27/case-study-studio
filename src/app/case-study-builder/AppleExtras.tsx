@@ -5,15 +5,55 @@ import type { CaseStudySection } from './model';
 
 const lines = (value: string) => value.split(/\n+/).map(line => line.trim()).filter(Boolean);
 
-export function Persona({ section }: { section: CaseStudySection }) {
+type PersonaBlockType = 'list' | 'text' | 'quote' | 'day' | 'meter';
+export const personaBlockType = (item: CaseStudySection['items'][number] | undefined, index: number): PersonaBlockType => item?.blockType ?? (index === 3 ? 'day' : 'list');
+export const personaBlockPresets: Array<{ label: string; item: CaseStudySection['items'][number] }> = [
+  { label: 'Goals', item: { blockType: 'list', title: 'Goals', detail: 'Goal one\nGoal two\nGoal three' } },
+  { label: 'Pain points', item: { blockType: 'list', title: 'Pain points', detail: 'Pain one\nPain two\nPain three' } },
+  { label: 'Motivations', item: { blockType: 'list', title: 'Motivations', detail: 'What drives them\nWhat they care about' } },
+  { label: 'Frustrations', item: { blockType: 'list', title: 'Frustrations', detail: 'What gets in the way\nWhat they work around' } },
+  { label: 'Needs', item: { blockType: 'list', title: 'Needs', detail: 'What they need from the product' } },
+  { label: 'Tools they use', item: { blockType: 'list', title: 'Tools they use', detail: 'Tool one\nTool two' } },
+  { label: 'Background', item: { blockType: 'text', title: 'Background', detail: 'A few sentences of context about their situation.' } },
+  { label: 'Quote', item: { blockType: 'quote', title: 'In their words', detail: 'A short line that captures how they think.' } },
+  { label: 'Scale (e.g. tech comfort)', item: { blockType: 'meter', title: 'Tech comfort', detail: 'Low · High', value: '70' } },
+  { label: 'A day in their life', item: { blockType: 'day', title: 'A day in their life', detail: 'Morning: a key moment\nAfternoon: another moment\nEvening: a final moment' } },
+  { label: 'Custom list', item: { blockType: 'list', title: 'Custom list', detail: 'First point\nSecond point' } },
+];
+
+function LineList({ index, detail, as = 'p' }: { index: number; detail: string; as?: 'p' | 'day' }) {
+  const { edit } = useContext(EditingContext);
   const reduce = useReducedMotion();
-  const [person, goals, pains, day] = section.items;
-  return <div className="csb-apple-persona">
+  const raw = detail.split('\n').map(line => line.trim());
+  const items = edit ? raw : raw.filter(Boolean);
+  const add = (event: React.MouseEvent) => { event.stopPropagation(); edit?.(`items.${index}.detail`, [...raw.filter(Boolean), 'New point'].join('\n')); };
+  if (as === 'day') return <div>{items.map((line, i) => <motion.div key={i} initial={reduce ? false : { opacity: 0, x: -14 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: .6 }} transition={{ delay: i * .22, duration: .55, ease: [0.22, 1, 0.36, 1] }}><i /><span>{String(i + 1).padStart(2, '0')}</span><p><EditableText field={`items.${index}.detail.${i}`} value={line} /></p></motion.div>)}{edit && <button type="button" className="csb-persona-add" onClick={add}>+ Add moment</button>}</div>;
+  return <>{items.map((line, i) => <p key={i}><EditableText field={`items.${index}.detail.${i}`} value={line} /></p>)}{edit && <button type="button" className="csb-persona-add" onClick={add}>+ Add point</button>}</>;
+}
+
+export function Persona({ section }: { section: CaseStudySection }) {
+  const person = section.items[0];
+  const blocks = section.items.slice(1).map((item, i) => ({ item, index: i + 1, type: personaBlockType(item, i + 1) }));
+  const showPortrait = section.options?.portrait !== false;
+  const side = blocks.filter(block => block.type !== 'day');
+  const days = blocks.filter(block => block.type === 'day');
+  return <div className={`csb-apple-persona ${showPortrait ? '' : 'is-no-portrait'}`}>
     <div className="csb-apple-persona-profile">
-      <div className="csb-apple-persona-portrait" data-image-slot={`${section.id}:0`}>{person?.image ? <img src={person.image} alt={`${person.title} portrait`} /> : <div><strong>Portrait</strong><span>880 × 1120 · designed media</span></div>}</div>
-      <div className="csb-apple-persona-copy"><h3><EditableText field="items.0.title" value={person?.title || 'The person'} /></h3><p><EditableText field="items.0.detail" value={person?.detail || ''} /></p><span className="csb-apple-persona-traits"><EditableText field="items.0.value" value={person?.value || ''} /></span><div className="csb-apple-persona-lists">{[[goals,1],[pains,2]].map(([item,index]) => <div key={index}><h4><EditableText field={`items.${index}.title`} value={(item as typeof goals)?.title || ''} /></h4>{lines((item as typeof goals)?.detail || '').map((line,i) => <p key={i}>{line}</p>)}</div>)}</div></div>
+      {showPortrait && <div className="csb-apple-persona-portrait" data-image-slot={`${section.id}:0`}>{person?.image ? <img src={person.image} alt={`${person.title} portrait`} /> : <div><strong>Portrait</strong><span>880 × 1120 · designed media</span></div>}</div>}
+      <div className="csb-apple-persona-copy">
+        <h3><EditableText field="items.0.title" value={person?.title || 'The person'} /></h3>
+        <p><EditableText field="items.0.detail" value={person?.detail || ''} /></p>
+        <span className="csb-apple-persona-traits"><EditableText field="items.0.value" value={person?.value || ''} /></span>
+        {side.length > 0 && <div className="csb-apple-persona-lists">{side.map(({ item, index, type }) => <div key={index} className={`csb-persona-block is-${type}`}>
+          <h4><EditableText field={`items.${index}.title`} value={item.title} /></h4>
+          {type === 'list' && <LineList index={index} detail={item.detail} />}
+          {type === 'text' && <p className="csb-persona-text"><EditableText field={`items.${index}.detail`} value={item.detail} /></p>}
+          {type === 'quote' && <blockquote>“<EditableText field={`items.${index}.detail`} value={item.detail} />”</blockquote>}
+          {type === 'meter' && <div className="csb-persona-meter"><span><motion.i initial={{ width: 0 }} whileInView={{ width: `${Math.min(100, Math.max(0, Number(item.value) || 0))}%` }} viewport={{ once: true }} transition={{ duration: .9, ease: [0.22, 1, 0.36, 1] }} /></span><small><EditableText field={`items.${index}.detail`} value={item.detail} /></small></div>}
+        </div>)}</div>}
+      </div>
     </div>
-    <div className="csb-apple-persona-day"><h4><EditableText field="items.3.title" value={day?.title || 'A day in their life'} /></h4><div>{lines(day?.detail || '').map((line,index) => <motion.div key={index} initial={reduce?false:{opacity:0,x:-14}} whileInView={{opacity:1,x:0}} viewport={{once:true,amount:.6}} transition={{delay:index*.22,duration:.55,ease:[0.22,1,0.36,1]}}><i /><span>{String(index+1).padStart(2,'0')}</span><p>{line}</p></motion.div>)}</div></div>
+    {days.map(({ item, index }) => <div key={index} className="csb-apple-persona-day"><h4><EditableText field={`items.${index}.title`} value={item.title} /></h4><LineList index={index} detail={item.detail} as="day" /></div>)}
   </div>;
 }
 

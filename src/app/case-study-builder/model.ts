@@ -23,7 +23,11 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "list" | "text" | "quote" | "day" | "meter" }>;
+  /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
+  options?: Record<string, string | number | boolean>;
+  /** Token text styles per field, e.g. { title: { tone: "accent", size: "l" } }. */
+  textStyles?: Record<string, { tone?: "ink" | "muted" | "accent" | "accent2"; size?: "s" | "l" | "xl"; weight?: "light" | "regular" | "bold" }>;
   /** Work timeline phases (bars under the weeks). detail = one note per line. */
   phases?: Array<{ title: string; detail: string }>;
   /** Work timeline column label, e.g. Week, Day, Sprint. */
@@ -67,6 +71,8 @@ export interface BuilderStudy {
   showNav?: boolean;
   /** Page style. Defaults to editorial. */
   theme?: "editorial" | "classic";
+  /** Optional second accent colour, used through text styles. */
+  accent2?: string;
   sections: CaseStudySection[];
 }
 
