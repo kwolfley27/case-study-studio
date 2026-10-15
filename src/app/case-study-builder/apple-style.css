@@ -2060,3 +2060,6 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-ticks button::after{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:color-mix(in srgb,currentColor 18%,transparent);transition:background .25s}
 .csb-ss-ticks button:hover::after{background:color-mix(in srgb,currentColor 45%,transparent)}
 .csb-ss-ticks button.is-on::after{background:var(--csb-accent-fill,var(--csb-accent,#1d1d1f))}
+/* Spotlight instead of a box: the rest of the screen dims, the highlighted part stays bright */
+.csb-ss-band{border:0!important;background:transparent!important;border-radius:12px!important;left:1.5%!important;right:1.5%!important;height:96px!important;margin-top:-48px!important;box-shadow:0 0 0 200vmax rgba(12,12,16,.32),0 0 24px 8px rgba(12,12,16,.2)!important}
+.csb-ss-phone .csb-ss-band{height:76px!important;margin-top:-38px!important;border-radius:10px!important}
