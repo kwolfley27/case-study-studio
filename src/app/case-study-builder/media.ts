@@ -37,13 +37,14 @@ export async function mediaUrl(src: string): Promise<string | null> {
 export async function recordScreen(onDone: (blob: Blob) => void, onStateChange: (recording: boolean) => void): Promise<() => void> {
   if (!navigator.mediaDevices?.getDisplayMedia) throw new Error('This browser cannot record the screen. Try Chrome, Edge or Safari on a computer.');
   const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60, cursor: 'never' } as MediaTrackConstraints, audio: false });
-  const type = ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) ?? '';
+  // WebM is the most reliable in Chrome/Edge/Firefox; Safari records MP4.
+  const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1', 'video/mp4'].find(t => MediaRecorder.isTypeSupported(t)) ?? '';
   const recorder = new MediaRecorder(stream, type ? { mimeType: type, videoBitsPerSecond: 5_000_000 } : undefined);
   const chunks: Blob[] = [];
   recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
   recorder.onstop = () => { stream.getTracks().forEach(track => track.stop()); onStateChange(false); onDone(new Blob(chunks, { type: recorder.mimeType || 'video/webm' })); };
   stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (recorder.state !== 'inactive') recorder.stop(); });
-  recorder.start(250); onStateChange(true);
+  recorder.start(1000); onStateChange(true);
   return () => { if (recorder.state !== 'inactive') recorder.stop(); };
 }
 

@@ -42,7 +42,7 @@ function cursorAt(t: number, clicks: RecClick[]) {
 export function ScreenRecording({ section, editorMode, onChange }: { section: CaseStudySection; editorMode: boolean; onChange?: (next: Recording) => void }) {
   const rec: Recording = { ...defaultRecording, ...(section.recording ?? {}) };
   const clicks = [...(rec.clicks ?? [])].sort((a, b) => a.t - b.t);
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotion() && !editorMode;
   const { edit } = useContext(EditingContext);
   const stage = useRef<HTMLDivElement>(null);
   const cam = useRef<HTMLDivElement>(null);
@@ -79,7 +79,9 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
 
   // autoplay when on screen
   useEffect(() => {
-    const el = stage.current; const v = video.current; if (!el || !v || reduce) return;
+    const el = stage.current; const v = video.current; if (!el || !v) return;
+    v.muted = true; v.defaultMuted = true; v.setAttribute('muted', '');
+    if (reduce) return;
     const io = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) void v.play().catch(() => undefined); else v.pause(); }, { threshold: .35 });
     io.observe(el); return () => io.disconnect();
   }, [url, reduce]);
@@ -149,7 +151,7 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
   };
   const useBlob = async (blob: Blob) => { setBusy('saving'); try { save({ src: await putMedia(blob), clicks: [] }); void publish(blob); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the video.'); } finally { setBusy(''); } };
   const publishStored = async () => { if (!rec.src.startsWith('idb:')) return; const url = await mediaUrl(rec.src); if (!url) return; void publish(await (await fetch(url)).blob()); };
-  const record = async () => { setError(''); try { stopRef.current = await recordScreen(blob => { stopRef.current = null; void useBlob(blob); }, on => setBusy(on ? 'recording' : '')); } catch (e) { if (e instanceof Error && e.name !== 'NotAllowedError') setError(e.message); } };
+  const record = async () => { setError(''); try { stopRef.current = await recordScreen(blob => { stopRef.current = null; if (blob.size < 30_000) { setError('That recording came out empty. Choose a window or screen to share, keep it shared while you record, then press Stop.'); return; } void useBlob(blob); }, on => setBusy(on ? 'recording' : '')); } catch (e) { if (e instanceof Error && e.name !== 'NotAllowedError') setError(e.message); } };
 
   const bgStyle = rec.background === 'image' && rec.bgImage ? { backgroundImage: `url(${rec.bgImage})` } : undefined;
   const sourceButtons = <div className="csb-rec-sources" onClick={e => e.stopPropagation()}>
@@ -166,13 +168,14 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
         {rec.frame === 'phone' && <span className="csb-rec-island" aria-hidden="true" />}
         <div className={`csb-rec-viewport ${editorMode && !demo ? 'is-markable' : ''} ${cropping ? 'is-cropping' : ''}`} style={{ aspectRatio: String(viewAspect) }} onClick={addClick} onPointerDown={startCrop}>
           <div ref={cam} className="csb-rec-cam" style={{ aspectRatio: String(demo ? 16 / 10 : aspect) }}>
-            {url ? <video ref={video} src={url} muted playsInline loop={rec.loop !== false} preload="metadata" controls={rec.controls || reduce} onLoadedMetadata={e => { setDuration(e.currentTarget.duration || 0); if (e.currentTarget.videoWidth) setAspect(e.currentTarget.videoWidth / e.currentTarget.videoHeight); e.currentTarget.playbackRate = rec.speed ?? 1; }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} aria-label={section.title} />
+            {url ? <video ref={video} src={url} muted playsInline loop={rec.loop !== false} preload="metadata" controls={rec.controls || reduce} onDurationChange={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) setDuration(d); }} onLoadedMetadata={e => { const v = e.currentTarget; if (!Number.isFinite(v.duration)) { const reset = () => { v.removeEventListener('timeupdate', reset); v.currentTime = 0; if (!reduce) void v.play().catch(() => undefined); }; v.addEventListener('timeupdate', reset); v.currentTime = 1e101; } else setDuration(v.duration || 0); if (e.currentTarget.videoWidth) setAspect(e.currentTarget.videoWidth / e.currentTarget.videoHeight); e.currentTarget.playbackRate = rec.speed ?? 1; }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} aria-label={section.title} />
               : <div className="csb-rec-demo" aria-hidden="true"><div className="csb-rec-demo-side"><b /><i /><i /><i /><i /></div><div className="csb-rec-demo-main"><b /><div><i /><i /><i /></div><span /><span /><em /></div></div>}
             {rec.cursor !== 'none' && !reduce && <div ref={cursor} className={`csb-rec-cursor is-${rec.cursor}`} aria-hidden="true">{rec.cursor === 'arrow' ? <svg viewBox="0 0 24 24" width="26" height="26"><path d="M5 2.8 19.4 13.6l-6.5.9 3.8 7.2-2.9 1.5-3.8-7.3-4.9 4.5z" fill="#fff" stroke="#111" strokeWidth="1.4" strokeLinejoin="round" /></svg> : <i />}</div>}
             <span ref={ripple} className="csb-rec-ripple" aria-hidden="true" />
             {draft && <span className="csb-rec-cropbox" style={{ left: `${draft.x}%`, top: `${draft.y}%`, width: `${draft.w}%`, height: `${draft.h}%` }} />}
             {cropping && !draft && rec.crop && <span className="csb-rec-cropbox is-current" style={{ left: `${rec.crop.x}%`, top: `${rec.crop.y}%`, width: `${rec.crop.w}%`, height: `${rec.crop.h}%` }} />}
           </div>
+          {url && !playing && reduce && <button type="button" className="csb-rec-play" aria-label={`Play ${section.title}`} onClick={e => { e.stopPropagation(); void video.current?.play(); }}><Play size={22} fill="currentColor" /></button>}
           {demo && editorMode && <div className="csb-rec-empty" onClick={e => e.stopPropagation()}>
             <strong>Add a screen recording</strong>
             <span>Clicks you mark become zoom-ins, like this demo.</span>
