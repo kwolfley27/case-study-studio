@@ -2711,3 +2711,44 @@ html.csb-presenting .csb-fd-pencil{width:min(clamp(240px,34cqw,480px),calc(30vh 
 @media (prefers-reduced-motion:reduce){.csb-figpull-busy i{animation:none;border-top-color:#d6d3d1}}
 .csb-figpull button.is-ghost{background:transparent;color:#000;box-shadow:inset 0 0 0 1px #0000001f}
 .csb-figpull.is-done{width:auto}
+/* Scrolling site: screens slide when the stage flips (from the page or a swipe on a phone) */
+.csb-ss[data-swap] .csb-ss-scroll>*{animation:csb-ss-swap .6s cubic-bezier(.22,1,.36,1)}
+.csb-ss[data-swap=back] .csb-ss-scroll>*{animation-name:csb-ss-swap-back}
+@keyframes csb-ss-swap{from{transform:translateX(18%);opacity:0;filter:blur(6px)}}
+@keyframes csb-ss-swap-back{from{transform:translateX(-18%);opacity:0;filter:blur(6px)}}
+@media (prefers-reduced-motion:reduce){.csb-ss[data-swap] .csb-ss-scroll>*{animation:csb-fade-in .3s}}
+@keyframes csb-fade-in{from{opacity:0}}
+.csb-ss-holdctl{display:grid;gap:8px;margin:6px 0 4px;padding:12px;border-radius:12px;background:#f5f3f1}
+.csb-ss-holdctl label{display:grid;gap:4px}
+.csb-ss-holdctl small{font-size:12px;color:#44403b}
+.csb-ss-holdctl input{height:32px;padding:0 10px;border:1px solid #e7e5e4;border-radius:8px;background:#fff;font:inherit;font-size:13px}
+/* Hold it: the little phone peeking up from the corner */
+.csb-view-canvas:not(.hide-right) .csb-hold-peek{right:calc(var(--inset-r,0px) + 28px)}
+.csb-hold-peek{position:fixed;right:28px;bottom:-24px;z-index:80;width:150px;transform-origin:50% 100%}
+.csb-hold-peek-phone{position:relative;display:block;width:150px;height:300px;padding:7px;border:0;border-radius:30px;background:#1d1d1f;box-shadow:inset 0 0 0 1.5px #3a3a3c,0 0 0 1px rgba(0,0,0,.08),0 30px 50px -18px rgba(0,0,0,.45);cursor:pointer;font:inherit}
+.csb-hold-peek-island{position:absolute;left:50%;top:14px;translate:-50% 0;width:42px;height:12px;border-radius:9999px;background:#000;z-index:2}
+.csb-hold-peek-screen{display:grid;align-content:start;justify-items:center;gap:9px;height:100%;padding:38px 12px 12px;box-sizing:border-box;border-radius:24px;background:#fdfcfc;text-align:center}
+.csb-hold-peek-screen b{font-size:13px;font-weight:500;line-height:1.25;color:#000}
+.csb-hold-peek-qr{display:block;width:104px;height:104px;padding:6px;box-sizing:border-box;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #ebe8e4}
+.csb-hold-peek-qr svg{display:block;width:100%;height:100%}
+.csb-hold-peek-screen small{font-size:10.5px;line-height:1.35;color:#777169}
+.csb-hold-peek-say{position:absolute;right:calc(100% - 6px);top:26px;margin:0;padding:8px 13px;border-radius:16px 16px 4px 16px;background:#000;color:#fdfcfc;font-size:13px;white-space:nowrap;box-shadow:0 10px 24px -12px rgba(0,0,0,.5);pointer-events:none}
+.csb-hold-peek-x{position:absolute;right:-8px;top:-8px;z-index:3;display:grid;place-items:center;width:24px;height:24px;border:0;border-radius:50%;background:#fdfcfc;color:#000;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 4px 10px -4px rgba(0,0,0,.3);cursor:pointer}
+.csb-hold-peek:not(.is-open) .csb-hold-peek-phone:hover{translate:0 -10px}
+.csb-hold-peek-phone{transition:translate .35s cubic-bezier(.22,1,.36,1)}
+@media (max-width:700px){.csb-hold-peek{display:none}}
+/* Hold it: full screen while their phone drives the page */
+[data-hold-anc]{transform:none!important;filter:none!important;perspective:none!important;contain:none!important;will-change:auto!important}
+.csb-ss.is-held{z-index:400;margin:0!important;padding:56px 40px 32px;box-sizing:border-box;background:var(--t-bg,#fdfcfc);display:flex;flex-direction:column;justify-content:center;overflow:hidden;animation:csb-held-in .55s cubic-bezier(.22,1,.36,1)}
+@keyframes csb-held-in{from{opacity:0;transform:scale(.97)}}
+.csb-ss.is-held .csb-ss-stage{flex:1;min-height:0;max-width:1240px;margin:0 auto;width:100%}
+.csb-ss.is-held .csb-ss-note-pos h3{font-size:clamp(24px,2.4vw,34px);font-weight:300;letter-spacing:-.01em}
+.csb-ss.is-held .csb-ss-note-pos p{font-size:17px;line-height:1.55}
+.csb-ss.is-held .csb-ss-stages{position:absolute;top:18px;left:50%;translate:-50% 0;margin:0;z-index:2}
+.csb-ss.is-held .csb-hold{position:absolute;top:16px;right:20px;margin:0}
+.csb-hold-exit{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border:0;border-radius:9999px;background:var(--t-surface,#f5f3f1);color:var(--t-ink,#000);font:inherit;font-size:13px;cursor:pointer}
+.csb-hold-exit:hover{background:#ebe8e4}
+html.csb-holding{overflow:hidden}
+.csb-ss.is-held .csb-ss-foot{display:none}
+
+.csb-ss.is-held .csb-hold{display:flex;gap:8px;align-items:center}

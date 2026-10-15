@@ -12,6 +12,8 @@ export type HoldMsg =
   | { t: 'hi'; stage?: string }          // laptop answered
   | { t: 'scroll'; f: number }           // phone scroll position, 0–1
   | { t: 'stage'; stage: string }        // laptop switched wireframe / high fidelity
+  | { t: 'pick'; stage: string }         // phone swiped to the other stage (old ↔ new)
+  | { t: 'mode'; live: boolean }         // phone switched between the screen and the live prototype
   | { t: 'bye' };
 
 export const newHoldCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');

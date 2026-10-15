@@ -210,7 +210,9 @@ function TwoScreens({ section, panes, editorMode, annotate, scrollersRef, takeRe
 export function ScrollSite({ section, editorMode }: { section: CaseStudySection; editorMode?: boolean }) {
   const expressive = useExpressive();
   const { edit } = useContext(EditingContext);
-  const show = (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
+  const [held, setHeldRaw] = useState(false);
+  const [heldBox, setHeldBox] = useState<React.CSSProperties | undefined>();
+  const show = held ? 'mobile' : (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
   const compare = section.options?.compare === true; const base = stageBase(section);
   const [stage, setStageRaw] = useState<Stage>('a');
   const [both, setBoth] = useState(false);
@@ -237,7 +239,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const [views, setViews] = useState<Record<Device, View>>({ desktop: { top: 0, bottom: .2 }, mobile: { top: 0, bottom: .2 } });
   const [device, setDevice] = useState<Device>(show === 'mobile' ? 'mobile' : 'desktop');
   const scrollers = useRef<Record<Device, HTMLDivElement | null>>({ desktop: null, mobile: null });
-  const setStage = (st: Stage) => { if (st === stage) return; paneScrollers.current.forEach((el, p) => { panePending.current[p] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); (['desktop', 'mobile'] as Device[]).forEach(d => { const el = scrollers.current[d]; pending.current[d] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); setStageRaw(st); };
+  const setStage = (st: Stage) => { if (st === stage) return; const w = wrap.current; if (w) { w.removeAttribute('data-swap'); void w.offsetWidth; w.setAttribute('data-swap', st === 'b' ? 'next' : 'back'); window.setTimeout(() => w.removeAttribute('data-swap'), 700); } paneScrollers.current.forEach((el, p) => { panePending.current[p] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); (['desktop', 'mobile'] as Device[]).forEach(d => { const el = scrollers.current[d]; pending.current[d] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); setStageRaw(st); };
   // Both screens scroll together (same distance through the page), so you see desktop and mobile side by side at the same point.
   const echo = useRef<{ d: Device; top: number } | null>(null);
   const sync = section.options?.syncScroll !== false && show === 'both';
@@ -287,6 +289,19 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     const x0 = (L ? Math.max(C.left, M.left) : Math.min(C.right, M.right)) - S.left, xm = (L ? Math.min(D.left, C.left) - 20 : Math.max(D.right, C.right) + 20) - S.left, ex = (L ? H.right + 16 : H.left - 16) - S.left;
     setLine(Math.abs(ey - my) < 1.5 ? `M${x0.toFixed(1)},${my.toFixed(1)} H${ex.toFixed(1)}` : `M${x0.toFixed(1)},${my.toFixed(1)} H${xm.toFixed(1)} V${ey.toFixed(1)} H${ex.toFixed(1)}`);
   });
+  // Full screen while someone is scrolling on their phone: lift the section out of the page (undo transforms on the way up, and scale back from any page zoom).
+  const setHeld = (on: boolean) => {
+    const w = wrap.current; if (!w) return;
+    document.querySelectorAll('[data-hold-anc]').forEach(a => a.removeAttribute('data-hold-anc'));
+    if (on) {
+      for (let a = w.parentElement; a && a !== document.body; a = a.parentElement) { const cs = getComputedStyle(a); if (cs.transform !== 'none' || cs.filter !== 'none' || cs.perspective !== 'none' || /paint|layout|strict|content/.test(cs.contain) || cs.willChange.includes('transform')) a.setAttribute('data-hold-anc', ''); }
+      const z = w.getBoundingClientRect().width / (w.offsetWidth || 1) || 1;
+      setHeldBox({ position: 'fixed', left: 0, top: 0, width: innerWidth / z, height: innerHeight / z, ['--ss-vh' as string]: `${innerHeight / z}px` });
+      document.documentElement.classList.add('csb-holding');
+    } else { setHeldBox(undefined); document.documentElement.classList.remove('csb-holding'); }
+    setHeldRaw(on);
+  };
+  useEffect(() => () => { document.querySelectorAll('[data-hold-anc]').forEach(a => a.removeAttribute('data-hold-anc')); document.documentElement.classList.remove('csb-holding'); }, []);
   const [vh, setVh] = useState(800);
   useLayoutEffect(() => { const measure = () => { const sc = wrap.current?.closest('.csb-preview-viewport') as HTMLElement | null; setVh(sc ? sc.clientHeight : window.innerHeight); }; measure(); window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }, []);
   const ticks = hasImage && list.length > 0 ? <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)} />)}</div> : null;
@@ -300,12 +315,12 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const idle = !note ? <p className="csb-ss-idle">{list.length ? 'Scroll the screen. Notes appear as their part of the page comes into view.' : 'Scroll the screen to explore the page.'}</p> : null;
   const addBtn = editorMode && (desk?.image || mob?.image) ? <button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot</button> : null;
   const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} onBox={(i, b, c) => { edit?.(`items.${i}.box`, b); edit?.(`items.${i}.point`, String(c)); }} />; };
-  return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''} ${!annotate || (!list.length && !editorMode) ? 'no-notes' : ''}`} style={{ ['--ss-vh' as string]: `${vh}px` }}>
+  return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''} ${!annotate || (!list.length && !editorMode) ? 'no-notes' : ''} ${held ? 'is-held' : ''}`} style={heldBox ?? { ['--ss-vh' as string]: `${vh}px` }}>
     {compare && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
       {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={!both && stage === st} onClick={() => { setBoth(false); setStage(st); }}>{!both && stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
       <button type="button" role="radio" aria-checked={both} onClick={() => setBoth(true)}>{both && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>Side by side</span></button>
     </div>}
-    {(compare && both) || show === 'both' ? <>
+    {(compare && both && !held) || show === 'both' ? <>
       {show === 'both' && !both && layerToggle && <div className="csb-ss-layerrow">{layerToggle}</div>}
       <TwoScreens key={compare && both ? 'stages' : 'mixed'} kind={compare && both ? 'stages' : 'mixed'} section={section} editorMode={editorMode} annotate={annotate} scrollersRef={paneScrollers} takeRestore={p => { const r = panePending.current[p]; panePending.current[p] = null; return r; }}
         panes={compare && both ? [{ st: 'a', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameA }, { st: 'b', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameB }] : [{ st: stage, d: 'desktop', grid: deskGrid }, { st: stage, d: 'mobile', grid: mobGrid }]} />
@@ -331,7 +346,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     </div>
     {centered && <div className="csb-ss-foot">{ticks}{!note && idle}{addBtn}</div>}
     </>}
-    {show !== 'desktop' && section.options?.hold !== false && <HoldIt sectionId={section.id} stage={stage} root={wrap} />}
+    {(held || (section.options?.show ?? 'both') !== 'desktop') && section.options?.hold !== false && <HoldIt held={held} onLive={on => { if (on !== held) setHeld(on); }} sectionId={section.id} stage={stage} root={wrap} onPick={st => { setBoth(false); setStage(st); }} />}
   </div>;
 }
 
@@ -356,6 +371,12 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.annotate !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), annotate: e.target.checked } })} /> Show notes and highlights (off: just the screens)</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.syncScroll !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), syncScroll: e.target.checked } })} /> Desktop and mobile scroll together</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.hold !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), hold: e.target.checked } })} /> “Hold it on your phone” button (visitors scroll the real screen on their phone)</label>
+    {section.options?.hold !== false && <div className="csb-ss-holdctl">
+      <span className="csb-sb-label">On their phone</span>
+      {(compare ? [['liveA', String(section.options?.stageA ?? 'Wireframe')], ['liveB', String(section.options?.stageB ?? 'High fidelity')]] : [['live', 'Live prototype']]).map(([k, l]) => <label key={k}><small>{compare ? `${l}: live link` : l}</small><input type="url" inputMode="url" placeholder="Figma prototype or web link (optional)" value={String(section.options?.[k] ?? '')} onChange={e => onChange({ options: { ...(section.options ?? {}), [k]: e.target.value.trim() } })} /></label>)}
+      <label><small>Real app (TestFlight or App Store)</small><input type="url" inputMode="url" placeholder="https://testflight.apple.com/join/…" value={String(section.options?.appLink ?? '')} onChange={e => onChange({ options: { ...(section.options ?? {}), appLink: e.target.value.trim() } })} /></label>
+      <p className="csb-field-note">With a live link, the phone opens your real prototype so people can tap through it, with a switch back to the scrolling screen. {compare ? 'People can swipe left and right on their phone to flip this page between the two stages.' : ''} Native Xcode builds can’t run in a browser: add the TestFlight link and they get a button to install it.</p>
+    </div>}
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
     <p className="csb-panel-kicker">Stages</p>
     <label className="csb-check-field"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Two stages, switched with one click</label>
