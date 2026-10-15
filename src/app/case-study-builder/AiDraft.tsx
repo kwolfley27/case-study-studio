@@ -28,7 +28,8 @@ function catalog() {
   return (Object.keys(componentNames) as SectionKind[]).filter(kind => kind !== 'coverHero').map(kind => {
     const example = createSection(kind);
     const template = templates.find(item => item.kind === kind);
-    return { kind, name: componentNames[kind], purpose: componentDescriptions[kind], phase: template?.phase, defaultNavLabel: navDefaults[kind], itemShape: example.items.slice(0, 2).map(({ image, frameId, tileSize, ...rest }) => ({ ...rest, ...(image !== undefined ? { frameId: '<figma frame id or omit>' } : {}) })), aiRules: template?.ai };
+    const sectionShape = kind === 'affinity' ? { affinity: { groups: [{ title: 'Area of concern', issues: [{ title: 'Issue in the user\'s voice', aspects: [{ title: 'What this cluster reveals, first person', notes: ['Observation copied word for word'] }] }] }] } } : kind === 'abtest' ? { abtest: { result: 'b | a | none', method: 'Split test · 2 weeks · 4,212 sessions · 95% confidence', metrics: [{ label: 'Booking completion', kind: 'rate', a: '31', b: '44', better: 'higher' }, { label: 'Time to book', kind: 'number', a: '42', b: '18', unit: 's', better: 'lower' }, { label: 'Preferred B', kind: 'votes', b: '4', of: '5' }] } } : undefined;
+    return { kind, sectionShape, name: componentNames[kind], purpose: componentDescriptions[kind], phase: template?.phase, defaultNavLabel: navDefaults[kind], itemShape: example.items.slice(0, kind === 'aeiou' ? 7 : kind === 'persona' ? 8 : 2).map(({ image, frameId, tileSize, pins, spots, ...rest }) => ({ ...rest, ...(image !== undefined ? { frameId: '<figma frame id or omit>' } : {}) })), aiRules: template?.ai };
   });
 }
 
@@ -46,6 +47,9 @@ export function applyDraft(study: BuilderStudy, draft: Draft, images: Record<str
       const shape = base.items[index] ?? base.items[base.items.length - 1] ?? { title: '', detail: '' };
       const next: CaseStudySection['items'][number] = { ...shape };
       for (const key of ['title', 'detail', 'value', 'finding', 'findingNote', 'quote', 'quoteNote', 'when'] as const) { const value = (item as DraftItem)[key]; if (typeof value === 'string') (next as Record<string, unknown>)[key] = value; }
+      const extra = item as Record<string, unknown>;
+      if (typeof extra.cat === 'string' && /^[aeiou]$/.test(extra.cat)) next.cat = extra.cat as NonNullable<typeof next.cat>;
+      if (typeof extra.blockType === 'string' && ['person', 'list', 'text', 'quote', 'day', 'meter', 'photo', 'facts', 'chips'].includes(extra.blockType)) next.blockType = extra.blockType as NonNullable<typeof next.blockType>;
       const frameId = (item as DraftItem).frameId;
       if (frameId && images[frameId]) { next.image = images[frameId]; next.frameId = frameId; }
       return next;
@@ -64,6 +68,9 @@ export function applyDraft(study: BuilderStudy, draft: Draft, images: Record<str
     if (kind === 'columns') { section.columns = ([2, 3, 4].includes(part.columns ?? 0) ? part.columns : Math.min(4, Math.max(2, items.length))) as 2 | 3 | 4; section.items = items.slice(0, section.columns); }
     if (kind === 'competitors') section.criteria = part.criteria || template && 'Usability, Accessibility, Personalization, Integration, Guidance, Value';
     if (kind === 'timeline') { section.timeUnit = part.timeUnit || 'Week'; const phases = (part.phases ?? []).filter(phase => phase?.title).map(phase => ({ title: String(phase.title), detail: String(phase.detail ?? '') })); section.phases = phases.length ? phases : [...new Set(items.map(item => item.value).filter(Boolean))].map(title => ({ title: String(title), detail: '' })); delete section.layout; }
+    const partExtra = part as Record<string, unknown>;
+    if (kind === 'affinity') { const aff = partExtra.affinity as { groups?: unknown } | undefined; if (aff && Array.isArray(aff.groups)) section.affinity = { groups: aff.groups as NonNullable<CaseStudySection['affinity']>['groups'], unsorted: [] }; }
+    if (kind === 'abtest') { const ab = partExtra.abtest as Record<string, unknown> | undefined; if (ab) section.abtest = { ...(base.abtest ?? { markers: [], metrics: [] }), ...(Array.isArray(ab.metrics) ? { metrics: (ab.metrics as NonNullable<CaseStudySection['abtest']>['metrics']).slice(0, 3) } : {}), ...(typeof ab.method === 'string' ? { method: ab.method } : {}), ...(['a', 'b', 'none'].includes(String(ab.result)) ? { result: ab.result as 'a' | 'b' | 'none' } : {}), markers: [] }; }
     if (kind === 'interviews' || kind === 'findings' || kind === 'carousel') section.layout = { count: Math.min(items.length, 8) };
     sections.push(section);
   }

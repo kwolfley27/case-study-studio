@@ -1,5 +1,5 @@
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, type MotionValue } from 'motion/react';
+import { animate as animateValue, motion, useMotionValue, useTransform, type MotionValue } from 'motion/react';
 import { publicAnonKey } from '../../utils/supabase/info';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
@@ -95,13 +95,18 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
   const { edit } = useContext(EditingContext);
   const reduce = useReducedMotion();
   const expressive = useExpressive();
-  const animate = !editorMode && !reduce && expressive;
+  // In the editor the board shows sorted; "Play the sort" runs the animation once on demand.
+  const demo = useMotionValue(1);
+  const [playing, setPlaying] = useState(false);
+  const demoRef = useRef(false); demoRef.current = playing;
+  const animate = (!editorMode && !reduce && expressive) || playing;
   const data: AffinityData = section.affinity ?? defaultAffinity();
   const boardRef = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const scroll = useScrollProgress(sentinel, START, END);
   const done = useTransform(scroll, () => 1);
-  const p = animate ? scroll : done;
+  const p = playing ? demo : animate ? scroll : done;
+  const play = () => { if (playing) return; demo.set(0); setPlaying(true); window.setTimeout(() => { void animateValue(demo, 1, { duration: 3.4, ease: 'linear' }).then(() => window.setTimeout(() => setPlaying(false), 400)); }, 350); };
   const geo = useRef<Geometry | null>(null);
 
   // Measure where every note ends up. The pile sits in the middle of the screen
@@ -119,7 +124,7 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
         n++;
       });
       // Board top (relative to the screen) moves linearly from START·vh to END·vh as progress goes 0 → 1.
-      const pileY = (v: number) => { const top = vh * (START - (START - END) * v); return Math.max(110, vh * .48 - top); };
+      const pileY = (v: number) => { if (demoRef.current) return Math.min(240, board.offsetHeight / 2); const top = vh * (START - (START - END) * v); return Math.max(110, vh * .48 - top); };
       geo.current = { spots, cx: board.offsetWidth / 2, pileY };
     };
     measure();
@@ -131,7 +136,8 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
   let order = 0;
   const legend = [['green', 'Area of concern'], ['pink', 'Issue'], ['blue', 'What a cluster reveals'], ['yellow', 'Observation']] as const;
 
-  return <div className="csb-af" style={Object.fromEntries(Object.entries(COLORS).map(([k, v]) => [`--af-${k}`, v])) as React.CSSProperties}>
+  return <div className={`csb-af ${playing ? 'is-playing' : ''}`} style={Object.fromEntries(Object.entries(COLORS).map(([k, v]) => [`--af-${k}`, v])) as React.CSSProperties}>
+    {editorMode && <button type="button" className="csb-af-play" data-no-slot onClick={e => { e.stopPropagation(); play(); }} disabled={playing}>{playing ? 'Sorting…' : '▶ Play the sort'}</button>}
     <div ref={sentinel} aria-hidden="true" />
     <div ref={boardRef} className="csb-af-board">
       {data.groups.map((g, gi) => <section key={gi} className="csb-af-group">

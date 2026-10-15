@@ -1287,3 +1287,5 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-jm-word{width:max-content}
 .csb-jm-scope{border-radius:16px!important}
 .csb-jm-quotes li>*{display:inline!important}
+.csb-af-play{justify-self:start;margin-bottom:20px;padding:7px 14px;border-radius:9999px;border:1px solid #e5e5e5;background:var(--t-paper,#fdfcfc);color:var(--t-ink,#000);font:500 13px/1 var(--brand-body,"Inter",ui-sans-serif,system-ui,sans-serif);cursor:pointer;box-shadow:0 0 1px #0006,0 1px 1px #0000000a}
+.csb-af-play:disabled{opacity:.6;cursor:default}
