@@ -2669,3 +2669,23 @@ html.csb-presenting .csb-iso{height:calc(58vh / var(--present-zoom,1))!important
 html.csb-presenting .csb-fd-dev{--w:min(clamp(130px,15.5cqw,230px),calc(13vh / var(--present-zoom,1)))}
 html.csb-presenting .csb-fd-floor{--w:min(clamp(130px,15.5cqw,230px),calc(13vh / var(--present-zoom,1)))}
 html.csb-presenting .csb-fd-pencil{width:min(clamp(240px,34cqw,480px),calc(30vh / var(--present-zoom,1)))}
+
+/* ── Hold it on your phone ── */
+.csb-hold{position:relative;display:flex;justify-content:center;margin-top:18px}
+.csb-hold-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:0;border-radius:9999px;background:var(--t-surface,#f5f3f1);color:var(--t-ink,#000);font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:background .2s}
+.csb-hold-btn:hover{background:var(--t-line2,#ebe8e4)}
+.csb-hold-live{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:9999px;background:var(--t-surface,#f5f3f1);font-size:13.5px;color:var(--t-ink,#000)}
+.csb-hold-live i{width:8px;height:8px;border-radius:50%;background:#34c759;box-shadow:0 0 0 3px rgba(52,199,89,.22);animation:csb-hold-pulse 1.6s ease-in-out infinite}
+@keyframes csb-hold-pulse{50%{box-shadow:0 0 0 6px rgba(52,199,89,.08)}}
+.csb-hold-card{position:absolute;bottom:calc(100% + 12px);left:50%;translate:-50% 0;z-index:30;display:grid;justify-items:center;gap:10px;width:280px;padding:22px 22px 18px;border-radius:20px;background:#fdfcfc;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 24px 60px -16px rgba(0,0,0,.28);text-align:center}
+.csb-hold-card strong{font-size:16px;font-weight:500;color:#000}
+.csb-hold-card p{margin:0;font-size:13px;line-height:1.5;color:#777169}
+.csb-hold-card small{min-height:16px;font-size:12px;color:#a59f97}
+.csb-hold-qr{display:block;width:168px;height:168px;padding:10px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px #ebe8e4}
+.csb-hold-qr svg{width:100%;height:100%;display:block}
+.csb-hold-x{position:absolute;right:10px;top:10px;display:grid;place-items:center;width:26px;height:26px;border:0;border-radius:50%;background:#f5f3f1;color:#000;cursor:pointer}
+.csb-variant-dark :is(.csb-hold-btn,.csb-hold-live){background:#ffffff14;color:#fdfcfc}
+/* the throw: the mockup leaves the page for their phone, then returns mirroring it */
+.csb-ss-phone.is-thrown{animation:csb-hold-throw 2.1s cubic-bezier(.5,0,.2,1) both}
+@keyframes csb-hold-throw{0%{transform:none;opacity:1}30%{transform:translate(40px,-60px) rotate(-8deg) scale(1.04)}55%{transform:translate(520px,-380px) rotate(24deg) scale(.6);opacity:0}70%{transform:translate(0,40px) scale(.96);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.csb-ss-phone.is-thrown{animation:none}}

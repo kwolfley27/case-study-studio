@@ -10,5 +10,7 @@ const pub = location.hash.match(/^#\/p\/([a-z0-9-]+)/)?.[1];
 const RunPage = lazy(() => import('./app/case-study-builder/research/SessionRunner'));
 const run = location.hash.match(/^#\/run\/([a-zA-Z0-9-]+)/)?.[1];
 const study = location.hash.match(/^#\/r\/([a-zA-Z0-9-]+)/)?.[1];
+const HoldPage = lazy(() => import('./app/case-study-builder/HoldPage'));
+const hold = location.hash.match(/^#\/hold\/([a-z0-9-]+)\/([a-zA-Z0-9-]+)\/([a-z0-9]+)/);
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode>{pub ? <Suspense fallback={null}><PublicPage slug={pub} /></Suspense> : run ? <Suspense fallback={null}><RunPage id={run} /></Suspense> : study ? <Suspense fallback={null}><ParticipantPage id={study} /></Suspense> : <CaseStudyBuilder />}</React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode>{hold ? <Suspense fallback={null}><HoldPage slug={hold[1]} sectionId={hold[2]} code={hold[3]} /></Suspense> : pub ? <Suspense fallback={null}><PublicPage slug={pub} /></Suspense> : run ? <Suspense fallback={null}><RunPage id={run} /></Suspense> : study ? <Suspense fallback={null}><ParticipantPage id={study} /></Suspense> : <CaseStudyBuilder />}</React.StrictMode>);

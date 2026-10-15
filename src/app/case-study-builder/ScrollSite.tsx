@@ -1,6 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Columns3, Crosshair, Eye, EyeOff, MousePointer2, Plus, Trash2 } from 'lucide-react';
+import { HoldIt } from './HoldIt';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive } from './MotionKit';
 
@@ -36,7 +37,7 @@ type Grid = { cols: number; margin: number; gutter: number } | null;
   background colour) and stacked top to bottom, so it scrolls like the real thing.
 */
 type Seg = { x: number; y: number; w: number; h: number };
-function useScreens(image: string | undefined, on: boolean) {
+export function useScreens(image: string | undefined, on: boolean) {
   const [segs, setSegs] = useState<{ W: number; H: number; list: Seg[] } | null>(null);
   useEffect(() => {
     setSegs(null); if (!image || !on) return;
@@ -330,6 +331,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     </div>
     {centered && <div className="csb-ss-foot">{ticks}{!note && idle}{addBtn}</div>}
     </>}
+    {show !== 'desktop' && section.options?.hold !== false && <HoldIt sectionId={section.id} stage={stage} root={wrap} />}
   </div>;
 }
 
@@ -353,6 +355,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste. Use full-length frames: the page scrolls inside the device.</p>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.annotate !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), annotate: e.target.checked } })} /> Show notes and highlights (off: just the screens)</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.syncScroll !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), syncScroll: e.target.checked } })} /> Desktop and mobile scroll together</label>
+    <label className="csb-check-field"><input type="checkbox" checked={section.options?.hold !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), hold: e.target.checked } })} /> “Hold it on your phone” button (visitors scroll the real screen on their phone)</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
     <p className="csb-panel-kicker">Stages</p>
     <label className="csb-check-field"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Two stages, switched with one click</label>
