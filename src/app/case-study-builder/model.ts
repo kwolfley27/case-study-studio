@@ -54,7 +54,7 @@ export interface CaseStudySection {
   abtest?: import("./ABTest").ABTestData;
   /** Affinity diagram: green areas > pink issues > blue clusters > yellow notes. */
   affinity?: import("./AffinityDiagram").AffinityData;
-  prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean; /* the prototype frame size, so the device screen matches it */ size?: { w: number; h: number } };
+  prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean; /* the prototype frame size, so the device screen matches it */ size?: { w: number; h: number }; /** Zoom the embed to crop away Figma's own margin (1 = none). */ zoom?: number };
   fit?: "contain" | "cover";
   criteria?: string;
   columns?: 2 | 3 | 4;

@@ -59,7 +59,26 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
   const expressive = useExpressive() && !editing;
   const stages = section.items.slice(0, 6);
   const n = Math.max(1, stages.length);
-  const values = stages.map(s => Number(s.value) || 50);
+  const { edit } = useContext(EditingContext);
+  const [dragging, setDragging] = useState<{ i: number; v: number } | null>(null);
+  const [hoverCol, setHoverCol] = useState<number | null>(null);
+  const values = stages.map((s, i) => dragging?.i === i ? dragging.v : (Number(s.value) || 50));
+  const chartRef = useRef<HTMLDivElement>(null);
+  // Drag a dot up or down to set how that stage feels (editor only).
+  const dragEmotion = (i: number) => (event: React.PointerEvent) => {
+    if (!edit || !chartRef.current) return;
+    event.preventDefault(); event.stopPropagation();
+    const rect = chartRef.current.getBoundingClientRect();
+    const at = (y: number) => Math.round(Math.min(100, Math.max(0, 110 - ((y - rect.top) / rect.height) * 120)));
+    let v = at(event.clientY); setDragging({ i, v });
+    const move = (e: PointerEvent) => { v = at(e.clientY); setDragging({ i, v }); };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); edit(`items.${i}.value`, String(v)); setDragging(null); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  const nudgeEmotion = (i: number) => (event: React.KeyboardEvent) => {
+    if (!edit || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+    event.preventDefault(); edit(`items.${i}.value`, String(Math.min(100, Math.max(0, values[i] + (event.key === 'ArrowUp' ? 5 : -5)))));
+  };
   const lowest = values.indexOf(Math.min(...values));
   const o = section.options ?? {};
   const wrap = useRef<HTMLDivElement>(null);
@@ -70,10 +89,10 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
   const d = curve(values);
   const W = n * 100;
   const rows = JOURNEY_ROWS.filter(r => rowOn(section, r.key));
-  const cell = (i: number, children: React.ReactNode, cls = '') => <div key={i} className={`csb-jm-cell ${cls} ${show(i) ? 'is-in' : ''}`}>{children}</div>;
+  const cell = (i: number, children: React.ReactNode, cls = '') => <div key={i} className={`csb-jm-cell ${cls} ${show(i) ? 'is-in' : ''} ${hoverCol === i ? 'is-col' : ''}`} onPointerEnter={() => setHoverCol(i)}>{children}</div>;
 
   return <div ref={wrap} className="csb-jm-scroll">
-    <div className="csb-jm" style={{ '--jm-n': n } as React.CSSProperties}>
+    <div className={`csb-jm ${hoverCol !== null ? 'has-col' : ''}`} style={{ '--jm-n': n } as React.CSSProperties} onPointerLeave={() => setHoverCol(null)}>
       {rowOn(section, 'scope') && <div className="csb-jm-scope">
         {([['user', 'User'], ['goal', 'Goal'], ['scenario', 'Scenario']] as const).map(([k, label]) => <div key={k}><small>{label}</small><p><EditableText field={`options.${k}`} value={String(o[k] ?? ({ user: 'New member, first week', goal: 'Book a class that fits their schedule', scenario: 'On their phone, between meetings' } as Record<string, string>)[k])} /></p></div>)}
       </div>}
@@ -84,7 +103,7 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
       {rows.map(row => row.key === 'emotion'
         ? <div key="emotion" className="csb-jm-emotion" style={{ gridColumn: '1 / -1' }}>
             <div className="csb-jm-label"><strong>{row.label}</strong></div>
-            <div className="csb-jm-chart">
+            <div className="csb-jm-chart" ref={chartRef}>
               <div className="csb-jm-scale" aria-hidden="true"><span style={{ top: `${Y(80) / 120 * 100}%` }}>Positive</span><span style={{ top: "50%" }}>Neutral</span><span style={{ top: `${Y(20) / 120 * 100}%` }}>Negative</span></div>
               <svg viewBox={`0 0 ${W} 120`} preserveAspectRatio="none" role="img" aria-label={`Emotion across stages: ${stages.map((s, i) => `${s.title} ${values[i]} of 100`).join(', ')}`}>
                 <defs>
@@ -98,10 +117,10 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
                 {editing ? <path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" /> : expressive ? <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" style={{ pathLength: progress }} />
                   : <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" initial={reduce || editing ? false : { pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true, amount: .4 }} transition={{ duration: 1.3, ease: 'easeInOut' }} />}
               </svg>
-              {values.map((v, i) => <motion.div key={i} className={`csb-jm-point is-${sentiment(v)} ${i === lowest ? 'is-lowest' : ''}`} style={{ left: `${(i + .5) / n * 100}%`, top: `${Y(v) / 120 * 100}%` }} initial={false} animate={{ opacity: show(i) ? 1 : 0, scale: show(i) ? 1 : .6 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
+              {values.map((v, i) => <motion.div key={i} className={`csb-jm-point is-${sentiment(v)} ${i === lowest ? 'is-lowest' : ''} ${edit ? 'is-draggable' : ''} ${dragging?.i === i ? 'is-dragging' : ''}`} onPointerDown={dragEmotion(i)} onKeyDown={nudgeEmotion(i)} tabIndex={edit ? 0 : undefined} role={edit ? 'slider' : undefined} aria-label={edit ? `${stages[i]?.title} emotion, drag up or down` : undefined} aria-valuemin={0} aria-valuemax={100} aria-valuenow={edit ? v : undefined} style={{ left: `${(i + .5) / n * 100}%`, top: `${Y(v) / 120 * 100}%` }} initial={false} animate={{ opacity: show(i) ? 1 : 0, scale: show(i) ? 1 : .6 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
                 <Face mood={sentiment(v) as 'pos' | 'neu' | 'neg'} />
                 <span className="csb-jm-dot" />
-                <span className="csb-jm-word"><EditableText field={`items.${i}.detail`} value={(stages[i].detail || '').split(/\s+[·—–-]\s+/)[0]} /></span>
+                <span className="csb-jm-word" onPointerDown={e => e.stopPropagation()}><EditableText field={`items.${i}.detail`} value={(stages[i].detail || '').split(/\s+[·—–-]\s+/)[0]} /></span>
               </motion.div>)}
             </div>
           </div>

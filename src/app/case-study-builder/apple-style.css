@@ -1289,3 +1289,24 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-jm-quotes li>*{display:inline!important}
 .csb-af-play{justify-self:start;margin-bottom:20px;padding:7px 14px;border-radius:9999px;border:1px solid #e5e5e5;background:var(--t-paper,#fdfcfc);color:var(--t-ink,#000);font:500 13px/1 var(--brand-body,"Inter",ui-sans-serif,system-ui,sans-serif);cursor:pointer;box-shadow:0 0 1px #0006,0 1px 1px #0000000a}
 .csb-af-play:disabled{opacity:.6;cursor:default}
+
+/* Journey map: room to breathe, read one stage at a time, drag emotions */
+.csb-jm-cell{padding:22px 18px 24px!important;transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1),filter .25s ease,background .25s ease}
+.csb-jm-label{padding:22px 18px 22px 0!important}
+.csb-jm-label small{margin-top:4px!important;line-height:1.4}
+.csb-jm-list,.csb-jm-chips,.csb-jm-quotes{gap:12px!important}
+.csb-jm-list li{font-size:14.5px;line-height:1.5;letter-spacing:.01em;padding-left:14px!important}
+.csb-jm-list li::before{top:.68em!important}
+.csb-jm-quotes li{padding:0!important;background:none!important;font-size:15px;line-height:1.5;color:var(--t-body,#44403b)!important}
+.csb-jm-chips{gap:6px!important}
+.csb-jm-chips li{padding:4px 10px!important;font-size:12.5px!important}
+.csb-jm-text{font-size:14.5px;line-height:1.5}
+.csb-jm.has-col .csb-jm-cell:not(.is-col){filter:opacity(.42)}
+.csb-jm-cell.is-col{background:color-mix(in srgb,var(--t-ink,#000) 2.5%,transparent)}
+.csb-jm-point.is-draggable{cursor:ns-resize}
+.csb-jm-point.is-draggable .csb-jm-dot::after{content:"";position:absolute;inset:-12px;border-radius:50%}
+.csb-jm-point.is-draggable:hover .csb-jm-dot,.csb-jm-point.is-dragging .csb-jm-dot{transform:scale(1.35);box-shadow:0 0 0 4px color-mix(in srgb,var(--t-ink,#000) 10%,transparent)}
+.csb-jm-dot{transition:transform .15s,background .2s}
+.csb-jm-point.is-dragging{z-index:5}
+.csb-jm-point:focus-visible{outline:none}.csb-jm-point:focus-visible .csb-jm-dot{box-shadow:0 0 0 3px #fdfcfc,0 0 0 5px var(--t-ink,#000)}
+.csb-proto-screen iframe{transform-origin:50% 50%;transition:transform .15s ease}

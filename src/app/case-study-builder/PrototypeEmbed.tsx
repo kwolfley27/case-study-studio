@@ -89,7 +89,7 @@ export function PrototypeEmbed({ section, editorMode, onSetLink }: { section: Ca
       {device === 'laptop' && <div className="csb-proto-bar" aria-hidden="true"><i /><i /><i /></div>}
       <div className="csb-proto-screen" ref={screenRef}>
         {embed && playing
-          ? <iframe key={reloadKey} src={embed} title={`${section.title} — interactive Figma prototype`} allowFullScreen loading="lazy" />
+          ? <iframe key={reloadKey} src={embed} title={`${section.title} — interactive Figma prototype`} allowFullScreen loading="lazy" style={{ transform: `scale(${section.prototype?.zoom ?? 1})` }} />
           : embed
             ? <button type="button" className="csb-proto-poster" onClick={event => { event.stopPropagation(); if (screenRef.current) setBg(toHex(getComputedStyle(screenRef.current).backgroundColor)); setPlaying(true); }}>
                 <span className="csb-proto-play"><Play size={22} fill="currentColor" /></span>
@@ -153,6 +153,7 @@ export function PrototypeControls({ section, onChange }: { section: CaseStudySec
       <button type="button" className="csb-quiet-button" disabled={busy || (!getFigmaToken() && !token.trim())} onClick={() => void detect()}>{busy ? 'Reading Figma…' : 'Match size from Figma'}</button>
       {note && <span className={`csb-field-note ${note.error ? 'is-error' : ''}`} role="status">{note.text}</span>}
     </div>}
+    <div className="csb-layout-control"><div className="csb-layout-label"><span>Zoom to fill</span><output>{Math.round((proto.zoom ?? 1) * 100)}%</output></div><input type="range" min={100} max={220} step={1} value={Math.round((proto.zoom ?? 1) * 100)} onChange={e => set({ zoom: Number(e.target.value) / 100 })} aria-label="Zoom the prototype to fill the screen" /><span className="csb-field-note">Figma adds its own margin inside the embed. Press Try the prototype, then slide until your design touches the screen edges.</span></div>
     <label className="csb-check-field"><input type="checkbox" checked={proto.hideUi !== false} onChange={event => set({ hideUi: event.target.checked })} /> Hide Figma's toolbar</label>
     <p className="csb-field-note">Visitors need view access to the file: in Figma, Share → Anyone with the link can view. Paste or change the link on the page.</p>
   </>;
