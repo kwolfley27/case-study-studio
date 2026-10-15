@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { figmaEmbedUrl } from './PrototypeEmbed';
+import { HoldCoach } from './HoldCoach';
+import { useReducedMotion } from './MotionKit';
 import { openHold, type HoldChannel, type HoldMsg } from './HoldSync';
 import { publishedJsonUrl } from './Publish';
 import { listStudies } from './studyLibrary';
@@ -59,20 +61,23 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   const liveSrc = !liveRaw ? '' : figmaEmbedUrl(liveRaw) ?? (/^https:\/\//.test(liveRaw) ? liveRaw : '');
   const appLink = /^https:\/\//.test(String(o.appLink ?? '')) ? String(o.appLink) : '';
   const [live, setLive] = useState(false);
+  const [coach, setCoach] = useState(true);
+  const [hud, setHud] = useState(0);
+  const reduce = useReducedMotion();
   const [dir, setDir] = useState(1);
   useEffect(() => { ch.current?.send({ t: 'mode', live: live && !!liveSrc }); }, [live, liveSrc]);
   // Keep the place on the page when the screen swaps.
   const frac = useRef(0);
   const restore = () => { const el = scroller.current; if (!el) return; const max = el.scrollHeight - el.clientHeight; if (max > 0) el.scrollTop = frac.current * max; report(); };
-  function setStageFrom(st: string) { setStage(prev => { if (prev !== st) setDir(st === 'b' ? 1 : -1); return st; }); }
-  const pick = (st: 'a' | 'b') => { if (!compare || st === stage) return; setDir(st === 'b' ? 1 : -1); setStage(st); ch.current?.send({ t: 'pick', stage: st }); try { navigator.vibrate?.(10); } catch { /* ignore */ } };
+  function setStageFrom(st: string) { setStage(prev => { if (prev !== st) { setDir(st === 'b' ? 1 : -1); setHud(h => h + 1); } return st; }); }
+  const pick = (st: 'a' | 'b') => { if (!compare || st === stage) return; setDir(st === 'b' ? 1 : -1); setStage(st); setHud(h => h + 1); setCoach(false); ch.current?.send({ t: 'pick', stage: st }); try { navigator.vibrate?.(10); } catch { /* ignore */ } };
   // Swipe left for the second stage (new), right for the first (old).
   const touch = useRef<{ x: number; y: number; t: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => { const t = e.touches[0]; touch.current = { x: t.clientX, y: t.clientY, t: Date.now() }; };
   const onTouchEnd = (e: React.TouchEvent) => { const s0 = touch.current; touch.current = null; if (!s0 || !compare) return; const t = e.changedTouches[0]; const dx = t.clientX - s0.x, dy = t.clientY - s0.y; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - s0.t < 700) pick(dx < 0 ? 'b' : 'a'); };
   // About 20 updates a second is smooth on the laptop and well inside the live channel's limits.
   const lastSent = useRef(0);
-  const report = () => { const el0 = scroller.current; if (el0) { const m = el0.scrollHeight - el0.clientHeight; if (m > 0) frac.current = el0.scrollTop / m; } if (frame.current) return; const wait = Math.max(0, 50 - (Date.now() - lastSent.current)); frame.current = window.setTimeout(() => { frame.current = 0; lastSent.current = Date.now(); const el = scroller.current; if (!el) return; const max = el.scrollHeight - el.clientHeight; ch.current?.send({ t: 'scroll', f: max > 0 ? Math.round(el.scrollTop / max * 1000) / 1000 : 0 }); }, wait); };
+  const report = () => { const el0 = scroller.current; if (el0) { const m = el0.scrollHeight - el0.clientHeight; if (m > 0) frac.current = el0.scrollTop / m; } if (frame.current) return; const wait = Math.max(0, 50 - (Date.now() - lastSent.current)); frame.current = window.setTimeout(() => { frame.current = 0; lastSent.current = Date.now(); const el = scroller.current; if (!el) return; const max = el.scrollHeight - el.clientHeight; ch.current?.send({ t: 'scroll', f: max > 0 ? Math.round(el.scrollTop / max * 1000) / 1000 : 0, v: el.scrollHeight ? Math.round(el.clientHeight / el.scrollHeight * 1000) / 1000 : 1 }); }, wait); };
 
   if (error) return <div className="hold-msg"><h1>Hmm</h1><p>{error}</p></div>;
   if (!section) return <div className="hold-msg"><p>Loading…</p></div>;
@@ -80,7 +85,7 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   const showLive = live && !!liveSrc;
   return <div className={`hold ${showLive ? 'is-live' : ''}`}>
     <motion.div className="hold-pill" initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .9, duration: .4 }}>
-      <i className={linked ? 'is-on' : ''} />{linked ? `Connected to ${title || 'the case study'}` : 'Connecting to the laptop…'}
+      <i className={linked ? 'is-on' : ''} />{linked ? (compare ? `Connected · ${stage === 'b' ? nameB : nameA}` : `Connected to ${title || 'the case study'}`) : 'Connecting to the laptop…'}
     </motion.div>
     {showLive
       ? <iframe key={liveSrc} className="hold-live" src={liveSrc} title="Live prototype" allow="fullscreen; clipboard-write" />
@@ -97,13 +102,13 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
       </AnimatePresence>
     </motion.div>}
     <div className="hold-dock">
-      {compare && <div className="hold-seg" role="radiogroup" aria-label="Version">
-        {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={stage === st} onClick={() => pick(st)}>{stage === st && <motion.i layoutId="hold-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
-      </div>}
       {liveSrc && <button type="button" className="hold-btn" onClick={() => setLive(v => !v)}>{showLive ? 'Back to the screen' : 'Try the prototype'}</button>}
       {showLive && <a className="hold-btn is-ghost" href={liveRaw} target="_blank" rel="noopener">Open full screen</a>}
       {appLink && <a className="hold-btn is-ghost" href={appLink} target="_blank" rel="noopener">Get the app</a>}
     </div>
-    {!showLive && <p className="hold-hint">{compare ? `Scroll here. Swipe left or right to flip ${nameA.toLowerCase()} and ${nameB.toLowerCase()}.` : 'Scroll here. The notes follow on the laptop.'}</p>}
+    <AnimatePresence>{hud > 0 && <motion.div key={hud} className="hold-hud" initial={{ opacity: 0, scale: .92 }} animate={{ opacity: [0, 1, 1, 0], scale: [.92, 1, 1, .98] }} transition={{ duration: 1.3, times: [0, .15, .75, 1] }} aria-live="polite">
+      <small>{stage === 'b' ? '→' : '←'}</small>{stage === 'b' ? nameB : nameA}
+    </motion.div>}</AnimatePresence>
+    <AnimatePresence>{coach && !showLive && image && <HoldCoach key="coach" versions={compare ? [nameA, nameB] : undefined} reduce={reduce} onDone={() => setCoach(false)} />}</AnimatePresence>
   </div>;
 }

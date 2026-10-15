@@ -2,6 +2,7 @@ import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react';
 import { Columns3, Crosshair, Eye, EyeOff, MousePointer2, Plus, Trash2 } from 'lucide-react';
 import { HoldIt } from './HoldIt';
+import { HeldView } from './HeldView';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive } from './MotionKit';
 
@@ -212,6 +213,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const { edit } = useContext(EditingContext);
   const [held, setHeldRaw] = useState(false);
   const [heldBox, setHeldBox] = useState<React.CSSProperties | undefined>();
+  const [heldPos, setHeldPos] = useState({ f: 0, v: .35 });
   const show = held ? 'mobile' : (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
   const compare = section.options?.compare === true; const base = stageBase(section);
   const [stage, setStageRaw] = useState<Stage>('a');
@@ -316,11 +318,13 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const addBtn = editorMode && (desk?.image || mob?.image) ? <button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot</button> : null;
   const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} onBox={(i, b, c) => { edit?.(`items.${i}.box`, b); edit?.(`items.${i}.point`, String(c)); }} />; };
   return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''} ${!annotate || (!list.length && !editorMode) ? 'no-notes' : ''} ${held ? 'is-held' : ''}`} style={heldBox ?? { ['--ss-vh' as string]: `${vh}px` }}>
-    {compare && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
+    {compare && !held && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
       {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={!both && stage === st} onClick={() => { setBoth(false); setStage(st); }}>{!both && stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
       <button type="button" role="radio" aria-checked={both} onClick={() => setBoth(true)}>{both && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>Side by side</span></button>
     </div>}
-    {(compare && both && !held) || show === 'both' ? <>
+    {held ? <HeldView image={mob?.image} stackMob={section.options?.stackMob === true} notes={notesFor('mobile').map(n => ({ title: n.title, detail: n.detail, at: n.at, i: n.i }))} f={heldPos.f} v={heldPos.v}
+      stage={compare ? { names: [nameA, nameB], current: stage } : undefined} onStage={st => { setBoth(false); setStage(st); }} />
+    : (compare && both) || show === 'both' ? <>
       {show === 'both' && !both && layerToggle && <div className="csb-ss-layerrow">{layerToggle}</div>}
       <TwoScreens key={compare && both ? 'stages' : 'mixed'} kind={compare && both ? 'stages' : 'mixed'} section={section} editorMode={editorMode} annotate={annotate} scrollersRef={paneScrollers} takeRestore={p => { const r = panePending.current[p]; panePending.current[p] = null; return r; }}
         panes={compare && both ? [{ st: 'a', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameA }, { st: 'b', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameB }] : [{ st: stage, d: 'desktop', grid: deskGrid }, { st: stage, d: 'mobile', grid: mobGrid }]} />
@@ -346,7 +350,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     </div>
     {centered && <div className="csb-ss-foot">{ticks}{!note && idle}{addBtn}</div>}
     </>}
-    {(held || (section.options?.show ?? 'both') !== 'desktop') && section.options?.hold !== false && <HoldIt held={held} onLive={on => { if (on !== held) setHeld(on); }} sectionId={section.id} stage={stage} root={wrap} onPick={st => { setBoth(false); setStage(st); }} />}
+    {(held || (section.options?.show ?? 'both') !== 'desktop') && section.options?.hold !== false && <HoldIt held={held} onScroll={(f, v) => setHeldPos(p => ({ f, v: v ?? p.v }))} onLive={on => { if (on !== held) setHeld(on); }} sectionId={section.id} stage={stage} root={wrap} onPick={st => { setBoth(false); setStage(st); }} />}
   </div>;
 }
 

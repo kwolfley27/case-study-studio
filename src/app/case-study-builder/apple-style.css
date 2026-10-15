@@ -2752,3 +2752,47 @@ html.csb-holding{overflow:hidden}
 .csb-ss.is-held .csb-ss-foot{display:none}
 
 .csb-ss.is-held .csb-hold{display:flex;gap:8px;align-items:center}
+/* Hold it: the calm, dark screen while their phone drives (HeldView) */
+.csb-ss.is-held{background:#0c0b0a;color:#fdfcfc;padding:0}
+.csb-held{position:relative;height:100%;overflow:hidden;isolation:isolate}
+.csb-held-glow{position:absolute;left:58%;top:50%;width:62vmax;height:62vmax;translate:-50% -50%;border-radius:50%;background:#c4553a;opacity:.32;filter:blur(110px);transition:background-color 1.4s ease;z-index:-1;animation:csb-held-breathe 9s ease-in-out infinite}
+.csb-held-glow.is-b{left:18%;top:78%;width:40vmax;height:40vmax;opacity:.18;animation-duration:13s;animation-direction:reverse}
+@keyframes csb-held-breathe{50%{scale:1.12;opacity:.24}}
+@media (prefers-reduced-motion:reduce){.csb-held-glow{animation:none}}
+.csb-held-main{height:100%;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:clamp(48px,7vw,120px);max-width:1180px;margin:0 auto;padding:72px clamp(32px,6vw,96px);box-sizing:border-box}
+.csb-held-map{height:min(72vh,720px);display:flex;align-items:center}
+.csb-held-page{position:relative;height:100%;aspect-ratio:9/30;max-width:120px;border-radius:10px;overflow:hidden;background:#ffffff08;box-shadow:0 0 0 1px #ffffff14}
+.csb-held-page>img,.csb-held-stack{display:block;width:100%;height:100%;object-fit:cover;object-position:top;opacity:.16;filter:grayscale(1)}
+.csb-held-stack>div{width:100%;background-repeat:no-repeat}
+.csb-held-window{position:absolute;left:0;right:0;border-radius:6px;box-shadow:0 0 0 1.5px #fdfcfc,0 0 0 9999px #0c0b0a55,0 0 30px 4px #ffffff22;transition:top .12s linear,height .3s}
+.csb-held-dot{position:absolute;right:-14px;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#ffffff33;transition:background .3s,scale .3s}
+.csb-held-map{padding-right:14px}
+.csb-held-dot.is-seen{background:#ffffff88}
+.csb-held-dot.is-on{background:#fdfcfc;scale:1.6;box-shadow:0 0 12px 2px #ffffff66}
+.csb-held-copy{max-width:640px}
+.csb-held-note small{display:block;margin-bottom:18px;font-size:14px;color:#a59f97;letter-spacing:.01em}
+.csb-held-note h3{margin:0;font-size:clamp(40px,4.6vw,68px);font-weight:300;line-height:1.06;letter-spacing:-.025em;color:#fdfcfc;text-wrap:balance}
+.csb-held-note h3 span{display:inline-block;white-space:pre}
+.csb-held-note p{margin:22px 0 0;max-width:520px;font-size:clamp(17px,1.4vw,20px);line-height:1.55;color:#c9c4bd;text-wrap:pretty}
+.csb-held-note.is-idle h3{color:#a59f97}
+.csb-held-stages{position:absolute;top:18px;left:50%;translate:-50% 0;z-index:3;display:inline-flex;padding:3px;border-radius:9999px;background:#ffffff12}
+.csb-held-stages button{position:relative;height:32px;padding:0 16px;border:0;background:none;color:#c9c4bd;font:inherit;font-size:13px;border-radius:9999px;cursor:pointer}
+.csb-held-stages button[aria-checked=true]{color:#000}
+.csb-held-stages button i{position:absolute;inset:0;border-radius:9999px;background:#fdfcfc}
+.csb-held-stages button span{position:relative}
+.csb-ss.is-held .csb-hold{z-index:4}
+.csb-ss.is-held :is(.csb-hold-exit,.csb-hold-live){background:#ffffff14;color:#fdfcfc}
+.csb-ss.is-held .csb-hold-exit:hover{background:#ffffff24}
+.csb-ss.is-held[data-swap] .csb-held-page{animation:csb-fade-in .5s}
+@media (max-width:820px){.csb-held-main{grid-template-columns:1fr}.csb-held-map{display:none}}
+/* Peeking phone, v2: bigger, light Apple hardware, larger QR, no bubble */
+.csb-hold-peek{width:220px;bottom:-30px}
+.csb-hold-peek-phone{width:220px;height:450px;padding:8px;border-radius:44px;background:linear-gradient(160deg,#f4f2ef,#dcd8d2 55%,#ecebe8);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 0 0 0 2.5px rgba(255,255,255,.7),0 1px 2px rgba(0,0,0,.06),0 40px 70px -34px rgba(0,0,0,.32)}
+.csb-hold-peek-island{top:19px;width:64px;height:18px;background:#0c0b0a}
+.csb-hold-peek-screen{gap:12px;padding:58px 18px 18px;border-radius:36px;background:#fdfcfc;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
+.csb-hold-peek-screen small.is-kicker{font-size:12px;color:#777169}
+.csb-hold-peek-screen b{margin-top:-6px;font-size:21px;font-weight:300;letter-spacing:-.015em;line-height:1.15;color:#000}
+.csb-hold-peek-qr{width:164px;height:164px;padding:10px;border-radius:16px;box-shadow:inset 0 0 0 1px #ebe8e4}
+.csb-hold-peek-screen small{font-size:11.5px;line-height:1.4}
+.csb-hold-peek-x{right:-6px;top:-6px;width:28px;height:28px;background:rgba(253,252,252,.95);color:#44403b}
+.csb-held-note h3{font-family:var(--ed-display,inherit)}

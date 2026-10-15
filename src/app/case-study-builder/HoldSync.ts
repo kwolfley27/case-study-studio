@@ -10,7 +10,7 @@ import { projectId, publicAnonKey } from '../../utils/supabase/info';
 export type HoldMsg =
   | { t: 'hello'; ua?: string }          // phone joined
   | { t: 'hi'; stage?: string }          // laptop answered
-  | { t: 'scroll'; f: number }           // phone scroll position, 0–1
+  | { t: 'scroll'; f: number; v?: number } // phone scroll position 0–1, and how much of the page fits on its screen
   | { t: 'stage'; stage: string }        // laptop switched wireframe / high fidelity
   | { t: 'pick'; stage: string }         // phone swiped to the other stage (old ↔ new)
   | { t: 'mode'; live: boolean }         // phone switched between the screen and the live prototype

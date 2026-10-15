@@ -11,7 +11,7 @@ import { StudyMeta } from './StudyMeta';
   joins, the mockup flies off the page "into" their phone, then comes back mirroring their scroll,
   so the highlights and notes here follow what they're looking at in their hand.
 */
-export function HoldIt({ sectionId, stage, root, onPick, onLive, held }: { sectionId: string; stage: string; root: React.RefObject<HTMLElement | null>; onPick?: (stage: 'a' | 'b') => void; onLive?: (live: boolean) => void; held?: boolean }) {
+export function HoldIt({ sectionId, stage, root, onPick, onLive, held, onScroll }: { sectionId: string; stage: string; root: React.RefObject<HTMLElement | null>; onPick?: (stage: 'a' | 'b') => void; onLive?: (live: boolean) => void; held?: boolean; onScroll?: (f: number, v?: number) => void }) {
   const { slug, published } = useContext(StudyMeta);
   const [open, setOpen] = useState(false);
   const [qr, setQr] = useState('');
@@ -19,6 +19,7 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held }: { secti
   const [proto, setProto] = useState(false);
   const pickRef = useRef(onPick); pickRef.current = onPick;
   const liveRef = useRef(onLive); liveRef.current = onLive;
+  const scrollCb = useRef(onScroll); scrollCb.current = onScroll;
   // The little phone that peeks up from the corner while this section is on screen.
   const [inView, setInView] = useState(false);
   const [peekOpen, setPeekOpen] = useState(false);
@@ -39,7 +40,7 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held }: { secti
   const onMsg = (m: HoldMsg) => {
     lastSeen.current = Date.now();
     if (m.t === 'hello') { ch.current?.send({ t: 'hi', stage: stageRef.current }); setState(s => { if (s !== 'live') { throwPhone(); setOpen(false); } return 'live'; }); }
-    if (m.t === 'scroll') { const el = phoneScroller(); if (el) el.scrollTop = m.f * (el.scrollHeight - el.clientHeight); }
+    if (m.t === 'scroll') { scrollCb.current?.(m.f, m.v); const el = phoneScroller(); if (el) el.scrollTop = m.f * (el.scrollHeight - el.clientHeight); }
     if (m.t === 'pick' && (m.stage === 'a' || m.stage === 'b')) { stageRef.current = m.stage; pickRef.current?.(m.stage); }
     if (m.t === 'mode') setProto(m.live);
     if (m.t === 'bye') { setState('waiting'); setProto(false); }
@@ -47,7 +48,8 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held }: { secti
   const start = async () => { if (ch.current) return; setState('waiting'); ch.current = await openHold(code.current, onMsg); };
   useEffect(() => { const el = root.current; if (!el) return; const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: .3 }); io.observe(el); return () => io.disconnect(); }, []);
   const peeking = inView && !dismissed && state !== 'live' && !open;
-  useEffect(() => { liveRef.current?.(state === 'live'); }, [state]);
+  // Let the phone fly off the page first, then dim the screen.
+  useEffect(() => { if (state !== 'live') { liveRef.current?.(false); return; } const t = setTimeout(() => liveRef.current?.(true), 950); return () => clearTimeout(t); }, [state]);
   useEffect(() => { if (!held) return; const k = (e: KeyboardEvent) => { if (e.key === 'Escape') liveRef.current?.(false); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [held]);
   useEffect(() => { if ((open || peeking) && link) { void start(); QRCode.toString(link, { type: 'svg', margin: 0, color: { dark: '#000000', light: '#00000000' } }).then(setQr, () => setQr('')); } }, [open, peeking, link]);
   useEffect(() => { if (state === 'live') ch.current?.send({ t: 'stage', stage }); }, [stage, state]);
@@ -58,18 +60,16 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held }: { secti
 
   const host = (root.current?.closest('.csb-app') as HTMLElement | null) ?? (typeof document !== 'undefined' ? document.body : null);
   const peek = host && createPortal(<AnimatePresence>{peeking && <motion.div key="peek" className={`csb-hold-peek ${peekOpen ? 'is-open' : ''}`} data-link={link}
-    initial={{ y: 260, rotate: 8 }} animate={{ y: peekOpen ? 0 : 118, rotate: peekOpen ? 0 : -7 }} exit={{ y: 300, rotate: 10 }}
+    initial={{ y: 470, rotate: 6 }} animate={{ y: peekOpen ? 0 : 196, rotate: peekOpen ? 0 : -4 }} exit={{ y: 480, rotate: 6 }}
     transition={{ type: 'spring', stiffness: 170, damping: 19, delay: peekOpen ? 0 : .5 }}>
-    <motion.p className="csb-hold-peek-say" initial={{ opacity: 0, scale: .9, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 1.1, duration: .35 }}>
-      {peekOpen ? 'Point your camera at the screen.' : 'Want to hold this?'}
-    </motion.p>
     <button type="button" className="csb-hold-peek-x" aria-label="No thanks" onClick={dismiss}><X size={12} strokeWidth={2.2} /></button>
     <button type="button" className="csb-hold-peek-phone" aria-label={peekOpen ? 'QR code to open this on your phone' : 'Try this on your phone'} aria-expanded={peekOpen} onClick={() => setPeekOpen(o => !o)}>
       <span className="csb-hold-peek-island" aria-hidden="true" />
       <span className="csb-hold-peek-screen">
-        <b>Try it on your phone</b>
+        <small className="is-kicker">On your phone</small>
+        <b>Hold the real thing.</b>
         {qr ? <span className="csb-hold-peek-qr" role="img" aria-label="QR code" dangerouslySetInnerHTML={{ __html: qr }} /> : <span className="csb-hold-peek-qr" />}
-        <small>{published === false ? 'Publish first so phones can open it.' : 'Scroll it in your hand. The notes follow here.'}</small>
+        <small>{published === false ? 'Publish first so phones can open it.' : 'Point your camera here. Scroll it in your hand, and this screen explains each part.'}</small>
       </span>
     </button>
   </motion.div>}</AnimatePresence>, host);

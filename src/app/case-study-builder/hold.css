@@ -22,3 +22,16 @@
 .hold-seg button span{position:relative}
 .hold-btn{display:inline-flex;align-items:center;height:38px;padding:0 16px;border:0;border-radius:9999px;background:#000;color:#fdfcfc;font:inherit;font-size:13.5px;font-weight:500;text-decoration:none;box-shadow:0 6px 20px -10px rgba(0,0,0,.4)}
 .hold-btn.is-ghost{background:rgba(253,252,252,.92);color:#000;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 6px 20px -10px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+/* Version change: a quiet HUD in the middle of the screen */
+.hold-hud{position:fixed;left:50%;top:50%;translate:-50% -50%;z-index:7;display:grid;justify-items:center;gap:2px;padding:16px 26px;border-radius:20px;background:rgba(253,252,252,.86);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -18px rgba(0,0,0,.3);font-size:22px;font-weight:300;letter-spacing:-.01em;color:#000;pointer-events:none;white-space:nowrap}
+.hold-hud small{font-size:15px;color:#777169}
+/* First-run how-to */
+.hold-coach{position:fixed;inset:0;z-index:8;display:grid;place-content:center;justify-items:center;gap:22px;padding:24px;background:rgba(253,252,252,.9);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);text-align:center;touch-action:none}
+.hold-coach-step{display:grid;justify-items:center;gap:6px;min-height:330px;align-content:start}
+.hold-coach-svg{width:170px;height:212px;margin-bottom:10px;overflow:visible}
+.hold-coach h2{margin:0;font-size:30px;font-weight:300;letter-spacing:-.02em;color:#000}
+.hold-coach p{margin:0;max-width:260px;font-size:15px;line-height:1.45;color:#777169;text-wrap:balance}
+.hold-coach-dots{display:flex;gap:6px}
+.hold-coach-dots i{width:6px;height:6px;border-radius:50%;background:#d6d3d1;transition:background .3s,width .3s}
+.hold-coach-dots i.is-on{width:18px;border-radius:9999px;background:#000}
+.hold-coach-go{height:44px;padding:0 30px;border:0;border-radius:9999px;background:#000;color:#fdfcfc;font:inherit;font-size:15px;font-weight:500}
