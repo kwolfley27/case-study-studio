@@ -4,6 +4,7 @@ import { SectionBasics } from "./SectionBasics";
 import { GradientPicker } from "./GradientElements";
 import { ScreenGroupsControls } from "./ScreenGroups";
 import { IsoShowcaseControls } from "./IsoShowcase";
+import { GifBoardControls } from "./GifBoard";
 import { FloatingDevicesControls } from "./FloatingDevices";
 import { InterviewQuestionsControls } from "./InterviewQuestions";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -374,6 +375,7 @@ export default function CaseStudyBuilder() {
         {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "interviewQs" && <><div className="csb-inspector-divider" /><InterviewQuestionsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "floatDevices" && <><div className="csb-inspector-divider" /><FloatingDevicesControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "gifBoard" && <><div className="csb-inspector-divider" /><GifBoardControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "isoShowcase" && <><div className="csb-inspector-divider" /><IsoShowcaseControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "screenGroups" && <><div className="csb-inspector-divider" /><ScreenGroupsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "iterations" && <><div className="csb-inspector-divider" /><IterationsControls section={selected} onChange={updateSection} /></>}

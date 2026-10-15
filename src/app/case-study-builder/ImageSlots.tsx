@@ -53,6 +53,7 @@ export async function pullFigmaFrame(link: string, budget = 900_000, maxWidth = 
    expire after ~30 days). Resized to at most 2400px wide and re-encoded as
    WebP until it fits the browser-draft budget. */
 const DRAFT_IMAGE_BUDGET = 1_400_000;
+export const GIF_LIMIT = 12_000_000;
 export async function downloadIntoDraft(url: string, budget = DRAFT_IMAGE_BUDGET, maxWidth = 2400): Promise<string> {
   const response = await fetch(url, { mode: 'cors' });
   if (!response.ok) throw new Error(`Download failed (${response.status}).`);
@@ -60,7 +61,11 @@ export async function downloadIntoDraft(url: string, budget = DRAFT_IMAGE_BUDGET
 }
 /* Any image (a pasted Figma frame, a big PNG) → compressed WebP data URL that fits the draft. */
 export async function compressIntoDraft(blob: Blob, budget = DRAFT_IMAGE_BUDGET, maxWidth = 2400): Promise<string> {
-  if (blob.type === 'image/gif' && blob.size <= budget) return blobToDataUrl(blob);
+  // GIFs are kept exactly as they are so they keep moving (re-encoding would freeze them on the first frame).
+  if (blob.type === 'image/gif') {
+    if (blob.size > GIF_LIMIT) throw new Error(`That GIF is ${(blob.size / 1e6).toFixed(0)} MB, over the ${GIF_LIMIT / 1e6} MB limit. Export it smaller, or as an MP4 (which is also much lighter), and try again.`);
+    return blobToDataUrl(blob);
+  }
   const bitmap = await createImageBitmap(blob);
   let width = Math.min(maxWidth, bitmap.width);
   for (let attempt = 0; attempt < 8; attempt++) {

@@ -39,7 +39,7 @@ export function LayoutControls({ section, onChange }: { section: CaseStudySectio
 }
 
 /* A small number choice: tap a number (up to 8 options), or use − and + beyond that. */
-function NumberPick({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
+export function NumberPick({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
   const n = Math.max(min, Math.min(max, value));
   const opts = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   return <div className="csb-numpick"><span className="csb-sb-label">{label}</span>

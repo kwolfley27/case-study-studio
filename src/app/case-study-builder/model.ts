@@ -1,4 +1,4 @@
-export type SectionKind = "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -144,6 +144,7 @@ export const componentNames: Record<SectionKind, string> = {
   iterations: "Iterations",
   screenGroups: "Screen gallery",
   isoShowcase: "Tilted showcase",
+  gifBoard: "GIF gallery",
   floatDevices: "Floating devices",
   interviewQs: "Interview questions",
   typeSpec: "Type specimen",
@@ -198,6 +199,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   insights: "Three findings side by side: a picture, a headline with emphasis, one sentence each.",
   interviewQs: "The questions you asked, beside an illustration. Pull them from an interview guide in Research.",
   floatDevices: "Phones and a tablet in real 3D, hanging at angles and turning as you scroll.",
+  gifBoard: "A wall of GIFs and short clips: inspiration, motion studies, interactions you love. Click any to see it large.",
   isoShowcase: "Your screens spread across a tilted plane with soft shadows, drifting as you scroll.",
   screenGroups: "Screens grouped by page in collapsible rows; click any screen to see it full size.",
   iterations: "One screen through its versions: step v1 → v2 → v3 in the same device, with what changed and why.",
@@ -232,7 +234,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", isoShowcase: "Showcase", floatDevices: "Devices", interviewQs: "Questions", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", isoShowcase: "Showcase", gifBoard: "Inspiration", floatDevices: "Devices", interviewQs: "Questions", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -267,6 +269,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     iterations: "How it evolved",
     screenGroups: "Wireframes",
     isoShowcase: "The work, at a glance",
+    gifBoard: "Things that inspired this",
     floatDevices: "Built for every screen",
     interviewQs: "Interview questions",
     typeSpec: "Typographic hierarchy",
@@ -329,6 +332,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     typeSpec: [{ title: "Header", detail: "Inter · 40pt", value: "A clear, confident headline", font: { family: "Inter", size: 40, weight: 600 } }, { title: "Paragraph", detail: "Inter · 18pt", value: "Body copy that reads easily at length.", font: { family: "Inter", size: 18, leading: 27 } }],
     interviewQs: ["How would you describe your experience with this today?", "Tell me about the last time it went wrong. What happened?", "What do you do now to work around it?", "If you could change one thing, what would it be?"].map(title => ({ title, detail: "" })),
     floatDevices: [{ title: "Dashboard", detail: "", value: "tablet", image: "" }, { title: "Home", detail: "", value: "phone", image: "" }, { title: "Detail", detail: "", value: "phone", image: "" }, { title: "Checkout", detail: "", value: "phone", image: "" }],
+    gifBoard: [0, 1, 2, 3, 4, 5].map(() => ({ title: "", detail: "", image: "" })),
     isoShowcase: ["Home", "Product page", "Detail", "Checkout", "Account", "Search"].map(title => ({ title, detail: "", image: "" })),
     screenGroups: [
       { title: "First layout", detail: "A traditional table to start: everything on one screen.", group: "Home page", tag: "V1", image: "" },
