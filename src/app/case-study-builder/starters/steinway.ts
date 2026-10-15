@@ -28,8 +28,18 @@ export function buildSteinway(): BuilderStudy {
       { value: '2846.33', title: 'USD million by 2031', detail: '' },
       { value: '1.9%', title: 'CAGR', detail: '' },
     ] }),
-    sec('fullMedia', { navLabel: 'Market chart', eyebrow: 'Supporting Research', title: 'Global Piano Sales Market Size, 2031 (USD Million)', options: { hideEyebrow: true }, items: [
-      { title: '', detail: 'www.businessresearchinsights.com', image: '', figmaUrl: F('53:47') },
+    sec('barChart', { navLabel: 'Market chart', eyebrow: 'Supporting Research', title: 'Global Piano Sales Market Size, 2031 (USD Million)', options: { hideEyebrow: true, unit: 'USD million', note: 'www.businessresearchinsights.com · years between 2021 and 2031 follow the 1.9% CAGR' }, items: [
+      { title: '2021', value: '2358.0', detail: '' },
+      { title: '2022', value: '2402.8', detail: '' },
+      { title: '2023', value: '2448.46', detail: '' },
+      { title: '2024', value: '2494.98', detail: '' },
+      { title: '2025', value: '2542.38', detail: '' },
+      { title: '2026', value: '2590.69', detail: '' },
+      { title: '2027', value: '2639.91', detail: '' },
+      { title: '2028', value: '2690.07', detail: '' },
+      { title: '2029', value: '2741.18', detail: '' },
+      { title: '2030', value: '2793.26', detail: '' },
+      { title: '2031', value: '2846.33', detail: '' },
     ] }),
     sec('rows', { navLabel: 'Market factors', eyebrow: 'Supporting Research', title: '', options: quiet, items: [
       { title: 'Main Driving Factor', detail: 'Practice participation of students in curricular activities to surge the demand.' },

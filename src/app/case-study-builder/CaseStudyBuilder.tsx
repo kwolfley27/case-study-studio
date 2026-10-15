@@ -25,6 +25,7 @@ import { FlowCompareControls } from "./FlowCompare";
 import { FlowDiffControls, UserFlowControls } from "./UserFlow";
 import { JTBDControls } from "./JobsToBeDone";
 import { ScrollSiteControls } from "./ScrollSite";
+import { BarChartControls } from "./BarChart";
 import { FigmaPullBar } from "./FigmaPull";
 import { PublishDialog } from "./Publish";
 import { Globe } from "lucide-react";
@@ -111,8 +112,8 @@ export default function CaseStudyBuilder() {
 
   // One-time starter projects added to the Home library (kept out of the way if deleted later).
   useEffect(() => {
-    try { if (localStorage.getItem("csb-starter-steinway-v2")) return; } catch { return; }
-    void import("./starters/steinway").then(({ buildSteinway }) => saveStudy(migrateStudy(buildSteinway()))).then(() => { try { localStorage.setItem("csb-starter-steinway-v2", "1"); } catch { /* ignore */ } setMessage({ text: "New project added: Steinway PDP redesign. Find it on Home." }); }).catch(() => undefined);
+    try { if (localStorage.getItem("csb-starter-steinway-v3")) return; } catch { return; }
+    void import("./starters/steinway").then(async ({ buildSteinway, STEINWAY_ID }) => { const fresh = migrateStudy(buildSteinway()); let had = false; try { had = !!localStorage.getItem("csb-starter-steinway-v2"); } catch { /* ignore */ } const existing = had ? await getStudy(STEINWAY_ID).catch(() => undefined) : undefined; if (existing && isBuilderStudy(existing)) { const chart = fresh.sections.find(s => s.kind === "barChart"); const next = { ...existing, sections: existing.sections.map(s => s.id === "stw-3-fullMedia" && chart ? chart : s) }; await saveStudy(next); setStudy(current => current.id === STEINWAY_ID ? next : current); return; } await saveStudy(fresh); setStudy(current => current.id === STEINWAY_ID ? fresh : current); }).then(() => { try { localStorage.setItem("csb-starter-steinway-v3", "1"); localStorage.setItem("csb-starter-steinway-v2", "1"); } catch { /* ignore */ } setMessage({ text: "New project added: Steinway PDP redesign. Find it on Home." }); }).catch(() => undefined);
   }, []);
   // Keep every study in the Home library too (debounced; IndexedDB has room for images).
   useEffect(() => { const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
@@ -244,6 +245,7 @@ export default function CaseStudyBuilder() {
         {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Affinity diagram</p><AffinityControls section={selected} onChange={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "annotated" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Device</p><div className="csb-segment" role="group" aria-label="Device"><button type="button" aria-pressed={selected.options?.device !== "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "phone" } })}>Phone</button><button type="button" aria-pressed={selected.options?.device === "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "desktop" } })}>Desktop page</button></div><p className="csb-field-note">Click the screen on the page to paste a Figma frame link (Copy link to selection) or drop an image. Up to six callouts; drag each dot to its spot.</p></>}
+        {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "scrollSite" && <><div className="csb-inspector-divider" /><ScrollSiteControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "jtbd" && <><div className="csb-inspector-divider" /><JTBDControls section={selected} onChange={jtbd => updateSection({ jtbd })} /></>}
         {selected.kind === "userFlow" && <><div className="csb-inspector-divider" /><UserFlowControls section={selected} onChange={userFlow => updateSection({ userFlow })} /></>}
