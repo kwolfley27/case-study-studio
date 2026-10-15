@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
   (scroller = the window).
 */
 
-const SLIDES = '.csb-doc-main > .csb-hero, .csb-doc-main > .csb-story-section, .csb-doc-main > .csb-canvas-end';
+const SLIDES = '.csb-doc-main > .csb-hero, .csb-doc-main > .csb-story-section, .csb-doc-main .csb-phase-step > .csb-story-section, .csb-doc-main > .csb-canvas-end';
 
 export function PresentMode({ scroller, onExit }: { scroller: () => HTMLElement | null; onExit: () => void }) {
   const [index, setIndex] = useState(0);

@@ -28,6 +28,8 @@ import { ScrollSiteControls } from "./ScrollSite";
 import { BarChartControls } from "./BarChart";
 import { TypeSpecimenControls } from "./TypeSpecimen";
 import { AnnotationControls } from "./AppleExtras";
+import { QuotesControls } from "./Quotes";
+import { InsightsControls } from "./Insights";
 import { FigmaPullBar } from "./FigmaPull";
 import { PublishDialog } from "./Publish";
 import { Globe } from "lucide-react";
@@ -304,6 +306,15 @@ export default function CaseStudyBuilder() {
         {selected.kind === "columns" && <div className="csb-field"><label htmlFor="column-count">Columns</label><select id="column-count" value={selected.columns || 3} onChange={e => updateSection({ columns: Number(e.target.value) as 2 | 3 | 4 })}><option value="2">2 columns</option><option value="3">3 columns</option><option value="4">4 columns</option></select></div>}
         {selected.kind === "wireframes" && <div className="csb-field"><label htmlFor="screen-fit-r">Screen fit</label><select id="screen-fit-r" value={selected.fit || "contain"} onChange={e => updateSection({ fit: e.target.value as "contain" | "cover" })}><option value="contain">Show full screen</option><option value="cover">Fill phone (crop)</option></select></div>}
         <label className="csb-check-field"><input type="checkbox" checked={!selected.hideFromNav} onChange={event => updateSection({ hideFromNav: !event.target.checked })} /> Show in side menu</label>
+        {(() => { const idx = study.sections.findIndex(s => s.id === selected.id); const above = study.sections[idx - 1]; const groups = [...new Set(study.sections.map(s => String(s.options?.group ?? '').trim()).filter(Boolean))]; const g = String(selected.options?.group ?? '');
+          return <div className="csb-phase-ctl"><p className="csb-panel-kicker">Phase group</p>
+            <input list="csb-phase-groups" value={g} placeholder="e.g. 4 ways I improved *exploration*" onChange={e => updateSection({ options: { ...(selected.options ?? {}), group: e.target.value } })} aria-label="Phase group" />
+            <datalist id="csb-phase-groups">{groups.map(x => <option key={x} value={x} />)}</datalist>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {above && String(above.options?.group ?? '').trim() && String(above.options?.group) !== g && <button type="button" className="csb-quiet-button" onClick={() => updateSection({ options: { ...(selected.options ?? {}), group: String(above.options?.group) } })}>Join the phase above</button>}
+              {g && <button type="button" className="csb-quiet-button" onClick={() => updateSection({ options: { ...(selected.options ?? {}), group: "" } })}>Leave phase</button>}
+            </div>
+            <p className="csb-field-note">Sections next to each other with the same phase name share a step menu that pins on the left while you read them. *word* sets a word in italic.</p></div>; })()}
         {selected.kind === "wireframes" && <><div className="csb-inspector-divider" /><div className="csb-connection-section"><FigmaSourcePicker key={selected.id} section={selected} sourceUrl={study.sources?.figmaUrl || MACROAI_URL} onApply={updateSection} onSourceChange={figmaUrl => updateStudy({ sources: { ...study.sources, figmaUrl } })} /></div></>}
         {selected.kind === "survey" && <><div className="csb-inspector-divider" /><SurveyDataSource section={selected} onApply={updateSection} onOpenResearch={() => setShowResearch(true)} /></>}
         {selected.kind === "showcase" && <><div className="csb-inspector-divider" /><ShowcaseControls section={selected} onChange={updateSection} /></>}
@@ -312,6 +323,8 @@ export default function CaseStudyBuilder() {
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "annotated" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Device</p><div className="csb-segment" role="group" aria-label="Device"><button type="button" aria-pressed={selected.options?.device !== "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "phone" } })}>Phone</button><button type="button" aria-pressed={selected.options?.device === "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "desktop" } })}>Desktop page</button></div><p className="csb-field-note">Click the screen on the page to paste a Figma frame link (Copy link to selection).</p></>}
         {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "insights" && <><div className="csb-inspector-divider" /><InsightsControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "quotes" && <><div className="csb-inspector-divider" /><QuotesControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "typeSpec" && <><div className="csb-inspector-divider" /><TypeSpecimenControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "scrollSite" && <><div className="csb-inspector-divider" /><ScrollSiteControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "jtbd" && <><div className="csb-inspector-divider" /><JTBDControls section={selected} onChange={jtbd => updateSection({ jtbd })} /></>}

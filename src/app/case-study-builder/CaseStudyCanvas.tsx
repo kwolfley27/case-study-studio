@@ -7,6 +7,9 @@ import { JobsToBeDone } from "./JobsToBeDone";
 import { ScrollSite } from "./ScrollSite";
 import { BarChart } from "./BarChart";
 import { EndMore } from "./EndMore";
+import { PhaseGroup } from "./PhaseGroup";
+import { QuotesView } from "./Quotes";
+import { Insights } from "./Insights";
 import { TypeSpecimen } from "./TypeSpecimen";
 import { FeatureCompare, Positioning } from "./CompetitorViews";
 import { AEIOUBoard } from "./AEIOU";
@@ -157,7 +160,8 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "survey": return <SurveyResults section={section} />;
     case "metrics": return <Metrics section={section} />;
     case "flow": return <Flow section={section} />;
-    case "quotes": return <Quotes section={section} />;
+    case "quotes": return <QuotesView section={section} />;
+    case "insights": return <Insights section={section} />;
     case "comparison": return <Comparison section={section} />;
     case "gallery": return <Gallery section={section} />;
     default: return <Enter className="csb-editorial-statement"><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
@@ -218,9 +222,21 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
         : <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>}
       {!study.sections.some(section => section.kind === "details") && <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>}
     </header></EditingContext.Provider>}
-    {study.sections.map((section, index) => (section.hidden && !editorMode) ? null : <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} data-hidden-label={section.hidden ? "Hidden from the page" : undefined} className={`csb-story-section ${section.hidden ? "is-hidden-section" : ""} csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
+    {(() => {
+      // Sections sharing options.group form one phase with a pinned step menu.
+      const renderOne = (section: CaseStudySection) => { const index = study.sections.indexOf(section); return <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} data-hidden-label={section.hidden ? "Hidden from the page" : undefined} className={`csb-story-section ${section.hidden ? "is-hidden-section" : ""} csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
       {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
-    </section></EditingContext.Provider>)}
+    </section></EditingContext.Provider>; };
+      const visible = study.sections.filter(sec => !(sec.hidden && !editorMode));
+      const out: React.ReactNode[] = [];
+      for (let k = 0; k < visible.length; k++) {
+        const g = String(visible[k].options?.group ?? '').trim();
+        if (!g) { out.push(renderOne(visible[k])); continue; }
+        const run = [visible[k]]; while (k + 1 < visible.length && String(visible[k + 1].options?.group ?? '').trim() === g) run.push(visible[++k]);
+        out.push(<PhaseGroup key={`phase-${run[0].id}`} title={g} sections={run} render={renderOne} />);
+      }
+      return out;
+    })()}
     {!bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><EndMore study={study} editorMode={editorMode} /></EditingContext.Provider>}
     </div>
   </article></MotionPrefs.Provider>;

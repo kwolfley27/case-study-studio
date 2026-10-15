@@ -1,4 +1,4 @@
-export type SectionKind = "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -130,6 +130,7 @@ export const componentNames: Record<SectionKind, string> = {
   jtbd: "Jobs to be done",
   scrollSite: "Scrolling site",
   barChart: "Bar chart",
+  insights: "Insights",
   typeSpec: "Type specimen",
   flowDiff: "Flow redesign",
   featureCompare: "Feature comparison",
@@ -179,6 +180,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   jtbd: "The job people hire a product for, what they use today, and what gets in the way.",
   scrollSite: "A long page scrolling inside a MacBook and an iPhone, with callouts as each part arrives.",
   barChart: "A live column chart: type the numbers, the bars rise as you scroll.",
+  insights: "Three findings side by side: a picture, a headline with emphasis, one sentence each.",
   typeSpec: "Your type system set in the real fonts, as live text.",
   flowDiff: "The old flow and the new one, with the steps you cut and added.",
   featureCompare: "Which products have which features, with ours first.",
@@ -210,7 +212,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -241,6 +243,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     jtbd: "The job they’re really trying to do",
     scrollSite: "The whole page, as it scrolls",
     barChart: "How the numbers moved",
+    insights: "What we learned",
     typeSpec: "Typographic hierarchy",
     flowDiff: "From nine steps to four",
     featureCompare: "What each option actually offers",
@@ -299,6 +302,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     userFlow: [],
     jtbd: [],
     typeSpec: [{ title: "Header", detail: "Inter · 40pt", value: "A clear, confident headline", font: { family: "Inter", size: 40, weight: 600 } }, { title: "Paragraph", detail: "Inter · 18pt", value: "Body copy that reads easily at length.", font: { family: "Inter", size: 18, leading: 27 } }],
+    insights: [{ title: "The *exploration* felt [[limited]]", detail: "Too few combinations and too few visible responses, so there was little to discover." }, { title: "The *exploration* was [[hard to build]]", detail: "Bugs, overlapping nodes and confusing interactions got in the way." }, { title: "The *exploration* felt [[irrelevant]]", detail: "People were engaged with the activity, but not with what it was teaching." }],
     barChart: [["2022", "120"], ["2023", "150"], ["2024", "190"], ["2025", "240"]].map(([title, value]) => ({ title, value, detail: "" })),
     scrollSite: [{ title: "Desktop page", detail: "", image: "" }, { title: "Mobile page", detail: "", image: "" }, { title: "First thing they see", detail: "Explain this part of the page.", point: "8", value: "desktop" }, { title: "Further down", detail: "Explain this part of the page.", point: "45", value: "desktop" }, { title: "On mobile", detail: "Explain this part of the page.", point: "70", value: "mobile" }],
     flowDiff: [],
