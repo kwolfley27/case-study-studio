@@ -142,6 +142,8 @@ export const navDefaults: Record<SectionKind, string> = {
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
 };
 export const navLabelFor = (section: Pick<CaseStudySection, "kind" | "navLabel">) => section.navLabel?.trim() || navDefaults[section.kind];
+/** A section label turned into a short menu name: drops numbering like "02 / " and tidies case. */
+export const labelFromEyebrow = (eyebrow: string) => { const t = eyebrow.replace(/^\s*\d+\s*[\/·.\-–—:]\s*/, '').trim(); return t && t === t.toUpperCase() ? t.charAt(0) + t.slice(1).toLowerCase() : t; };
 
 export const createSection = (kind: SectionKind): CaseStudySection => ({
   id: crypto.randomUUID(),

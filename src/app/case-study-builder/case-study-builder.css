@@ -482,3 +482,4 @@
 .csb-detail-toggle{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;cursor:pointer}
 .csb-detail-toggle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .csb-detail-solo-toggle{grid-column:1/-1;margin:2px 0 2px 22px;font-size:11.5px}
+.csb-section-label small em{font-style:normal;opacity:.6}
