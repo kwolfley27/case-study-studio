@@ -57,12 +57,12 @@ export function fromOutline(text: string, unsorted: string[] = []): AffinityData
 type Spot = { x: number; y: number; r: number; jx: number; jy: number };
 type Geometry = { spots: Record<string, Spot>; cx: number; pileY: (v: number) => number };
 
-const START = .78, END = .12; // board top position (fraction of the viewport) where sorting starts / ends
+const START = .58, END = .06; // board top position (fraction of the viewport) where sorting starts / ends
 
 function Note({ id, text, field, p, geo, order, total, animate }: { id: string; text: string; field: string; p: MotionValue<number>; geo: React.MutableRefObject<Geometry | null>; order: number; total: number; animate: boolean }) {
   // Each note leaves the pile in its own slice of the scroll, so they peel off one after another.
   const s = .12 + (order / Math.max(1, total)) * .38; const e = s + .32;
-  const rest = (((order * 37) % 7) - 3) * .35; // a slight, hand-placed tilt
+  const rest = [-2.2, 1.4, -.8, 2, -1.5, .9, -2.6, 1.8][order % 8]; // a slight, hand-placed tilt
   const x = useMotionValue(0), y = useMotionValue(0), rotate = useMotionValue(rest), zIndex = useMotionValue(1);
   useEffect(() => {
     const update = (v: number) => {
@@ -119,7 +119,7 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
         n++;
       });
       // Board top (relative to the screen) moves linearly from START·vh to END·vh as progress goes 0 → 1.
-      const pileY = (v: number) => { const top = vh * (START - (START - END) * v); return Math.max(140, vh * .5 - top); };
+      const pileY = (v: number) => { const top = vh * (START - (START - END) * v); return Math.max(110, vh * .48 - top); };
       geo.current = { spots, cx: board.offsetWidth / 2, pileY };
     };
     measure();
@@ -132,19 +132,18 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
   const legend = [['green', 'Area of concern'], ['pink', 'Issue'], ['blue', 'What a cluster reveals'], ['yellow', 'Observation']] as const;
 
   return <div className="csb-af" style={Object.fromEntries(Object.entries(COLORS).map(([k, v]) => [`--af-${k}`, v])) as React.CSSProperties}>
-    <Reveal p={p} from={.72} className="csb-af-legend">{legend.map(([k, l]) => <span key={k}><i style={{ background: COLORS[k] }} />{l}</span>)}</Reveal>
     <div ref={sentinel} aria-hidden="true" />
     <div ref={boardRef} className="csb-af-board">
       {data.groups.map((g, gi) => <section key={gi} className="csb-af-group">
         <Line p={p} from={.7} />
-        <Reveal p={p} from={.8} as="h3" className="csb-af-green"><i aria-hidden="true" /><EditableText field={`deep:affinity.groups.${gi}.title`} value={g.title} /></Reveal>
+        <Reveal p={p} from={.8} className="csb-af-green"><small>Area of concern</small><h3><EditableText field={`deep:affinity.groups.${gi}.title`} value={g.title} /></h3></Reveal>
         <div className="csb-af-issues">
           {g.issues.map((iss, ii) => <div key={ii} className="csb-af-issue" style={{ '--n': Math.max(1, iss.aspects.length) } as React.CSSProperties}>
             {ii > 0 && <Line p={p} from={.7} vertical />}
-            <Reveal p={p} from={.76} as="h4" className="csb-af-pink"><i aria-hidden="true" /><EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.title`} value={iss.title} /></Reveal>
+            <Reveal p={p} from={.76} className="csb-af-pink"><small>Issue {ii + 1}</small><h4><EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.title`} value={iss.title} /></h4></Reveal>
             <div className="csb-af-aspects">
               {iss.aspects.map((asp, ai) => <div key={ai} className="csb-af-aspect">
-                <Reveal p={p} from={.7} as="p" className="csb-af-blue"><i aria-hidden="true" /><span>“<EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.aspects.${ai}.title`} value={asp.title} />”</span></Reveal>
+                <Reveal p={p} from={.7} as="p" className="csb-af-blue">“<EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.aspects.${ai}.title`} value={asp.title} />”</Reveal>
                 <ul className="csb-af-notes">{asp.notes.map((note, ni) => { const id = `${gi}-${ii}-${ai}-${ni}`; const o = order++; return <Note key={id} id={id} text={note} field={`deep:affinity.groups.${gi}.issues.${ii}.aspects.${ai}.notes.${ni}`} p={p} geo={geo} order={o} total={total} animate={animate} />; })}</ul>
               </div>)}
             </div>
