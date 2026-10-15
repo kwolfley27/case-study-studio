@@ -22,7 +22,7 @@ import type { CaseStudySection } from './model';
 type Stage = 'a' | 'b';
 export const stageBase = (section: CaseStudySection) => section.options?.compare ? 4 : 2;
 type Device = 'desktop' | 'mobile';
-type Note = { title: string; detail: string; at: number; device: Device; i: number; when?: string };
+type Note = { title: string; detail: string; at: number; device: Device; i: number; when?: string; side?: string };
 type View = { top: number; bottom: number };
 type Grid = { cols: number; margin: number; gutter: number } | null;
 
@@ -119,7 +119,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const deskGrid: Grid = gridOn && Number(g.gridDesk) > 0 ? { cols: Number(g.gridDesk), margin: pct(g.gridDeskMarginPx, g.gridDeskW ?? 1440, 80), gutter: pct(g.gridDeskGutterPx, g.gridDeskW ?? 1440, 20) } : null;
   const mobGrid: Grid = gridOn && Number(g.gridMob) > 0 ? { cols: Number(g.gridMob), margin: pct(g.gridMobMarginPx, g.gridMobW ?? 390, 20), gutter: pct(g.gridMobGutterPx, g.gridMobW ?? 390, 16) } : null;
 
-  const all: Note[] = section.items.slice(base).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: (n.value === 'mobile' ? 'mobile' : 'desktop') as Device, i: k + base, when: n.when }))
+  const all: Note[] = section.items.slice(base).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: (n.value === 'mobile' ? 'mobile' : 'desktop') as Device, i: k + base, when: n.when, side: n.side }))
     .filter(n => !compare || (n.when === 'a' ? 'a' : n.when === 'both' ? stage : 'b') === stage);
   const notesFor = (d: Device) => all.filter(n => n.device === d).sort((a, b) => a.at - b.at);
   const [views, setViews] = useState<Record<Device, View>>({ desktop: { top: 0, bottom: .2 }, mobile: { top: 0, bottom: .2 } });
@@ -154,6 +154,9 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   // The note sits level with the part of the screen it describes and moves with it; a straight hairline joins them.
   const col = useRef<HTMLDivElement>(null); const pos = useRef<HTMLDivElement>(null);
   const [noteY, setNoteY] = useState(0);
+  // Phone on its own: the phone sits in the middle and notes alternate left and right (or the side you pick).
+  const centered = show === 'mobile';
+  const noteSide = !centered || !note ? 'right' : note.side === 'left' || note.side === 'right' ? note.side : (list.findIndex(n => n.i === note.i) % 2 === 0 ? 'left' : 'right');
   useLayoutEffect(() => {
     const st = stageEl.current; if (!st || !note) { setLine(''); return; }
     const m = st.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`); const h = head.current;
@@ -167,11 +170,22 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     const y = Math.round(Math.max(-P.offsetTop, Math.min(K.height - P.offsetTop - P.offsetHeight, want)));
     setNoteY(y);
     const ey = K.top - S.top + P.offsetTop + y + headOff;
-    const x0 = C.right - C.width * .03 - S.left, xm = Math.max(D.right, C.right) + 20 - S.left, ex = H.left - 16 - S.left;
+    const L = noteSide === 'left';
+    const x0 = (L ? C.left + C.width * .03 : C.right - C.width * .03) - S.left, xm = (L ? Math.min(D.left, C.left) - 20 : Math.max(D.right, C.right) + 20) - S.left, ex = (L ? H.right + 16 : H.left - 16) - S.left;
     setLine(Math.abs(ey - my) < 1.5 ? `M${x0.toFixed(1)},${my.toFixed(1)} H${ex.toFixed(1)}` : `M${x0.toFixed(1)},${my.toFixed(1)} H${xm.toFixed(1)} V${ey.toFixed(1)} H${ex.toFixed(1)}`);
   });
   const [vh, setVh] = useState(800);
   useLayoutEffect(() => { const measure = () => { const sc = wrap.current?.closest('.csb-preview-viewport') as HTMLElement | null; setVh(sc ? sc.clientHeight : window.innerHeight); }; measure(); window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }, []);
+  const ticks = hasImage && list.length > 0 ? <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)} />)}</div> : null;
+  const noteBlock = <div className={`csb-ss-note-pos is-${noteSide}`} ref={pos} style={{ transform: note ? `translateY(${noteY}px)` : undefined }}><AnimatePresence mode="wait">
+    {note && <motion.div key={note.i} className={`csb-ss-note ${note.title.length > 48 ? 'is-long' : ''}`} initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
+      <small>{compare ? `${stage === 'a' ? nameA : nameB} · ` : ''}{note.device === 'mobile' ? 'Mobile' : 'Desktop'} · {list.findIndex(n => n.i === note.i) + 1} of {list.length}</small>
+      <h3 ref={head}><EditableText field={`items.${note.i}.title`} value={note.title} /></h3>
+      <p><EditableText field={`items.${note.i}.detail`} value={note.detail} /></p>
+    </motion.div>}
+  </AnimatePresence></div>;
+  const idle = !note ? <p className="csb-ss-idle">{list.length ? 'Scroll the screen. Notes appear as their part of the page comes into view.' : 'Scroll the screen to explore the page.'}</p> : null;
+  const addBtn = editorMode && (desk?.image || mob?.image) ? <button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot</button> : null;
   const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} />; };
   return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''}`} style={{ ['--ss-vh' as string]: `${vh}px` }}>
     {compare && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
@@ -179,6 +193,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     </div>}
     <div className="csb-ss-stage" ref={stageEl}>
       <svg className="csb-ss-lines" aria-hidden="true">{note && line && <motion.path key={note.i} d={line} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }} />}</svg>
+      {centered && <div className="csb-ss-notes is-left" aria-live="polite" ref={noteSide === 'left' ? col : undefined}>{noteSide === 'left' && noteBlock}</div>}
       <div className="csb-ss-devices">
         {show !== 'mobile' && <div className={`csb-ss-mac ${device === 'desktop' ? 'is-focus' : ''}`}>{layerToggle}
           <div className="csb-ss-lid"><span className="csb-ss-notch" aria-hidden="true" />{screen('desktop')}</div>
@@ -186,18 +201,16 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
         </div>}
         {show !== 'desktop' && <div className={`csb-ss-phone ${device === 'mobile' ? 'is-focus' : ''}`}>{show === 'mobile' && layerToggle}<span className="csb-ss-island" aria-hidden="true" />{screen('mobile')}</div>}
       </div>
-      <div className="csb-ss-notes" aria-live="polite" ref={col}>
-        {hasImage && list.length > 0 && <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)} />)}</div>}
-        <div className="csb-ss-note-pos" ref={pos} style={{ transform: note ? `translateY(${noteY}px)` : undefined }}><AnimatePresence mode="wait">
-          {note ? <motion.div key={note.i} className={`csb-ss-note ${note.title.length > 48 ? 'is-long' : ''}`} initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
-            <small>{compare ? `${stage === 'a' ? nameA : nameB} · ` : ''}{note.device === 'mobile' ? 'Mobile' : 'Desktop'} · {list.findIndex(n => n.i === note.i) + 1} of {list.length}</small>
-            <h3 ref={head}><EditableText field={`items.${note.i}.title`} value={note.title} /></h3>
-            <p><EditableText field={`items.${note.i}.detail`} value={note.detail} /></p>
-          </motion.div> : <motion.p key="idle" className="csb-ss-idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{list.length ? 'Scroll the screen. Notes appear as their part of the page comes into view.' : 'Scroll the screen to explore the page.'}</motion.p>}
-        </AnimatePresence></div>
-        {editorMode && (desk?.image || mob?.image) && <button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot</button>}
-      </div>
+      {centered ? <>
+        <div className="csb-ss-notes is-right" aria-live="polite" ref={noteSide === 'right' ? col : undefined}>{noteSide === 'right' && noteBlock}</div>
+      </> : <div className="csb-ss-notes" aria-live="polite" ref={col}>
+        {ticks}
+        {noteBlock}
+        {idle}
+        {addBtn}
+      </div>}
     </div>
+    {centered && <div className="csb-ss-foot">{ticks}{!note && idle}{addBtn}</div>}
   </div>;
 }
 
@@ -245,6 +258,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
       <input value={n.title} aria-label="Note title" onChange={e => setItem(i, { title: e.target.value })} />
       <div className="csb-fc-ctl-line">
         <select value={n.value === 'mobile' ? 'mobile' : 'desktop'} aria-label="Device" onChange={e => setItem(i, { value: e.target.value })}><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select>
+        {show === 'mobile' && <select value={n.side === 'left' || n.side === 'right' ? n.side : ''} aria-label="Side" onChange={e => setItem(i, { side: e.target.value || undefined })}><option value="">Auto side</option><option value="left">Left</option><option value="right">Right</option></select>}
         {compare && <select value={n.when === 'a' ? 'a' : n.when === 'both' ? 'both' : 'b'} aria-label="Stage" onChange={e => setItem(i, { when: e.target.value })}><option value="a">{String(section.options?.stageA ?? 'Wireframe')}</option><option value="b">{String(section.options?.stageB ?? 'High fidelity')}</option><option value="both">Both</option></select>}
         <button type="button" className="csb-quiet-button csb-ss-at" title="Attach this note to the middle of what the screen shows now" onClick={() => { const v = lastView.get(section.id); if (v) setItem(i, { point: String(Math.round(v.center * 1000) / 10), value: v.device }); }}><Crosshair size={12} /> Here</button>
         <button type="button" className="csb-icon-button" aria-label="Remove note" onClick={() => onChange({ items: items.filter((_, x) => x !== i) })}><Trash2 size={13} /></button>
