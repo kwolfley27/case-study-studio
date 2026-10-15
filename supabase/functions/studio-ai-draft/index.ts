@@ -251,15 +251,22 @@ async function askClaude({ anthropicKey, notes, figma, catalog, current, guidanc
     },
   };
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 12000, system: SYSTEM, tools: [tool], tool_choice: { type: 'auto' }, messages: [{ role: 'user', content }] }),
-    signal: AbortSignal.timeout(140000),
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
-  const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
-  if (!use) throw new Error('Claude did not return a case study.');
-  return use.input;
+  // tool_choice "auto" (some models reject a forced tool). If Claude answers in
+  // text instead of calling the tool, ask once more for the tool call.
+  const messages: any[] = [{ role: 'user', content }];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 12000, system: SYSTEM + '\n\nAlways respond by calling the build_case_study tool. Do not reply in plain text.', tools: [tool], tool_choice: { type: 'auto' }, messages }),
+      signal: AbortSignal.timeout(140000),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
+    const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
+    if (use) return use.input;
+    if (data.stop_reason === 'max_tokens') throw new Error('The draft ran too long. Try guidance like “keep it under 8 sections”.');
+    messages.push({ role: 'assistant', content: data.content?.length ? data.content : [{ type: 'text', text: '(no answer)' }] }, { role: 'user', content: 'Now call the build_case_study tool with the complete case study.' });
+  }
+  throw new Error('Claude did not return a case study. Try again.');
 }
