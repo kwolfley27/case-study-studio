@@ -15,7 +15,7 @@ import { PresentMode } from "./PresentMode";
 import { parseWhen, timelinePhases } from "./WorkTimeline";
 import { SurveyDataSource } from "./research/StudyPicker";
 import { templates, sectionFromTemplate, type ComponentTemplate } from "./library";
-import { ImageSlotLayer } from "./ImageSlots";
+import { ImageSlotLayer, compressIntoDraft } from "./ImageSlots";
 import { AiDraftCard } from "./AiDraft";
 import { PrototypeControls } from "./PrototypeEmbed";
 import { ABTestControls } from "./ABTest";
@@ -203,10 +203,10 @@ export default function CaseStudyBuilder() {
     setUploadingKey(key);
     setMessage(null);
     try {
-      if (file.size > 1_500_000) throw new Error("Use an image URL for files over 1.5 MB. Browser drafts have limited storage.");
-      const image = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Could not read image.")); reader.readAsDataURL(file); });
+      // Big images (a long Figma frame copied as PNG) are resized and compressed to fit the draft.
+      const image = await compressIntoDraft(file, 1_600_000, 1600);
       onSuccess(image);
-      setMessage({ text: `${file.name} added to the case study.` });
+      setMessage({ text: file.name === "figma-frame.png" || file.name === "image.png" ? "Frame added to the case study." : `${file.name} added to the case study.` });
     } catch (error) { setMessage({ text: error instanceof Error ? error.message : "Image upload failed.", error: true }); }
     finally { setUploadingKey(null); }
   };

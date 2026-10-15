@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Link2, Trash2, X } from 'lucide-react';
+import { ClipboardPaste, ImagePlus, Link2, Trash2, X } from 'lucide-react';
 
 /*
   Direct image editing on the canvas.
   Any element marked data-image-slot="hero" or data-image-slot="<sectionId>:<itemIndex>"
   becomes an image spot in the editor:
     • click or right-click  → small menu: upload, paste a Figma frame / image link, remove
-    • ⌘V / Ctrl+V while hovering a spot → pastes a copied image file or link
+    • ⌘V / Ctrl+V while hovering a spot → pastes a copied image (e.g. Figma's Copy as PNG, ⌘⇧C) or link
     • drag and drop an image onto a spot
   The Figma token is kept in memory only for this browser tab.
 */
@@ -26,12 +26,20 @@ async function figmaFrameImage(link: string): Promise<string> {
   const [, fileKey, rawId] = match;
   const id = rawId.replace('-', ':');
   const response = await fetch(`https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(id)}&format=png&scale=2`, { headers: { 'X-Figma-Token': figmaToken } });
-  if (response.status === 403) throw new Error('Figma said no access. Check the token and that it can read this file.');
-  if (!response.ok) throw new Error(`Figma request failed (${response.status}).`);
+  figmaStatus(response.status);
   const data = await response.json();
   const url = data.images?.[id];
   if (!url) throw new Error('Figma could not render that frame.');
   return url as string;
+}
+
+/* Figma's API allows View and Collab seats only about 20 frame renders a month (Dev/Full seats: 10 a minute). */
+export const FIGMA_LIMIT_MSG = 'Figma’s monthly limit for pulling frames has been reached (View seats get about 20 a month). Instead: in Figma select the frame, press ⌘⇧C (Copy as PNG), then hover this spot and press ⌘V.';
+export function figmaStatus(status: number) {
+  if (status === 429) throw new Error(FIGMA_LIMIT_MSG);
+  if (status === 403) throw new Error('Figma said no access. Check the token can read this file (File content: read).');
+  if (status === 404) throw new Error('Figma couldn’t find that file or frame. Use Copy link to selection on the frame.');
+  if (status < 200 || status >= 300) throw new Error(`Figma request failed (${status}).`);
 }
 
 /* Render a Figma frame link and store it in the draft. Asks once for a token (kept in memory only). */
@@ -48,7 +56,10 @@ const DRAFT_IMAGE_BUDGET = 1_400_000;
 export async function downloadIntoDraft(url: string, budget = DRAFT_IMAGE_BUDGET, maxWidth = 2400): Promise<string> {
   const response = await fetch(url, { mode: 'cors' });
   if (!response.ok) throw new Error(`Download failed (${response.status}).`);
-  const blob = await response.blob();
+  return compressIntoDraft(await response.blob(), budget, maxWidth);
+}
+/* Any image (a pasted Figma frame, a big PNG) → compressed WebP data URL that fits the draft. */
+export async function compressIntoDraft(blob: Blob, budget = DRAFT_IMAGE_BUDGET, maxWidth = 2400): Promise<string> {
   if (blob.type === 'image/gif' && blob.size <= budget) return blobToDataUrl(blob);
   const bitmap = await createImageBitmap(blob);
   let width = Math.min(maxWidth, bitmap.width);
@@ -171,12 +182,13 @@ export function ImageSlotLayer({ enabled, onFile, onUrl, onRemove, notify }: {
       <div className="csb-slot-scrim" onMouseDown={() => setMenu(null)} onContextMenu={event => { event.preventDefault(); setMenu(null); }} />
       <div className="csb-slot-menu" role="menu" style={{ left: menu.x, top: menu.y }} onClick={event => event.stopPropagation()}>
         {menu.mode === 'menu' ? <>
-          <button role="menuitem" onClick={() => { fileSlot.current = menu.slot; setMenu(null); fileRef.current?.click(); }}><ImagePlus size={15} /><span><strong>{menu.hasImage ? 'Replace from your files' : 'Upload from your files'}</strong><small>PNG, JPG or GIF up to 1.5 MB</small></span></button>
+          <button role="menuitem" onClick={() => { fileSlot.current = menu.slot; setMenu(null); fileRef.current?.click(); }}><ImagePlus size={15} /><span><strong>{menu.hasImage ? 'Replace from your files' : 'Upload from your files'}</strong><small>PNG, JPG or GIF</small></span></button>
           <button role="menuitem" onClick={async () => { let clip = ''; try { clip = await navigator.clipboard.readText(); } catch { /* permission denied */ } setLink(isFigmaFrameLink(clip) || isImageLink(clip) ? clip : ''); setMenu({ ...menu, mode: 'link' }); }}><Link2 size={15} /><span><strong>Paste a Figma frame or image link</strong><small>Figma: right-click a frame → Copy link to selection</small></span></button>
+          <button role="menuitem" onClick={async () => { const slot = menu.slot; try { const items = await navigator.clipboard.read(); for (const item of items) { const type = item.types.find(t => t.startsWith('image/')); if (type) { const blob = await item.getType(type); setMenu(null); onFile(slot, new File([blob], 'figma-frame.png', { type })); return; } } notify('No copied image found. In Figma select the frame and press ⌘⇧C (Copy as PNG), then try again.', true); } catch { notify('Your browser blocked reading the clipboard. Hover the spot and press ⌘V instead.', true); } }}><ClipboardPaste size={15} /><span><strong>Paste a copied frame</strong><small>In Figma: select the frame, ⌘⇧C (Copy as PNG)</small></span></button>
           {menu.hasImage && <button role="menuitem" className="is-danger" onClick={() => { onRemove(menu.slot); setMenu(null); }}><Trash2 size={15} /><span><strong>Remove image</strong></span></button>}
         </> : <form className="csb-slot-link" onSubmit={event => { event.preventDefault(); void applyLink(menu.slot, link); }}>
           <div className="csb-slot-link-head"><strong>Add from a link</strong><button type="button" aria-label="Close" onClick={() => setMenu(null)}><X size={14} /></button></div>
-          <input autoFocus value={link} onChange={event => setLink(event.target.value)} placeholder="https://www.figma.com/design/…?node-id=… or image URL" />
+          <input autoFocus value={link} onPaste={event => { const file = Array.from(event.clipboardData?.files ?? []).find(f => f.type.startsWith('image/')); if (file) { event.preventDefault(); const slot = menu.slot; setMenu(null); onFile(slot, file); } }} onChange={event => setLink(event.target.value)} placeholder="https://www.figma.com/design/…?node-id=… or image URL" />
           {isFigmaFrameLink(link) && !figmaToken && <><input type="password" autoComplete="off" value={token} onChange={event => setToken(event.target.value)} placeholder="Figma personal access token" /><small>Kept in memory for this tab only. <a href="https://www.figma.com/developers/api#access-tokens" target="_blank" rel="noreferrer">Create a token ↗</a></small></>}
           <button type="submit" className="csb-primary-button" disabled={busy || !link.trim() || (isFigmaFrameLink(link) && !figmaToken && !token.trim())} onClick={() => { if (token.trim()) figmaToken = token.trim(); }}>{busy ? 'Downloading…' : 'Add image'}</button>
         </form>}

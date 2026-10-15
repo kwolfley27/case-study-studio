@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { downloadIntoDraft, getFigmaToken, setFigmaToken } from './ImageSlots';
+import { downloadIntoDraft, figmaStatus, getFigmaToken, setFigmaToken } from './ImageSlots';
 import type { BuilderStudy } from './model';
 
 /*
@@ -19,9 +19,7 @@ export function figmaJobs(study: BuilderStudy, all = false): Job[] {
 
 async function figma(path: string) {
   const r = await fetch(`https://api.figma.com/v1/${path}`, { headers: { 'X-Figma-Token': getFigmaToken() } });
-  if (r.status === 403) throw new Error('Figma said no access. Check the token can read this file.');
-  if (r.status === 429) throw new Error('Figma is rate-limiting. Wait a minute and pull again.');
-  if (!r.ok) throw new Error(`Figma request failed (${r.status}).`);
+  figmaStatus(r.status);
   return r.json();
 }
 
@@ -32,12 +30,8 @@ export async function pullFrames(jobs: Job[], onImage: (slot: string, dataUrl: s
   let done = 0; onProgress(0, parsed.length);
   for (const [file, list] of byFile) {
     const ids = [...new Set(list.map(j => j.id))];
-    // Pick a render scale per frame: about 1600px wide, never above 2×.
-    const meta = await figma(`files/${file}/nodes?ids=${encodeURIComponent(ids.join(','))}&depth=1`);
-    const scaleOf = (id: string) => { const w = meta.nodes?.[id]?.document?.absoluteBoundingBox?.width || 1000; return Math.max(.5, Math.min(2, Math.round(1600 / w * 4) / 4)); };
-    const groups = new Map<number, string[]>(); ids.forEach(id => { const sc = scaleOf(id); groups.set(sc, [...(groups.get(sc) ?? []), id]); });
-    const urls: Record<string, string> = {};
-    for (const [scale, gids] of groups) { const r = await figma(`images/${file}?ids=${encodeURIComponent(gids.join(','))}&format=png&scale=${scale}`); Object.assign(urls, r.images ?? {}); }
+    // One request for every frame in the file: Figma counts each call against a small monthly allowance on View seats.
+    const urls: Record<string, string> = (await figma(`images/${file}?ids=${encodeURIComponent(ids.join(','))}&format=png&scale=2`)).images ?? {};
     for (const j of list) {
       const url = urls[j.id];
       if (url) onImage(j.slot, await downloadIntoDraft(url, 1_600_000, 1600));
@@ -65,6 +59,7 @@ export function FigmaPullBar({ study, onImage }: { study: BuilderStudy; onImage:
     {!getFigmaToken() && <input type="password" autoComplete="off" placeholder="Figma access token" value={token} onChange={e => setToken(e.target.value)} aria-label="Figma personal access token" />}
     <button type="button" disabled={!!busy} onClick={() => void run()}>{busy || 'Pull from Figma'}</button>
     {error && <em>{error}</em>}
+    <small>No API needed: in Figma select a frame, press ⌘⇧C (Copy as PNG), then hover its spot here and press ⌘V.</small>
     {!getFigmaToken() && <small>Kept only in this tab. Figma → Settings → Security → Personal access tokens (File content: read).</small>}
   </div>;
 }
