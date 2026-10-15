@@ -27,25 +27,28 @@ export const detailPresets: Array<{ label: string; item: CaseStudySection['items
 export const isTeam = (item: CaseStudySection['items'][number]) => /^team\b|collaborat/i.test(item.title.trim());
 const initials = (name: string) => name.replace(/\(.*?\)/g, '').trim().split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase() || '•';
 
+/* One quiet row: label above value, hairlines top and bottom. The team is a small stack of
+   initials with the names; roles show on hover (and in the editor as editable lines). */
 export function ProjectDetails({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const { edit } = useContext(EditingContext);
   const shown = section.items.map((item, index) => ({ item, index })).filter(({ item }) => !item.hidden);
-  const teamShown = shown.some(({ item }) => isTeam(item));
-  const others = shown.length - (teamShown ? 1 : 0);
-  const teamRows = Math.max(1, Math.ceil(others / 2));
-  return <dl className={`csb-details ${teamShown && others > 0 ? 'has-team' : ''}`} style={{ '--details-cols': Math.min(3, Math.max(1, shown.length)) } as React.CSSProperties}>
+  return <dl className="csb-details">
     {shown.map(({ item, index }, k) => {
       const team = isTeam(item);
       const solo = team && item.value === 'solo';
       const raw = team && !solo ? item.detail.split('\n').map(line => line.trim()) : [];
-      const people = edit ? raw : raw.filter(Boolean);
-      return <motion.div key={index} className={`csb-detail ${team ? 'is-team' : ''}`} style={team && teamShown && others > 0 ? { gridColumn: 3, gridRow: `1 / span ${teamRows}` } : undefined} initial={reduce ? false : { opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .6, delay: k * .07, ease: [0.22, 1, 0.36, 1] }}>
+      const people = raw.filter(Boolean).map(line => { const [name, role] = line.split(/\s+[—–-]\s+/); return { name: name.trim(), role: role?.trim() }; });
+      return <motion.div key={index} className={`csb-detail ${team ? 'is-team' : ''}`} initial={reduce ? false : { opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .5, delay: k * .05, ease: [0.22, 1, 0.36, 1] }}>
         <dt><EditableText field={`items.${index}.title`} value={item.title} /></dt>
         <dd>
-          {solo ? <><span className="csb-detail-solo"><i>{initials('Me')}</i>Solo project</span><EditableText field={`items.${index}.detail`} value={item.detail} /></>
-            : team ? <ul>{people.map((line, i) => { const [name, role] = line.split(/\s+[—–-]\s+/); return <li key={i}><i aria-hidden="true">{initials(name)}</i><span><strong><EditableText field={`items.${index}.detail.${i}`} value={line}>{name}</EditableText></strong>{!edit && role && <small>{role}</small>}</span></li>; })}
-              {edit && <li><button type="button" className="csb-persona-add" onClick={e => { e.stopPropagation(); edit(`items.${index}.detail`, [...raw.filter(Boolean), 'Name — Role'].join('\n')); }}>+ Add person</button></li>}</ul>
+          {solo ? <EditableText field={`items.${index}.detail`} value={item.detail || 'Solo project'} />
+            : team && edit ? <ul className="csb-detail-edit">{raw.map((line, i) => <li key={i}><EditableText field={`items.${index}.detail.${i}`} value={line} /></li>)}
+              <li><button type="button" className="csb-persona-add" onClick={e => { e.stopPropagation(); edit(`items.${index}.detail`, [...raw.filter(Boolean), 'Name — Role'].join('\n')); }}>+ Add person</button></li></ul>
+            : team ? <span className="csb-detail-team">
+                <span className="csb-detail-faces" aria-hidden="true">{people.slice(0, 4).map((p, i) => <i key={i} title={p.role ? `${p.name}, ${p.role}` : p.name}>{initials(p.name)}</i>)}</span>
+                <span>{people.map((p, i) => <span key={i} title={p.role}>{p.name}{i < people.length - 1 ? ', ' : ''}</span>)}</span>
+              </span>
             : <EditableText field={`items.${index}.detail`} value={item.detail} />}
         </dd>
       </motion.div>;
