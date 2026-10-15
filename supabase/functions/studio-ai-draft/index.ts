@@ -254,7 +254,7 @@ async function askClaude({ anthropicKey, notes, figma, catalog, current, guidanc
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 12000, system: SYSTEM, tools: [tool], tool_choice: { type: 'tool', name: 'build_case_study' }, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 12000, system: SYSTEM, tools: [tool], tool_choice: { type: 'auto' }, messages: [{ role: 'user', content }] }),
     signal: AbortSignal.timeout(140000),
   });
   const data = await response.json();
