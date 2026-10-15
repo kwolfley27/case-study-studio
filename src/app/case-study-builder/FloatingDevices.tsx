@@ -11,22 +11,25 @@ import type { CaseStudySection } from './model';
   options.bg = 'tint' (soft accent, default) | 'stone' | 'white' | 'dark'.
 */
 type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number };
-// Resting poses (x/y in % of the stage, z in px, angles in degrees), five slots.
+// Resting poses (x/y in % of the stage, z in px, angles in degrees): a loose cascade that tumbles
+// down through the middle, devices overlapping one another like the classic "gravity" shot.
 const REST: Pose[] = [
-  { x: 50, y: 50, z: 0, rx: 18, ry: -22, rz: -28 },
-  { x: 66, y: 20, z: 120, rx: 30, ry: -18, rz: -16 },
-  { x: 40, y: 82, z: 80, rx: 26, ry: 20, rz: -34 },
-  { x: 24, y: 30, z: -60, rx: 22, ry: 28, rz: 14 },
-  { x: 78, y: 70, z: -40, rx: 34, ry: -30, rz: 8 },
+  { x: 52, y: 47, z: 0, rx: 14, ry: -18, rz: -32 },   // tablet, centre
+  { x: 64, y: 17, z: 140, rx: 32, ry: -14, rz: -22 },  // phone over its top-right corner
+  { x: 41, y: 72, z: 90, rx: 24, ry: 22, rz: -38 },    // phone overlapping the lower edge
+  { x: 54, y: 93, z: 30, rx: 58, ry: 6, rz: -16 },     // phone lying flatter, near the floor
+  { x: 30, y: 14, z: -60, rx: 26, ry: 18, rz: 14 },    // phone behind, top left
 ];
 // How far each slot is thrown out at the start of the scroll.
 const SPREAD: Pose[] = [
-  { x: 0, y: 10, z: -80, rx: -14, ry: 26, rz: 12 },
-  { x: 8, y: -16, z: 60, rx: -20, ry: 30, rz: -24 },
-  { x: -6, y: 18, z: 40, rx: 24, ry: -26, rz: 20 },
-  { x: -10, y: -10, z: -40, rx: -18, ry: -24, rz: -20 },
-  { x: 10, y: 14, z: -20, rx: 20, ry: 22, rz: 18 },
+  { x: 2, y: 8, z: -60, rx: -12, ry: 22, rz: 10 },
+  { x: 10, y: -14, z: 60, rx: -20, ry: 26, rz: -20 },
+  { x: -10, y: 16, z: 40, rx: 22, ry: -24, rz: 18 },
+  { x: 6, y: 18, z: -30, rx: -24, ry: -16, rz: -14 },
+  { x: -8, y: -14, z: -40, rx: 18, ry: 20, rz: 16 },
 ];
+const PENCIL: Pose = { x: 62, y: 44, z: 120, rx: 22, ry: -10, rz: -14 };
+const PENCIL_SPREAD: Pose = { x: 14, y: -10, z: 60, rx: -16, ry: 20, rz: 30 };
 
 function Device({ img, alt, tablet, p, k, slot, reduce }: { img?: string; alt: string; tablet: boolean; p: MotionValue<number>; k: number; slot?: string; reduce: boolean }) {
   const r = REST[k % REST.length], s = SPREAD[k % SPREAD.length];
@@ -36,6 +39,7 @@ function Device({ img, alt, tablet, p, k, slot, reduce }: { img?: string; alt: s
   const style = reduce ? { left: `${r.x}%`, top: `${r.y}%`, z: r.z, rotateX: r.rx, rotateY: r.ry, rotateZ: r.rz } : { left, top, z, rotateX: rx, rotateY: ry, rotateZ: rz };
   return <motion.div className={`csb-fd-dev ${tablet ? 'is-tablet' : 'is-phone'}`} style={style}>
     <div className="csb-fd-float" style={{ animationDelay: `${k * -1.3}s` }}>
+      <i className="csb-fd-cast" aria-hidden="true" />
       <i className="csb-fd-layer" style={{ transform: 'translateZ(-9px)' }} /><i className="csb-fd-layer" style={{ transform: 'translateZ(-6px)' }} /><i className="csb-fd-layer" style={{ transform: 'translateZ(-3px)' }} />
       <div className="csb-fd-face">
         <div className="csb-fd-screen" data-image-slot={slot}>{img ? <img src={img} alt={alt} draggable={false} /> : <span>{slot ? 'Click to add a screen' : ''}</span>}{!tablet && <b className="csb-fd-island" />}</div>
@@ -43,6 +47,15 @@ function Device({ img, alt, tablet, p, k, slot, reduce }: { img?: string; alt: s
       </div>
     </div>
   </motion.div>;
+}
+
+function Pencil({ p, reduce }: { p: MotionValue<number>; reduce: boolean }) {
+  const r = PENCIL, s = PENCIL_SPREAD;
+  const m = (a: number, b: number) => useTransform(p, [0, .55, 1], [a + b, a, a - b * .35]);
+  const x = m(r.x, s.x), y = m(r.y, s.y), z = m(r.z, s.z), rx = m(r.rx, s.rx), ry = m(r.ry, s.ry), rz = m(r.rz, s.rz);
+  const left = useTransform(x, v => `${v}%`), top = useTransform(y, v => `${v}%`);
+  const style = reduce ? { left: `${r.x}%`, top: `${r.y}%`, z: r.z, rotateX: r.rx, rotateY: r.ry, rotateZ: r.rz } : { left, top, z, rotateX: rx, rotateY: ry, rotateZ: rz };
+  return <motion.div className="csb-fd-pencil" style={style} aria-hidden="true"><div className="csb-fd-float" style={{ animationDelay: '-2.4s' }}><i className="csb-fd-cast" /><span className="csb-fd-pencil-body"><b /></span></div></motion.div>;
 }
 
 export function FloatingDevices({ section, editorMode }: { section: CaseStudySection; editorMode?: boolean }) {
@@ -54,9 +67,9 @@ export function FloatingDevices({ section, editorMode }: { section: CaseStudySec
   const bg = String(section.options?.bg ?? 'tint');
   return <div ref={ref} className={`csb-fd is-${bg}`}>
     <div className="csb-fd-stage">
+      {section.options?.pencil === true && <Pencil p={p} reduce={reduce} />}
       {items.map((it, k) => <Device key={k} k={k} p={p} reduce={reduce} img={it.image} alt={it.title || 'Screen'} tablet={it.value ? it.value === 'tablet' : k === 0 && items.length > 1} slot={editorMode ? `${section.id}:${k}` : undefined} />)}
     </div>
-    <i className="csb-fd-shadow" aria-hidden="true" />
   </div>;
 }
 
@@ -66,6 +79,7 @@ export function FloatingDevicesControls({ section, onChange }: { section: CaseSt
   return <div className="csb-tsc">
     <div className="csb-sb-row"><span className="csb-sb-label">Background</span>
       <div className="csb-sb-chips" role="radiogroup" aria-label="Background">{([['tint', 'Soft accent'], ['stone', 'Warm grey'], ['white', 'White'], ['dark', 'Dark']] as const).map(([v, l]) => { const on = String(o.bg ?? 'tint') === v; return <button key={v} type="button" role="radio" aria-checked={on} aria-pressed={on} onClick={() => onChange({ options: { ...o, bg: v } })}>{l}</button>; })}</div></div>
+    <label className="csb-sb-switch"><span><b>Apple Pencil</b><small>Float a pencil over the tablet.</small></span><input type="checkbox" role="switch" checked={o.pencil === true} onChange={e => onChange({ options: { ...o, pencil: e.target.checked } })} /><i aria-hidden="true" /></label>
     <div className="csb-sb-row"><span className="csb-sb-label">Devices (up to five)</span>
       {items.slice(0, 5).map((it, i) => { const tab = it.value ? it.value === 'tablet' : i === 0 && items.length > 1; return <div key={i} className="csb-sg-ctl-row" style={{ gridTemplateColumns: '34px minmax(0,1fr) auto' }}>
         <span className="csb-sg-ctl-thumb" style={it.image ? { backgroundImage: `url("${it.image}")` } : undefined} />

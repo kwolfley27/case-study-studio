@@ -2602,3 +2602,21 @@ html.csb-presenting .csb-iso{height:calc(78vh / var(--present-zoom,1))}
 .csb-fd.is-dark .csb-fd-shadow{background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent)}
 @media (prefers-reduced-motion:reduce){.csb-fd-float{animation:none}}
 html.csb-presenting .csb-fd{height:calc(80vh / var(--present-zoom,1))}
+
+/* Floating devices v2: as wide as the other big visuals, a shadow per device, Apple Pencil */
+.csb-story-section:is(.csb-kind-floatDevices,.csb-kind-isoShowcase){padding-left:clamp(12px,2cqw,24px)!important;padding-right:clamp(12px,2cqw,24px)!important}
+.csb-fd{height:clamp(560px,78cqw,980px)}
+.csb-fd-dev{--w:clamp(130px,15.5cqw,230px)}
+.csb-fd-cast{position:absolute;inset:4%;border-radius:calc(var(--w,160px) * .17);background:rgba(28,22,16,.34);filter:blur(22px);transform:translate3d(6%,10%,-140px);pointer-events:none}
+.csb-fd.is-dark .csb-fd-cast{background:rgba(0,0,0,.7)}
+.csb-fd-layer{background:linear-gradient(135deg,#e2dfdb,#a19d98 35%,#55524e 70%,#2c2a28)}
+.csb-fd-pencil{position:absolute;translate:-50% -50%;width:clamp(240px,34cqw,480px);height:clamp(10px,1.3cqw,17px);transform-style:preserve-3d}
+.csb-fd-pencil .csb-fd-cast{inset:0;border-radius:999px;filter:blur(10px);transform:translate3d(4%,140%,-90px);background:rgba(28,22,16,.28)}
+.csb-fd-pencil-body{position:absolute;inset:0;border-radius:3px 999px 999px 3px;background:linear-gradient(180deg,#ffffff 0%,#f4f3f1 38%,#d9d6d2 78%,#bdb9b4 100%);box-shadow:inset -10px 0 12px -10px rgba(0,0,0,.15)}
+.csb-fd-pencil-body::before{content:"";position:absolute;right:62%;top:0;bottom:0;width:22%;background:linear-gradient(180deg,rgba(0,0,0,.035),rgba(0,0,0,0) 50%,rgba(0,0,0,.05));border-radius:2px}
+.csb-fd-pencil-body b{position:absolute;left:-9%;top:0;bottom:0;width:9.5%;clip-path:polygon(100% 0,100% 100%,8% 58%,0 50%,8% 42%);background:linear-gradient(180deg,#f7f6f4,#cfcbc6)}
+.csb-fd-pencil-body b::after{content:"";position:absolute;left:0;top:38%;width:22%;height:24%;border-radius:50%;background:#8f8b86}
+/* soft shadows without blur filters (filters render hard edges on 3D layers) */
+.csb-fd-cast{inset:-6%;filter:none!important;border-radius:50%;background:radial-gradient(closest-side,rgba(28,22,16,.30),rgba(28,22,16,.12) 55%,transparent)!important;transform:translate3d(8%,12%,-120px)}
+.csb-fd.is-dark .csb-fd-cast{background:radial-gradient(closest-side,rgba(0,0,0,.65),rgba(0,0,0,.25) 55%,transparent)!important}
+.csb-fd-pencil .csb-fd-cast{inset:-120% -4%;transform:translate3d(3%,120%,-80px);background:radial-gradient(closest-side,rgba(28,22,16,.22),transparent)!important}
