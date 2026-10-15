@@ -9,7 +9,7 @@ import { EditingContext } from './EditableText';
 export type Frame = 'none' | 'laptop' | 'desktop' | 'browser' | 'phone';
 export const frameOptions: Array<[Frame, string]> = [['none', 'No frame'], ['laptop', 'Laptop'], ['desktop', 'Desktop monitor'], ['browser', 'Browser window'], ['phone', 'Phone']];
 
-function SampleScreen({ phone }: { phone?: boolean }) {
+export function SampleScreen({ phone }: { phone?: boolean }) {
   return phone
     ? <div className="csb-dev-sample is-phone" aria-hidden="true"><b /><i /><i /><span /><span /><em /></div>
     : <div className="csb-dev-sample" aria-hidden="true"><div><b /><i /><i /><i /><i /></div><div><b /><p><i /><i /><i /></p><span /><span /><em /></div></div>;

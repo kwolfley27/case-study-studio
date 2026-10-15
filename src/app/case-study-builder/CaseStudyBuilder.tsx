@@ -21,6 +21,7 @@ import { PrototypeControls } from "./PrototypeEmbed";
 import { ABTestControls } from "./ABTest";
 import { AEIOUControls } from "./AEIOU";
 import { AffinityControls } from "./AffinityDiagram";
+import { ScreensControls } from "./Screens";
 import { HomeGallery } from "./HomeGallery";
 import { freshCopy, newId, saveStudy } from "./studyLibrary";
 import "./case-study-builder.css";
@@ -207,6 +208,7 @@ export default function CaseStudyBuilder() {
         {selected.kind === "columns" && <div className="csb-field"><label htmlFor="column-count">Columns</label><select id="column-count" value={selected.columns || 3} onChange={e => updateSection({ columns: Number(e.target.value) as 2 | 3 | 4 })}><option value="2">2 columns</option><option value="3">3 columns</option><option value="4">4 columns</option></select></div>}
         {selected.kind === "wireframes" && <div className="csb-field"><label htmlFor="screen-fit-r">Screen fit</label><select id="screen-fit-r" value={selected.fit || "contain"} onChange={e => updateSection({ fit: e.target.value as "contain" | "cover" })}><option value="contain">Show full screen</option><option value="cover">Fill phone (crop)</option></select></div>}
         <label className="csb-check-field"><input type="checkbox" checked={!selected.hideFromNav} onChange={event => updateSection({ hideFromNav: !event.target.checked })} /> Show in side menu</label>
+        {["screenFocus", "screenStory", "screenStrip"].includes(selected.kind) && <><div className="csb-inspector-divider" /><ScreensControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Affinity diagram</p><AffinityControls section={selected} onChange={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "abtest" && <ABTestControls section={selected} onChange={abtest => updateSection({ abtest })} />}

@@ -1,6 +1,7 @@
 import { ABTest } from "./ABTest";
 import { AEIOUBoard } from "./AEIOU";
 import { AffinityDiagram } from "./AffinityDiagram";
+import { FocusCarousel, ScreenFilmstrip, ScreenStory } from "./Screens";
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "motion/react";
 import { MotionPrefs, useExpressive, useReducedMotion, useScrollProgress } from "./MotionKit";
@@ -120,6 +121,9 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "annotated": return <AnnotatedScreen section={section} />;
     case "problem": return <ProblemStatement section={section} />;
     case "empathy": return <EmpathyMap section={section} />;
+    case "screenFocus": return <FocusCarousel section={section} />;
+    case "screenStory": return <ScreenStory section={section} />;
+    case "screenStrip": return <ScreenFilmstrip section={section} />;
     case "affinity": return <AffinityDiagram section={section} editorMode={editorMode} />;
     case "aeiou": return <AEIOUBoard section={section} />;
     case "abtest": return <ABTest section={section} editorMode={editorMode} />;

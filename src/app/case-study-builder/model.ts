@@ -1,4 +1,4 @@
-export type SectionKind = "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -23,7 +23,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo"; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo"; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -95,6 +95,9 @@ export const componentNames: Record<SectionKind, string> = {
   abtest: "A/B test",
   aeiou: "AEIOU observations",
   affinity: "Affinity diagram",
+  screenFocus: "Focus carousel",
+  screenStory: "Screen story",
+  screenStrip: "Screen filmstrip",
   details: "Project details",
   empathy: "Empathy map",
   rows: "Labeled rows",
@@ -121,6 +124,9 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  screenFocus: "Screens slide past as you scroll; each one comes to the centre big enough to read, with optional spotlights.",
+  screenStory: "A big screen stays pinned while short steps scroll beside it and swap what it shows.",
+  screenStrip: "One large screen with thumbnails to switch, plus highlight buttons for spotlights.",
   affinity: "Observations that scatter from a pile into clusters as you scroll, under issues and areas of concern.",
   aeiou: "Code observation photos and notes as Activities, Environments, Interactions, Objects and Users; hover a letter to see just those.",
   abtest: "Two versions in one frame, the changes between them, and what happened.",
@@ -150,7 +156,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -171,6 +177,9 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     abtest: "What changed, and what it did",
     aeiou: "What we observed",
     affinity: "What the notes added up to",
+    screenFocus: "The final screens, up close",
+    screenStory: "How it works, step by step",
+    screenStrip: "The final screens",
     rows: "The essentials",
     screenRecording: "See it in motion",
     prototype: "Try it yourself",
@@ -197,6 +206,9 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
     affinity: [],
+    screenFocus: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],
+    screenStory: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],
+    screenStrip: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],
     aeiou: [
       { title: "Activities", value: "Goal-directed actions. What pathways do people take to get things done?", detail: "People plan around the class, not the studio: booking happens in stolen minutes between other tasks." },
       { title: "Environments", value: "The whole arena: atmosphere, function, individual and shared spaces.", detail: "The lobby doubles as a waiting room and a checkout, so the 6 pm rush feels chaotic." },
