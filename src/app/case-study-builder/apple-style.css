@@ -2063,3 +2063,26 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 /* Spotlight instead of a box: the rest of the screen dims, the highlighted part stays bright */
 .csb-ss-band{border:0!important;background:transparent!important;border-radius:12px!important;left:1.5%!important;right:1.5%!important;height:96px!important;margin-top:-48px!important;box-shadow:0 0 0 200vmax rgba(12,12,16,.32),0 0 24px 8px rgba(12,12,16,.2)!important}
 .csb-ss-phone .csb-ss-band{height:76px!important;margin-top:-38px!important;border-radius:10px!important}
+
+/* Editorial pass (style reference): achromatic chrome, hairlines, whisper type */
+.csb-ss-notes{align-self:stretch;align-content:start!important;display:flex!important;flex-direction:column;gap:18px;padding-top:8px}
+.csb-ss-note-pos{transition:transform .18s cubic-bezier(.22,1,.36,1);will-change:transform}
+.csb-ss-addhere{margin-top:auto}
+.csb-ss-lines path{stroke:color-mix(in srgb,currentColor 55%,transparent)!important;stroke-width:1!important}
+.csb-ss-note small{font:400 12px/1.6 "IBM Plex Mono",ui-monospace,monospace!important;letter-spacing:.06em!important;color:#a59f97!important}
+.csb-ss-note h3{font-weight:300!important;font-size:clamp(24px,2.3vw,32px)!important;line-height:1.13!important;letter-spacing:-.02em!important;margin:8px 0 10px!important}
+.csb-ss-note.is-long h3{font-size:clamp(20px,1.9vw,26px)!important}
+.csb-ss-note p{font-size:16px!important;line-height:1.5!important;letter-spacing:.01em;color:#777169!important}
+.csb-ss-ticks button.is-on::after{background:var(--t-ink,#000)!important}
+.csb-ss-band{box-shadow:0 0 0 200vmax rgba(28,24,20,.3),0 0 24px 8px rgba(28,24,20,.18)!important}
+.csb-ss-hint{background:#fdfcfc!important;color:#000!important;box-shadow:rgba(0,0,0,.4) 0 0 1px,rgba(0,0,0,.04) 0 1px 1px,rgba(0,0,0,.04) 0 2px 4px!important;font:500 12px/1 Inter,system-ui,sans-serif!important;padding:6px 11px!important;backdrop-filter:none!important}
+.csb-ss-stages{background:#f5f3f1!important;box-shadow:none!important}
+.csb-ss-stages button{font:500 14px/1 Inter,system-ui,sans-serif!important;color:#777169!important;outline:none!important}
+.csb-ss-stages button[aria-checked=true]{color:#000!important}
+.csb-ss-stages button:focus{outline:none!important;box-shadow:none!important}
+.csb-ss-stages button:focus-visible .csb-ss-stages-knob,.csb-ss-stages button:focus-visible{box-shadow:inset 0 0 0 1px #000!important}
+.csb-ss-stages-knob{background:#fdfcfc!important;box-shadow:rgba(0,0,0,.4) 0 0 1px,rgba(0,0,0,.04) 0 1px 1px,rgba(0,0,0,.04) 0 2px 4px!important}
+.csb-ss-gridtoggle{border-radius:9999px!important;border-color:#ebe8e4!important;background:#fdfcfc!important;backdrop-filter:none!important}
+.csb-ss-gridtoggle:focus{outline:none}
+.csb-ss-marker{background:#fdfcfc!important}
+.csb-ss-marker.is-on{background:#000!important}

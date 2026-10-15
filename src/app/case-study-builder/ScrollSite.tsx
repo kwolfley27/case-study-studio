@@ -151,15 +151,24 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   // A hairline drawn from the highlighted spot on the screen to its note, redrawn as the page scrolls.
   const stageEl = useRef<HTMLDivElement>(null); const head = useRef<HTMLHeadingElement>(null);
   const [line, setLine] = useState('');
+  // The note sits level with the part of the screen it describes and moves with it; a straight hairline joins them.
+  const col = useRef<HTMLDivElement>(null); const pos = useRef<HTMLDivElement>(null);
+  const [noteY, setNoteY] = useState(0);
   useLayoutEffect(() => {
     const st = stageEl.current; if (!st || !note) { setLine(''); return; }
     const m = st.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`); const h = head.current;
     const scr = m?.closest('.csb-ss-screen'); const dev = m?.closest('.csb-ss-mac, .csb-ss-phone');
-    if (!m || !h || !scr || !dev) { setLine(''); return; }
-    const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), H = h.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect();
+    if (!m || !h || !scr || !dev || !col.current || !pos.current) { setLine(''); return; }
+    const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect(), K = col.current.getBoundingClientRect();
+    const P = pos.current, H = h.getBoundingClientRect(), PR = P.getBoundingClientRect();
     const my = Math.min(C.bottom - 4, Math.max(C.top + 4, M.top + M.height / 2)) - S.top;
-    const x0 = C.right - C.width * .03 - S.left, x1 = Math.max(D.right, C.right) + 18 - S.left, ex = H.left - 14 - S.left, ey = H.top + Math.min(18, H.height / 2) - S.top;
-    setLine(`M${x0.toFixed(1)},${my.toFixed(1)} H${x1.toFixed(1)} L${Math.max(x1 + 8, ex - 30).toFixed(1)},${ey.toFixed(1)} H${ex.toFixed(1)}`);
+    const headOff = H.top - PR.top + Math.min(16, H.height / 2);
+    const want = (my + S.top - K.top) - P.offsetTop - headOff;
+    const y = Math.round(Math.max(-P.offsetTop, Math.min(K.height - P.offsetTop - P.offsetHeight, want)));
+    setNoteY(y);
+    const ey = K.top - S.top + P.offsetTop + y + headOff;
+    const x0 = C.right - C.width * .03 - S.left, xm = Math.max(D.right, C.right) + 20 - S.left, ex = H.left - 16 - S.left;
+    setLine(Math.abs(ey - my) < 1.5 ? `M${x0.toFixed(1)},${my.toFixed(1)} H${ex.toFixed(1)}` : `M${x0.toFixed(1)},${my.toFixed(1)} H${xm.toFixed(1)} V${ey.toFixed(1)} H${ex.toFixed(1)}`);
   });
   const [vh, setVh] = useState(800);
   useLayoutEffect(() => { const measure = () => { const sc = wrap.current?.closest('.csb-preview-viewport') as HTMLElement | null; setVh(sc ? sc.clientHeight : window.innerHeight); }; measure(); window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }, []);
@@ -177,15 +186,15 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
         </div>}
         {show !== 'desktop' && <div className={`csb-ss-phone ${device === 'mobile' ? 'is-focus' : ''}`}>{show === 'mobile' && layerToggle}<span className="csb-ss-island" aria-hidden="true" />{screen('mobile')}</div>}
       </div>
-      <div className="csb-ss-notes" aria-live="polite">
+      <div className="csb-ss-notes" aria-live="polite" ref={col}>
         {hasImage && list.length > 0 && <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)} />)}</div>}
-        <AnimatePresence mode="wait">
+        <div className="csb-ss-note-pos" ref={pos} style={{ transform: note ? `translateY(${noteY}px)` : undefined }}><AnimatePresence mode="wait">
           {note ? <motion.div key={note.i} className={`csb-ss-note ${note.title.length > 48 ? 'is-long' : ''}`} initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
             <small>{compare ? `${stage === 'a' ? nameA : nameB} · ` : ''}{note.device === 'mobile' ? 'Mobile' : 'Desktop'} · {list.findIndex(n => n.i === note.i) + 1} of {list.length}</small>
             <h3 ref={head}><EditableText field={`items.${note.i}.title`} value={note.title} /></h3>
             <p><EditableText field={`items.${note.i}.detail`} value={note.detail} /></p>
           </motion.div> : <motion.p key="idle" className="csb-ss-idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{list.length ? 'Scroll the screen. Notes appear as their part of the page comes into view.' : 'Scroll the screen to explore the page.'}</motion.p>}
-        </AnimatePresence>
+        </AnimatePresence></div>
         {editorMode && (desk?.image || mob?.image) && <button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot</button>}
       </div>
     </div>
