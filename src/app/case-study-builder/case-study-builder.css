@@ -370,3 +370,15 @@
 .csb-field input[type=range]{width:100%;accent-color:var(--csb-accent,#0071e3)}
 .csb-connection-link{display:inline-flex;align-items:center;gap:4px;margin:-6px 0 14px;font-size:11px;color:#0071e3}
 .csb-connection-section{margin-top:6px;padding-top:4px}
+
+/* ── Draft with AI ── */
+.csb-ai-card{display:grid;gap:10px;margin:6px 0 16px;padding:14px;border-radius:14px;background:linear-gradient(160deg,color-mix(in srgb,#0071e3 7%,#fff),#fff 70%);border:1px solid color-mix(in srgb,#0071e3 18%,#e5e5e7)}
+.csb-ai-card-head{display:flex;align-items:center;gap:7px;color:#0071e3}.csb-ai-card-head strong{color:#1d1d1f;font-size:13px}
+.csb-ai-card p{margin:0;font-size:11.5px;line-height:1.5;color:#6e6e73}
+.csb-ai-card textarea,.csb-ai-card input{width:100%;padding:8px 10px;border:1px solid #d2d2d7;border-radius:9px;font:inherit;font-size:12px;background:#fff;resize:vertical}
+.csb-ai-card .csb-primary-button{justify-content:center;gap:7px}
+.csb-ai-card small{font-size:11px;color:#86868b}
+.csb-ai-spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:csb-spin .8s linear infinite}
+@keyframes csb-spin{to{transform:rotate(360deg)}}
+.csb-ai-gaps{padding:10px 12px;border-radius:10px;background:#fff8e6;font-size:11.5px;color:#5c4400}.csb-ai-gaps ul{margin:6px 0 0;padding-left:16px;display:grid;gap:4px}
+@media (prefers-reduced-motion:reduce){.csb-ai-spinner{animation:none}}

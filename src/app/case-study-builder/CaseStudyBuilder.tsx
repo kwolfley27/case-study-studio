@@ -9,6 +9,7 @@ import { LayoutControls } from "./LayoutControls";
 import { SurveySourcePicker } from "./SurveySourcePicker";
 import { templates, sectionFromTemplate, type ComponentTemplate } from "./library";
 import { ImageSlotLayer } from "./ImageSlots";
+import { AiDraftCard } from "./AiDraft";
 import "./case-study-builder.css";
 import "./apple-style.css";
 
@@ -143,6 +144,7 @@ export default function CaseStudyBuilder() {
         {renderField("Notion research", study.sources?.notionUrl || "", notionUrl => updateStudy({ sources: { ...study.sources, notionUrl } }), false, "Research notes the AI briefs draw from.")}
         {study.sources?.notionUrl && /^https:\/\/(?:www\.)?(?:notion\.so|notion\.site|app\.notion\.com)\//.test(study.sources.notionUrl) && <a className="csb-connection-link" href={study.sources.notionUrl} target="_blank" rel="noreferrer">Open in Notion <ExternalLink size={11} /></a>}
         {renderField("Figma design file", study.sources?.figmaUrl || "", figmaUrl => updateStudy({ sources: { ...study.sources, figmaUrl } }), false, "The file your wireframe sections pull frames from.")}
+        <AiDraftCard study={study} onApply={next => { setStudy(next); setSelectedId(null); }} notify={(text, error) => setMessage({ text, error })} />
         {selected?.kind === "survey" && <div className="csb-connection-section"><p className="csb-panel-kicker">This section · Google Forms</p><SurveySourcePicker key={selected.id} section={selected} onApply={updateSection} /></div>}
         {selected?.kind === "wireframes" && <div className="csb-connection-section"><FigmaSourcePicker key={selected.id} section={selected} sourceUrl={study.sources?.figmaUrl || MACROAI_URL} onApply={updateSection} onSourceChange={figmaUrl => updateStudy({ sources: { ...study.sources, figmaUrl } })} /></div>}
         {selected && !["survey", "wireframes"].includes(selected.kind) && <p className="csb-field-note">Survey and wireframe sections show their data connection here when selected.</p>}

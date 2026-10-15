@@ -37,13 +37,13 @@ async function figmaFrameImage(link: string): Promise<string> {
    expire after ~30 days). Resized to at most 2400px wide and re-encoded as
    WebP until it fits the browser-draft budget. */
 const DRAFT_IMAGE_BUDGET = 1_400_000;
-async function downloadIntoDraft(url: string): Promise<string> {
+export async function downloadIntoDraft(url: string, budget = DRAFT_IMAGE_BUDGET, maxWidth = 2400): Promise<string> {
   const response = await fetch(url, { mode: 'cors' });
   if (!response.ok) throw new Error(`Download failed (${response.status}).`);
   const blob = await response.blob();
-  if (blob.type === 'image/gif' && blob.size <= DRAFT_IMAGE_BUDGET) return blobToDataUrl(blob);
+  if (blob.type === 'image/gif' && blob.size <= budget) return blobToDataUrl(blob);
   const bitmap = await createImageBitmap(blob);
-  let width = Math.min(2400, bitmap.width);
+  let width = Math.min(maxWidth, bitmap.width);
   for (let attempt = 0; attempt < 8; attempt++) {
     const height = Math.round(bitmap.height * width / bitmap.width);
     const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
@@ -51,7 +51,7 @@ async function downloadIntoDraft(url: string): Promise<string> {
     context.drawImage(bitmap, 0, 0, width, height);
     for (const quality of [0.9, 0.82, 0.72]) {
       const encoded = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', quality));
-      if (encoded && encoded.size <= DRAFT_IMAGE_BUDGET) return blobToDataUrl(encoded);
+      if (encoded && encoded.size <= budget) return blobToDataUrl(encoded);
     }
     width = Math.round(width * 0.8);
   }

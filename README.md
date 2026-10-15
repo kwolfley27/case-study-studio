@@ -28,3 +28,20 @@ The build keeps earlier hashed assets so a browser with a cached HTML entry stil
 - **Images:** Paste image URLs, or upload small images into your browser draft. Export a backup regularly. Large production media should use durable storage.
 
 Never put a Figma token, Notion integration secret, or Supabase service role key in `VITE_` variables.
+
+## AI drafting setup ("Draft with AI")
+
+The **Draft with AI** button (left panel → Connections) reads the linked Notion page and Figma design page, asks Claude to assemble the case study from the component library, and writes it into the draft (with **Undo AI draft**). It never invents quotes or numbers; gaps come back as a "Worth adding to Notion" list.
+
+It runs in the Supabase Edge Function `supabase/functions/studio-ai-draft`, because API keys can't live in a static site.
+
+1. Deploy the function: `supabase functions deploy studio-ai-draft --project-ref <project-id>`
+   (or Supabase dashboard → Edge Functions → Deploy a new function → via Editor, name `studio-ai-draft`, paste `index.ts`).
+2. Add secrets (dashboard → Edge Functions → Secrets, or `supabase secrets set NAME=value`):
+   - `ANTHROPIC_API_KEY` — from console.anthropic.com (billed per draft)
+   - `NOTION_TOKEN` — the Case Study Studio integration's Internal Integration Secret
+   - `FIGMA_TOKEN` — Figma personal access token with `file_content:read`
+   - `STUDIO_PASSCODE` — any phrase; the Studio asks for it once per browser
+   - `CLAUDE_MODEL` — optional, defaults to `claude-sonnet-5-5`
+3. In Notion, open the project page → ••• → Connections → add the integration, so it can read that page and its subpages.
+4. In the Studio, paste the Notion page link and the Figma page link under Connections, then press **Draft case study**.
