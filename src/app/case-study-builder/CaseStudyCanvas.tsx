@@ -7,6 +7,7 @@ import { ResearchVisual } from "./ResearchVisuals";
 import { SurveyResults } from "./SurveyResults";
 import { AnnotatedScreen, IssueFlow, Journey, Persona } from "./AppleExtras";
 import { CoverHero } from "./CoverHero";
+import { PrototypeEmbed } from "./PrototypeEmbed";
 import type { BuilderStudy, CaseStudySection } from "./model";
 
 function Enter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -85,8 +86,9 @@ function FullWidthMedia({ section, editorMode, onUploadMedia }: { section: CaseS
   </figure>)}</div>;
 }
 
-function SectionVisual({ section, editorMode, onUploadMedia }: { section: CaseStudySection; editorMode: boolean; onUploadMedia?: (sectionId: string, index: number, file: File) => void }) {
+function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: { section: CaseStudySection; editorMode: boolean; onUploadMedia?: (sectionId: string, index: number, file: File) => void; onSetPrototype?: (sectionId: string, link: string) => void }) {
   switch (section.kind) {
+    case "prototype": return <PrototypeEmbed section={section} editorMode={editorMode} onSetLink={onSetPrototype} />;
     case "persona": return <Persona section={section} />;
     case "journey": return <Journey section={section} />;
     case "issueFlow": return <IssueFlow section={section} />;
@@ -104,7 +106,7 @@ function SectionVisual({ section, editorMode, onUploadMedia }: { section: CaseSt
   }
 }
 
-export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia }: { study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; editorMode?: boolean }) {
+export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype }: { study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
   return <article className={`csb-canvas ${editorMode ? "csb-canvas-editable" : ""}`} style={{ "--csb-accent": study.accent } as React.CSSProperties}>
     <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
@@ -112,7 +114,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
       <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>
     </header></EditingContext.Provider>
     {study.sections.map((section, index) => <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined}}><section id={`builder-section-${section.id}`} className={`csb-story-section csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
-      {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /></div>}
+      {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
     </section></EditingContext.Provider>)}
     <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>
   </article>;

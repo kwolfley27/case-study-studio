@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "prototype" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -34,6 +34,7 @@ export interface CaseStudySection {
   };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
+  prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean };
   fit?: "contain" | "cover";
   criteria?: string;
   columns?: 2 | 3 | 4;
@@ -59,6 +60,7 @@ export interface BuilderStudy {
 
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
+  prototype: "Interactive prototype",
   wireframes: "Linked wireframe showcase",
   fullMedia: "Full width image / GIF",
   survey: "Survey results",
@@ -77,6 +79,7 @@ export const componentNames: Record<SectionKind, string> = {
 
 export const componentDescriptions: Record<SectionKind, string> = {
   coverHero: "A big title that holds still while your hero image scrolls up and over it.",
+  prototype: "Embed a clickable Figma prototype in a phone or laptop frame.",
   wireframes: "Import Figma screens into staggered iPhone mockups, then refresh by frame ID.",
   fullMedia: "Show an image or animated GIF edge to edge at its natural proportions.",
   survey: "Turn Google Forms responses into clear, evidence-backed charts.",
@@ -99,6 +102,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   eyebrow: componentNames[kind],
   title: {
     coverHero: "Making access feel obvious, not accidental.",
+    prototype: "Try it yourself",
     wireframes: "From wireframes to a clear direction",
     fullMedia: "See the work in detail",
     survey: "User research & key insights",
@@ -118,6 +122,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],
     wireframes: Array.from({length:4}, (_, i) => ({title:`Screen ${i+1}`, detail:"Add a caption explaining this step.", image:""})),
     fullMedia: [{ title: "Visual detail", detail: "Add a caption about what this shows.", image: "" }],
     survey: [{ title: "Survey question one", detail: "Add a short takeaway from this result." }, { title: "Survey question two", detail: "Explain what this result changed in the design." }],
@@ -155,7 +160,8 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     gallery: { layout: { count: 3, columns: 2 as const, pattern: "bento" as const, gap: 20, scale: 100, presentation: "images" as const } },
     metrics: { layout: { count: 3, columns: 3 as const } },
     wireframes: { layout: { count: 4, scale: 100 } },
-  } as Partial<Record<SectionKind, Pick<CaseStudySection, "layout">>>)[kind],
+    prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
