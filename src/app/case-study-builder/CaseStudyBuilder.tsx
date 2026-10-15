@@ -21,6 +21,8 @@ import { PrototypeControls } from "./PrototypeEmbed";
 import { ABTestControls } from "./ABTest";
 import { TaskSuccessControls } from "./TaskSuccess";
 import { RoadmapControls } from "./Roadmap";
+import { FlowCompareControls } from "./FlowCompare";
+import { FeatureCompareControls, PositioningControls } from "./CompetitorViews";
 import { AEIOUControls } from "./AEIOU";
 import { AffinityControls } from "./AffinityDiagram";
 import { ScreensControls } from "./Screens";
@@ -225,6 +227,9 @@ export default function CaseStudyBuilder() {
         {["screenFocus", "screenStory", "screenStrip"].includes(selected.kind) && <><div className="csb-inspector-divider" /><ScreensControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Affinity diagram</p><AffinityControls section={selected} onChange={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
+        {selected.kind === "flowCompare" && <><div className="csb-inspector-divider" /><FlowCompareControls section={selected} onChange={flowCompare => updateSection({ flowCompare })} /></>}
+        {selected.kind === "featureCompare" && <><div className="csb-inspector-divider" /><FeatureCompareControls section={selected} onChange={featureCompare => updateSection({ featureCompare })} /></>}
+        {selected.kind === "positioning" && <><div className="csb-inspector-divider" /><PositioningControls section={selected} onChange={positioning => updateSection({ positioning })} /></>}
         {selected.kind === "roadmap" && <><div className="csb-inspector-divider" /><RoadmapControls section={selected} onChange={roadmap => updateSection({ roadmap })} /></>}
         {selected.kind === "taskSuccess" && <><div className="csb-inspector-divider" /><TaskSuccessControls section={selected} onChange={updateSection} onOpenResearch={() => setShowResearch(true)} /></>}
         {selected.kind === "abtest" && <ABTestControls section={selected} onChange={abtest => updateSection({ abtest })} />}

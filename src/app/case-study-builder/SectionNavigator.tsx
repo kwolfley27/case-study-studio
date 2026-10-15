@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, UserRound, Users, Video, Workflow } from 'lucide-react';
+import { GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, UserRound, Users, Video, Workflow } from 'lucide-react';
 import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, type SectionKind } from './model';
 
 /*
@@ -10,7 +10,7 @@ type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 const ICONS: Record<SectionKind, Icon> = {
   coverHero: LayoutTemplate, details: Info, timeline: CalendarRange, empathy: Brain, persona: UserRound, journey: Route, problem: Target,
   findings: ListOrdered, methods: FlaskConical, interviews: MessagesSquare, quotes: Quote, survey: BarChart3, metrics: Hash, affinity: StickyNote,
-  aeiou: Eye, abtest: Columns2, taskSuccess: CircleCheck, roadmap: CalendarRange, prototype: MousePointerClick, screenRecording: Video, wireframes: Frame, fullMedia: Image,
+  aeiou: Eye, abtest: Columns2, taskSuccess: CircleCheck, roadmap: CalendarRange, flowCompare: GitCompare, featureCompare: ListChecks, positioning: Grid2x2, prototype: MousePointerClick, screenRecording: Video, wireframes: Frame, fullMedia: Image,
   gallery: Images, carousel: GalleryHorizontal, showcase: Component, screenFocus: Smartphone, screenStory: Smartphone, screenStrip: Smartphone,
   annotated: ScanSearch, flow: Workflow, comparison: ArrowLeftRight, narrative: AlignLeft, rows: Rows3, columns: Columns3, competitors: Users,
   gap: Crosshair, issueFlow: GitBranch,
