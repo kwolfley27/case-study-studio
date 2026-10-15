@@ -30,7 +30,10 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   if (section.options?.layout === 'rows') return <div className="csb-ps-rows"><ResearchVisual section={{ ...section, items: [who, need, why].filter(Boolean).map((item, i) => ({ ...item, title: i === 0 ? (item.title || 'Who') : i === 1 ? 'Needs' : 'Because' })) }} />{extras}</div>;
   const markColor = String(section.options?.markColor || 'accent');
   const markVar = markColor === 'accent' ? 'var(--csb-accent)' : markColor === 'accent2' ? 'var(--csb-accent-2, var(--csb-accent))' : markColor === 'ink' ? 'var(--t-ink, #000)' : markColor;
-  const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className="csb-ps-mark" initial={reduce ? false : { backgroundSize: '0% 2px' }} whileInView={{ backgroundSize: '100% 2px' }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
+  // Highlighter marker (default) or a thin underline, in any colour.
+  const marker = section.options?.markStyle !== 'underline';
+  const band = marker ? '58%' : '2px';
+  const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className={`csb-ps-mark ${marker ? 'is-marker' : ''}`} initial={reduce ? false : { backgroundSize: `0% ${band}` }} whileInView={{ backgroundSize: `100% ${band}` }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
       {mark(0, who?.detail || '')}{' '}

@@ -1337,3 +1337,6 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-show-card figcaption strong{font-size:15px;font-weight:500;color:var(--t-ink,#000)}
 .csb-show-card figcaption span{font-size:14px;color:var(--t-muted,#777169)}
 @container (max-width:700px){.csb-show{grid-template-columns:1fr}}
+/* Problem statement: highlighter marker */
+.csb-ps-mark.is-marker{background:linear-gradient(color-mix(in srgb,var(--ps-mark,var(--csb-accent)) 32%,transparent),color-mix(in srgb,var(--ps-mark,var(--csb-accent)) 32%,transparent)) no-repeat 0 88%/100% 58%;padding:0 .08em;margin:0 -.04em;border-radius:.12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.csb-variant-dark .csb-ps-mark.is-marker{background-image:linear-gradient(color-mix(in srgb,var(--ps-mark,var(--csb-accent)) 55%,transparent),color-mix(in srgb,var(--ps-mark,var(--csb-accent)) 55%,transparent))}
