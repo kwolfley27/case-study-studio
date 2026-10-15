@@ -2693,3 +2693,13 @@ html.csb-presenting .csb-fd-pencil{width:min(clamp(240px,34cqw,480px),calc(30vh 
 .csb-psf-run{height:26vh}
 .csb-psf-stick{top:24vh}
 .csb-story-section.csb-kind-problem:has(.csb-psf){padding-bottom:clamp(40px,6cqw,80px)}
+
+/* ── Annotated screen, desktop: the page gets most of the width, and breaks out of the text column ── */
+.csb-apple-annotated.is-desktop{grid-template-columns:minmax(140px,230px) minmax(0,1fr) minmax(140px,230px)!important;gap:clamp(16px,2.2vw,36px)!important;margin-inline:calc(min(0px,(100% - min(100vw - 420px,1500px)) / 2))}
+.csb-apple-annotated.is-desktop .csb-apple-annotation-side h3{font-size:clamp(16px,1.3vw,19px)}
+.csb-apple-annotated.is-desktop .csb-apple-annotation-side p{font-size:clamp(13.5px,1vw,15.5px)}
+@media (max-width:1300px){.csb-apple-annotated.is-desktop{margin-inline:0}}
+/* On a grey or dark card, widen the card itself instead of letting the page poke out of it */
+.csb-doc-main .csb-story-section.csb-kind-annotated:is(.csb-variant-tinted,.csb-variant-dark):has(.csb-apple-annotated.is-desktop){margin-inline:calc(min(0px,(100% - min(100vw - 420px,1500px)) / 2))!important;padding-inline:clamp(20px,2.4vw,40px)!important}
+.csb-story-section:is(.csb-variant-tinted,.csb-variant-dark) .csb-apple-annotated.is-desktop{margin-inline:0}
+@media (max-width:1300px){.csb-doc-main .csb-story-section.csb-kind-annotated:is(.csb-variant-tinted,.csb-variant-dark):has(.csb-apple-annotated.is-desktop){margin-inline:0!important}}
