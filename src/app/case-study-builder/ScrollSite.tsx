@@ -125,7 +125,15 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const [device, setDevice] = useState<Device>(show === 'mobile' ? 'mobile' : 'desktop');
   const scrollers = useRef<Record<Device, HTMLDivElement | null>>({ desktop: null, mobile: null });
   const setStage = (st: Stage) => { if (st === stage) return; (['desktop', 'mobile'] as Device[]).forEach(d => { const el = scrollers.current[d]; pending.current[d] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); setStageRaw(st); };
-  const onView = (d: Device) => (v: View, byUser?: boolean) => { setViews(prev => ({ ...prev, [d]: v })); if (byUser) setDevice(d); lastView.set(section.id, { device: d, center: (v.top + v.bottom) / 2 }); };
+  // Both screens scroll together (same distance through the page), so you see desktop and mobile side by side at the same point.
+  const echo = useRef<{ d: Device; top: number } | null>(null);
+  const sync = section.options?.syncScroll !== false && show === 'both';
+  const onView = (d: Device) => (v: View, byUser?: boolean) => {
+    const el = scrollers.current[d];
+    if (byUser && echo.current?.d === d && el && Math.abs(el.scrollTop - echo.current.top) < 3) { echo.current = null; byUser = false; }
+    if (byUser && sync && el) { const o: Device = d === 'desktop' ? 'mobile' : 'desktop'; const other = scrollers.current[o];
+      if (other) { const f = el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight); const top = Math.round(f * Math.max(0, other.scrollHeight - other.clientHeight)); if (Math.abs(other.scrollTop - top) >= 1) { echo.current = { d: o, top }; other.scrollTop = top; } } }
+    setViews(prev => ({ ...prev, [d]: v })); if (byUser) setDevice(d); lastView.set(section.id, { device: d, center: (v.top + v.bottom) / 2 }); };
   // The note shown: the one on the frame you're scrolling whose spot is on screen, nearest the middle.
   const hasImage = !!(device === 'desktop' ? desk?.image : mob?.image);
   const v = views[device]; const mid = (v.top + v.bottom) / 2;
@@ -186,6 +194,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <p className="csb-panel-kicker">Show</p>
     <div className="csb-segment" role="group" aria-label="Devices">{([['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={show === v} onClick={() => onChange({ options: { ...(section.options ?? {}), show: v } })}>{l}</button>)}</div>
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste. Use full-length frames: the page scrolls inside the device.</p>
+    <label className="csb-check-field"><input type="checkbox" checked={section.options?.syncScroll !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), syncScroll: e.target.checked } })} /> Desktop and mobile scroll together</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
     <p className="csb-panel-kicker">Stages</p>
     <label className="csb-check-field"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Two stages, switched with one click</label>
