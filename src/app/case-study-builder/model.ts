@@ -38,6 +38,8 @@ export interface CaseStudySection {
   navLabel?: string;
   /** Hide this section from the side menu. */
   hideFromNav?: boolean;
+  /** Keep the section but leave it off the page. */
+  hidden?: boolean;
   layout?: {
     count?: number;
     columns?: 1 | 2 | 3;

@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'motion/react';
-import { ArrowDown, ArrowUp, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import { SampleScreen } from './DeviceFrame';
@@ -20,6 +20,17 @@ type Item = CaseStudySection['items'][number];
 type Spot = NonNullable<Item['spots']>[number];
 type Step = { screen: number; spot: number };
 
+/* Jump to a screen / spotlight from the panel or a box on the page. */
+type FocusDetail = { sectionId: string; screen: number; spot: number };
+export const focusSpot = (detail: FocusDetail) => window.dispatchEvent(new CustomEvent('csb-sc-focus', { detail }));
+function useFocusRequest(sectionId: string, handler: (d: FocusDetail) => void) {
+  const ref = useRef(handler); ref.current = handler;
+  useEffect(() => { const on = (e: Event) => { const d = (e as CustomEvent<FocusDetail>).detail; if (d?.sectionId === sectionId) ref.current(d); }; window.addEventListener('csb-sc-focus', on); return () => window.removeEventListener('csb-sc-focus', on); }, [sectionId]);
+}
+const scrollerOf = (el: HTMLElement): HTMLElement | null => el.closest('.csb-preview-viewport') as HTMLElement | null;
+const scrollToY = (el: HTMLElement, y: number) => { const sc = scrollerOf(el); if (sc) sc.scrollTo({ top: y, behavior: 'smooth' }); else window.scrollTo({ top: y, behavior: 'smooth' }); };
+const docTop = (el: HTMLElement) => { const sc = scrollerOf(el); return sc ? sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top : window.scrollY + el.getBoundingClientRect().top; };
+
 const stepsOf = (items: Item[]): Step[] => items.flatMap((item, i) => [{ screen: i, spot: -1 }, ...(item.spots ?? []).map((_, k) => ({ screen: i, spot: k }))]);
 const useRatio = (src?: string, fallback = 393 / 852) => {
   const [r, setR] = useState(fallback);
@@ -28,7 +39,7 @@ const useRatio = (src?: string, fallback = 393 / 852) => {
 };
 
 /* ---------- One screen in a device, with spotlight + drawing ---------- */
-export function Screen({ section, index, spot, side = 'right', drawing, onDrawn, slot = true }: { section: CaseStudySection; index: number; spot: number; side?: 'right' | 'left' | 'below'; drawing?: boolean; onDrawn?: (box: Omit<Spot, 'note'>) => void; slot?: boolean }) {
+export function Screen({ section, index, spot, side = 'right', drawing, onDrawn, slot = true, outlines }: { section: CaseStudySection; index: number; spot: number; side?: 'right' | 'left' | 'below'; drawing?: boolean; onDrawn?: (box: Omit<Spot, 'note'>) => void; slot?: boolean; outlines?: boolean }) {
   const item = section.items[index];
   const browser = section.options?.device === 'browser';
   const ratio = useRatio(item?.image, browser ? 16 / 10 : 393 / 852);
@@ -52,6 +63,8 @@ export function Screen({ section, index, spot, side = 'right', drawing, onDrawn,
         <rect width="100" height="100" fill="#000" fillOpacity=".74" mask={`url(#sc-m-${section.id}-${index})`} />
       </motion.svg>}</AnimatePresence>
       {s && <motion.span key={`ring-${index}-${spot}`} className="csb-sc-ring" style={{ left: `${s.x * 100}%`, top: `${s.y * 100}%`, width: `${s.w * 100}%`, height: `${s.h * 100}%` }} initial={reduce ? false : { opacity: 0, scale: 1.06 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .5, delay: .15 }} />}
+      {!s && !drawing && outlines && (item?.spots ?? []).map((sp, k) => <button key={k} type="button" data-no-slot className="csb-sc-outline" title={`Show spotlight ${k + 1}`} aria-label={`Show spotlight ${k + 1}`} style={{ left: `${sp.x * 100}%`, top: `${sp.y * 100}%`, width: `${sp.w * 100}%`, height: `${sp.h * 100}%` }} onClick={e => { e.stopPropagation(); focusSpot({ sectionId: section.id, screen: index, spot: k }); }}><b>{k + 1}</b></button>)}
+      {s && outlines && <button type="button" data-no-slot className="csb-sc-unspot" onClick={e => { e.stopPropagation(); focusSpot({ sectionId: section.id, screen: index, spot: -1 }); }}>Back to full screen</button>}
       {drawing && <div className="csb-sc-draw" data-no-slot onPointerDown={draw} onClick={e => e.stopPropagation()}><span>Drag a box around the feature</span>{draft && <i style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }} />}</div>}
     </div>
     {s && side !== 'below' && <motion.div key={`note-${index}-${spot}`} className={`csb-sc-note is-${side}`} style={{ top: `calc(${(s.y + s.h / 2) * 100}% + ${browser ? 14 : 0}px)` }} initial={reduce ? false : { opacity: 0, x: side === 'right' ? -8 : 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .5, delay: .25, ease: [0.22, 1, 0.36, 1] }}>
@@ -89,7 +102,7 @@ function usePinnedProgress(ref: React.RefObject<HTMLElement | null>): MotionValu
 }
 
 /* ---------- Focus carousel ---------- */
-function CarouselCard({ section, index, pos, active, spot, drawing, onDrawn }: { section: CaseStudySection; index: number; pos: MotionValue<number>; active: boolean; spot: number; drawing: boolean; onDrawn: (b: Omit<Spot, 'note'>) => void }) {
+function CarouselCard({ section, index, pos, active, spot, drawing, onDrawn, editing }: { section: CaseStudySection; index: number; pos: MotionValue<number>; active: boolean; spot: number; drawing: boolean; onDrawn: (b: Omit<Spot, 'note'>) => void; editing: boolean }) {
   const reduce = useReducedMotion();
   const d = useTransform(pos, v => index - v);
   const x = useTransform(d, v => `calc(-50% + ${v * 74}%)`);
@@ -98,7 +111,7 @@ function CarouselCard({ section, index, pos, active, spot, drawing, onDrawn }: {
   const rotateY = useTransform(d, v => reduce ? 0 : Math.max(-1, Math.min(1, v)) * -14);
   const zIndex = useTransform(d, v => 10 - Math.round(Math.abs(v) * 2));
   return <motion.div className={`csb-sc-card ${active ? 'is-active' : ''}`} style={{ x, scale, opacity, rotateY, zIndex }}>
-    <Screen section={section} index={index} spot={active ? spot : -1} side="right" drawing={active && drawing} onDrawn={onDrawn} />
+    <Screen section={section} index={index} spot={active ? spot : -1} side="right" drawing={active && drawing} onDrawn={onDrawn} outlines={active && editing} />
   </motion.div>;
 }
 
@@ -119,12 +132,18 @@ export function FocusCarousel({ section }: { section: CaseStudySection }) {
   useMotionValueEvent(progress, 'change', v => { const k = Math.round(v * Math.max(0, steps.length - 1)); setStep(prev => prev === k ? prev : k); });
   const cur = steps[step] ?? { screen: 0, spot: -1 };
   const item = items[cur.screen];
+  useFocusRequest(section.id, d => {
+    const el = ref.current; if (!el) return;
+    const k = steps.findIndex(st => st.screen === d.screen && st.spot === d.spot); if (k < 0) return;
+    const sc = scrollerOf(el); const h = sc ? sc.clientHeight : window.innerHeight;
+    scrollToY(el, docTop(el) + (el.offsetHeight - h) * (k / Math.max(1, steps.length - 1)) + 2);
+  });
   // The stage pins for the height of the visible window (the editor's preview, or the browser).
   const [vh, setVh] = useState(800);
   useEffect(() => { const el = ref.current; if (!el) return; const sc = el.closest('.csb-preview-viewport') as HTMLElement | null; const m = () => setVh(sc ? sc.clientHeight : window.innerHeight); m(); window.addEventListener('resize', m); return () => window.removeEventListener('resize', m); }, []);
   return <div ref={ref} className="csb-sc-pin" style={{ height: Math.max(2, steps.length) * vh * .6 + vh, '--sc-h': `${vh}px` } as React.CSSProperties}>
     <div className={`csb-sc-stage ${cur.spot >= 0 ? 'is-spot' : ''}`}>
-      <div className="csb-sc-track">{items.map((_, i) => <CarouselCard key={i} section={section} index={i} pos={pos} active={i === cur.screen} spot={cur.spot} drawing={drawing} onDrawn={box => { addSpot(section, edit, i, box); setDrawing(false); }} />)}</div>
+      <div className="csb-sc-track">{items.map((_, i) => <CarouselCard key={i} section={section} index={i} pos={pos} active={i === cur.screen} spot={cur.spot} drawing={drawing} editing={!!edit} onDrawn={box => { addSpot(section, edit, i, box); setDrawing(false); }} />)}</div>
       <div className="csb-sc-caption">
         <AnimatePresence mode="wait"><motion.div key={cur.screen} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: .3 }}>
           <strong><EditableText field={`items.${cur.screen}.title`} value={item?.title || ''} /></strong>
@@ -156,6 +175,12 @@ export function ScreenStory({ section }: { section: CaseStudySection }) {
   const [drawing, setDrawing] = useState(false);
   const cur = steps[active] ?? { screen: 0, spot: -1 };
   const list = useRef<HTMLDivElement>(null);
+  useFocusRequest(section.id, d => {
+    const el = list.current; if (!el) return;
+    const k = steps.findIndex(st => st.screen === d.screen && st.spot === d.spot); const node = el.querySelectorAll<HTMLElement>('[data-step]')[k]; if (!node) return;
+    const sc = scrollerOf(node); const h = sc ? sc.clientHeight : window.innerHeight;
+    scrollToY(node, docTop(node) - h / 2 + node.offsetHeight / 2);
+  });
   useEffect(() => {
     const el = list.current; if (!el) return;
     const scroller: HTMLElement | Window = (el.closest('.csb-preview-viewport') as HTMLElement | null) ?? window;
@@ -172,7 +197,7 @@ export function ScreenStory({ section }: { section: CaseStudySection }) {
     <div className="csb-sc-sticky">
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.div key={cur.screen} className="csb-sc-story-screen" initial={reduce ? false : { opacity: 0, scale: .98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .98 }} transition={{ duration: .45, ease: [0.22, 1, 0.36, 1] }}>
-          <Screen section={section} index={cur.screen} spot={cur.spot} side="below" drawing={drawing} onDrawn={box => { addSpot(section, edit, cur.screen, box); setDrawing(false); }} />
+          <Screen section={section} index={cur.screen} spot={cur.spot} side="below" drawing={drawing} outlines={!!edit} onDrawn={box => { addSpot(section, edit, cur.screen, box); setDrawing(false); }} />
         </motion.div>
       </AnimatePresence>
       <SpotTools section={section} index={cur.screen} drawing={drawing} setDrawing={setDrawing} />
@@ -189,11 +214,13 @@ export function ScreenFilmstrip({ section }: { section: CaseStudySection }) {
   const [drawing, setDrawing] = useState(false);
   const items = section.items; const i = Math.min(index, items.length - 1); const item = items[i];
   const go = (n: number) => { setIndex((n + items.length) % items.length); setSpot(-1); setDrawing(false); };
-  return <div className="csb-sc-strip">
+  const stripRef = useRef<HTMLDivElement>(null);
+  useFocusRequest(section.id, d => { setIndex(d.screen); setSpot(d.spot); setDrawing(false); const el = stripRef.current; if (el) { const sc = scrollerOf(el); const h = sc ? sc.clientHeight : window.innerHeight; const r = el.getBoundingClientRect(); const box = sc ? sc.getBoundingClientRect() : { top: 0 }; if (r.top < box.top || r.top > box.top + h * .5) scrollToY(el, docTop(el) - 40); } });
+  return <div ref={stripRef} className="csb-sc-strip">
     <div className="csb-sc-strip-main">
       <button type="button" className="csb-sc-nav" aria-label="Previous screen" onClick={e => { e.stopPropagation(); go(i - 1); }}>‹</button>
       <AnimatePresence mode="wait" initial={false}><motion.div key={i} initial={reduce ? false : { opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
-        <Screen section={section} index={i} spot={spot} side="right" drawing={drawing} onDrawn={box => { addSpot(section, edit, i, box); setDrawing(false); }} />
+        <Screen section={section} index={i} spot={spot} side="right" drawing={drawing} outlines={!!edit} onDrawn={box => { addSpot(section, edit, i, box); setDrawing(false); }} />
       </motion.div></AnimatePresence>
       <button type="button" className="csb-sc-nav" aria-label="Next screen" onClick={e => { e.stopPropagation(); go(i + 1); }}>›</button>
     </div>
@@ -222,12 +249,12 @@ export function ScreensControls({ section, onChange }: { section: CaseStudySecti
     <p className="csb-panel-kicker">Screens · {items.length}</p>
     <ol>{items.map((it, i) => <li key={i} className="csb-sc-ctl-row">
       <span className={`csb-sc-ctl-thumb ${browser ? 'is-wide' : ''}`}>{it.image ? <img src={it.image} alt="" /> : null}</span>
-      <span className="csb-sc-ctl-name"><strong>{it.title || `Screen ${i + 1}`}</strong><small>{(it.spots?.length ?? 0) ? `${it.spots!.length} spotlight${it.spots!.length > 1 ? 's' : ''}` : it.image ? 'No spotlights' : 'No image yet'}</small></span>
+      <span className="csb-sc-ctl-name"><button type="button" className="csb-sc-ctl-show" title="Show this screen on the page" onClick={() => focusSpot({ sectionId: section.id, screen: i, spot: -1 })}><strong>{it.title || `Screen ${i + 1}`}</strong></button><small>{(it.spots?.length ?? 0) ? `${it.spots!.length} spotlight${it.spots!.length > 1 ? 's' : ''}` : it.image ? 'No spotlights' : 'No image yet'}</small></span>
       <button type="button" aria-label={`Move ${it.title || 'screen'} up`} title="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
       <button type="button" aria-label={`Move ${it.title || 'screen'} down`} title="Move down" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>
       <button type="button" aria-label={`Remove ${it.title || 'screen'}`} title="Remove screen" disabled={items.length <= 1} onClick={() => setItems(items.filter((_, k) => k !== i))}><X size={13} /></button>
       {(it.spots ?? []).map((sp, k) => <div key={k} className="csb-sc-ctl-spot">
-        <label htmlFor={`sc-spot-${section.id}-${i}-${k}`}>Spotlight {k + 1}</label>
+        <div className="csb-sc-ctl-spot-head"><label htmlFor={`sc-spot-${section.id}-${i}-${k}`}>Spotlight {k + 1}</label><button type="button" className="csb-sc-ctl-showbtn" onClick={() => focusSpot({ sectionId: section.id, screen: i, spot: k })}><Eye size={12} /> Show</button></div>
         <textarea id={`sc-spot-${section.id}-${i}-${k}`} rows={2} value={sp.note} onChange={e => setSpot(i, k, e.target.value)} />
         <button type="button" aria-label={`Remove spotlight ${k + 1}`} title="Remove spotlight" onClick={() => dropSpot(i, k)}><X size={13} /></button>
       </div>)}

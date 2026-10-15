@@ -548,7 +548,7 @@
 .csb-mark-colors i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0000001a; }
 .csb-mark-custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 .csb-items li.csb-sc-ctl-row { grid-template-columns: 28px minmax(0,1fr) repeat(3,24px); gap: 8px 4px; padding: 8px 0; }
-.csb-sc-ctl-thumb { width: 22px; aspect-ratio: .46; border-radius: 5px; overflow: hidden; background: #ececef; box-shadow: inset 0 0 0 1px #0000000f; }
+.csb-sc-ctl-thumb { display: block; width: 22px; aspect-ratio: .46; border-radius: 5px; overflow: hidden; background: #ececef; box-shadow: inset 0 0 0 1px #0000000f; }
 .csb-sc-ctl-thumb.is-wide { width: 28px; aspect-ratio: 1.6; }
 .csb-sc-ctl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .csb-sc-ctl-name { display: grid; gap: 1px; min-width: 0; }
@@ -557,3 +557,27 @@
 .csb-sc-ctl-spot { grid-column: 2 / -1; display: grid; grid-template-columns: minmax(0,1fr) 24px; gap: 3px 4px; align-items: start; }
 .csb-sc-ctl-spot label { grid-column: 1 / -1; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #8a8a8e; }
 .csb-sc-ctl-spot textarea { width: 100%; min-width: 0; font: inherit; font-size: 12px; line-height: 1.4; padding: 6px 8px; border: 1px solid #d2d2d7; border-radius: 8px; resize: vertical; background: #fff; }
+.csb-sc-ctl-show { all: unset; cursor: pointer; display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csb-sc-ctl-show:hover strong { text-decoration: underline; text-underline-offset: 2px; }
+.csb-sc-ctl-show:focus-visible { outline: 2px solid #397968; outline-offset: 2px; border-radius: 3px; }
+.csb-sc-ctl-spot-head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+.csb-items li .csb-sc-ctl-showbtn { width: auto; height: 22px; display: inline-flex; gap: 4px; padding: 0 8px; border: 1px solid #d2d2d7; border-radius: 999px; font-size: 11px; color: #1d1d1f; background: #fff; }
+.csb-items li .csb-sc-ctl-show { width: auto; height: auto; display: block; padding: 0; border-radius: 0; background: none; color: inherit; text-align: left; }
+.csb-items li .csb-sc-ctl-show:hover { background: none; }
+/* Section row ⋯ menu */
+.csb-row-controls { grid-auto-flow: column; grid-template-rows: auto auto; align-items: center; column-gap: 0; }
+.csb-row-menu { position: relative; grid-row: 1 / 3; align-self: center; }
+.csb-row-more { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: none; color: #6e7a73; opacity: 0; cursor: pointer; transition: opacity .15s, background .15s; }
+.csb-section-row:hover .csb-row-more, .csb-section-row.is-active .csb-row-more, .csb-section-row.has-menu .csb-row-more, .csb-row-more:focus-visible { opacity: 1; }
+.csb-row-more:hover, .csb-row-more[aria-expanded=true] { background: #e3ebe5; color: #1d2622; }
+.csb-row-pop { position: absolute; right: 0; top: calc(100% + 4px); z-index: 60; min-width: 196px; padding: 5px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px #0000000f, 0 10px 30px -8px #0000002e; display: grid; }
+.csb-row-pop > button { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: #1d2622; font-size: 12.5px; text-align: left; cursor: pointer; }
+.csb-row-pop > button:hover { background: #f1f4f2; }
+.csb-row-pop .is-danger { color: #b42318; }
+.csb-row-pop-sep { height: 1px; margin: 4px 6px; background: #ececef; }
+.csb-row-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; font-size: 12px; }
+.csb-row-confirm span { grid-column: 1 / -1; color: #1d2622; }
+.csb-row-confirm button { padding: 6px 8px; border: 1px solid #e3e3e6; border-radius: 7px; background: #fff; font-size: 12px; cursor: pointer; }
+.csb-row-confirm button.is-danger { background: #b42318; border-color: #b42318; color: #fff; }
+.csb-section-row.is-hidden .csb-section-label { opacity: .5; }
+.csb-row-hidden { display: inline-block; margin-right: 5px; vertical-align: -1px; }
