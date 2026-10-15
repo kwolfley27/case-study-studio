@@ -11,6 +11,10 @@ npm run dev
 
 Edits save in your browser. Export JSON to back up a study and import JSON to restore it. The sample study contains generic content. No personal research or Figma access token is committed.
 
+## Adjustable layouts
+
+Select a gallery, metric, or linked wireframe section and use **Layout controls** in the inspector. Gallery controls set the visible item count, one to three columns, even or Bento arrangement, tile sizes, spacing, presentation as images or iPhone mockups, and visual scale. Metric controls set one to six data points; wireframe controls set one to four phones and their size. Reducing a count hides extra items without deleting their text, images, or Figma frame IDs. These are manual composition controls; the AI brief records the settings, but visual generation is not connected.
+
 ## Publish
 
 `npm run build` writes the GitHub Pages site into `docs/`. Serve the `main` branch's `/docs` folder under GitHub Pages settings.

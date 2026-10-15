@@ -23,7 +23,15 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large" }>;
+  layout?: {
+    count?: number;
+    columns?: 1 | 2 | 3;
+    pattern?: "even" | "bento";
+    gap?: number;
+    scale?: number;
+    presentation?: "images" | "phones";
+  };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
   fit?: "contain" | "cover";
@@ -137,10 +145,13 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
       { title: "Before", detail: "State the original assumption or experience." },
       { title: "After", detail: "State what your work changed." },
     ],
-    gallery: [
-      { title: "Artifact 01", detail: "Add a caption explaining why this matters.", image: "" },
-    ],
+    gallery: Array.from({ length: 3 }, (_, index) => ({ title: `Artifact ${String(index + 1).padStart(2, "0")}`, detail: "Add a caption explaining why this matters.", image: "", tileSize: index === 0 ? "wide" as const : "standard" as const })),
   }[kind],
+  ...({
+    gallery: { layout: { count: 3, columns: 2 as const, pattern: "bento" as const, gap: 20, scale: 100, presentation: "images" as const } },
+    metrics: { layout: { count: 3, columns: 3 as const } },
+    wireframes: { layout: { count: 4, scale: 100 } },
+  } as Partial<Record<SectionKind, Pick<CaseStudySection, "layout">>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
@@ -175,11 +186,19 @@ export function isBuilderStudy(value: unknown): value is BuilderStudy {
       typeof section.title === "string" && typeof section.body === "string" && typeof section.eyebrow === "string" &&
       variants.has(section.variant) &&
       (section.fit === undefined || ["contain", "cover"].includes(section.fit)) &&
+      (section.layout === undefined || (section.layout !== null && typeof section.layout === "object" &&
+        (section.layout.count === undefined || (Number.isInteger(section.layout.count) && section.layout.count >= 1 && section.layout.count <= 8)) &&
+        (section.layout.columns === undefined || [1, 2, 3].includes(section.layout.columns)) &&
+        (section.layout.pattern === undefined || ["even", "bento"].includes(section.layout.pattern)) &&
+        (section.layout.gap === undefined || (Number.isFinite(section.layout.gap) && section.layout.gap >= 0 && section.layout.gap <= 48)) &&
+        (section.layout.scale === undefined || (Number.isFinite(section.layout.scale) && section.layout.scale >= 65 && section.layout.scale <= 135)) &&
+        (section.layout.presentation === undefined || ["images", "phones"].includes(section.layout.presentation)))) &&
       (section.figmaSource === undefined || (section.figmaSource !== null && typeof section.figmaSource === "object" &&
         [section.figmaSource.url, section.figmaSource.fileKey, section.figmaSource.nodeId, section.figmaSource.importedAt].every(value => typeof value === "string") &&
         ["snapshot", "live"].includes(section.figmaSource.mode))) && Array.isArray(section.items) && section.items.every(entry =>
         entry && typeof entry.title === "string" && typeof entry.detail === "string" &&
-        (entry.value === undefined || typeof entry.value === "string") && (entry.image === undefined || typeof entry.image === "string") && (entry.frameId === undefined || typeof entry.frameId === "string")) &&
+        (entry.value === undefined || typeof entry.value === "string") && (entry.image === undefined || typeof entry.image === "string") && (entry.frameId === undefined || typeof entry.frameId === "string") &&
+        (entry.tileSize === undefined || ["standard", "wide", "large"].includes(entry.tileSize))) &&
       (section.surveySource === undefined || (section.surveySource !== null && typeof section.surveySource === "object" &&
         (section.surveySource.url === undefined || typeof section.surveySource.url === "string") &&
         typeof section.surveySource.updatedAt === "string" && Number.isInteger(section.surveySource.totalResponses) &&

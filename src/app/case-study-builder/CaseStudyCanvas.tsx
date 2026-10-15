@@ -43,7 +43,8 @@ function SectionIntro({ section, index }: { section: CaseStudySection; index: nu
 }
 
 function Metrics({ section }: { section: CaseStudySection }) {
-  return <div className="csb-metric-grid">{section.items.map((item, index) => <Enter key={index} className="csb-metric"><span className="csb-metric-number"><EditableText field={`items.${index}.value`} value={item.value || ""}><AnimatedValue value={item.value || "—"} /></EditableText></span><h3><EditableText field={`items.${index}.title`} value={item.title} /></h3><p><EditableText field={`items.${index}.detail`} value={item.detail} /></p></Enter>)}</div>;
+  const items = section.items.slice(0, section.layout?.count ?? section.items.length);
+  return <div className="csb-metric-grid" style={{ "--csb-metric-columns": Math.min(3, items.length) } as React.CSSProperties}>{items.map((item, index) => <Enter key={index} className="csb-metric"><span className="csb-metric-number"><EditableText field={`items.${index}.value`} value={item.value || ""}><AnimatedValue value={item.value || "—"} /></EditableText></span><h3><EditableText field={`items.${index}.title`} value={item.title} /></h3><p><EditableText field={`items.${index}.detail`} value={item.detail} /></p></Enter>)}</div>;
 }
 
 function Flow({ section }: { section: CaseStudySection }) {
@@ -62,7 +63,14 @@ function Comparison({ section }: { section: CaseStudySection }) {
 }
 
 function Gallery({ section }: { section: CaseStudySection }) {
-  return <div className="csb-gallery">{section.items.map((item, index) => <Enter key={index} className="csb-gallery-card"><div className="csb-gallery-image">{item.image ? <img src={item.image} alt={<EditableText field={`items.${index}.title`} value={item.title} />} loading="lazy" /> : <div className="csb-gallery-placeholder"><span>Visual {String(index + 1).padStart(2, "0")}</span><div className="csb-gallery-placeholder-shape" /></div>}</div><div className="csb-gallery-caption"><strong>{<EditableText field={`items.${index}.title`} value={item.title} />}</strong><span>{<EditableText field={`items.${index}.detail`} value={item.detail} />}</span></div></Enter>)}</div>;
+  const layout = section.layout;
+  const columns = layout?.columns ?? 1;
+  const items = section.items.slice(0, layout?.count ?? section.items.length);
+  const phones = layout?.presentation === "phones";
+  return <div className={`csb-gallery csb-gallery-adjustable ${phones ? "is-phones" : ""}`} style={{ "--csb-gallery-columns": columns, "--csb-gallery-gap": `${layout?.gap ?? 20}px`, "--csb-gallery-scale": (layout?.scale ?? 100) / 100 } as React.CSSProperties}>{items.map((item, index) => {
+    const size = layout?.pattern === "bento" ? item.tileSize ?? (index === 0 ? "wide" : "standard") : "standard";
+    return <Enter key={index} className={`csb-gallery-card csb-tile-${size}`}><div className="csb-gallery-image">{phones ? <div className="csb-gallery-phone"><div className="csb-gallery-phone-screen">{item.image ? <img src={item.image} alt={item.title} loading="lazy" /> : <span>Drop screen {String(index + 1).padStart(2, "0")}</span>}</div><span className="csb-gallery-phone-island" /></div> : item.image ? <img src={item.image} alt={item.title} loading="lazy" /> : <div className="csb-gallery-placeholder"><span>Visual {String(index + 1).padStart(2, "0")}</span><div className="csb-gallery-placeholder-shape" /></div>}</div><div className="csb-gallery-caption"><strong><EditableText field={`items.${index}.title`} value={item.title} /></strong><span><EditableText field={`items.${index}.detail`} value={item.detail} /></span></div></Enter>;
+  })}</div>;
 }
 
 function FullWidthMedia({ section, editorMode, onUploadMedia }: { section: CaseStudySection; editorMode: boolean; onUploadMedia?: (sectionId: string, index: number, file: File) => void }) {
