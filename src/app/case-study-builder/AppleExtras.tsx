@@ -224,6 +224,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   const { edit } = useContext(EditingContext);
   const screen = section.items[0];
   const notes = section.items.slice(1, 7);
+  const desktop = section.options?.device === 'desktop';
   const wrap = useRef<HTMLDivElement>(null);
   const phone = useRef<HTMLDivElement>(null);
   const anchors = useRef<Array<HTMLDivElement | null>>([]);
@@ -289,11 +290,12 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   };
   const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''} style={tops[k] !== undefined ? { top: tops[k] } : undefined}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
 
-  return <div className={`csb-apple-annotated ${edit ? 'is-editing' : ''}`} ref={wrap}>
+  return <div className={`csb-apple-annotated ${desktop ? 'is-desktop' : ''} ${edit ? 'is-editing' : ''}`} ref={wrap}>
     <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[0] = el; }}>{notes.slice(0, 3).map((item, i) => note(item, i))}</div>
     <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
-      <span className="csb-apple-annotated-island" />
-      {screen?.image ? <img src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>Designed screen</strong><span>700 × 1440 · designed media</span></div>}
+      {edit && screen?.figmaUrl && <button type="button" className="csb-annot-pull" data-no-slot onClick={async e => { e.stopPropagation(); const b = e.currentTarget; b.disabled = true; b.textContent = 'Pulling from Figma…'; try { const { pullFigmaFrame } = await import('./ImageSlots'); edit('items.0.image', await pullFigmaFrame(screen.figmaUrl!)); b.textContent = 'Pulled from Figma'; } catch (err) { b.disabled = false; b.textContent = err instanceof Error ? err.message : 'Could not pull'; } }}>{screen.image?.startsWith('data:') ? 'Refresh from Figma' : 'Pull frame from Figma'}</button>}
+      {desktop ? <span className="csb-apple-annotated-chrome" aria-hidden="true"><i /><i /><i /></span> : <span className="csb-apple-annotated-island" />}
+      {screen?.image ? <img src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>{desktop ? 'Desktop page' : 'Designed screen'}</strong><span>{desktop ? 'Paste a Figma frame link or drop a full-page screenshot' : '700 × 1440 · designed media'}</span></div>}
       {points.map(([x, y], k) => <span key={k} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
         role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
         onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}><b>{k + 1}</b></span>)}

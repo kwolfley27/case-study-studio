@@ -1823,3 +1823,14 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-hx-desktop.is-imac .csb-hx-screen{box-shadow:0 0 0 clamp(1.5px,.22vw,2.5px) #141416}
 .csb-hx-desktop.is-imac .csb-hx-stand{width:21%;padding-bottom:12%}
 .csb-hx-desktop.is-imac .csb-hx-foot{width:21%}
+/* Annotated screen · desktop page */
+.csb-apple-annotated.is-desktop{grid-template-columns:minmax(0,1fr) minmax(320px,1.35fr) minmax(0,1fr)}
+.csb-apple-annotated.is-desktop .csb-apple-annotated-phone{aspect-ratio:auto;min-height:420px;border:0;border-radius:10px;background:#fff;padding-top:22px;box-shadow:0 0 0 1px #0000001a,0 2px 4px #0000000a,0 30px 60px -30px #0000003d!important;overflow:hidden}
+.csb-apple-annotated.is-desktop .csb-apple-annotated-phone img{display:block;width:100%;height:auto;object-fit:initial}
+.csb-apple-annotated-chrome{position:absolute;left:0;right:0;top:0;height:22px;display:flex;align-items:center;gap:5px;padding:0 10px;background:#f2f2f4;border-bottom:1px solid #e3e3e6;z-index:2}
+.csb-apple-annotated-chrome i{width:7px;height:7px;border-radius:50%;background:#d2d2d6}
+.csb-apple-annotated.is-desktop .csb-apple-annotated-empty{min-height:420px}
+.csb-annot-pull{position:absolute;z-index:6;top:30px;right:10px;height:28px;padding:0 12px;border:0;border-radius:9999px;background:#000;color:#fdfcfc;font:500 12px/1 inherit;cursor:pointer;box-shadow:0 4px 12px #0003}
+.csb-annot-pull:disabled{opacity:.7;cursor:default}
+.csb-apple-annotated:not(.is-desktop) .csb-annot-pull{top:40px;left:50%;right:auto;transform:translateX(-50%)}
+.csb-apple-annotated.is-desktop{grid-template-columns:minmax(0,1fr) minmax(380px,1.7fr) minmax(0,1fr)}

@@ -34,6 +34,12 @@ async function figmaFrameImage(link: string): Promise<string> {
   return url as string;
 }
 
+/* Render a Figma frame link and store it in the draft. Asks once for a token (kept in memory only). */
+export async function pullFigmaFrame(link: string, budget = 900_000, maxWidth = 2000): Promise<string> {
+  if (!figmaToken) { const t = window.prompt('Paste your Figma personal access token (kept only in this tab):'); if (!t) throw new Error('A Figma token is needed to pull frames.'); figmaToken = t.trim(); }
+  return downloadIntoDraft(await figmaFrameImage(link), budget, maxWidth);
+}
+
 /* Download a remote image and store it inside the draft as a compressed
    data URL, so it never depends on the original link (Figma render links
    expire after ~30 days). Resized to at most 2400px wide and re-encoded as
