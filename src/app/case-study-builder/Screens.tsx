@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'motion/react';
+import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import { SampleScreen } from './DeviceFrame';
@@ -210,19 +211,28 @@ export function ScreenFilmstrip({ section }: { section: CaseStudySection }) {
 export function ScreensControls({ section, onChange }: { section: CaseStudySection; onChange: (patch: Partial<CaseStudySection>) => void }) {
   const items = section.items;
   const setItems = (next: Item[]) => onChange({ items: next });
-  return <>
+  const move = (i: number, j: number) => { const n = [...items]; [n[i], n[j]] = [n[j], n[i]]; setItems(n); };
+  const setSpot = (i: number, k: number, note: string) => setItems(items.map((x, n) => n === i ? { ...x, spots: x.spots!.map((y, m) => m === k ? { ...y, note } : y) } : x));
+  const dropSpot = (i: number, k: number) => setItems(items.map((x, n) => n === i ? { ...x, spots: x.spots!.filter((_, m) => m !== k) } : x));
+  const browser = section.options?.device === 'browser';
+  return <div className="csb-items csb-sc-ctl">
     <div className="csb-field"><span className="csb-field-label">Device</span><div className="csb-segment" role="group" aria-label="Device">
       {([['phone', 'Phone'], ['browser', 'Browser']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(section.options?.device ?? 'phone') === v} onClick={() => onChange({ options: { ...(section.options ?? {}), device: v } })}>{l}</button>)}
     </div></div>
-    <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Screens · {items.length}</p>
-    {items.map((it, i) => <div key={i} className="csb-sc-ctl">
-      <div className="csb-sc-ctl-head"><strong>{it.title || `Screen ${i + 1}`}</strong><span>
-        <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => { const n = [...items]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setItems(n); }}>↑</button>
-        <button type="button" aria-label="Move down" disabled={i === items.length - 1} onClick={() => { const n = [...items]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setItems(n); }}>↓</button>
-        <button type="button" aria-label={`Remove ${it.title || 'screen'}`} disabled={items.length <= 1} onClick={() => setItems(items.filter((_, k) => k !== i))}>×</button></span></div>
-      {(it.spots ?? []).map((sp, k) => <div key={k} className="csb-sc-ctl-spot"><span>◐</span><input aria-label={`Spotlight ${k + 1} note`} value={sp.note} onChange={e => setItems(items.map((x, n) => n === i ? { ...x, spots: x.spots!.map((y, m) => m === k ? { ...y, note: e.target.value } : y) } : x))} /><button type="button" aria-label={`Remove spotlight ${k + 1}`} onClick={() => setItems(items.map((x, n) => n === i ? { ...x, spots: x.spots!.filter((_, m) => m !== k) } : x))}>×</button></div>)}
-    </div>)}
-    <button type="button" className="csb-jm-add" onClick={() => setItems([...items, { title: `Screen ${items.length + 1}`, detail: 'What this screen does.', image: '', spots: [] }])}>+ Add screen</button>
-    <p className="csb-field-note">Click a screen on the page to add its image. Use “+ Spotlight a feature” under the focused screen, then drag a box around the detail.</p>
-  </>;
+    <p className="csb-panel-kicker">Screens · {items.length}</p>
+    <ol>{items.map((it, i) => <li key={i} className="csb-sc-ctl-row">
+      <span className={`csb-sc-ctl-thumb ${browser ? 'is-wide' : ''}`}>{it.image ? <img src={it.image} alt="" /> : null}</span>
+      <span className="csb-sc-ctl-name"><strong>{it.title || `Screen ${i + 1}`}</strong><small>{(it.spots?.length ?? 0) ? `${it.spots!.length} spotlight${it.spots!.length > 1 ? 's' : ''}` : it.image ? 'No spotlights' : 'No image yet'}</small></span>
+      <button type="button" aria-label={`Move ${it.title || 'screen'} up`} title="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
+      <button type="button" aria-label={`Move ${it.title || 'screen'} down`} title="Move down" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>
+      <button type="button" aria-label={`Remove ${it.title || 'screen'}`} title="Remove screen" disabled={items.length <= 1} onClick={() => setItems(items.filter((_, k) => k !== i))}><X size={13} /></button>
+      {(it.spots ?? []).map((sp, k) => <div key={k} className="csb-sc-ctl-spot">
+        <label htmlFor={`sc-spot-${section.id}-${i}-${k}`}>Spotlight {k + 1}</label>
+        <textarea id={`sc-spot-${section.id}-${i}-${k}`} rows={2} value={sp.note} onChange={e => setSpot(i, k, e.target.value)} />
+        <button type="button" aria-label={`Remove spotlight ${k + 1}`} title="Remove spotlight" onClick={() => dropSpot(i, k)}><X size={13} /></button>
+      </div>)}
+    </li>)}</ol>
+    <button type="button" className="csb-items-add" onClick={() => setItems([...items, { title: `Screen ${items.length + 1}`, detail: 'What this screen does.', image: '', spots: [] }])}>+ Add screen</button>
+    <p className="csb-field-note">On the page: click a screen to add its image, and use “+ Spotlight a feature” under the screen in focus to box a detail.</p>
+  </div>;
 }

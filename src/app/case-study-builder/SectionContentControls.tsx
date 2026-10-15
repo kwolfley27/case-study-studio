@@ -81,7 +81,7 @@ export function PersonaControls({ section, onChange }: { section: CaseStudySecti
     onChange({ items });
   };
   const allGroups = () => groups.map(g => [{ ...section.items[g.personIndex], blockType: "person" as const }, ...g.blocks.map(b => ({ ...b.item, blockType: b.type === "person" ? "list" as const : b.type }))]);
-  const types: Array<[NonNullable<Item["blockType"]>, string]> = [["list", "List"], ["text", "Paragraph"], ["quote", "Quote"], ["meter", "Scale"], ["day", "Timeline"]];
+  const types: Array<[NonNullable<Item["blockType"]>, string]> = [["facts", "Details"], ["list", "List"], ["text", "Paragraph"], ["quote", "Quote"], ["chips", "Tags"], ["meter", "Scale"], ["day", "Timeline"]];
   return <div className="csb-items">
     <p className="csb-panel-kicker">Personas · {groups.length}</p>
     <div className="csb-pp-switch" role="tablist" aria-label="Edit persona">{groups.map((g, i) => <button key={g.personIndex} type="button" role="tab" aria-selected={i === at} onClick={() => setCurrent(i)}>{short(section.items[g.personIndex]?.title, `Persona ${i + 1}`)}</button>)}</div>
@@ -90,6 +90,7 @@ export function PersonaControls({ section, onChange }: { section: CaseStudySecti
       <button type="button" className="csb-quiet-button" disabled={groups.length >= 4} onClick={() => { const g = allGroups(); const copy = g[at].map(it => ({ ...it, title: it.blockType === "person" ? `${it.title} (copy)` : it.title, image: it.blockType === "person" ? "" : it.image })); onChange({ items: [...g.slice(0, at + 1), copy, ...g.slice(at + 1)].flat() }); setCurrent(at + 1); }}>Duplicate</button>
       {groups.length > 1 && <button type="button" className="csb-quiet-button" onClick={() => { onChange({ items: allGroups().filter((_, i) => i !== at).flat() }); setCurrent(Math.max(0, at - 1)); }}>Remove</button>}
     </div>
+    <div className="csb-field"><span className="csb-field-label">Style</span><div className="csb-segment" role="group" aria-label="Persona style">{([["profile", "Profile cards"], ["simple", "Simple"]] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(section.options?.personaStyle ?? "profile") === v} onClick={() => onChange({ options: { ...section.options, personaStyle: v } })}>{l}</button>)}</div></div>
     {groups.length > 1 && <div className="csb-field"><span className="csb-field-label">Show personas as</span><div className="csb-segment" role="group" aria-label="Persona layout">{([["tabs", "Tabs"], ["side", "Side by side"]] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(section.options?.personaLayout ?? "tabs") === v} onClick={() => onChange({ options: { ...section.options, personaLayout: v } })}>{l}</button>)}</div></div>}
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.portrait !== false} onChange={e => onChange({ options: { ...section.options, portrait: e.target.checked } })} /> Show photos</label>
     <p className="csb-field-note">Blocks for {short(section.items[group.personIndex]?.title, "this persona")}. Rename them and edit each point on the page.</p>

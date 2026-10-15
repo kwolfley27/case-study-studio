@@ -23,7 +23,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo"; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo" | "facts" | "chips"; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -242,7 +242,16 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: Array.from({length:4}, (_, i) => ({title:`Screen ${i+1}`, detail:"Add a caption explaining this step.", image:""})),
     fullMedia: [{ title: "Visual detail", detail: "Add a caption about what this shows.", image: "" }],
     survey: [{ title: "Survey question one", detail: "Add a short takeaway from this result." }, { title: "Survey question two", detail: "Explain what this result changed in the design." }],
-    persona: [{ title: "The person", detail: "Role, context, and a concise description.", value: "Traits", image: "" }, { title: "Goals", detail: "Goal one\nGoal two\nGoal three" }, { title: "Pain points", detail: "Pain one\nPain two\nPain three" }, { title: "A day in their life", detail: "Morning: a key moment\nAfternoon: another moment\nEvening: a final moment" }],
+    persona: [
+      { blockType: "person", title: "Maya Lopez", detail: "ER nurse who books classes between twelve-hour shifts.", value: "Planner, Night owl, Loyal", image: "" },
+      { blockType: "facts", title: "Details", detail: "Age: 31\nLocation: Denver\nOccupation: ER nurse\nSchedule: Rotating shifts\nTech comfort: High" },
+      { blockType: "quote", title: "In her words", detail: "If I can't see the time before I pay, I just close the app." },
+      { blockType: "text", title: "Bio", detail: "Maya joined the studio to keep a routine through a rotating schedule. She books on her phone in short breaks and plans her week every Sunday." },
+      { blockType: "list", title: "Core needs", detail: "See open times before committing\nRebook a favourite class in one tap\nKnow when a spot opens up" },
+      { blockType: "list", title: "Frustrations", detail: "Availability hidden until checkout\nClasses fill while she's mid-shift\nNo way to filter by time" },
+      { blockType: "chips", title: "Apps she lives in", detail: "Instagram\nGoogle Calendar\nSpotify\nMindbody" },
+      { blockType: "chips", title: "Devices", detail: "iPhone\nApple Watch" },
+    ],
     journey: [
       { title: "Discover", value: "55", detail: "Curious", actions: "Sees an ad\nOpens the app", touchpoints: "Instagram\nApp Store", thoughts: "Could this fit my week?", pains: "Unclear what's included", opportunities: "Show classes before sign-up", owner: "Marketing" },
       { title: "Sign up", value: "68", detail: "Hopeful", actions: "Creates an account\nPicks interests", touchpoints: "Onboarding", thoughts: "Nice, that was quick.", pains: "", opportunities: "Remember preferences", owner: "Product" },
