@@ -79,7 +79,7 @@ export function ImageSlotLayer({ enabled, onFile, onUrl, onRemove, notify }: {
   const slotFrom = (target: EventTarget | null) => {
     const element = (target as HTMLElement | null)?.closest?.('[data-image-slot]') as HTMLElement | null;
     if (!element || !element.closest('.csb-preview-viewport')) return null;
-    if ((target as HTMLElement).closest('.csb-editable-text, a, input, textarea, select')) return null;
+    if ((target as HTMLElement).closest('.csb-editable-text, .csb-annot-pin, a, input, textarea, select')) return null;
     return element;
   };
   const slotHasImage = (element: HTMLElement) => !!element.querySelector('img');

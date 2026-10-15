@@ -497,3 +497,16 @@
   .csb-wt-chip small{display:inline;margin-left:6px;font-weight:400;opacity:.75}
 }
 @media (prefers-reduced-motion:reduce){.csb-wt-lane{transition:none}}
+
+/* ── Annotated screen: pointers you can place ───────────────────────── */
+.csb-apple-annotated{position:relative}
+.csb-apple-annotation-side:first-child>div:after,.csb-apple-annotation-side:last-child>div:before{display:none}
+.csb-apple-annotation-side>div.is-active h3{color:var(--csb-accent)}
+.csb-annot-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:3}
+.csb-annot-lines path{fill:none;stroke:var(--csb-accent);stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+.csb-annot-pin{position:absolute;z-index:4;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;display:grid;place-items:center;background:var(--csb-accent);color:#fff;font:600 11px/1 ui-monospace,"SF Mono",Menlo,monospace;box-shadow:0 0 0 3px #fff,0 4px 12px #0003;user-select:none;touch-action:none}
+.is-editing .csb-annot-pin{cursor:grab}
+.is-editing .csb-annot-pin:hover,.csb-annot-pin:focus-visible{outline:none;box-shadow:0 0 0 3px #fff,0 0 0 6px color-mix(in srgb,var(--csb-accent) 35%,transparent),0 4px 12px #0003}
+.csb-annot-pin.is-dragging{cursor:grabbing;transform:scale(1.2)}
+.csb-annot-hint{grid-column:1/-1;margin:6px 0 0;text-align:center;font-size:12px;color:#86868b}
+@container (max-width:700px){.csb-annot-lines{display:none}.csb-apple-annotation-side small{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--csb-accent);color:#fff;font-size:10px}}

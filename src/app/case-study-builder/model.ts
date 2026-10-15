@@ -23,7 +23,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string }>;
   /** Work timeline phases (bars under the weeks). detail = one note per line. */
   phases?: Array<{ title: string; detail: string }>;
   /** Work timeline column label, e.g. Week, Day, Sprint. */

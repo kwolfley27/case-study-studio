@@ -1,5 +1,6 @@
+import { useContext, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { EditableText } from './EditableText';
+import { EditableText, EditingContext } from './EditableText';
 import type { CaseStudySection } from './model';
 
 const lines = (value: string) => value.split(/\n+/).map(line => line.trim()).filter(Boolean);
@@ -36,8 +37,75 @@ export function IssueFlow({ section }: { section: CaseStudySection }) {
   return <div className="csb-apple-issue"><div className="csb-apple-issue-legend">{Object.entries({A:'Action',C:'Checking',R:'Retrieval',COM:'Communication',S:'Selection'}).map(([code,label])=><span key={code}><i style={{background:issueColors[code]}}/>{code} · {label}</span>)}</div><div className="csb-apple-issue-track">{section.items.map((item,index) => {const code=(item.value||'S').toUpperCase();return <motion.div key={index} initial={reduce?false:{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:index*.16}}><div className="csb-apple-issue-node"><h3><EditableText field={`items.${index}.title`} value={item.title}/></h3><p><i style={{background:issueColors[code]||issueColors.S}}/><span style={{color:issueColors[code]||issueColors.S}}>{code} · <EditableText field={`items.${index}.detail`} value={item.detail}/></span></p></div>{index<section.items.length-1&&<motion.span className="csb-apple-issue-arrow" aria-hidden="true" initial={reduce?false:{opacity:0,x:-10}} whileInView={{opacity:1,x:0}} viewport={{once:true}} transition={{delay:index*.16+.2,duration:.4}}>→</motion.span>}</motion.div>;})}</div><div className="csb-apple-issue-opportunities">{section.items.slice(0,3).map((item,index)=><div key={index}><small style={{color:issueColors[(item.value||'S').toUpperCase()]||issueColors.S}}>{item.value||'S'}{index+1}</small><h4><EditableText field={`items.${index}.title`} value={item.title}/></h4><p><EditableText field={`items.${index}.detail`} value={item.detail}/></p></div>)}</div></div>;
 }
 
+/* Where each callout points on the screen, as x,y percentages. */
+export const defaultAnnotationPoint = (k: number) => `${k < 3 ? 26 : 74},${[24, 50, 76][k % 3]}`;
+export const parsePoint = (value: string | undefined, k: number): [number, number] => {
+  const [x, y] = (value || defaultAnnotationPoint(k)).split(',').map(Number);
+  return [Number.isFinite(x) ? Math.min(100, Math.max(0, x)) : 50, Number.isFinite(y) ? Math.min(100, Math.max(0, y)) : 50];
+};
+
 export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
-  const screen=section.items[0];
-  const notes=section.items.slice(1,7);
-  return <div className="csb-apple-annotated"><div className="csb-apple-annotation-side">{notes.slice(0,3).map((item,index)=><div key={index}><small>0{index+1}</small><h3><EditableText field={`items.${index+1}.title`} value={item.title}/></h3><p><EditableText field={`items.${index+1}.detail`} value={item.detail}/></p></div>)}</div><div className="csb-apple-annotated-phone" data-image-slot={`${section.id}:0`}><span className="csb-apple-annotated-island"/>{screen?.image?<img src={screen.image} alt={screen.title||'Designed screen'}/>:<div className="csb-apple-annotated-empty"><strong>Designed screen</strong><span>700 × 1440 · designed media</span></div>}</div><div className="csb-apple-annotation-side">{notes.slice(3,6).map((item,index)=><div key={index}><small>0{index+4}</small><h3><EditableText field={`items.${index+4}.title`} value={item.title}/></h3><p><EditableText field={`items.${index+4}.detail`} value={item.detail}/></p></div>)}</div></div>;
+  const reduce = useReducedMotion();
+  const { edit } = useContext(EditingContext);
+  const screen = section.items[0];
+  const notes = section.items.slice(1, 7);
+  const wrap = useRef<HTMLDivElement>(null);
+  const phone = useRef<HTMLDivElement>(null);
+  const anchors = useRef<Array<HTMLDivElement | null>>([]);
+  const [drag, setDrag] = useState<{ k: number; point: [number, number] } | null>(null);
+  const [paths, setPaths] = useState<string[]>([]);
+  const points = notes.map((item, k) => drag?.k === k ? drag.point : parsePoint(item.point, k));
+  const key = points.map(p => p.join(',')).join('|');
+
+  // Draw a line from each callout's edge to its dot on the screen.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const box = wrap.current?.getBoundingClientRect(); const screenBox = phone.current?.getBoundingClientRect();
+      if (!box || !screenBox) return;
+      setPaths(points.map(([x, y], k) => {
+        const el = anchors.current[k]; if (!el) return '';
+        const r = el.getBoundingClientRect(); const left = k < 3;
+        const ax = (left ? r.right : r.left) - box.left; const ay = r.bottom - box.top;
+        const px = screenBox.left - box.left + screenBox.width * x / 100; const py = screenBox.top - box.top + screenBox.height * y / 100;
+        const edge = (left ? screenBox.left - 14 : screenBox.right + 14) - box.left;
+        return `M${ax.toFixed(1)},${ay.toFixed(1)} H${edge.toFixed(1)} L${px.toFixed(1)},${py.toFixed(1)}`;
+      }));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (wrap.current) observer.observe(wrap.current);
+    if (phone.current) observer.observe(phone.current);
+    return () => observer.disconnect();
+  }, [key, notes.length]);
+
+  const startDrag = (k: number) => (event: React.PointerEvent) => {
+    if (!edit) return;
+    event.preventDefault(); event.stopPropagation();
+    const target = event.currentTarget as HTMLElement; target.setPointerCapture(event.pointerId);
+    const at = (e: { clientX: number; clientY: number }): [number, number] => { const r = phone.current!.getBoundingClientRect(); return [Math.round(Math.min(98, Math.max(2, (e.clientX - r.left) / r.width * 100))), Math.round(Math.min(98, Math.max(2, (e.clientY - r.top) / r.height * 100)))]; };
+    let last = at(event); setDrag({ k, point: last });
+    const move = (e: PointerEvent) => { last = at(e); setDrag({ k, point: last }); };
+    const up = () => { target.removeEventListener('pointermove', move); target.removeEventListener('pointerup', up); target.removeEventListener('pointercancel', up); edit(`items.${k + 1}.point`, last.join(',')); setDrag(null); };
+    target.addEventListener('pointermove', move); target.addEventListener('pointerup', up); target.addEventListener('pointercancel', up);
+  };
+  const nudge = (k: number) => (event: React.KeyboardEvent) => {
+    const step = event.shiftKey ? 10 : 2; const [x, y] = points[k];
+    const next = ({ ArrowLeft: [x - step, y], ArrowRight: [x + step, y], ArrowUp: [x, y - step], ArrowDown: [x, y + step] } as Record<string, number[]>)[event.key];
+    if (!next || !edit) return; event.preventDefault(); edit(`items.${k + 1}.point`, `${Math.min(98, Math.max(2, next[0]))},${Math.min(98, Math.max(2, next[1]))}`);
+  };
+  const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''}><small>0{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
+
+  return <div className={`csb-apple-annotated ${edit ? 'is-editing' : ''}`} ref={wrap}>
+    <div className="csb-apple-annotation-side">{notes.slice(0, 3).map((item, i) => note(item, i))}</div>
+    <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
+      <span className="csb-apple-annotated-island" />
+      {screen?.image ? <img src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>Designed screen</strong><span>700 × 1440 · designed media</span></div>}
+      {points.map(([x, y], k) => <span key={k} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
+        role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
+        onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}>{k + 1}</span>)}
+    </div>
+    <div className="csb-apple-annotation-side">{notes.slice(3, 6).map((item, i) => note(item, i + 3))}</div>
+    <svg className="csb-annot-lines" aria-hidden="true">{paths.map((d, k) => d && <motion.path key={k} d={d} initial={reduce ? false : { pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 1 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .9, delay: .3 + k * .1, ease: [0.22, 1, 0.36, 1] }} />)}</svg>
+    {edit && <p className="csb-annot-hint">Drag the numbered dots to point at the right spot on the screen</p>}
+  </div>;
 }
