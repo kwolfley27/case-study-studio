@@ -45,6 +45,12 @@ Deno.serve(async (request) => {
       if (notes.length < 3) return reply({ error: 'Add at least three notes to sort.' }, 400);
       return reply(await sortAffinity(anthropicKey, notes, String(body.guidance || '').slice(0, 1000)));
     }
+    // Recorded flow: name each screenshot and the action that led to it.
+    if (body.task === 'flowFromScreens') {
+      const images = (Array.isArray(body.images) ? body.images : []).map((x: unknown) => String(x)).filter((x: string) => /^[A-Za-z0-9+/=]+$/.test(x) && x.length < 400_000).slice(0, 20);
+      if (images.length < 2) return reply({ error: 'Send at least two screenshots.' }, 400);
+      return reply(await nameScreens(anthropicKey, images, String(body.context || '').slice(0, 200)));
+    }
     const notionUrl: string = body.notionUrl || '';
     const figmaUrl: string = body.figmaUrl || '';
     const catalog: unknown = body.catalog;
@@ -322,4 +328,34 @@ async function sortAffinity(anthropicKey: string, notes: string[], guidance: str
     messages.push({ role: 'assistant', content: data.content?.length ? data.content : [{ type: 'text', text: '(no answer)' }] }, { role: 'user', content: 'Now call the affinity_diagram tool.' });
   }
   throw new Error('Claude did not return a diagram. Try again.');
+}
+
+/* Recorded user flow: label each screen (a few words) and the action that got there.
+   Screens are in order; mark near-duplicates or transition frames keep=false. */
+async function nameScreens(anthropicKey: string, images: string[], context: string) {
+  const tool = {
+    name: 'user_flow',
+    description: 'Return one entry per screenshot, in the same order.',
+    input_schema: { type: 'object', required: ['steps'], properties: {
+      title: { type: 'string', description: 'The task being done, e.g. "ClassPass · book a class". Include the product name if visible.' },
+      steps: { type: 'array', items: { type: 'object', required: ['label', 'keep'], properties: {
+        label: { type: 'string', description: 'Name of this screen, 1–4 words, Title-free sentence case, e.g. "Class schedule", "Payment sheet".' },
+        action: { type: 'string', description: 'What the user did on the previous screen to get here, starting with a verb, e.g. "Tap Book", "Search yoga". Empty for the first screen.' },
+        keep: { type: 'boolean', description: 'false if this frame is a duplicate, a loading/transition frame, or a keyboard-only change of the previous screen.' },
+      } } },
+    } },
+  };
+  const content: any[] = [{ type: 'text', text: `These ${images.length} screenshots are consecutive screens from a screen recording of someone using an app or website${context ? ` (${context})` : ''}. Name each screen and the action between screens.` }];
+  images.forEach((data, i) => { content.push({ type: 'text', text: `Screen ${i + 1}:` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } }); });
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 3000, system: 'You are a UX designer documenting a user flow from screenshots. Be literal: only describe what is visible. Always answer by calling the user_flow tool with exactly one step per screenshot.', tools: [tool], tool_choice: { type: 'tool', name: 'user_flow' }, messages: [{ role: 'user', content }] }),
+    signal: AbortSignal.timeout(120000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
+  const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
+  if (!use) throw new Error('Claude did not name the screens. Try again.');
+  return use.input;
 }

@@ -4,6 +4,7 @@ import { GitBranch, Plus, Trash2 } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive, useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
+import { recordingToFlow, Recordings } from './FlowRecorder';
 
 /*
   User flow: a real flowchart. Ovals start and end, boxes are screens, diamonds are decisions.
@@ -118,7 +119,7 @@ function layout(d: UserFlowData, dir: 'LR' | 'TB', width = 900): Laid {
   const parent = new Map<string, string>();
   for (const id of others) { const e = d.edges.find(x => x.to === id && (main.includes(x.from) || parent.has(x.from))) ?? d.edges.find(x => x.to === id); if (e && e.from !== id) parent.set(id, e.from); else main.push(id); }
   const pos = new Map<string, P>();
-  const maxW = Math.max(110, ...main.map(id => size.get(id)!.w)); const GX = 64, GY = 52;
+  const maxW = Math.max(110, ...main.map(id => size.get(id)!.w)); const longest = Math.max(0, ...d.edges.filter(e => !e.alt && e.label).map(e => e.label!.length)); const GX = Math.min(170, Math.max(64, longest * 6.6 + 30)), GY = 52;
   const colW = Math.min(250, maxW) + GX;
   const down = dir === 'TB' || width < 420;
   const M = down ? 12 : 44; // outside margin for the turn lines
@@ -367,6 +368,8 @@ export function UserFlowControls({ section, onChange, onRecord }: { section: Cas
     {data.nodes.some(n => n.image) && <label className="csb-check-field"><input type="checkbox" checked={!!data.showScreens} onChange={e => onChange({ ...data, showScreens: e.target.checked })} /> Show screenshots in the boxes</label>}
     {onRecord && <><div className="csb-inspector-divider" /><button type="button" className="csb-primary-button" onClick={onRecord}>Record a flow…</button></>}
     <div className="csb-inspector-divider" />
+    <Recordings onUse={r => { if (data.nodes.length > 2 && !window.confirm(`Replace this flow with “${r.name}”?`)) return; const next = recordingToFlow(r, data); last.current = JSON.stringify(next); setText(flowToScript(next)); onChange(next); }} />
+    <div className="csb-inspector-divider" />
     <p className="csb-panel-kicker">Write the flow</p>
     <p className="csb-field-note">One step per line. <code>(Start)</code> oval · <code>Screen</code> box · <code>&lt;Decision?&gt;</code> diamond. Indent a line to branch: <code>No -&gt; Error screen</code>. Name an earlier step to loop back. <code>Yes -&gt; Next</code> labels the main arrow.</p>
     <textarea className="csb-uf-script" rows={Math.min(22, Math.max(8, text.split('\n').length + 1))} value={text} spellCheck={false} onChange={e => apply(e.target.value)} aria-label="Flow script" />
@@ -390,6 +393,8 @@ export function FlowDiffControls({ section, onChange }: { section: CaseStudySect
       <label className="csb-field"><span>First label</span><input value={data.beforeLabel ?? 'Before'} onChange={e => set({ beforeLabel: e.target.value })} /></label>
       <label className="csb-field"><span>Second label</span><input value={data.afterLabel ?? 'After'} onChange={e => set({ afterLabel: e.target.value })} /></label>
     </div>
+    <Recordings useLabels={[{ slot: 'before', label: `As ${data.beforeLabel || 'Before'}` }, { slot: 'after', label: `As ${data.afterLabel || 'After'}` }]} onUse={(r, slot) => { const flow = recordingToFlow(r, slot === 'before' ? data.before : data.after); set(slot === 'before' ? { before: flow } : { after: flow }); }} />
+    <div className="csb-inspector-divider" />
     <p className="csb-panel-kicker">{data.beforeLabel || 'Before'}</p>
     <textarea className="csb-uf-script" rows={Math.min(18, tb.split('\n').length + 1)} value={tb} spellCheck={false} aria-label="Old flow" onChange={e => { setTb(e.target.value); set({ before: parseFlow(e.target.value, data.before) }); }} />
     <p className="csb-panel-kicker">{data.afterLabel || 'After'}</p>
