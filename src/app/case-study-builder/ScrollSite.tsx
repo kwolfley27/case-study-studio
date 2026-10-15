@@ -88,7 +88,7 @@ function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, e
         {segs ? <div className="csb-ss-frame csb-ss-stack" role="img" aria-label={label}>{segs.list.map((sg, k) => <div key={k} style={{ aspectRatio: `${sg.w} / ${sg.h}`, backgroundImage: `url("${image}")`, backgroundSize: `${(segs.W / sg.w) * 100}% auto`, backgroundPosition: `${segs.W === sg.w ? 0 : (sg.x / (segs.W - sg.w)) * 100}% ${segs.H === sg.h ? 0 : (sg.y / (segs.H - sg.h)) * 100}%` }} />)}</div>
           : <img key={image} className="csb-ss-frame" src={image} alt={label} draggable={false} onLoad={() => { const el = scroller.current; const r = takeRestore?.(); if (el && r != null) { silent.current = true; el.scrollTop = r * el.scrollHeight; } report(); }} />}
         <AnimatePresence>{notes.filter(n => n.i === activeI).map(n => <motion.span key={`band-${n.i}`} className="csb-ss-band" style={{ top: `${n.at * 100}%` }} initial={{ opacity: 0, scaleX: .96 }} animate={{ opacity: 1, scaleX: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }} aria-hidden="true" />)}</AnimatePresence>
-        {notes.map((n, k) => <span key={n.i} data-i={n.i} className={`csb-ss-marker ${activeI === n.i ? 'is-on' : ''}`} style={{ top: `${n.at * 100}%` }} onPointerDown={drag(n)} data-no-slot title={editorMode ? 'Drag to move this note on the frame' : n.title}>{k + 1}</span>)}
+        {notes.map((n, k) => <span key={n.i} data-i={n.i} className={`csb-ss-marker ${activeI === n.i ? 'is-on' : ''}`} style={{ top: `${n.at * 100}%` }} onPointerDown={drag(n)} data-no-slot title={editorMode ? `Drag to move “${n.title}” on the frame` : undefined} aria-hidden={editorMode ? undefined : true} />)}
       </div>
     </div> : <div className="csb-ss-empty"><strong>{label}</strong><span>Paste a Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste it here</span></div>}
     <AnimatePresence>{grid && image && <motion.div key="grid" className="csb-ss-grid" aria-hidden="true" style={{ paddingLeft: `${grid.margin}%`, paddingRight: `${grid.margin}%`, columnGap: `${grid.gutter}%`, gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}
@@ -158,7 +158,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     if (!m || !h || !scr || !dev) { setLine(''); return; }
     const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), H = h.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect();
     const my = Math.min(C.bottom - 4, Math.max(C.top + 4, M.top + M.height / 2)) - S.top;
-    const x0 = M.right + 4 - S.left, x1 = Math.max(D.right, C.right) + 18 - S.left, ex = H.left - 14 - S.left, ey = H.top + Math.min(18, H.height / 2) - S.top;
+    const x0 = C.right - C.width * .03 - S.left, x1 = Math.max(D.right, C.right) + 18 - S.left, ex = H.left - 14 - S.left, ey = H.top + Math.min(18, H.height / 2) - S.top;
     setLine(`M${x0.toFixed(1)},${my.toFixed(1)} H${x1.toFixed(1)} L${Math.max(x1 + 8, ex - 30).toFixed(1)},${ey.toFixed(1)} H${ex.toFixed(1)}`);
   });
   const [vh, setVh] = useState(800);
@@ -178,7 +178,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
         {show !== 'desktop' && <div className={`csb-ss-phone ${device === 'mobile' ? 'is-focus' : ''}`}>{show === 'mobile' && layerToggle}<span className="csb-ss-island" aria-hidden="true" />{screen('mobile')}</div>}
       </div>
       <div className="csb-ss-notes" aria-live="polite">
-        {hasImage && list.length > 0 && <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)}>{k + 1}</button>)}</div>}
+        {hasImage && list.length > 0 && <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)} />)}</div>}
         <AnimatePresence mode="wait">
           {note ? <motion.div key={note.i} className={`csb-ss-note ${note.title.length > 48 ? 'is-long' : ''}`} initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
             <small>{compare ? `${stage === 'a' ? nameA : nameB} · ` : ''}{note.device === 'mobile' ? 'Mobile' : 'Desktop'} · {list.findIndex(n => n.i === note.i) + 1} of {list.length}</small>

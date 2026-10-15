@@ -2049,3 +2049,14 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-notes{position:relative;z-index:2}
 .csb-ss-band{position:absolute;left:3%;right:3%;z-index:1;height:72px;margin-top:-36px;border-radius:10px;border:1.5px solid var(--csb-accent,#1d1d1f);background:color-mix(in srgb,var(--csb-accent,#1d1d1f) 7%,transparent);pointer-events:none;transform-origin:center}
 .csb-ss-phone .csb-ss-band{height:56px;margin-top:-28px;border-radius:8px}
+
+/* Lines, not numbered dots: the spot is shown by the highlight band and the line to the note.
+   In the editor a small handle stays on each spot so it can be dragged. */
+.csb-ss-marker{width:22px!important;height:10px!important;margin-top:-5px!important;border-radius:999px!important;font-size:0!important;box-shadow:0 0 0 1px #0000002e,0 1px 4px #00000026!important;background:#fff!important}
+.csb-ss-marker.is-on{background:var(--csb-accent,#1d1d1f)!important;transform:none!important}
+.csb-ss-screen:not(.is-editing) .csb-ss-marker{opacity:0;pointer-events:none}
+.csb-ss-ticks{gap:4px!important}
+.csb-ss-ticks button{width:22px!important;height:14px!important;border:0!important;border-radius:0!important;background:transparent!important;position:relative}
+.csb-ss-ticks button::after{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:color-mix(in srgb,currentColor 18%,transparent);transition:background .25s}
+.csb-ss-ticks button:hover::after{background:color-mix(in srgb,currentColor 45%,transparent)}
+.csb-ss-ticks button.is-on::after{background:var(--csb-accent-fill,var(--csb-accent,#1d1d1f))}
