@@ -6,6 +6,7 @@ import { FlowDiff, UserFlow } from "./UserFlow";
 import { useSolidElements } from "./GradientElements";
 import { ScreenGroups } from "./ScreenGroups";
 import { IsoShowcase } from "./IsoShowcase";
+import { FloatingDevices } from "./FloatingDevices";
 import { JobsToBeDone } from "./JobsToBeDone";
 import { ScrollSite } from "./ScrollSite";
 import { BarChart } from "./BarChart";
@@ -167,6 +168,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "quotes": return <QuotesView section={section} />;
     case "insights": return <Insights section={section} />;
     case "iterations": return <Iterations section={section} />;
+    case "floatDevices": return <FloatingDevices section={section} editorMode={editorMode} />;
     case "isoShowcase": return <IsoShowcase section={section} editorMode={editorMode} />;
     case "screenGroups": return <ScreenGroups section={section} editorMode={editorMode} />;
     case "comparison": return <Comparison section={section} />;

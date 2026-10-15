@@ -16,7 +16,7 @@ type Change = (patch: Partial<CaseStudySection>) => void;
 
 const rules: Partial<Record<SectionKind, { min: number; max: number; noun: string }>> = {
   findings: { min: 1, max: 12, noun: "finding" }, columns: { min: 1, max: 8, noun: "column" }, methods: { min: 1, max: 8, noun: "method" },
-  metrics: { min: 1, max: 6, noun: "metric" }, quotes: { min: 1, max: 8, noun: "quote" }, isoShowcase: { min: 1, max: 12, noun: "screen" }, flow: { min: 2, max: 8, noun: "step" },
+  metrics: { min: 1, max: 6, noun: "metric" }, quotes: { min: 1, max: 8, noun: "quote" }, isoShowcase: { min: 1, max: 12, noun: "screen" }, floatDevices: { min: 1, max: 5, noun: "device" }, flow: { min: 2, max: 8, noun: "step" },
   journey: { min: 2, max: 6, noun: "stage" }, issueFlow: { min: 2, max: 6, noun: "step" }, gap: { min: 1, max: 4, noun: "approach" },
   competitors: { min: 1, max: 4, noun: "competitor" }, rows: { min: 1, max: 8, noun: "row" }, gallery: { min: 1, max: 8, noun: "image" },
   carousel: { min: 1, max: 8, noun: "screen" }, wireframes: { min: 1, max: 4, noun: "screen" }, interviews: { min: 1, max: 6, noun: "participant" },

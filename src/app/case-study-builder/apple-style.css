@@ -2576,3 +2576,29 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-iso-card span{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:#a59f97;transform:none}
 .csb-iso-empty{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:#777169}
 html.csb-presenting .csb-iso{height:calc(78vh / var(--present-zoom,1))}
+
+/* ── Floating devices (CSS 3D) ── */
+.csb-fd{position:relative;height:clamp(520px,70cqw,900px);margin-top:clamp(24px,4cqw,48px);border-radius:24px;overflow:hidden;background:radial-gradient(120% 90% at 50% 20%,color-mix(in srgb,var(--csb-accent) 14%,#fdfcfc),color-mix(in srgb,var(--csb-accent) 26%,#ebe8e4))}
+.csb-fd.is-stone{background:radial-gradient(120% 90% at 50% 20%,#f5f3f1,#e4e0db)}
+.csb-fd.is-white{background:radial-gradient(120% 90% at 50% 20%,#fff,#f5f3f1)}
+.csb-fd.is-dark{background:radial-gradient(120% 90% at 50% 20%,#2a2724,#100f0d)}
+.csb-fd-stage{position:absolute;inset:0;perspective:1600px;perspective-origin:50% 40%;transform-style:preserve-3d}
+.csb-fd-dev{position:absolute;translate:-50% -50%;transform-style:preserve-3d;--w:clamp(120px,15cqw,210px)}
+.csb-fd-dev.is-phone{width:var(--w);aspect-ratio:9/19.5}
+.csb-fd-dev.is-tablet{width:calc(var(--w) * 2.3);aspect-ratio:4/3}
+.csb-fd-float{position:absolute;inset:0;transform-style:preserve-3d;animation:csb-fd-bob 7s ease-in-out infinite}
+@keyframes csb-fd-bob{0%,100%{transform:translate3d(0,0,0) rotateZ(0)}50%{transform:translate3d(0,-10px,14px) rotateZ(1.2deg)}}
+.csb-fd-layer{position:absolute;inset:0;border-radius:calc(var(--w) * .17);background:linear-gradient(135deg,#d9d6d2,#8c8883 40%,#3a3836)}
+.csb-fd-dev.is-tablet .csb-fd-layer,.csb-fd-dev.is-tablet .csb-fd-face{border-radius:calc(var(--w) * .12)}
+.csb-fd-face{position:absolute;inset:0;border-radius:calc(var(--w) * .17);padding:calc(var(--w) * .035);background:#0d0d0f;box-shadow:inset 0 0 0 1.5px #3b3b3f,inset 0 0 0 3px #111;overflow:hidden;transform:translateZ(0)}
+.csb-fd-dev.is-tablet .csb-fd-face{padding:calc(var(--w) * .06)}
+.csb-fd-screen{position:relative;width:100%;height:100%;border-radius:calc(var(--w) * .135);overflow:hidden;background:#f5f3f1}
+.csb-fd-dev.is-tablet .csb-fd-screen{border-radius:calc(var(--w) * .06)}
+.csb-fd-screen img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.csb-fd-screen span{position:absolute;inset:0;display:grid;place-items:center;padding:12px;text-align:center;font-size:12px;color:#a59f97}
+.csb-fd-island{position:absolute;left:50%;top:3%;width:30%;height:3.6%;border-radius:999px;background:#0d0d0f;translate:-50% 0}
+.csb-fd-glare{position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,.22),rgba(255,255,255,0) 38%,rgba(255,255,255,0) 70%,rgba(255,255,255,.08));pointer-events:none}
+.csb-fd-shadow{position:absolute;left:50%;bottom:6%;width:46%;height:7%;translate:-50% 0;border-radius:50%;background:radial-gradient(closest-side,rgba(30,24,18,.22),transparent);filter:blur(6px)}
+.csb-fd.is-dark .csb-fd-shadow{background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent)}
+@media (prefers-reduced-motion:reduce){.csb-fd-float{animation:none}}
+html.csb-presenting .csb-fd{height:calc(80vh / var(--present-zoom,1))}
