@@ -4,6 +4,7 @@ import { Roadmap } from "./Roadmap";
 import { FlowCompare } from "./FlowCompare";
 import { FlowDiff, UserFlow } from "./UserFlow";
 import { JobsToBeDone } from "./JobsToBeDone";
+import { ScrollSite } from "./ScrollSite";
 import { FeatureCompare, Positioning } from "./CompetitorViews";
 import { AEIOUBoard } from "./AEIOU";
 import { AffinityDiagram } from "./AffinityDiagram";
@@ -134,6 +135,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "screenStrip": return <ScreenFilmstrip section={section} />;
     case "affinity": return <AffinityDiagram section={section} editorMode={editorMode} />;
     case "aeiou": return <AEIOUBoard section={section} />;
+    case "scrollSite": return <ScrollSite section={section} editorMode={editorMode} />;
     case "jtbd": return <JobsToBeDone section={section} />;
     case "userFlow": return <UserFlow section={section} editorMode={editorMode} />;
     case "flowDiff": return <FlowDiff section={section} editorMode={editorMode} />;

@@ -1834,3 +1834,49 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-annot-pull:disabled{opacity:.7;cursor:default}
 .csb-apple-annotated:not(.is-desktop) .csb-annot-pull{top:40px;left:50%;right:auto;transform:translateX(-50%)}
 .csb-apple-annotated.is-desktop{grid-template-columns:minmax(0,1fr) minmax(380px,1.7fr) minmax(0,1fr)}
+
+/* ---------- Scrolling site (MacBook + iPhone) ---------- */
+.csb-ss{position:relative;margin-top:clamp(20px,3vw,40px)}
+.csb-ss-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,300px);gap:clamp(24px,4vw,56px);align-items:center;padding:24px 0}
+.csb-ss.is-pinned .csb-ss-stage{position:sticky;top:0;height:var(--ss-vh,100vh);padding:clamp(24px,5vh,56px) 0;box-sizing:border-box}
+.csb-ss-devices{position:relative;display:grid;align-items:end;justify-items:center;height:100%;min-height:420px}
+.csb-ss.is-both .csb-ss-devices{grid-template-columns:1fr}
+.csb-ss-mac{width:min(100%,calc((var(--ss-vh,800px) - 120px) * 1.5));display:grid;justify-items:center}
+.csb-ss.is-both .csb-ss-mac{margin-right:12%}
+.csb-ss-lid{position:relative;width:88%;padding:1.5% 1.5% 2%;border-radius:clamp(10px,1.6vw,20px) clamp(10px,1.6vw,20px) 4px 4px;background:#0d0d0f;box-shadow:0 0 0 1.5px #b9b9be,0 0 0 2.5px #d8d8dc,0 40px 70px -34px #00000059}
+.csb-ss-lid .csb-ss-screen{aspect-ratio:16/10;border-radius:4px}
+.csb-ss-notch{position:absolute;z-index:3;left:50%;top:0;width:12%;height:3%;min-height:7px;transform:translateX(-50%);border-radius:0 0 7px 7px;background:#0d0d0f}
+.csb-ss-base{position:relative;width:100%;height:clamp(8px,1.2vw,14px);border-radius:1px 1px 50% 50%/1px 1px 100% 100%;background:linear-gradient(#f2f2f4,#d7d7db 35%,#a7a7ad);box-shadow:0 22px 34px -14px #00000052}
+.csb-ss-base i{position:absolute;left:50%;top:0;width:14%;height:42%;transform:translateX(-50%);border-radius:0 0 10px 10px;background:linear-gradient(#c6c6cb,#dcdce0)}
+.csb-ss-phone{position:relative;width:clamp(150px,22%,240px);aspect-ratio:9/19.5;padding:2.6%;border-radius:clamp(26px,3.4vw,40px);background:#0d0d0f;box-shadow:0 0 0 1.5px #b9b9be,0 30px 60px -26px #00000066}
+.csb-ss.is-both .csb-ss-phone{position:absolute;right:2%;bottom:-2%;z-index:2}
+.csb-ss.is-mobile .csb-ss-phone{width:min(300px,calc((var(--ss-vh,800px) - 120px) * .46))}
+.csb-ss-phone .csb-ss-screen{height:100%;border-radius:clamp(20px,2.8vw,32px)}
+.csb-ss-island{position:absolute;z-index:3;left:50%;top:3.6%;width:30%;height:3.2%;transform:translateX(-50%);border-radius:9999px;background:#0d0d0f}
+.csb-ss-screen{position:relative;overflow:hidden;background:#fff}
+.csb-ss-screen img{display:block;width:100%;height:auto;will-change:transform;user-select:none}
+.csb-ss-empty{position:absolute;inset:0;display:grid;place-content:center;gap:6px;padding:12px;text-align:center;background:#f5f5f7;color:#6e6e73;font-size:13px}
+.csb-ss-empty strong{color:#1d1d1f;font-weight:500}.csb-ss-empty span{font-size:11.5px}
+.csb-ss-notes{position:relative;display:grid;gap:18px;align-content:center;min-height:200px}
+.csb-ss-ticks{display:flex;gap:5px}
+.csb-ss-ticks i{flex:1;max-width:28px;height:2px;border-radius:2px;background:color-mix(in srgb,currentColor 12%,transparent);transition:background .3s}
+.csb-ss-ticks i.is-past{background:color-mix(in srgb,currentColor 35%,transparent)}.csb-ss-ticks i.is-on{background:currentColor}
+.csb-ss-note small{font:400 11.5px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,currentColor 45%,transparent)}
+.csb-ss-note h3{margin:10px 0 8px;font-family:var(--brand-display,var(--ed-display,"Inter",ui-sans-serif,system-ui,sans-serif));font-weight:300;font-size:clamp(24px,2.4vw,32px);line-height:1.15;letter-spacing:-.02em}
+.csb-ss-note p{margin:0;font-size:16px;line-height:1.55;color:color-mix(in srgb,currentColor 60%,transparent)}
+.csb-ss-scrub{display:grid;gap:6px;font-size:12px;color:color-mix(in srgb,currentColor 55%,transparent)}
+.csb-ss-scrub input{width:100%;accent-color:#000}
+.csb-ss-ctl{display:grid;gap:6px;padding:8px 0;border-bottom:1px solid #ececef}
+.csb-ss-at{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#6e6e73}.csb-ss-at input{width:90px}
+@media (max-width:760px){.csb-ss-stage{grid-template-columns:1fr}.csb-ss.is-both .csb-ss-mac{display:none}.csb-ss.is-both .csb-ss-phone{position:relative;right:auto;bottom:auto;width:min(240px,60%)}.csb-ss-notes{min-height:150px}}
+/* Figma pull bar */
+.csb-figpull{position:fixed!important;left:50%;bottom:84px;transform:translateX(-50%);width:min(620px,calc(100vw - 32px));display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0;padding:10px 12px 10px 16px;box-sizing:border-box;border-radius:14px;background:#fff;box-shadow:0 0 0 1px #0000000f,0 6px 20px -10px #00000033;font-size:13px;color:#1d1d1f;z-index:60}
+.csb-figpull b{font-weight:600}
+.csb-figpull input{flex:1;min-width:180px;height:32px;padding:0 10px;border:1px solid #d2d2d7;border-radius:8px;font:inherit;font-size:13px}
+.csb-figpull button{height:32px;padding:0 16px;border:0;border-radius:9999px;background:#000;color:#fdfcfc;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.csb-figpull button:disabled{opacity:.7}
+.csb-figpull em{flex-basis:100%;font-style:normal;color:#b42318;font-size:12px}
+.csb-figpull small{flex-basis:100%;color:#86868b;font-size:11.5px}
+.csb-hx-screen img{object-position:top}
+.csb-ss-stage{grid-template-columns:minmax(0,1fr) minmax(200px,260px)}
+.csb-ss-devices{align-items:center;height:auto;min-height:0;padding-bottom:4%}

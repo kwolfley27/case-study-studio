@@ -1,103 +1,123 @@
 import { createSection, type BuilderStudy, type CaseStudySection } from '../model';
 
 /*
-  Steinway pianos · PDP redesign (Project C, DESPX 260).
-  Words come from Katelyn's Figma presentation (file HsoYEMMSaLQPIMXbbXrIKd);
-  images are crops of the 12 archive slides on katelynwolfley.design, hosted with the Studio
-  (public/projects/steinway) so they load anywhere without a Figma token.
+  Steinway PDP Redesign (Project C, DESPX 260).
+  Every word is Katelyn's: from her Figma presentation (file HsoYEMMSaLQPIMXbbXrIKd) and her portfolio entry.
+  Every visual is a real Figma frame, linked by node id and pulled with her Figma token
+  (the "Pull from Figma" bar). The only file shipped with the Studio is the persona photo she supplied.
 */
 export const STEINWAY_ID = 'starter-steinway-pdp';
 export const FIGMA_FILE = 'HsoYEMMSaLQPIMXbbXrIKd';
-
-const sec = (kind: CaseStudySection['kind'], patch: Partial<CaseStudySection>): CaseStudySection => ({ ...createSection(kind), ...patch, id: `stw-${patch.navLabel?.toLowerCase().replace(/[^a-z]+/g, '-') ?? kind}` });
+const F = (id: string) => `https://www.figma.com/design/${FIGMA_FILE}/C_Katelyn_Dayley_W24?node-id=${id.replace(':', '-')}`;
 const img = (name: string) => new URL(`${import.meta.env.BASE_URL}projects/steinway/${name}`, location.origin).href;
+let n = 0;
+const sec = (kind: CaseStudySection['kind'], patch: Partial<CaseStudySection>): CaseStudySection => ({ ...createSection(kind), body: '', ...patch, id: `stw-${++n}-${kind}` });
+const quiet = { hideEyebrow: true, hideTitle: true, hideBody: true };
 
 export function buildSteinway(): BuilderStudy {
+  n = 0;
   const sections: CaseStudySection[] = [
-    sec('details', { navLabel: 'Overview', eyebrow: 'Overview', title: 'Project overview', body: '', items: [
-      { title: 'My role', detail: 'UX/UI designer — research, wireframes, visual design' },
-      { title: 'Project', detail: 'Project C · Hierarchy / responsive website\nDESPX 260' },
-      { title: 'Deliverables', detail: 'Desktop and mobile product page\nWireframes, grids, type system' },
-      { title: 'Tools', detail: 'Figma' },
+    sec('persona', { navLabel: 'Persona', eyebrow: 'Persona + Job to Be Done', title: 'Lauren Redding', items: [
+      { blockType: 'person', title: 'Lauren Redding', detail: 'New Mom | Accountant', value: '32 years old, Mom-of-one, Price conscious consumer', image: img('lauren.jpg') },
+      { blockType: 'text', title: 'Job to be done', detail: 'Lauren Redding is a new mom and an accountant. She’s looking to add a grand piano to her home to make it feel cozy and elegant, but she’s also careful with her money. The Certified Preowned Steinway Center is perfect for her because it offers high-quality pianos that are refurbished to be like new, but they cost less than brand-new ones.' },
+      { blockType: 'text', title: 'Motivation', detail: 'Lauren wants her home to feel warm and remind her of her own childhood. Steinway pianos have a long history and are known for being really well-made. Buying one from the Certified Preowned Steinway Center means she can bring a bit of that history into her own home.' },
+      { blockType: 'quote', title: 'Luxury on a budget', detail: 'She has a luxurious taste and makes a good salary but is looking to accomplish the feel of luxury on a budget.' },
     ] }),
-    sec('problem', { navLabel: 'The problem', eyebrow: 'Define', title: 'Luxury, but on a budget', items: [
-      { title: 'Who', detail: 'Price-conscious buyers like Lauren' },
-      { title: 'need a way to', detail: 'see what a pre-owned Steinway costs and trust the people who restored it' },
-      { title: 'because', detail: 'Steinway keeps prices offline, and its refurbished page feels closer to Craigslist than to a luxury brand' },
-      { title: 'How might we', detail: 'make a certified pre-owned Steinway feel as considered as a new one, without hiding the path to price?' },
+    sec('metrics', { navLabel: 'Research', eyebrow: 'Supporting Research', title: 'The global piano market', body: 'The global piano sales market size was USD 2358 million in 2021 and is projected to touch USD 2846.33 million by 2031, exhibiting a CAGR of 1.9% during the forecast period.', layout: { count: 3, columns: 3 }, items: [
+      { value: '2358', title: 'USD million, 2021', detail: '' },
+      { value: '2846.33', title: 'USD million by 2031', detail: '' },
+      { value: '1.9%', title: 'CAGR', detail: '' },
     ] }),
-    sec('persona', { navLabel: 'Persona', eyebrow: 'Define', title: 'Meet Lauren', body: 'A new mom who wants the feel of luxury without the luxury price tag.', items: [
-      { blockType: 'person', title: 'Lauren Redding', detail: 'New mom and accountant who wants a grand piano to make home feel cozy and elegant.', value: 'Mom of one, Price-conscious, Refined taste', image: img('lauren.jpg') },
-      { blockType: 'facts', title: 'Details', detail: 'Age: 32\nOccupation: Accountant\nFamily: Mom of one\nShopping for: A grand piano' },
-      { blockType: 'quote', title: 'In short', detail: 'She wants luxury, but on a budget.' },
-      { blockType: 'text', title: 'Job to be done', detail: 'Lauren is careful with her money. The Certified Pre-Owned Steinway Center is perfect for her: high-quality pianos, refurbished to be like new, for less than brand-new ones.' },
-      { blockType: 'text', title: 'Motivation', detail: 'She wants her home to feel warm and remind her of her own childhood. Buying a certified pre-owned Steinway brings a bit of that history into her home.' },
-      { blockType: 'list', title: 'What she needs', detail: 'To know the price before she decides\nConfidence in who refurbished the piano\nA way to picture it in her home' },
+    sec('fullMedia', { navLabel: 'Market chart', eyebrow: 'Supporting Research', title: 'Global Piano Sales Market Size, 2031 (USD Million)', options: { hideEyebrow: true }, items: [
+      { title: '', detail: 'www.businessresearchinsights.com', image: '', figmaUrl: F('53:47') },
     ] }),
-    sec('metrics', { navLabel: 'Research', eyebrow: 'Discover', title: 'A small, steady market', body: 'Maintenance is the main restraint: regular tuning and upkeep can be expensive and time-consuming, which puts off future buyers.', items: [
-      { value: '$2.36B', title: 'Global piano sales, 2021', detail: 'USD 2,358 million.' },
-      { value: '$2.85B', title: 'Projected by 2031', detail: 'USD 2,846.33 million.' },
-      { value: '1.9%', title: 'Yearly growth', detail: 'CAGR over the forecast period, driven by students’ music participation.' },
+    sec('rows', { navLabel: 'Market factors', eyebrow: 'Supporting Research', title: '', options: quiet, items: [
+      { title: 'Main Driving Factor', detail: 'Practice participation of students in curricular activities to surge the demand.' },
+      { title: 'Demographic', detail: 'The piano market is impacted by demographic factors like the distribution of ages, economic levels, and cultural preferences. For example, there will probably be a greater demand for pianos in areas where there are a lot of wealthy people or where music education is highly regarded.' },
+      { title: 'Market Restraints', detail: 'Owners may find that tuning and maintaining an acoustic piano on a regular basis can be expensive and time-consuming; this continuous expense can be off putting for future customers.' },
     ] }),
-    sec('fullMedia', { navLabel: 'Market', eyebrow: 'Discover', title: 'Global piano sales, 2020–2031', body: 'Demand is strongest where incomes are high and music education is valued.', items: [
-      { title: 'Global piano sales market size (USD million)', detail: 'Source: businessresearchinsights.com', image: img('market.jpg') },
+    { ...sec('gallery', { navLabel: 'Original PDP', eyebrow: 'Original PDP Page', title: 'Discarded', body: 'Steinway pianos are considered luxury items, and the brand intentionally avoids displaying prices online to maintain a feeling of exclusivity and encourage potential buyers to engage directly with their sales representatives. Lauren needs to know prices before she decides because though she’s ready to make this investment, she is also mindful of her budget. Without knowing the prices, she wouldn’t be able to determine if the pianos were within her price range or if they were too expensive. She wants luxury but on a budget. That’s why I looked for other options, like the Certified Preowned Steinway Center, which might be better for her in purchasing her grand piano. She isn’t particularly picky about the style or color of the piano.', items: [
+      { title: '', detail: '', image: '', figmaUrl: F('56:81'), tileSize: 'standard' },
+      { title: '', detail: '', image: '', figmaUrl: F('56:82'), tileSize: 'standard' },
+    ] }), layout: { count: 2, columns: 2, pattern: 'even', gap: 20, scale: 100, presentation: 'images' } },
+    sec('annotated', { navLabel: 'Refurbished site', eyebrow: 'Original PDP Page', title: 'Refurbished Site', body: 'I chose to analyze the refurbished product page instead of the original because it better aligned with the needs and buying habits of my user persona.', options: { device: 'desktop' }, items: [
+      { title: 'Refurbished site', detail: '', image: '', figmaUrl: F('72:25') },
+      { title: 'Mismatched aesthetic', detail: 'The refurbished page had a starkly different feel from the original Steinway website. The page resembled Craigslist rather than a platform for selling high-end pianos, potentially deterring customers.', point: '45,22' },
+      { title: 'Lack of assurance', detail: 'No information or reviews were provided on the refurbishing company’s quality and reputation.', point: '50,61' },
+      { title: 'Lacking resources', detail: 'Tools like requesting a grand piano floor pattern were absent, hindering the customer buying process.', point: '70,90' },
+      { title: 'Limited interaction', detail: 'Customers could only request more information, lacking interactive features found on the original site.', point: '80,9' },
+      { title: 'Empty space and lack of detail', detail: 'The layout appeared sparse, lacking detail shots and depth of information compared to the original page.', point: '77,44' },
     ] }),
-    sec('fullMedia', { navLabel: 'Original page', eyebrow: 'Discover', title: 'The main product page hides the price', body: 'Steinway keeps prices offline to feel exclusive and steer buyers to sales reps. Lauren is ready to invest, but she needs a price to know if a piano is in her range, so I looked at the Certified Pre-Owned Steinway Center instead.', items: [
-      { title: 'Original Steinway product page', detail: 'Discarded: no prices, so no way for Lauren to plan.', image: img('original-pdp.jpg') },
+    sec('fullMedia', { navLabel: 'Old mobile', eyebrow: 'PDP Refurbished Site (Old)', title: 'Mobile', items: [
+      { title: '', detail: '', image: '', figmaUrl: F('72:65') },
     ] }),
-    sec('annotated', { navLabel: 'Findings', eyebrow: 'Discover', title: 'What the refurbished page got wrong', body: 'I analysed the refurbished product page instead of the original because it better matched the needs and buying habits of my persona.', options: { device: 'desktop' }, items: [
-      { title: 'Refurbished product page', detail: 'Certified Pre-Owned Steinway Center, before the redesign.', image: img('refurbished-desktop.jpg'), figmaUrl: `https://www.figma.com/design/${FIGMA_FILE}/C_Katelyn_Dayley_W24?node-id=72-25` },
-      { title: 'Mismatched aesthetic', detail: 'It felt starkly different from the Steinway site, closer to Craigslist than a home for high-end pianos.', point: '55,21' },
-      { title: 'Lack of assurance', detail: 'Nothing about the refurbishing company’s quality or reputation, and no reviews.', point: '50,61' },
-      { title: 'Lacking resources', detail: 'No way to request a grand piano floor pattern, which hinders the buying process.', point: '71,90' },
-      { title: 'Limited interaction', detail: 'The only option was to request more information.', point: '82,9' },
-      { title: 'Empty space, little detail', detail: 'A sparse layout without detail shots or depth of information.', point: '77,44' },
+    sec('findings', { navLabel: 'Old mobile notes', eyebrow: '', title: '', options: quiet, items: [
+      { title: 'Lots of text and empty space when scrolling to view product information.', detail: 'Not in digestible or relevant sections to consumers.' },
+      { title: 'Chat pop up button gets in the way when looking for product info.', detail: '' },
+      { title: 'Irrelevant historical information for Lauren about the piano.', detail: '' },
+      { title: 'The only action a user can take is fill out the entire form for more information.', detail: '' },
+      { title: 'Page ends and there’s no loop back into the product page or suggestion to view any other models.', detail: 'This is a missed opportunity.' },
     ] }),
-    sec('fullMedia', { navLabel: 'Before on mobile', eyebrow: 'Discover', title: 'On mobile, it got worse', body: 'Walls of text and empty space, a chat button that covers product info, history that doesn’t matter to Lauren, a long form as the only action, and a dead end with no other models to browse.', items: [
-      { title: 'Refurbished site on mobile', detail: 'Before the redesign.', image: img('refurbished-mobile.jpg') },
+    sec('scrollSite', { navLabel: 'Wireframes', eyebrow: 'PDP Page Wireframe', title: 'Desktop and Mobile', body: 'In the mobile wireframe, we’ve adjusted the size of pictures and sections to fit better on smaller screens. By elongating these elements, we’ve made it easier for users to see the details of the refurbished pianos without needing to zoom in. I temporarily removed the chat button to keep the interface clean and focused on essential information. Then I eliminated empty space to ensure that all content is easily accessible without excessive scrolling.', options: { show: 'both' }, items: [
+      { title: 'Desktop wireframe', detail: '', image: '', figmaUrl: F('28:9467') },
+      { title: 'Mobile wireframe', detail: '', image: '', figmaUrl: F('43:358') },
+      { title: 'Enhanced visual appeal', detail: 'Enhanced visual appeal to align with the elegance of Steinway pianos.', point: '4', value: 'desktop' },
+      { title: 'Increased user interaction', detail: 'Increased user interaction through intuitive features and captivating long page design.', point: '18', value: 'desktop' },
+      { title: 'Refurbishing company', detail: 'Clear display of refurbishing company information and reviews.', point: '30', value: 'desktop' },
+      { title: 'Product information carousel', detail: 'More detailed product information carousel.', point: '50', value: 'desktop' },
+      { title: 'Tools for visualization', detail: 'Integration of essential tools for customer visualization: requesting floor plan.', point: '72', value: 'desktop' },
     ] }),
-    { ...sec('gallery', { navLabel: 'Wireframes', eyebrow: 'Develop', title: 'Wireframes: a longer, richer page', body: 'Visual appeal that matches the elegance of Steinway, more to interact with, the refurbisher’s information and reviews up front, a floor pattern request, and a product details carousel. On mobile, pictures and sections grow to be readable without zooming, and empty space goes.', items: [
-      { title: 'Desktop wireframe', detail: 'Long page: product, refurbisher, guarantees, specs, floor pattern, more models.', image: img('wireframe-desktop.jpg'), tileSize: 'wide' },
-      { title: 'Mobile wireframe', detail: 'Larger images and sections; chat button removed while testing the layout.', image: img('wireframe-mobile.jpg'), tileSize: 'wide' },
-    ] }), layout: { count: 2, columns: 1, pattern: 'even', gap: 20, scale: 100, presentation: 'images' } },
-    { ...sec('gallery', { navLabel: 'System', eyebrow: 'Develop', title: 'Grid and type', body: 'A 12-column grid on desktop and 4 columns on mobile. DIN Condensed for headers and buttons, Lora for subheads and paragraphs.', items: [
-      { title: '12-column desktop grid', detail: '', image: img('grid-desktop.jpg'), tileSize: 'standard' },
-      { title: '4-column mobile grid', detail: '', image: img('grid-mobile.jpg'), tileSize: 'standard' },
-      { title: 'Typographic hierarchy', detail: 'Header 1 · DIN Condensed 40pt · Header 2 · Lora Italic 38pt · Subheader · Lora caps 25pt · Paragraph · Lora 18pt', image: img('type.jpg'), tileSize: 'wide' },
-    ] }), layout: { count: 3, columns: 2, pattern: 'bento', gap: 20, scale: 100, presentation: 'images' } },
-    sec('screenStory', { navLabel: 'Final desktop', eyebrow: 'Deliver', title: 'The final page, on desktop', body: 'A long page that reflects the elegance of the original Steinway site, built around what Lauren needs before she commits.', options: { device: 'browser' }, items: [
-      { title: 'The path to price', detail: 'See financing options keeps the luxury feel while letting Lauren plan her budget. A home setting helps her picture the piano in her space.', image: img('final-desktop-col1.jpg'), spots: [] },
-      { title: 'Who restored it', detail: 'The refurbishing company’s quality and reputation, with customer reviews.', image: img('final-desktop-col1.jpg'), spots: [] },
-      { title: 'Guaranteed', detail: 'Warranty and guarantees ease any worry about buying refurbished.', image: img('final-desktop-col1.jpg'), spots: [] },
-      { title: 'Specs, as a carousel', detail: 'A more captivating way to read the description and specifications.', image: img('final-desktop-col2.jpg'), spots: [] },
-      { title: 'Picture it at home', detail: 'Request a grand piano floor pattern to see how it fits.', image: img('final-desktop-col2.jpg'), spots: [] },
-      { title: 'Keep exploring', detail: 'Other refurbished pianos to browse, styled like the original Steinway site.', image: img('final-desktop-col2.jpg'), spots: [] },
+    { ...sec('gallery', { navLabel: 'Desktop grid', eyebrow: 'Grid for Desktop PDP', title: '12 Column Grid', items: [
+      { title: '', detail: '', image: '', figmaUrl: F('64:36'), tileSize: 'standard' },
+      { title: '', detail: '', image: '', figmaUrl: F('64:58'), tileSize: 'standard' },
+    ] }), layout: { count: 2, columns: 2, pattern: 'even', gap: 20, scale: 100, presentation: 'images' } },
+    { ...sec('gallery', { navLabel: 'Mobile grid', eyebrow: 'Mobile PDP Grid Layout', title: '4 Column Grid', items: [
+      { title: '', detail: '', image: '', figmaUrl: F('64:66'), tileSize: 'standard' },
+      { title: '', detail: '', image: '', figmaUrl: F('64:67'), tileSize: 'standard' },
+    ] }), layout: { count: 2, columns: 2, pattern: 'even', gap: 20, scale: 100, presentation: 'images' } },
+    sec('rows', { navLabel: 'Type', eyebrow: 'Typographic Hierarchy', title: 'Typographic Hierarchy', options: { hideEyebrow: true }, items: [
+      { title: 'Header 1', detail: 'DIN Condensed 40pt | 10% kerning' },
+      { title: 'Header 2', detail: 'Lora Italic 38pt' },
+      { title: 'Subheader', detail: 'Lora caps 25pt | 10% kerning' },
+      { title: 'Paragraph', detail: 'Lora Regular 18pt | Leading 25 | Kerning 2%' },
+      { title: 'Section heading & button text', detail: 'DIN Condensed 25pt | 10% kerning' },
     ] }),
-    sec('screenFocus', { navLabel: 'Final mobile', eyebrow: 'Deliver', title: 'And in her hand', body: 'The same page on a 4-column grid, with the chat button pinned out of the way.', items: [
-      { title: 'Price and trust', detail: 'Financing options let Lauren see the price and plan within her budget; reviews of the refurbisher and its guarantees build confidence.', image: img('final-mobile-1.jpg'), spots: [] },
-      { title: 'Specs that read well', detail: '100% Steinway, 100% guaranteed, then specifications in digestible sections instead of a wall of text.', image: img('final-mobile-2.jpg'), spots: [] },
-      { title: 'Picture it, keep shopping', detail: 'Request a floor pattern to visualize the piano at home, then swipe through other refurbished models. The chat button stays pinned to the bottom, out of the way.', image: img('final-mobile-3.jpg'), spots: [] },
+    sec('fullMedia', { navLabel: 'Type specimen', eyebrow: '', title: '', options: quiet, items: [
+      { title: '', detail: '', image: '', figmaUrl: F('56:191') },
     ] }),
-    sec('comparison', { navLabel: 'Outcome', eyebrow: 'Deliver', title: 'From listing to showroom', body: '', items: [
-      { title: 'Before', detail: 'A sparse page that looked like a classified ad, with one action: fill out a form.' },
-      { title: 'After', detail: 'A page that feels like Steinway: a path to price, the refurbisher’s reputation, guarantees, and tools to picture the piano at home.' },
+    sec('scrollSite', { navLabel: 'Final PDP', eyebrow: 'Final PDP', title: 'High Fidelity', options: { show: 'both' }, items: [
+      { title: 'Final PDP: Desktop', detail: '', image: '', figmaUrl: F('84:22') },
+      { title: 'Final PDP: Mobile', detail: '', image: '', figmaUrl: F('42:23') },
+      { title: 'Pricing and financing', detail: 'Provides access to pricing and financing options, maintaining a luxury feel while enabling budget planning.', point: '12', value: 'desktop' },
+      { title: 'A piano in a home', detail: 'A captivating image of a Steinway piano in a home setting to help Lauren visualize how it would fit into her space.', point: '5', value: 'desktop' },
+      { title: 'The refurbishing company', detail: 'Highlights the refurbishing company’s quality and reputation with customer reviews.', point: '20', value: 'desktop' },
+      { title: 'Guarantees', detail: 'Eases any customer concerns about buying a refurbished piano by highlighting guarantees and warranty information.', point: '30', value: 'desktop' },
+      { title: 'Carousel', detail: 'Carousel provides more captivating way of reading product description and specifications.', point: '42', value: 'desktop' },
+      { title: 'Floor pattern', detail: 'Tools to visualize the piano in her home with a grand piano floor pattern.', point: '72', value: 'desktop' },
+      { title: 'More pianos', detail: 'Encourages further exploration by showcasing additional refurbished pianos for her to browse.', point: '86', value: 'desktop' },
+      { title: 'Financing options button', detail: 'Lauren can tap on the link to view the price of the piano and explore financing options, helping her plan her purchase within her budget.', point: '15', value: 'mobile' },
+      { title: 'Builds trust', detail: 'This section showcases reviews and ratings of the refurbishing company. She can read through testimonials to gain confidence in the quality and authenticity of the refurbished pianos.', point: '22', value: 'mobile' },
+      { title: 'Refurbisher guarantees', detail: 'Also builds trust by guaranteeing the quality of the refurbished models.', point: '36', value: 'mobile' },
+      { title: 'Tools for buying process', detail: 'By visualizing the piano in her home, she can make a more informed decision.', point: '75', value: 'mobile' },
+      { title: 'Keep shopping', detail: 'Lauren can easily swipe horizontally through a carousel of other refurbished piano models.', point: '86', value: 'mobile' },
+      { title: 'Chat button pinned', detail: 'By keeping the chat button pinned to the bottom of the screen we keep users from having to constantly try to shop around it.', point: '95', value: 'mobile' },
     ] }),
   ];
   return {
     id: STEINWAY_ID,
     slug: 'steinway',
-    title: 'Luxury, on a budget: a pre-owned Steinway page that feels like Steinway',
-    summary: 'A responsive redesign of the Certified Pre-Owned Steinway product page, so a price-conscious buyer can find the path to price, trust who restored the piano, and picture it in her home.',
-    client: 'Steinway & Sons · Certified Pre-Owned',
-    role: 'UX/UI designer',
-    timeframe: 'Winter 2024',
-    accent: '#8c6d3f',
+    title: 'Rebuilt a luxury PDP around 3 buyer trust barriers',
+    summary: 'A UX redesign of the Certified Pre-Owned Steinway Center PDP, focused on user persona Lauren — a budget-conscious luxury buyer who needs pricing transparency, refurbisher credibility, and visualization tools before committing to a grand piano purchase.',
+    client: 'Steinway PDP Redesign',
+    role: 'UX Design · Figma, UX Research',
+    timeframe: 'Project C · DESPX 260',
+    accent: '#1B2A44',
     theme: 'editorial',
     motion: 'expressive',
     hero: { style: 'reveal', bg: 'paper', frame: 'laptop' },
+    heroFigmaUrl: F('84:22'),
     showNav: true,
-    sources: { figmaUrl: `https://www.figma.com/design/${FIGMA_FILE}/C_Katelyn_Dayley_W24?node-id=0-1` },
-    heroImage: img('final-desktop-top.jpg'),
+    sources: { figmaUrl: F('0:1') },
     sections,
   } as BuilderStudy;
 }
