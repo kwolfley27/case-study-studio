@@ -61,3 +61,21 @@ export function CountUp({ value, duration = 1200, delay = 0 }: { value: string; 
 }
 
 export const easeOut = [0.22, 1, 0.36, 1] as const;
+
+/* 0 → 1 while a sticky child is pinned inside `scene` (pinned `top` = fraction of the viewport).
+   Works in the editor's scrolling preview and on the published page. */
+export function usePinProgress(scene: React.RefObject<HTMLElement | null>, stick: React.RefObject<HTMLElement | null>, top = .3): MotionValue<number> {
+  const p = useMotionValue(0);
+  useEffect(() => {
+    const el = scene.current; if (!el) return;
+    const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
+    let frame = 0;
+    const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
+      const pin = box.top + box.height * top; const travel = r.height - (stick.current?.offsetHeight ?? 0);
+      p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
+    const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
+    measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
+    return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
+  }, [p, top]);
+  return p;
+}

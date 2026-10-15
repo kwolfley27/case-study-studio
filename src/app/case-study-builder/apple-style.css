@@ -2441,3 +2441,25 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 /* bubble colours */
 .csb-psf-ask{color:currentColor;opacity:.62}
 .csb-qchat-row.is-me .csb-qchat-bubble{background:var(--qme,#000)!important;color:var(--qme-ink,#fdfcfc)!important}
+
+/* ── Flow redesign: one chart that changes as you scroll ── */
+.csb-ufd-scene{position:relative}
+.csb-ufd-stick{position:sticky;top:18vh}
+.csb-ufd-run{height:120vh}
+.csb-ufd-steps{position:relative;display:flex;gap:28px;padding-bottom:12px;margin-bottom:18px;font-size:14px;color:var(--t-muted,#a59f97)}
+.csb-ufd-steps span{transition:color .3s}
+.csb-ufd-steps span.is-on{color:var(--t-ink,#000)}
+.csb-ufd-steps::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--t-line2,#ebe8e4)}
+.csb-ufd-steps i{position:absolute;left:0;right:0;bottom:0;z-index:1;height:1px;background:var(--t-ink,#000);transform-origin:left;transition:transform .1s linear}
+.csb-ufd-cap{margin:0 0 18px;font-size:15px;color:var(--t-muted,#777169)}
+.csb-ufd-cap strong{font-weight:500;color:var(--t-ink,#000)}
+.csb-ufd:not(.is-scroll) .csb-uf-scroll+.csb-ufd-cap{margin-top:40px}
+.csb-variant-dark .csb-ufd-steps span.is-on,.csb-variant-dark .csb-ufd-cap strong{color:#fdfcfc}
+.csb-variant-dark .csb-ufd-steps i{background:#fdfcfc}.csb-variant-dark .csb-ufd-steps::after{background:#ffffff26}
+/* quieter tags: small sentence-case text, no coloured pills */
+.csb-ufd .csb-uf-tag{top:-20px;right:auto;left:0;padding:0;background:none!important;color:var(--uf-muted)!important;font-size:11.5px;font-weight:500;letter-spacing:0}
+.csb-ufd .csb-uf-node.is-added .csb-uf-tag{color:var(--uf-ink)!important}
+.csb-ufd .csb-uf-node.is-removed{opacity:.45;transition:opacity .3s}
+.csb-ufd .csb-uf-node.is-removed .csb-uf-label{text-decoration-color:currentColor}
+.csb-ufd .csb-uf-lines path.is-removed{stroke:var(--uf-muted);stroke-dasharray:4 4;opacity:.6}
+.csb-ufd .csb-uf-scroll{padding-top:18px;box-sizing:content-box}

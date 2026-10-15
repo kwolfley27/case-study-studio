@@ -1,8 +1,8 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useInView } from 'motion/react';
+import { AnimatePresence, motion, useInView, useMotionValueEvent } from 'motion/react';
 import { GitBranch, Plus, Trash2 } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
-import { useExpressive, useReducedMotion } from './MotionKit';
+import { useExpressive, usePinProgress, useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
 import { recordingToFlow, Recordings } from './FlowRecorder';
 
@@ -312,42 +312,66 @@ Yes -> Payment
 (Booked)`),
 });
 
+/*
+  One flow chart that changes as you scroll. It pins in place and goes through three states:
+    1. the old flow, plain;  2. what changes: steps that go are struck through, faded and tagged "Cut";
+    3. the new flow: the cut steps fold away, kept steps glide to their new spots, new steps arrive tagged "New".
+  In the editor, options.ufdStage chooses which state the canvas shows (default: the new flow).
+  With Reduce Motion or calm motion it shows "what changes" and the new flow one after the other.
+*/
+type Stage = 'before' | 'cut' | 'after';
 export function FlowDiff({ section, editorMode }: { section: CaseStudySection; editorMode?: boolean }) {
   const data = section.flowDiff ?? defaultFlowDiff();
   const reduce = useReducedMotion(); const expressive = useExpressive();
   const [wrap, cw] = useWidth();
-  const inView = useInView(wrap, { once: true, amount: .35 });
-  const seen = inView || reduce || !expressive || !!editorMode;
-  const [phase, setPhase] = useState<'before' | 'after'>(editorMode || reduce || !expressive ? 'after' : 'before');
-  const [touched, setTouched] = useState(false);
-  // On the page: show the old flow, then morph into the new one.
-  useEffect(() => { if (!inView || touched || editorMode || !expressive || reduce) return; const t = setTimeout(() => setPhase('after'), 2600); return () => clearTimeout(t); }, [inView, touched, editorMode, expressive, reduce]);
+  const scene = useRef<HTMLDivElement>(null); const stick = useRef<HTMLDivElement>(null);
+  const p = usePinProgress(scene, stick, .18);
+  const scroll = !editorMode && expressive && !reduce;
+  const [stage, setStage] = useState<Stage>('before');
+  const [fill, setFill] = useState(0);
+  useMotionValueEvent(p, 'change', v => { setFill(v); setStage(v < .3 ? 'before' : v < .64 ? 'cut' : 'after'); });
   const dir: 'LR' | 'TB' = data.direction ?? 'LR';
   const gb = useMemo(() => layout(data.before, dir, cw), [JSON.stringify(data.before), dir, cw]);
   const ga = useMemo(() => layout(data.after, dir, cw), [JSON.stringify(data.after), dir, cw]);
   const before = new Set(data.before.nodes.map(n => norm(n.label))), after = new Set(data.after.nodes.map(n => norm(n.label)));
   const marksB = Object.fromEntries(data.before.nodes.filter(n => !after.has(norm(n.label))).map(n => [n.id, 'removed' as Mark]));
   const marksA = Object.fromEntries(data.after.nodes.filter(n => !before.has(norm(n.label))).map(n => [n.id, 'added' as Mark]));
-  const cur = phase === 'before' ? data.before : data.after; const g = phase === 'before' ? gb : ga;
   const W = Math.max(gb.w, ga.w), H = Math.max(gb.h, ga.h);
   const scale = Math.max(.6, Math.min(1, cw / Math.max(1, W)));
   const count = (d: UserFlowData) => d.nodes.filter(n => n.type !== 'terminal').length;
   const nb = count(data.before), na = count(data.after); const cut = Object.keys(marksB).length, added = Object.keys(marksA).length;
-  const pick = (p: 'before' | 'after') => { setTouched(true); setPhase(p); };
-  return <div ref={wrap} className={`csb-uf csb-ufd ${editorMode ? 'is-editing' : ''}`}>
-    <div className="csb-ufd-bar">
-      <div className="csb-ufd-toggle" role="tablist" aria-label="Which flow">
-        {(['before', 'after'] as const).map(p => <button key={p} type="button" role="tab" aria-selected={phase === p} onClick={() => pick(p)}>
-          {phase === p && <motion.i layoutId={`ufd-pill-${section.id}`} className="csb-ufd-pill" transition={{ type: 'spring', stiffness: 400, damping: 34 }} />}
-          <span>{p === 'before' ? data.beforeLabel || 'Before' : data.afterLabel || 'After'}</span>
-        </button>)}
-      </div>
-      <p className="csb-ufd-sum"><strong>{nb}</strong> steps <span aria-hidden="true">→</span> <strong>{na}</strong>{cut ? <> · <em className="is-removed">{cut} cut</em></> : null}{added ? <> · <em className="is-added">{added} new</em></> : null}</p>
+  const bl = data.beforeLabel || 'Before', al = data.afterLabel || 'After';
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const caption = (st: Stage) => st === 'before' ? <><strong>{bl}</strong> · {plural(nb, 'step')}</>
+    : st === 'cut' ? <><strong>What changes</strong> · {plural(cut, 'step')} cut{added ? <>, {added} new</> : null}</>
+    : <><strong>{al}</strong> · {plural(na, 'step')}{nb > na ? <>, {nb - na} fewer</> : null}</>;
+  const chart = (st: Stage, key: string) => <div className="csb-uf-scroll" style={{ height: H * scale + 12 }}>
+    <div style={{ position: 'relative', width: W, height: H }}>
+      <FlowChart data={st === 'after' ? data.after : data.before} g={st === 'after' ? ga : gb} scale={scale} sid={`${section.id}-${key}`} field={`flowDiff.${st === 'after' ? 'after' : 'before'}`} seen expressive={expressive} editorMode={editorMode} marks={st === 'cut' ? marksB : st === 'after' ? marksA : undefined} keyByLabel quick />
     </div>
-    <div className="csb-uf-scroll" style={{ height: H * scale + 12 }}>
-      <div style={{ position: 'relative', width: W, height: H }}>
-        <FlowChart data={cur} g={g} scale={scale} sid={`${section.id}-${phase}`} field={`flowDiff.${phase}`} seen={seen} expressive={expressive} editorMode={editorMode} marks={phase === 'before' ? marksB : marksA} keyByLabel quick />
+  </div>;
+  if (!scroll) {
+    const shown: Stage = editorMode ? ((section.options?.ufdStage as Stage) || 'after') : 'after';
+    return <div ref={wrap} className={`csb-uf csb-ufd ${editorMode ? 'is-editing' : ''}`}>
+      {!editorMode && <><p className="csb-ufd-cap">{caption('cut')}</p>{chart('cut', 'cut')}</>}
+      <p className="csb-ufd-cap">{caption(shown)}</p>
+      {chart(shown, shown)}
+    </div>;
+  }
+  const steps: Stage[] = ['before', 'cut', 'after'];
+  return <div ref={wrap} className="csb-uf csb-ufd is-scroll">
+    <div ref={scene} className="csb-ufd-scene">
+      <div ref={stick} className="csb-ufd-stick">
+        <div className="csb-ufd-steps" aria-hidden="true">
+          {steps.map(st => <span key={st} className={st === stage ? 'is-on' : ''}>{st === 'before' ? bl : st === 'cut' ? 'What changes' : al}</span>)}
+          <i style={{ transform: `scaleX(${fill})` }} />
+        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p key={stage} className="csb-ufd-cap" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: .25 }}>{caption(stage)}</motion.p>
+        </AnimatePresence>
+        {chart(stage, 'live')}
       </div>
+      <div className="csb-ufd-run" aria-hidden="true" />
     </div>
   </div>;
 }
