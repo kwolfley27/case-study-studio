@@ -1,6 +1,6 @@
 import { useContext, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'motion/react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Columns3, Plus, Trash2 } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
@@ -29,9 +29,9 @@ function Screen({ image, progress, slot, label, emptyHint, editorMode, grid }: {
   return <div ref={box} className={`csb-ss-screen ${editorMode ? 'is-editing' : ''}`} data-image-slot={slot}>
     {image ? <motion.img ref={img} src={image} alt={label} style={{ y }} draggable={false} onLoad={() => { const b = box.current, i = img.current; if (b && i) setTravel(Math.max(0, i.offsetHeight - b.clientHeight)); }} />
       : <div className="csb-ss-empty"><strong>{label}</strong><span>{emptyHint}</span></div>}
-    <AnimatePresence>{grid && <motion.div key="grid" className="csb-ss-grid" aria-hidden="true" style={{ paddingLeft: `${grid.margin}%`, paddingRight: `${grid.margin}%`, columnGap: `${grid.gutter}%`, gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .4 }}>
-      {Array.from({ length: grid.cols }, (_, i) => <motion.i key={i} initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: .5, delay: i * .03, ease: [0.22, 1, 0.36, 1] }} />)}
+    <AnimatePresence>{grid && image && <motion.div key="grid" className="csb-ss-grid" aria-hidden="true" style={{ paddingLeft: `${grid.margin}%`, paddingRight: `${grid.margin}%`, columnGap: `${grid.gutter}%`, gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
+      {Array.from({ length: grid.cols }, (_, i) => <i key={i} />)}
     </motion.div>}</AnimatePresence>
   </div>;
 }
@@ -42,10 +42,12 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const desk = section.items[0], mob = section.items[1];
   // Optional layout grid over each screen (e.g. 12 columns on desktop, 4 on mobile), with a visitor toggle.
   const g = section.options ?? {};
-  const hasGrid = Number(g.gridDesk) > 0 || Number(g.gridMob) > 0;
-  const [gridOn, setGridOn] = useState(g.gridOn !== false);
-  const deskGrid: Grid = hasGrid && gridOn && Number(g.gridDesk) > 0 ? { cols: Number(g.gridDesk), margin: Number(g.gridDeskMargin ?? 5.5), gutter: Number(g.gridDeskGutter ?? 1.4) } : null;
-  const mobGrid: Grid = hasGrid && gridOn && Number(g.gridMob) > 0 ? { cols: Number(g.gridMob), margin: Number(g.gridMobMargin ?? 5), gutter: Number(g.gridMobGutter ?? 4) } : null;
+  // Layout grid, entered the way Figma does (count, margin, gutter in px of the frame). Off until someone switches it on, like Figma's "Show layout grids".
+  const pct = (px: unknown, w: unknown, d: number) => (Number(px ?? d) / (Number(w) || 1)) * 100;
+  const hasGrid = (Number(g.gridDesk) > 0 && !!desk?.image) || (Number(g.gridMob) > 0 && !!mob?.image);
+  const [gridOn, setGridOn] = useState(g.gridOn === true);
+  const deskGrid: Grid = gridOn && Number(g.gridDesk) > 0 ? { cols: Number(g.gridDesk), margin: pct(g.gridDeskMarginPx, g.gridDeskW ?? 1440, 80), gutter: pct(g.gridDeskGutterPx, g.gridDeskW ?? 1440, 20) } : null;
+  const mobGrid: Grid = gridOn && Number(g.gridMob) > 0 ? { cols: Number(g.gridMob), margin: pct(g.gridMobMarginPx, g.gridMobW ?? 390, 20), gutter: pct(g.gridMobGutterPx, g.gridMobW ?? 390, 16) } : null;
   const notes: Note[] = section.items.slice(2).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: n.value === 'mobile' ? 'mobile' : 'desktop', i: k + 2 }))
     .filter(n => show === 'both' || n.device === show).sort((a, b) => a.at - b.at);
   const wrap = useRef<HTMLDivElement>(null);
@@ -73,7 +75,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
         {show !== 'desktop' && <div className="csb-ss-phone"><span className="csb-ss-island" aria-hidden="true" /><Screen image={mob?.image} progress={p} slot={`${section.id}:1`} label={mob?.title || 'Mobile page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} grid={mobGrid} /></div>}
       </div>
       <div className="csb-ss-notes" aria-live="polite">
-        {hasGrid && <button type="button" className="csb-ss-gridtoggle" role="switch" aria-checked={gridOn} onClick={() => setGridOn(v => !v)}><i aria-hidden="true" />Layout grid{Number(g.gridDesk) > 0 ? ` · ${g.gridDesk} col` : ''}{Number(g.gridMob) > 0 ? ` / ${g.gridMob} col` : ''}</button>}
+        {hasGrid && <button type="button" className="csb-ss-gridtoggle" aria-pressed={gridOn} title={gridOn ? 'Hide layout grid' : 'Show layout grid'} onClick={() => setGridOn(v => !v)}><Columns3 size={14} strokeWidth={1.7} aria-hidden="true" />{gridOn ? 'Hide layout grid' : 'Show layout grid'}</button>}
         <div className="csb-ss-ticks" aria-hidden="true">{notes.map((n, k) => <i key={n.i} className={k === active ? 'is-on' : k < active ? 'is-past' : ''} />)}</div>
         <AnimatePresence mode="wait">
           {note && <motion.div key={note.i} className="csb-ss-note" initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
@@ -99,13 +101,16 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <div className="csb-segment" role="group" aria-label="Devices">{([['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={show === v} onClick={() => onChange({ options: { ...(section.options ?? {}), show: v } })}>{l}</button>)}</div>
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link. Use full-length frames: the page scrolls inside the device.</p>
     <p className="csb-panel-kicker">Layout grid</p>
-    <div className="csb-fc-ctl-grid">
-      <label className="csb-field"><span>Desktop columns</span><input type="number" min={0} max={24} value={Number(section.options?.gridDesk ?? 0)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridDesk: Number(e.target.value) } })} /></label>
-      <label className="csb-field"><span>Mobile columns</span><input type="number" min={0} max={12} value={Number(section.options?.gridMob ?? 0)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridMob: Number(e.target.value) } })} /></label>
-      <label className="csb-field"><span>Desktop margin / gutter %</span><span className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 1fr' }}><input type="number" step={.1} value={Number(section.options?.gridDeskMargin ?? 5.5)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridDeskMargin: Number(e.target.value) } })} /><input type="number" step={.1} value={Number(section.options?.gridDeskGutter ?? 1.4)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridDeskGutter: Number(e.target.value) } })} /></span></label>
-      <label className="csb-field"><span>Mobile margin / gutter %</span><span className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 1fr' }}><input type="number" step={.1} value={Number(section.options?.gridMobMargin ?? 5)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridMobMargin: Number(e.target.value) } })} /><input type="number" step={.1} value={Number(section.options?.gridMobGutter ?? 4)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridMobGutter: Number(e.target.value) } })} /></span></label>
-    </div>
-    <p className="csb-field-note">0 columns hides the grid. Visitors can switch it off and on.</p>
+    <p className="csb-field-note">Copy the numbers from the frame’s Layout grid in Figma. It stays hidden until a visitor taps “Show layout grid”, the way you toggle grids in Figma. 0 columns turns it off.</p>
+    {([['Desk', 'Desktop frame', 1440, 80, 20], ['Mob', 'Mobile frame', 390, 20, 16]] as const).map(([k, label, w, m, gu]) => { const o = section.options ?? {}; const set = (key: string, v: number) => onChange({ options: { ...o, [key]: v } });
+      return <div key={k} className="csb-ss-gridctl">
+        <strong>{label}</strong>
+        <label><span>Columns</span><input type="number" min={0} max={24} value={Number(o[`grid${k}`] ?? 0)} onChange={e => set(`grid${k}`, Number(e.target.value))} /></label>
+        <label><span>Margin</span><input type="number" min={0} value={Number(o[`grid${k}MarginPx`] ?? m)} onChange={e => set(`grid${k}MarginPx`, Number(e.target.value))} /></label>
+        <label><span>Gutter</span><input type="number" min={0} value={Number(o[`grid${k}GutterPx`] ?? gu)} onChange={e => set(`grid${k}GutterPx`, Number(e.target.value))} /></label>
+        <label><span>Frame width</span><input type="number" min={100} value={Number(o[`grid${k}W`] ?? w)} onChange={e => set(`grid${k}W`, Number(e.target.value))} /></label>
+      </div>; })}
+    <label className="csb-check-field"><input type="checkbox" checked={section.options?.gridOn === true} onChange={e => onChange({ options: { ...(section.options ?? {}), gridOn: e.target.checked } })} /> Start with the grid showing</label>
     <p className="csb-panel-kicker">Callouts</p>
     {items.slice(2).map((n, k) => { const i = k + 2; return <div key={i} className="csb-ss-ctl">
       <input value={n.title} aria-label="Callout title" onChange={e => setItem(i, { title: e.target.value })} />

@@ -1909,12 +1909,16 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 @media (max-width:640px){.csb-bar-col b{font-size:10px}.csb-bar-plot{gap:4px}}
 /* Layout grid overlay on scrolling screens */
 .csb-ss-grid{position:absolute;inset:0;z-index:2;display:grid;pointer-events:none;box-sizing:border-box}
-.csb-ss-grid i{display:block;height:100%;background:color-mix(in srgb,#ff4704 13%,transparent);box-shadow:inset 1px 0 0 color-mix(in srgb,#ff4704 30%,transparent),inset -1px 0 0 color-mix(in srgb,#ff4704 30%,transparent);transform-origin:top}
-.csb-ss-gridtoggle{justify-self:start;display:inline-flex;align-items:center;gap:10px;height:34px;padding:0 14px 0 8px;border:1px solid #e5e5e5;border-radius:9999px;background:#fdfcfc;color:#000;font:500 13px/1 inherit;cursor:pointer}
-.csb-ss-gridtoggle i{position:relative;width:30px;height:18px;border-radius:9999px;background:#e3e3e6;transition:background .2s}
-.csb-ss-gridtoggle i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #0003;transition:transform .2s}
-.csb-ss-gridtoggle[aria-checked=true] i{background:#ff4704}
-.csb-ss-gridtoggle[aria-checked=true] i::after{transform:translateX(12px)}
+/* Figma's default layout grid: red at 10% */
+.csb-ss-grid i{display:block;height:100%;background:rgba(255,0,0,.1)}
+.csb-ss-gridtoggle{justify-self:start;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px 0 10px;border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:9999px;background:transparent;color:inherit;font:500 12.5px/1 Inter,system-ui,sans-serif;cursor:pointer;opacity:.75;transition:opacity .15s,background .15s}
+.csb-ss-gridtoggle:hover{opacity:1}
+.csb-ss-gridtoggle[aria-pressed=true]{opacity:1;background:color-mix(in srgb,currentColor 6%,transparent)}
+.csb-ss-gridtoggle svg{color:#e5484d}
+.csb-ss-gridctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 0;border-top:1px solid #0000000f}
+.csb-ss-gridctl strong{grid-column:1/-1;font-size:12.5px;font-weight:600}
+.csb-ss-gridctl label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#6e6e73}
+.csb-ss-gridctl input{width:100%;min-width:0;height:30px;padding:0 8px;border:1px solid #e3e3e6;border-radius:8px;font:inherit;font-size:12.5px;color:#1d1d1f;background:#fff}
 
 /* Type system: live text set in the real fonts */
 .csb-type{--hair:color-mix(in srgb,currentColor 12%,transparent);--soft:color-mix(in srgb,currentColor 50%,transparent);margin:clamp(24px,4vw,44px) 0 0;display:flex;flex-direction:column;gap:clamp(48px,7vw,96px)}
@@ -1943,3 +1947,19 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-type-meta span{font:400 11.5px/1.5 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.02em;color:var(--soft)}
 .csb-type-sample{margin:0;min-width:0;overflow-wrap:break-word;text-wrap:balance}
 @media (max-width:760px){.csb-type-faces{grid-template-columns:1fr}.csb-type-face{padding-left:0 !important;padding-right:0 !important}.csb-type-face + .csb-type-face{border-left:0;border-top:1px solid var(--hair)}.csb-type-scale{overflow-x:auto;grid-auto-columns:minmax(96px,1fr)}.csb-type-row{grid-template-columns:1fr;gap:10px}}
+
+/* Annotated screen: notes list in the inspector */
+.csb-annctl{display:flex;flex-direction:column;gap:10px}
+.csb-annctl-head{display:flex;align-items:baseline;justify-content:space-between}
+.csb-annctl-head span{font-size:12px;color:#86868b}
+.csb-annctl ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.csb-annctl li{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid #e8e8ed;border-radius:12px;background:#fff}
+.csb-annctl-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto auto;align-items:center;gap:4px}
+.csb-annctl-row b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#1d1d1f;color:#fff;font:600 11px/1 Inter,system-ui,sans-serif}
+.csb-annctl-row input,.csb-annctl textarea{width:100%;min-width:0;padding:6px 8px;border:1px solid transparent;border-radius:8px;background:#f5f5f7;font:500 13px/1.35 Inter,system-ui,sans-serif;color:#1d1d1f}
+.csb-annctl textarea{font-weight:400;color:#424245;resize:vertical}
+.csb-annctl-row input:focus,.csb-annctl textarea:focus{outline:none;border-color:#c7c7cc;background:#fff}
+.csb-annctl-row .csb-icon-button{width:26px;height:26px}
+.csb-annctl-row .csb-icon-button:disabled{opacity:.3}
+.csb-annctl-side{align-self:flex-start}
+.csb-annctl-side button{padding:4px 12px;font-size:12px}

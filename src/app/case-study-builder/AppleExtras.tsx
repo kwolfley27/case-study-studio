@@ -2,6 +2,7 @@ import { useContext, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useMotionValueEvent, useSpring, useTransform } from 'motion/react';
 import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
 import { EditableText, EditingContext } from './EditableText';
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import type { CaseStudySection } from './model';
 
 const lines = (value: string) => value.split(/\n+/).map(line => line.trim()).filter(Boolean);
@@ -219,6 +220,41 @@ export const parsePoint = (value: string | undefined, k: number): [number, numbe
   return [Number.isFinite(x) ? Math.min(100, Math.max(0, x)) : 50, Number.isFinite(y) ? Math.min(100, Math.max(0, y)) : 50];
 };
 
+/** Which side a note sits on: its own choice (value 'left' / 'right'), else the first three left. */
+export const annotSide = (item: CaseStudySection['items'][number] | undefined, k: number) => item?.value === 'right' ? 1 : item?.value === 'left' ? 0 : k < 3 ? 0 : 1;
+
+/** Inspector list for an annotated screen: add, write, reorder, move sides, delete. */
+export function AnnotationControls({ section, onChange }: { section: CaseStudySection; onChange: (p: Partial<CaseStudySection>) => void }) {
+  const screen = section.items[0] ?? { title: 'Screen', detail: '' };
+  const notes = section.items.slice(1, 7);
+  const save = (next: typeof notes) => onChange({ items: [screen, ...next] });
+  const set = (k: number, patch: Partial<CaseStudySection['items'][number]>) => save(notes.map((n, i) => i === k ? { ...n, ...patch } : n));
+  const move = (k: number, d: number) => { const j = k + d; if (j < 0 || j >= notes.length) return; const next = [...notes]; [next[k], next[j]] = [next[j], next[k]]; save(next); };
+  return <div className="csb-annctl">
+    <div className="csb-annctl-head"><p className="csb-panel-kicker">Notes</p><span>{notes.length} of 6</span></div>
+    {notes.length === 0 && <p className="csb-field-note">No notes yet. Add one, then drag its numbered dot on the screen to the spot it describes.</p>}
+    <ol>
+      {notes.map((n, k) => <li key={k}>
+        <div className="csb-annctl-row">
+          <b aria-hidden="true">{k + 1}</b>
+          <input value={n.title} placeholder="Short title" aria-label={`Note ${k + 1} title`} onChange={e => set(k, { title: e.target.value })} />
+          <button type="button" className="csb-icon-button" aria-label="Move up" disabled={k === 0} onClick={() => move(k, -1)}><ChevronUp size={14} /></button>
+          <button type="button" className="csb-icon-button" aria-label="Move down" disabled={k === notes.length - 1} onClick={() => move(k, 1)}><ChevronDown size={14} /></button>
+          <button type="button" className="csb-icon-button" aria-label={`Delete note ${k + 1}`} onClick={() => save(notes.filter((_, i) => i !== k))}><Trash2 size={13} /></button>
+        </div>
+        <textarea value={n.detail} rows={2} placeholder="What the reader should notice" aria-label={`Note ${k + 1} text`} onChange={e => set(k, { detail: e.target.value })} />
+        <div className="csb-segment csb-annctl-side" role="group" aria-label={`Note ${k + 1} side`}>
+          <button type="button" aria-pressed={annotSide(n, k) === 0} onClick={() => set(k, { value: 'left' })}>Left</button>
+          <button type="button" aria-pressed={annotSide(n, k) === 1} onClick={() => set(k, { value: 'right' })}>Right</button>
+        </div>
+      </li>)}
+    </ol>
+    <button type="button" className="csb-quiet-button" disabled={notes.length >= 6} onClick={() => { const left = notes.filter((n, k) => annotSide(n, k) === 0).length; save([...notes, { title: 'New note', detail: '', point: '50,50', value: left <= notes.length - left ? 'left' : 'right' }]); }}><Plus size={13} /> Add note</button>
+    <p className="csb-field-note">Drag each numbered dot on the screen to what it describes; arrow keys fine-tune. You can also click any note on the page to edit it there.</p>
+    <button type="button" className="csb-quiet-button" onClick={() => save(notes.map(n => ({ ...n, point: undefined })))}>Reset dot positions</button>
+  </div>;
+}
+
 export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const { edit } = useContext(EditingContext);
@@ -233,6 +269,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   const [tops, setTops] = useState<number[]>([]);
   const sideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const points = notes.map((item, k) => drag?.k === k ? drag.point : parsePoint(item.point, k));
+  const sideOf = (k: number) => annotSide(notes[k], k);
   const key = points.map(p => p.join(',')).join('|');
 
   // Place each label level with its dot (Apple-style), keep labels from overlapping,
@@ -247,7 +284,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
       if (stacked) { setTops([]); setPaths([]); return; }
       const next: number[] = [];
       for (const side of [0, 1]) {
-        const ids = points.map((_, k) => k).filter(k => (k < 3 ? 0 : 1) === side && anchors.current[k]);
+        const ids = points.map((_, k) => k).filter(k => sideOf(k) === side && anchors.current[k]);
         const sideEl = sideRefs.current[side]; const sideTop = sideEl ? sideEl.getBoundingClientRect().top : box.top;
         const want = ids.map(k => ({ k, y: screenBox.top - sideTop + screenBox.height * points[k][1] / 100 - 12, h: anchors.current[k]!.offsetHeight }));
         want.sort((p, q) => p.y - q.y);
@@ -257,8 +294,8 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
       setTops(next);
       setPaths(points.map(([x, y], k) => {
         const el = anchors.current[k]; if (!el || next[k] === undefined) return '';
-        const sideEl = sideRefs.current[k < 3 ? 0 : 1]; if (!sideEl) return '';
-        const sr = sideEl.getBoundingClientRect(); const left = k < 3;
+        const sideEl = sideRefs.current[sideOf(k)]; if (!sideEl) return '';
+        const sr = sideEl.getBoundingClientRect(); const left = sideOf(k) === 0;
         const ly = sr.top - box.top + next[k] + 12;
         const lx = left ? sr.right - box.left + 14 : sr.left - box.left - 14;
         const px = screenBox.left - box.left + screenBox.width * x / 100; const py = screenBox.top - box.top + screenBox.height * y / 100;
@@ -291,7 +328,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''} style={tops[k] !== undefined ? { top: tops[k] } : undefined}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
 
   return <div className={`csb-apple-annotated ${desktop ? 'is-desktop' : ''} ${edit ? 'is-editing' : ''}`} ref={wrap}>
-    <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[0] = el; }}>{notes.slice(0, 3).map((item, i) => note(item, i))}</div>
+    <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[0] = el; }}>{notes.map((item, i) => sideOf(i) === 0 ? note(item, i) : null)}</div>
     <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
       {edit && screen?.figmaUrl && <button type="button" className="csb-annot-pull" data-no-slot onClick={async e => { e.stopPropagation(); const b = e.currentTarget; b.disabled = true; b.textContent = 'Pulling from Figma…'; try { const { pullFigmaFrame } = await import('./ImageSlots'); edit('items.0.image', await pullFigmaFrame(screen.figmaUrl!)); b.textContent = 'Pulled from Figma'; } catch (err) { b.disabled = false; b.textContent = err instanceof Error ? err.message : 'Could not pull'; } }}>{screen.image?.startsWith('data:') ? 'Refresh from Figma' : 'Pull frame from Figma'}</button>}
       {desktop ? <span className="csb-apple-annotated-chrome" aria-hidden="true"><i /><i /><i /></span> : <span className="csb-apple-annotated-island" />}
@@ -300,7 +337,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
         role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
         onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}><b>{k + 1}</b></span>)}
     </div>
-    <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[1] = el; }}>{notes.slice(3, 6).map((item, i) => note(item, i + 3))}</div>
+    <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[1] = el; }}>{notes.map((item, i) => sideOf(i) === 1 ? note(item, i) : null)}</div>
     <svg className="csb-annot-lines" aria-hidden="true">{paths.map((d, k) => d && <motion.path key={k} d={d} initial={reduce ? false : { pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 1 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .9, delay: .3 + k * .1, ease: [0.22, 1, 0.36, 1] }} />)}</svg>
     {edit && <p className="csb-annot-hint">Drag a dot to the spot it describes; its label follows.</p>}
   </div>;
