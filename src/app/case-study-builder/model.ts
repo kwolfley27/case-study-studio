@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "details" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "details" | "rows" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -23,7 +23,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "list" | "text" | "quote" | "day" | "meter"; hidden?: boolean }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "list" | "text" | "quote" | "day" | "meter"; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -87,6 +87,7 @@ export interface BuilderStudy {
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
   details: "Project details",
+  rows: "Labeled rows",
   screenRecording: "Screen recording",
   timeline: "Work timeline",
   prototype: "Interactive prototype",
@@ -97,7 +98,7 @@ export const componentNames: Record<SectionKind, string> = {
   fullMedia: "Full width image / GIF",
   survey: "Survey results",
   persona: "Persona",
-  journey: "Journey & emotion",
+  journey: "User journey map",
   issueFlow: "Color-coded issue flow",
   annotated: "Annotated screen",
   methods: "Research methods", columns: "Flexible columns", problem: "Problem statement", competitors: "Competitor analysis", gap: "Gap analysis",
@@ -122,10 +123,10 @@ export const componentDescriptions: Record<SectionKind, string> = {
   fullMedia: "Show an image or animated GIF edge to edge at its natural proportions.",
   survey: "Turn Google Forms responses into clear, evidence-backed charts.",
   persona: "A portrait, goals, pain points, and a day-in-the-life timeline.",
-  journey: "Plot emotion across stages with observed quotes and opportunities.",
+  journey: "Stages as columns with actions, thoughts, an emotion curve, pain points and opportunities. Pick which rows to show.",
   issueFlow: "Trace task steps and color-code the issues found in research.",
   annotated: "Explain one designed screen with numbered callouts.",
-  methods: "A clear research intention with the methods behind it.", columns: "Icon-led columns for findings, principles, or opportunities.", problem: "Frame who needs help, the barrier, and the desired change.", competitors: "Compare competitors across six editable criteria.", gap: "Connect existing approaches to an unmet need.",
+  methods: "A clear research intention with the methods behind it.", columns: "Icon-led columns for findings, principles, or opportunities.", rows: "Numbered rows with a label and a statement — a clean layout for any list.", problem: "Frame who needs help, the barrier, and the desired change.", competitors: "Compare competitors across six editable criteria.", gap: "Connect existing approaches to an unmet need.",
   narrative: "A focused, readable passage with a strong visual pause.",
   metrics: "Animated figures with the context behind each number.",
   flow: "A step-by-step sequence that draws itself as you scroll.",
@@ -135,7 +136,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  coverHero: "Overview", details: "Overview", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  coverHero: "Overview", details: "Overview", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -150,6 +151,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     coverHero: "Making access feel obvious, not accidental.",
     timeline: "How the work unfolded",
     details: "Project overview",
+    rows: "The essentials",
     screenRecording: "See it in motion",
     prototype: "Try it yourself",
     findings: "What kept coming up",
@@ -185,12 +187,19 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     fullMedia: [{ title: "Visual detail", detail: "Add a caption about what this shows.", image: "" }],
     survey: [{ title: "Survey question one", detail: "Add a short takeaway from this result." }, { title: "Survey question two", detail: "Explain what this result changed in the design." }],
     persona: [{ title: "The person", detail: "Role, context, and a concise description.", value: "Traits", image: "" }, { title: "Goals", detail: "Goal one\nGoal two\nGoal three" }, { title: "Pain points", detail: "Pain one\nPain two\nPain three" }, { title: "A day in their life", detail: "Morning: a key moment\nAfternoon: another moment\nEvening: a final moment" }],
-    journey: ["Discover", "Try", "Get stuck", "Recover", "Continue"].map((title, index) => ({ title, detail: ["Curious · What can I do?", "Hopeful · This looks useful.", "Frustrated · What changed?", "Reassured · Now I understand.", "Confident · I can keep going."][index], value: String([46, 72, 20, 54, 80][index]) })),
+    journey: [
+      { title: "Discover", value: "55", detail: "Curious · What can I do here?", actions: "Sees an ad\nOpens the app", touchpoints: "Instagram\nApp Store", thoughts: "Could this fit my week?", pains: "Unclear what's included", opportunities: "Show classes before sign-up", owner: "Marketing" },
+      { title: "Sign up", value: "68", detail: "Hopeful · This looks easy.", actions: "Creates an account\nPicks interests", touchpoints: "Onboarding", thoughts: "Nice, that was quick.", pains: "", opportunities: "Remember preferences", owner: "Product" },
+      { title: "Book", value: "22", detail: "Frustrated · Where are the times?", actions: "Searches classes\nTries to filter by time", touchpoints: "Schedule\nCheckout", thoughts: "Why can't I see availability?", pains: "Availability hidden until checkout\nNo time filter", opportunities: "Show open spots up front\nAdd a time filter", owner: "Product" },
+      { title: "Attend", value: "62", detail: "Relieved · Got it done.", actions: "Gets reminder\nChecks in", touchpoints: "Push notification\nFront desk", thoughts: "That worked out.", pains: "Reminder came late", opportunities: "Reminder an hour before", owner: "Operations" },
+      { title: "Return", value: "82", detail: "Confident · I'll book again.", actions: "Rebooks the same class", touchpoints: "App", thoughts: "This is my routine now.", pains: "", opportunities: "One-tap rebook", owner: "Product" },
+    ],
     issueFlow: ["Open entry point", "Ask a question", "Review answer", "Copy the result"].map((title, index) => ({ title, detail: ["Wrong selection", "Premature action", "Missed indicator", "Recall failure"][index], value: ["S", "A", "C", "R"][index] })),
     annotated: [{ title: "Designed screen", detail: "Upload a screen or paste its image URL.", image: "" }, ...["Menu", "Offers", "Subscription", "Notifications", "Profile", "Navigation"].map(title => ({ title, detail: "Explain the design decision here." }))],
     methods: [{title: "Interviews", detail: "Understand motivations and unmet needs."}, {title: "Think-aloud testing", detail: "Observe behavior in the real flow."}, {title: "Task analysis", detail: "Find moments of friction."}],
     columns: Array.from({length: 3}, (_, i) => ({title: `Finding ${i + 1}`, detail: "Add an observation and explain why it matters.", value: "Evidence or measurement"})),
-    problem: [{title: "Who", detail: "Describe the people affected."}, {title: "Needs", detail: "What are they trying to accomplish?"}, {title: "Because", detail: "What evidence explains the barrier?"}],
+    problem: [{ title: "Who", detail: "New members" }, { title: "need a way to", detail: "find a class that fits their schedule" }, { title: "because", detail: "the booking flow hides availability until checkout" }, { title: "How might we", detail: "show what's open before people commit?" }, { title: "We'll know it worked when", detail: "first-week bookings go up", hidden: true }],
+    rows: [{title: "Who", detail: "Describe the people affected."}, {title: "Needs", detail: "What are they trying to accomplish?"}, {title: "Because", detail: "What evidence explains the barrier?"}],
     competitors: ["Alternative A", "Alternative B", "Alternative C"].map(title => ({title, detail: "Add source, date, and scoring rationale.", value: "0,0,0,0,0,0"})),
     gap: [{title: "Existing approach A", detail: "What it offers", value: "What is missing"}, {title: "Existing approach B", detail: "What it offers", value: "What is missing"}, {title: "Existing approach C", detail: "What it offers", value: "What is missing"}],
     narrative: [],

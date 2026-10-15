@@ -14,6 +14,7 @@ import { WorkTimeline } from "./WorkTimeline";
 import { ScreenRecording } from "./ScreenRecording";
 import { ProjectDetails } from "./ProjectDetails";
 import { ImmersiveHero } from "./ImmersiveHero";
+import { ProblemStatement } from "./ProblemStatement";
 import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
 
@@ -111,7 +112,9 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "journey": return <Journey section={section} />;
     case "issueFlow": return <IssueFlow section={section} />;
     case "annotated": return <AnnotatedScreen section={section} />;
-    case "methods": case "columns": case "problem": case "competitors": case "gap": return <ResearchVisual section={section} />;
+    case "problem": return <ProblemStatement section={section} />;
+    case "rows": return <ResearchVisual section={{ ...section, kind: "problem" }} />;
+    case "methods": case "columns": case "competitors": case "gap": return <ResearchVisual section={section} />;
     case "wireframes": return <WireframeShowcase section={section} />;
     case "fullMedia": return <FullWidthMedia section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} />;
     case "survey": return <SurveyResults section={section} />;

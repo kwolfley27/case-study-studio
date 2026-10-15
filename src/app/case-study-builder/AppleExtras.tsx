@@ -109,9 +109,7 @@ function JourneyScrub({ section }: { section: CaseStudySection }) {
   </div>;
 }
 
-export function Journey({ section }: { section: CaseStudySection }) {
-  return useExpressive() ? <JourneyScrub section={section} /> : <JourneyCalm section={section} />;
-}
+export { JourneyMap as Journey } from './JourneyMap';
 
 const issueColors: Record<string,string> = {A:'#30d158',C:'#bf5af2',R:'#ff453a',COM:'#ff9f0a',S:'#64d2ff'};
 export function IssueFlow({ section }: { section: CaseStudySection }) {

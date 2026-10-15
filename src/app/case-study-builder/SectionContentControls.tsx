@@ -16,8 +16,8 @@ type Change = (patch: Partial<CaseStudySection>) => void;
 const rules: Partial<Record<SectionKind, { min: number; max: number; noun: string }>> = {
   findings: { min: 1, max: 12, noun: "finding" }, columns: { min: 1, max: 8, noun: "column" }, methods: { min: 1, max: 8, noun: "method" },
   metrics: { min: 1, max: 6, noun: "metric" }, quotes: { min: 1, max: 8, noun: "quote" }, flow: { min: 2, max: 8, noun: "step" },
-  journey: { min: 2, max: 5, noun: "stage" }, issueFlow: { min: 2, max: 6, noun: "step" }, gap: { min: 1, max: 4, noun: "approach" },
-  competitors: { min: 1, max: 4, noun: "competitor" }, problem: { min: 1, max: 6, noun: "row" }, gallery: { min: 1, max: 8, noun: "image" },
+  journey: { min: 2, max: 6, noun: "stage" }, issueFlow: { min: 2, max: 6, noun: "step" }, gap: { min: 1, max: 4, noun: "approach" },
+  competitors: { min: 1, max: 4, noun: "competitor" }, rows: { min: 1, max: 8, noun: "row" }, gallery: { min: 1, max: 8, noun: "image" },
   carousel: { min: 1, max: 8, noun: "screen" }, wireframes: { min: 1, max: 4, noun: "screen" }, interviews: { min: 1, max: 6, noun: "participant" },
   fullMedia: { min: 1, max: 6, noun: "image" },
 };
@@ -46,6 +46,7 @@ export function ItemsManager({ section, onChange }: { section: CaseStudySection;
   const add = (from: number) => {
     const source = items[from] ?? items[items.length - 1] ?? { title: "", detail: "" };
     const copy: Item = { ...source, title: from === items.length - 1 && source === items[items.length - 1] ? `New ${rule.noun}` : `${source.title} (copy)`, image: source.image !== undefined ? "" : undefined, frameId: undefined, point: undefined };
+    if (section.kind === "journey" && from === items.length - 1) Object.assign(copy, { title: "New stage", value: "50", detail: "Feeling · what they say", actions: "", touchpoints: "", thoughts: "", pains: "", opportunities: "", owner: "" });
     const next = [...items]; next.splice(from + 1, 0, copy);
     onChange({ ...withCount(section, next), layout: section.layout?.count !== undefined ? { ...section.layout, count: Math.min(next.length, (section.layout.count ?? 0) + 1) } : section.layout });
   };
