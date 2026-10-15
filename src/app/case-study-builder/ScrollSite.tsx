@@ -22,7 +22,7 @@ import type { CaseStudySection } from './model';
 type Stage = 'a' | 'b';
 export const stageBase = (section: CaseStudySection) => section.options?.compare ? 4 : 2;
 type Device = 'desktop' | 'mobile';
-type Note = { title: string; detail: string; at: number; device: Device; i: number; when?: string; side?: string };
+type Note = { title: string; detail: string; at: number; device: Device; i: number; when?: string; side?: string; box?: string };
 type View = { top: number; bottom: number };
 type Grid = { cols: number; margin: number; gutter: number } | null;
 
@@ -63,9 +63,11 @@ function useScreens(image: string | undefined, on: boolean) {
 /** Last view of each section's screens, so the inspector can place a note "where I am now". */
 export const lastView = new Map<string, { device: Device; center: number }>();
 
-function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, editorMode, onMoveNote, takeRestore, stack }: {
+const parseBox = (b?: string) => { const v = String(b ?? '').split(',').map(Number); return v.length === 4 && v.every(Number.isFinite) ? v : null; };
+
+function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, editorMode, onMoveNote, takeRestore, stack, onBox }: {
   image?: string; slot: string; label: string; grid?: Grid; notes: Note[]; activeI: number | null; takeRestore?: () => number | null; stack?: boolean;
-  onView: (v: View, byUser?: boolean) => void; scrollRef: (el: HTMLDivElement | null) => void; editorMode?: boolean; onMoveNote: (i: number, at: number) => void;
+  onView: (v: View, byUser?: boolean) => void; scrollRef: (el: HTMLDivElement | null) => void; editorMode?: boolean; onMoveNote: (i: number, at: number) => void; onBox?: (i: number, box: string, center: number) => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null); const content = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -82,13 +84,37 @@ function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, e
     const up = () => { t.removeEventListener('pointermove', move); t.removeEventListener('pointerup', up); onMoveNote(n.i, last); };
     t.addEventListener('pointermove', move); t.addEventListener('pointerup', up);
   };
+  // Resize / move a note's highlight (editor). Saved as "x,y,w,h" in % of the frame; the note's spot follows its centre.
+  const boxDrag = (n: Note, mode: 'move' | 'nw' | 'ne' | 'sw' | 'se') => (e: React.PointerEvent) => {
+    if (!editorMode || !content.current) return; e.preventDefault(); e.stopPropagation();
+    const band = (e.currentTarget as HTMLElement).closest('.csb-ss-band') as HTMLElement; const R0 = content.current.getBoundingClientRect(), B = band.getBoundingClientRect();
+    const st = { x: (B.left - R0.left) / R0.width * 100, y: (B.top - R0.top) / R0.height * 100, w: B.width / R0.width * 100, h: B.height / R0.height * 100 };
+    const minH = 20 / R0.height * 100, sx = e.clientX, sy = e.clientY; let nb = { ...st };
+    const t = e.currentTarget as HTMLElement; t.setPointerCapture(e.pointerId);
+    const apply = () => { band.classList.add('has-box'); band.style.removeProperty('top'); band.style.setProperty('--bx', `${nb.x}%`); band.style.setProperty('--by', `${nb.y}%`); band.style.setProperty('--bw', `${nb.w}%`); band.style.setProperty('--bh', `${nb.h}%`); };
+    const move = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / R0.width * 100, dy = (ev.clientY - sy) / R0.height * 100; let { x, y, w, h } = st;
+      if (mode === 'move') { x += dx; y += dy; }
+      if (mode === 'nw' || mode === 'sw') { x += dx; w -= dx; } if (mode === 'ne' || mode === 'se') w += dx;
+      if (mode === 'nw' || mode === 'ne') { y += dy; h -= dy; } if (mode === 'sw' || mode === 'se') h += dy;
+      w = Math.max(6, w); h = Math.max(minH, h); x = Math.min(100 - w, Math.max(0, x)); y = Math.min(100 - h, Math.max(0, y));
+      nb = { x, y, w, h }; apply();
+    };
+    const up = () => { t.removeEventListener('pointermove', move); t.removeEventListener('pointerup', up); const r = (v: number) => Math.round(v * 100) / 100; onBox?.(n.i, [nb.x, nb.y, nb.w, nb.h].map(r).join(','), r(nb.y + nb.h / 2)); };
+    t.addEventListener('pointermove', move); t.addEventListener('pointerup', up);
+  };
   return <div className={`csb-ss-screen ${editorMode ? 'is-editing' : ''}`} data-image-slot={slot}>
     {image ? <div className="csb-ss-scroll" ref={el => { scroller.current = el; scrollRef(el); }} tabIndex={0} aria-label={`${label}: scroll to explore`} onScroll={() => { if (silent.current) { silent.current = false; report(); return; } if (!scrolled) setScrolled(true); report(true); }}>
       <div className="csb-ss-content" ref={content}>
         {segs ? <div className="csb-ss-frame csb-ss-stack" role="img" aria-label={label}>{segs.list.map((sg, k) => <div key={k} style={{ aspectRatio: `${sg.w} / ${sg.h}`, backgroundImage: `url("${image}")`, backgroundSize: `${(segs.W / sg.w) * 100}% auto`, backgroundPosition: `${segs.W === sg.w ? 0 : (sg.x / (segs.W - sg.w)) * 100}% ${segs.H === sg.h ? 0 : (sg.y / (segs.H - sg.h)) * 100}%` }} />)}</div>
           : <img key={image} className="csb-ss-frame" src={image} alt={label} draggable={false} onLoad={() => { const el = scroller.current; const r = takeRestore?.(); if (el && r != null) { silent.current = true; el.scrollTop = r * el.scrollHeight; } report(); }} />}
-        <AnimatePresence>{notes.filter(n => n.i === activeI).map(n => <motion.span key={`band-${n.i}`} className="csb-ss-band" style={{ top: `${n.at * 100}%` }} initial={{ opacity: 0, scaleX: .96 }} animate={{ opacity: 1, scaleX: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }} aria-hidden="true" />)}</AnimatePresence>
-        {notes.map((n, k) => <span key={n.i} data-i={n.i} className={`csb-ss-marker ${activeI === n.i ? 'is-on' : ''}`} style={{ top: `${n.at * 100}%` }} onPointerDown={drag(n)} data-no-slot title={editorMode ? `Drag to move “${n.title}” on the frame` : undefined} aria-hidden={editorMode ? undefined : true} />)}
+        <AnimatePresence>{notes.filter(n => n.i === activeI).map(n => { const bx = parseBox(n.box);
+          return <motion.span key={`band-${n.i}`} data-i={n.i} className={`csb-ss-band ${bx ? 'has-box' : ''} ${editorMode ? 'is-edit' : ''}`} style={bx ? { ['--bx' as string]: `${bx[0]}%`, ['--by' as string]: `${bx[1]}%`, ['--bw' as string]: `${bx[2]}%`, ['--bh' as string]: `${bx[3]}%` } : { top: `${n.at * 100}%` }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }} aria-hidden={editorMode ? undefined : true}
+            onPointerDown={editorMode ? boxDrag(n, 'move') : undefined} data-no-slot title={editorMode ? 'Drag to move the highlight; drag a corner to resize it' : undefined}>
+            {editorMode && (['nw', 'ne', 'sw', 'se'] as const).map(c => <i key={c} className={`csb-ss-handle is-${c}`} onPointerDown={boxDrag(n, c)} />)}
+          </motion.span>; })}</AnimatePresence>
+        {notes.map((n, k) => <span key={n.i} data-i={n.i} className={`csb-ss-marker ${activeI === n.i ? 'is-on' : ''} ${n.box ? 'has-box' : ''}`} style={{ top: `${n.at * 100}%` }} onPointerDown={drag(n)} data-no-slot title={editorMode ? `Drag to move “${n.title}” on the frame` : undefined} aria-hidden={editorMode ? undefined : true} />)}
       </div>
     </div> : <div className="csb-ss-empty"><strong>{label}</strong><span>Paste a Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste it here</span></div>}
     <AnimatePresence>{grid && image && <motion.div key="grid" className="csb-ss-grid" aria-hidden="true" style={{ paddingLeft: `${grid.margin}%`, paddingRight: `${grid.margin}%`, columnGap: `${grid.gutter}%`, gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}
@@ -99,12 +125,93 @@ function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, e
   </div>;
 }
 
+/* Two screens at once, scrolling together, each with its own notes (left screen's notes on the left,
+   right screen's on the right) so a highlight never hides behind the other device.
+   Used for laptop + phone, and for two stages side by side (e.g. old site and new design). */
+type Pane = { st: 'a' | 'b'; d: Device; label?: string; grid?: Grid };
+function TwoScreens({ section, panes, editorMode, annotate, scrollersRef, takeRestore, kind }: {
+  section: CaseStudySection; panes: [Pane, Pane]; editorMode?: boolean; annotate: boolean; kind: 'mixed' | 'stages';
+  scrollersRef: React.MutableRefObject<Array<HTMLDivElement | null>>; takeRestore: (p: number) => number | null;
+}) {
+  const expressive = useExpressive();
+  const { edit } = useContext(EditingContext);
+  const compare = section.options?.compare === true; const base = compare ? 4 : 2;
+  const slotOf = (pn: Pane) => (compare && pn.st === 'b' ? 2 : 0) + (pn.d === 'desktop' ? 0 : 1);
+  const sides = ['left', 'right'] as const;
+  const notesOf = (pn: Pane): Note[] => !annotate ? [] : section.items.slice(base).map((n, j) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: (n.value === 'mobile' ? 'mobile' : 'desktop') as Device, i: j + base, when: n.when, box: n.box }))
+    .filter(n => n.device === pn.d && (!compare || (n.when === 'a' ? 'a' : n.when === 'both' ? pn.st : 'b') === pn.st)).sort((a, b) => a.at - b.at);
+  const [views, setViews] = useState<View[]>([{ top: 0, bottom: .2 }, { top: 0, bottom: .2 }]);
+  const [last, setLast] = useState(0);
+  const scrollers = scrollersRef;
+  const echo = useRef<{ p: number; top: number } | null>(null);
+  const sync = section.options?.syncScroll !== false;
+  const onView = (p: number) => (v: View, byUser?: boolean) => {
+    const el = scrollers.current[p];
+    if (byUser && echo.current?.p === p && el && Math.abs(el.scrollTop - echo.current.top) < 3) { echo.current = null; byUser = false; }
+    if (byUser && el && sync) { const other = scrollers.current[1 - p]; if (other) { const f = el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight); const top = Math.round(f * Math.max(0, other.scrollHeight - other.clientHeight)); if (Math.abs(other.scrollTop - top) >= 1) { echo.current = { p: 1 - p, top }; other.scrollTop = top; } } }
+    if (byUser) { setLast(p); lastView.set(section.id, { device: panes[p].d, center: (v.top + v.bottom) / 2 }); }
+    setViews(prev => prev.map((x, j) => j === p ? v : x));
+  };
+  const imageOf = (pn: Pane) => section.items[slotOf(pn)]?.image;
+  const active = panes.map((pn, p) => { const v = views[p]; const pad = (v.bottom - v.top) * .12; const mid = (v.top + v.bottom) / 2; return imageOf(pn) ? notesOf(pn).filter(n => n.at >= Math.max(0, v.top + (v.top > .001 ? pad : -1)) && n.at <= Math.min(1, v.bottom - (v.bottom < .999 ? pad : -1))).sort((a, b) => Math.abs(a.at - mid) - Math.abs(b.at - mid))[0] ?? null : null; });
+  const stageEl = useRef<HTMLDivElement>(null);
+  const cols = useRef<Array<HTMLDivElement | null>>([null, null]); const poss = useRef<Array<HTMLDivElement | null>>([null, null]); const heads = useRef<Array<HTMLHeadingElement | null>>([null, null]);
+  const [geo, setGeo] = useState<Array<{ y: number; d: string }>>([{ y: 0, d: '' }, { y: 0, d: '' }]);
+  useLayoutEffect(() => {
+    const st = stageEl.current; if (!st) return;
+    const next = panes.map((_, p) => {
+      const note = active[p]; const col = cols.current[p], pos = poss.current[p], h = heads.current[p];
+      const paneEl = st.querySelector(`.csb-ss-sbs-pane.is-p${p}`);
+      const m = note && paneEl ? paneEl.querySelector<HTMLElement>(`.csb-ss-band[data-i="${note.i}"]`) ?? paneEl.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`) : null;
+      const scr = m?.closest('.csb-ss-screen'); const dev = m?.closest('.csb-ss-mac, .csb-ss-phone');
+      if (!note || !m || !scr || !dev || !col || !pos || !h) return { y: 0, d: '' };
+      const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect(), K = col.getBoundingClientRect(), H = h.getBoundingClientRect(), PR = pos.getBoundingClientRect();
+      const my = Math.min(C.bottom - 4, Math.max(C.top + 4, M.top + M.height / 2)) - S.top;
+      const headOff = H.top - PR.top + Math.min(16, H.height / 2);
+      const y = Math.round(Math.max(-pos.offsetTop, Math.min(K.height - pos.offsetTop - pos.offsetHeight, (my + S.top - K.top) - pos.offsetTop - headOff)));
+      const ey = K.top - S.top + pos.offsetTop + y + headOff; const L = sides[p] === 'left';
+      const x0 = (L ? Math.max(C.left, M.left) : Math.min(C.right, M.right)) - S.left, xm = (L ? D.left - 18 : D.right + 18) - S.left, ex = (L ? H.right + 16 : H.left - 16) - S.left;
+      return { y, d: Math.abs(ey - my) < 1.5 ? `M${x0.toFixed(1)},${my.toFixed(1)} H${ex.toFixed(1)}` : `M${x0.toFixed(1)},${my.toFixed(1)} H${xm.toFixed(1)} V${ey.toFixed(1)} H${ex.toFixed(1)}` };
+    });
+    if (next.some((g, p) => g.y !== geo[p].y || g.d !== geo[p].d)) setGeo(next);
+  });
+  const nameOf = (pn: Pane) => pn.label ?? (pn.d === 'desktop' ? 'Desktop' : 'Mobile');
+  const noteCol = (p: number) => { const note = active[p]; const pn = panes[p]; const list = notesOf(pn);
+    return <div className={`csb-ss-notes is-${sides[p]}`} ref={el => { cols.current[p] = el; }} aria-live="polite">
+      <div className={`csb-ss-note-pos is-${sides[p]}`} ref={el => { poss.current[p] = el; }} style={{ transform: note ? `translateY(${geo[p].y}px)` : undefined }}><AnimatePresence mode="wait">
+        {note && <motion.div key={note.i} className={`csb-ss-note ${note.title.length > 48 ? 'is-long' : ''}`} initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
+          <small>{nameOf(pn)} · {list.findIndex(n => n.i === note.i) + 1} of {list.length}</small>
+          <h3 ref={el => { heads.current[p] = el; }}><EditableText field={`items.${note.i}.title`} value={note.title} /></h3>
+          <p><EditableText field={`items.${note.i}.detail`} value={note.detail} /></p>
+        </motion.div>}
+      </AnimatePresence></div>
+    </div>; };
+  const device = (p: number) => { const pn = panes[p]; const it = section.items[slotOf(pn)];
+    const sc = <Screen stack={section.options?.[pn.d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => takeRestore(p)} image={it?.image} slot={`${section.id}:${slotOf(pn)}`} label={it?.title || `${nameOf(pn)} frame`} grid={pn.grid} notes={notesOf(pn)} activeI={active[p]?.i ?? null} onView={onView(p)} scrollRef={el => { scrollers.current[p] = el; }} editorMode={editorMode} onMoveNote={(i, at) => edit?.(`items.${i}.point`, String(at))} onBox={(i, b, c) => { edit?.(`items.${i}.box`, b); edit?.(`items.${i}.point`, String(c)); }} />;
+    return <div className={`csb-ss-sbs-pane is-p${p} is-${pn.d}`}>{kind === 'stages' && <p className="csb-ss-sbs-label">{pn.label}</p>}
+      {pn.d === 'desktop' ? <div className="csb-ss-mac"><div className="csb-ss-lid"><span className="csb-ss-notch" aria-hidden="true" />{sc}</div><div className="csb-ss-base" aria-hidden="true"><i /></div></div>
+        : <div className="csb-ss-phone"><span className="csb-ss-island" aria-hidden="true" />{sc}</div>}
+    </div>; };
+  const addHere = () => { if (!edit) return; const pn = panes[last]; const v = views[last]; const items = [...section.items]; items.push({ title: 'New note', detail: 'What this part of the page does.', point: String(Math.round((v.top + v.bottom) / 2 * 1000) / 10), value: pn.d, ...(compare ? { when: pn.st } : {}) }); edit('json:items', JSON.stringify(items)); };
+  return <>
+    <div className={`csb-ss-sbs is-${kind} ${annotate ? '' : 'is-plain'} ${panes[0].d === panes[1].d ? `is-${panes[0].d}` : ''}`} ref={stageEl}>
+      {annotate && <svg className="csb-ss-lines" aria-hidden="true">{geo.map((g, p) => g.d && active[p] && <motion.path key={`${p}-${active[p]!.i}`} d={g.d} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }} />)}</svg>}
+      {annotate && noteCol(0)}{device(0)}{device(1)}{annotate && noteCol(1)}
+    </div>
+    {annotate && editorMode && (imageOf(panes[0]) || imageOf(panes[1])) && <div className="csb-ss-foot"><button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot ({nameOf(panes[last]).toLowerCase()})</button></div>}
+  </>;
+}
+
 export function ScrollSite({ section, editorMode }: { section: CaseStudySection; editorMode?: boolean }) {
   const expressive = useExpressive();
   const { edit } = useContext(EditingContext);
   const show = (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
   const compare = section.options?.compare === true; const base = stageBase(section);
   const [stage, setStageRaw] = useState<Stage>('a');
+  const [both, setBoth] = useState(false);
+  const annotate = section.options?.annotate !== false;
+  const paneScrollers = useRef<Array<HTMLDivElement | null>>([null, null]);
+  const panePending = useRef<Array<number | null>>([null, null]);
   // Keep your place on the page when switching stage: remember where each screen was, restore once the new frame loads.
   const pending = useRef<Record<Device, number | null>>({ desktop: null, mobile: null });
   const off = compare && stage === 'b' ? 2 : 0;
@@ -119,13 +226,13 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const deskGrid: Grid = gridOn && Number(g.gridDesk) > 0 ? { cols: Number(g.gridDesk), margin: pct(g.gridDeskMarginPx, g.gridDeskW ?? 1440, 80), gutter: pct(g.gridDeskGutterPx, g.gridDeskW ?? 1440, 20) } : null;
   const mobGrid: Grid = gridOn && Number(g.gridMob) > 0 ? { cols: Number(g.gridMob), margin: pct(g.gridMobMarginPx, g.gridMobW ?? 390, 20), gutter: pct(g.gridMobGutterPx, g.gridMobW ?? 390, 16) } : null;
 
-  const all: Note[] = section.items.slice(base).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: (n.value === 'mobile' ? 'mobile' : 'desktop') as Device, i: k + base, when: n.when, side: n.side }))
+  const all: Note[] = section.items.slice(base).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: (n.value === 'mobile' ? 'mobile' : 'desktop') as Device, i: k + base, when: n.when, side: n.side, box: n.box }))
     .filter(n => !compare || (n.when === 'a' ? 'a' : n.when === 'both' ? stage : 'b') === stage);
-  const notesFor = (d: Device) => all.filter(n => n.device === d).sort((a, b) => a.at - b.at);
+  const notesFor = (d: Device) => !annotate ? [] : all.filter(n => n.device === d).sort((a, b) => a.at - b.at);
   const [views, setViews] = useState<Record<Device, View>>({ desktop: { top: 0, bottom: .2 }, mobile: { top: 0, bottom: .2 } });
   const [device, setDevice] = useState<Device>(show === 'mobile' ? 'mobile' : 'desktop');
   const scrollers = useRef<Record<Device, HTMLDivElement | null>>({ desktop: null, mobile: null });
-  const setStage = (st: Stage) => { if (st === stage) return; (['desktop', 'mobile'] as Device[]).forEach(d => { const el = scrollers.current[d]; pending.current[d] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); setStageRaw(st); };
+  const setStage = (st: Stage) => { if (st === stage) return; paneScrollers.current.forEach((el, p) => { panePending.current[p] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); (['desktop', 'mobile'] as Device[]).forEach(d => { const el = scrollers.current[d]; pending.current[d] = el && el.scrollHeight ? el.scrollTop / el.scrollHeight : null; }); setStageRaw(st); };
   // Both screens scroll together (same distance through the page), so you see desktop and mobile side by side at the same point.
   const echo = useRef<{ d: Device; top: number } | null>(null);
   const sync = section.options?.syncScroll !== false && show === 'both';
@@ -159,7 +266,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const noteSide = !centered || !note ? 'right' : note.side === 'left' || note.side === 'right' ? note.side : (list.findIndex(n => n.i === note.i) % 2 === 0 ? 'left' : 'right');
   useLayoutEffect(() => {
     const st = stageEl.current; if (!st || !note) { setLine(''); return; }
-    const m = st.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`); const h = head.current;
+    const m = st.querySelector<HTMLElement>(`.csb-ss-band[data-i="${note.i}"]`) ?? st.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`); const h = head.current;
     const scr = m?.closest('.csb-ss-screen'); const dev = m?.closest('.csb-ss-mac, .csb-ss-phone');
     if (!m || !h || !scr || !dev || !col.current || !pos.current) { setLine(''); return; }
     const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect(), K = col.current.getBoundingClientRect();
@@ -171,7 +278,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     setNoteY(y);
     const ey = K.top - S.top + P.offsetTop + y + headOff;
     const L = noteSide === 'left';
-    const x0 = (L ? C.left + C.width * .03 : C.right - C.width * .03) - S.left, xm = (L ? Math.min(D.left, C.left) - 20 : Math.max(D.right, C.right) + 20) - S.left, ex = (L ? H.right + 16 : H.left - 16) - S.left;
+    const x0 = (L ? Math.max(C.left, M.left) : Math.min(C.right, M.right)) - S.left, xm = (L ? Math.min(D.left, C.left) - 20 : Math.max(D.right, C.right) + 20) - S.left, ex = (L ? H.right + 16 : H.left - 16) - S.left;
     setLine(Math.abs(ey - my) < 1.5 ? `M${x0.toFixed(1)},${my.toFixed(1)} H${ex.toFixed(1)}` : `M${x0.toFixed(1)},${my.toFixed(1)} H${xm.toFixed(1)} V${ey.toFixed(1)} H${ex.toFixed(1)}`);
   });
   const [vh, setVh] = useState(800);
@@ -186,11 +293,17 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   </AnimatePresence></div>;
   const idle = !note ? <p className="csb-ss-idle">{list.length ? 'Scroll the screen. Notes appear as their part of the page comes into view.' : 'Scroll the screen to explore the page.'}</p> : null;
   const addBtn = editorMode && (desk?.image || mob?.image) ? <button type="button" className="csb-ss-addhere" onClick={addHere}><Crosshair size={13} /> Add a note at this spot</button> : null;
-  const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} />; };
+  const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} onBox={(i, b, c) => { edit?.(`items.${i}.box`, b); edit?.(`items.${i}.point`, String(c)); }} />; };
   return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''}`} style={{ ['--ss-vh' as string]: `${vh}px` }}>
     {compare && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
-      {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={stage === st} onClick={() => setStage(st)}>{stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
+      {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={!both && stage === st} onClick={() => { setBoth(false); setStage(st); }}>{!both && stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
+      <button type="button" role="radio" aria-checked={both} onClick={() => setBoth(true)}>{both && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>Side by side</span></button>
     </div>}
+    {(compare && both) || show === 'both' ? <>
+      {show === 'both' && !both && layerToggle && <div className="csb-ss-layerrow">{layerToggle}</div>}
+      <TwoScreens key={compare && both ? 'stages' : 'mixed'} kind={compare && both ? 'stages' : 'mixed'} section={section} editorMode={editorMode} annotate={annotate} scrollersRef={paneScrollers} takeRestore={p => { const r = panePending.current[p]; panePending.current[p] = null; return r; }}
+        panes={compare && both ? [{ st: 'a', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameA }, { st: 'b', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameB }] : [{ st: stage, d: 'desktop', grid: deskGrid }, { st: stage, d: 'mobile', grid: mobGrid }]} />
+    </> : <>
     <div className="csb-ss-stage" ref={stageEl}>
       <svg className="csb-ss-lines" aria-hidden="true">{note && line && <motion.path key={note.i} d={line} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }} />}</svg>
       {centered && <div className="csb-ss-notes is-left" aria-live="polite" ref={noteSide === 'left' ? col : undefined}>{noteSide === 'left' && noteBlock}</div>}
@@ -211,6 +324,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
       </div>}
     </div>
     {centered && <div className="csb-ss-foot">{ticks}{!note && idle}{addBtn}</div>}
+    </>}
   </div>;
 }
 
@@ -232,6 +346,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <p className="csb-panel-kicker">Show</p>
     <div className="csb-segment" role="group" aria-label="Devices">{([['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={show === v} onClick={() => onChange({ options: { ...(section.options ?? {}), show: v } })}>{l}</button>)}</div>
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste. Use full-length frames: the page scrolls inside the device.</p>
+    <label className="csb-check-field"><input type="checkbox" checked={section.options?.annotate !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), annotate: e.target.checked } })} /> Show notes and highlights (off: just the screens)</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.syncScroll !== false} onChange={e => onChange({ options: { ...(section.options ?? {}), syncScroll: e.target.checked } })} /> Desktop and mobile scroll together</label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
     <p className="csb-panel-kicker">Stages</p>

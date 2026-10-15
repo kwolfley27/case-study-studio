@@ -2109,3 +2109,39 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-canvas .csb-side-nav a[aria-current],.csb-canvas .csb-side-nav a.is-active{font-weight:500!important}
 .csb-canvas :is(.csb-ss-note small,.csb-more-label,.csb-type-meta span){font-size:13px!important;font-weight:500!important;color:#a59f97!important}
 .csb-canvas .csb-bar-col b{font-size:12.5px!important}
+
+/* Side by side: both stages at once, scrolling together */
+.csb-ss-sbs{position:relative;display:grid;align-items:stretch;gap:clamp(20px,3vw,44px);grid-template-columns:minmax(160px,1fr) minmax(240px,320px) minmax(240px,320px) minmax(160px,1fr)}
+.csb-ss-sbs.is-desktop{grid-template-columns:minmax(150px,220px) minmax(0,1fr) minmax(0,1fr) minmax(150px,220px)}
+.csb-ss-sbs-pane{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0;position:relative;z-index:0}
+.csb-ss-sbs-label{margin:0;font:500 14px/1.3 Inter,-apple-system,system-ui,sans-serif;color:#777169}
+.csb-ss-sbs .csb-ss-phone{--pw:min(300px,100%,calc((var(--ss-vh,800px) - 160px) * .46));position:relative}
+.csb-ss-sbs .csb-ss-mac{width:100%;margin:0!important}
+.csb-ss-sbs .csb-ss-notes{padding-top:40px}
+.csb-ss-sbs .csb-ss-notes.is-left{text-align:right}
+@media (max-width:900px){.csb-ss-sbs,.csb-ss-sbs.is-desktop{grid-template-columns:1fr 1fr}.csb-ss-sbs .csb-ss-notes{display:none}}
+
+/* Highlight you can resize: a box around exactly the part a note is about */
+.csb-ss-band.has-box{left:var(--bx)!important;top:var(--by)!important;width:var(--bw)!important;height:var(--bh)!important;right:auto!important;margin-top:0!important}
+.csb-ss-band.is-edit{pointer-events:auto;cursor:move;outline:1px dashed rgba(0,0,0,.45);outline-offset:2px}
+.csb-ss-handle{position:absolute;width:12px;height:12px;border-radius:50%;background:#fdfcfc;box-shadow:0 0 0 1px rgba(0,0,0,.5),0 1px 3px rgba(0,0,0,.2)}
+.csb-ss-handle.is-nw{left:-6px;top:-6px;cursor:nwse-resize}.csb-ss-handle.is-ne{right:-6px;top:-6px;cursor:nesw-resize}
+.csb-ss-handle.is-sw{left:-6px;bottom:-6px;cursor:nesw-resize}.csb-ss-handle.is-se{right:-6px;bottom:-6px;cursor:nwse-resize}
+.csb-ss-marker.has-box{display:none}
+
+/* Laptop + phone side by side (no overlap): desktop notes left, mobile notes right */
+.csb-ss-sbs{align-items:end}
+.csb-ss-sbs-pane{justify-content:flex-end;align-self:stretch}
+.csb-ss-sbs.is-mixed{grid-template-columns:minmax(150px,210px) minmax(0,3fr) minmax(0,1fr) minmax(150px,210px)}
+.csb-ss-sbs.is-mixed .csb-ss-phone{--pw:min(230px,100%)}
+.csb-ss-sbs.is-mixed .csb-ss-mac .csb-ss-lid{width:88%}
+.csb-ss-sbs.is-plain.is-mixed{grid-template-columns:minmax(0,3fr) minmax(0,1fr);max-width:1100px;margin-inline:auto}
+.csb-ss-sbs.is-plain.is-stages{grid-template-columns:1fr 1fr;max-width:900px;margin-inline:auto}
+.csb-ss-sbs .csb-ss-notes{align-self:stretch}
+.csb-ss-layerrow{display:flex;margin-bottom:10px}
+.csb-ss-layerrow .csb-ss-gridtoggle{position:static!important}
+@media (max-width:900px){.csb-ss-sbs.is-mixed{grid-template-columns:minmax(0,3fr) minmax(0,1fr)}}
+.csb-ss-sbs.is-mixed,.csb-ss-sbs.is-stages{grid-template-columns:minmax(140px,190px) minmax(0,3fr) minmax(0,1fr) minmax(140px,190px);gap:clamp(16px,2.4vw,36px)}
+.csb-ss-sbs.is-stages{grid-template-columns:minmax(140px,190px) minmax(0,1fr) minmax(0,1fr) minmax(140px,190px)}
+@container csbview (min-width:1500px){.csb-doc-main .csb-kind-scrollSite .csb-section-inner{width:1200px;margin-inline:calc(50% - 600px)}}
+@container csbview (min-width:1760px){.csb-doc-main .csb-kind-scrollSite .csb-section-inner{width:1360px;margin-inline:calc(50% - 680px)}}
