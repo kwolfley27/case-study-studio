@@ -1,5 +1,6 @@
 import { MessageSquare, Hand, Puzzle, Layers } from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
+import { useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
 import { EditableText as Text } from './EditableText';
 const icons=[MessageSquare,Hand,Puzzle,Layers];

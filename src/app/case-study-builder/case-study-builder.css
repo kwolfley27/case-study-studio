@@ -452,3 +452,7 @@
 .csb-brand-save>div{display:flex;gap:6px;margin:8px 0}
 .csb-brand-save .csb-primary-button{white-space:nowrap}
 @media (max-width:640px){.csb-brand-panel{left:8px;right:8px;width:auto;top:64px}}
+.csb-preview-exit{flex-wrap:wrap;gap:6px}
+.csb-motion-switch{display:flex;padding:2px;border-radius:999px;background:#ffffff1f}
+.csb-motion-switch button{padding:5px 10px!important;border-radius:999px!important;background:none!important;color:inherit!important;font-size:12px}
+.csb-motion-switch button[aria-pressed=true]{background:#fff!important;color:#1d1d1f!important}

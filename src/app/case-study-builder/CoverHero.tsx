@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileUp } from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
+import { useReducedMotion } from './MotionKit';
 import { EditableText } from './EditableText';
 import type { CaseStudySection } from './model';
 

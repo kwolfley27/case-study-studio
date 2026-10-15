@@ -1,5 +1,6 @@
 import { useContext, useLayoutEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, useMotionValue, useMotionValueEvent, useSpring, useTransform } from 'motion/react';
+import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
 import { EditableText, EditingContext } from './EditableText';
 import type { CaseStudySection } from './model';
 
@@ -62,13 +63,54 @@ function journeyPath(values: number[]) {
   return points.reduce((path, point, index) => index === 0 ? `M ${point.x} ${point.y}` : `${path} C ${(points[index-1].x+point.x)/2} ${points[index-1].y}, ${(points[index-1].x+point.x)/2} ${point.y}, ${point.x} ${point.y}`, '');
 }
 
-export function Journey({ section }: { section: CaseStudySection }) {
+function JourneyCalm({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const items = section.items.slice(0, 5);
   const values = items.map(item => Number(item.value) || 50);
   const path = journeyPath(values);
   const lowest = values.indexOf(Math.min(...values));
   return <div className="csb-apple-journey"><svg viewBox="0 0 1040 260" preserveAspectRatio="none" role="img" aria-label={`Emotion journey across ${items.map(item => item.title).join(', ')}`}><motion.path d={`${path} L 960 255 L 80 255 Z`} fill="var(--csb-accent)" initial={reduce?{opacity:.09}:{opacity:0}} whileInView={{opacity:.09}} viewport={{once:true}} transition={{delay:1.1,duration:.8}}/><motion.path d={path} fill="none" stroke="var(--csb-accent)" strokeWidth="3" initial={reduce ? false : {pathLength:0}} whileInView={{pathLength:1}} viewport={{once:true}} transition={{duration:1.4,ease:'easeInOut'}} />{values.map((value,index) => {const cy=190-Math.min(100,Math.max(0,value))*1.45;return <g key={index}>{index===lowest&&!reduce&&<motion.circle cx={80+index*220} cy={cy} r={7} fill="none" stroke="var(--csb-accent)" strokeWidth="2" style={{transformBox:'fill-box',transformOrigin:'center'}} initial={{scale:1,opacity:0}} whileInView={{scale:[1,3.2],opacity:[.6,0]}} viewport={{once:true}} transition={{delay:1.5,duration:1.4,repeat:2,ease:'easeOut'}}/>}<motion.circle cx={80+index*220} cy={cy} r={index===lowest?7:5} fill={index===lowest?'var(--csb-accent)':'white'} stroke="var(--csb-accent)" strokeWidth="3" style={{transformBox:'fill-box',transformOrigin:'center'}} initial={reduce?false:{scale:0}} whileInView={{scale:1}} viewport={{once:true}} transition={{delay:index*.3+.1,type:'spring',stiffness:420,damping:15}}/></g>;})}</svg><div className="csb-apple-journey-stages">{items.map((item,index) => <motion.div key={index} initial={reduce?false:{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:index*.12}}><small>0{index+1}</small><h3><EditableText field={`items.${index}.title`} value={item.title}/></h3><p className={index===lowest?'is-lowest':''}><EditableText field={`items.${index}.detail`} value={item.detail}/></p><span>Emotion {item.value || '50'}/100</span></motion.div>)}</div></div>;
+}
+
+/* Expressive: the curve draws as you scroll, a dot rides along it and each
+   stage lights up when the dot reaches it. */
+function JourneyScrub({ section }: { section: CaseStudySection }) {
+  const items = section.items.slice(0, 5);
+  const values = items.map(item => Number(item.value) || 50);
+  const path = journeyPath(values);
+  const lowest = values.indexOf(Math.min(...values));
+  const n = items.length;
+  const wrap = useRef<HTMLDivElement>(null);
+  const line = useRef<SVGPathElement>(null);
+  const progress = useSpring(useScrollProgress(wrap, .92, .55), { stiffness: 120, damping: 24, restDelta: .001 });
+  const area = useTransform(progress, [.55, 1], [0, .1]);
+  const cy = (v: number) => 190 - Math.min(100, Math.max(0, v)) * 1.45;
+  const dotX = useMotionValue(80); const dotY = useMotionValue(cy(values[0] ?? 50));
+  const dotOpacity = useTransform(progress, [0, .03], [0, 1]);
+  const [reached, setReached] = useState(-1);
+  useMotionValueEvent(progress, 'change', v => {
+    const el = line.current; if (!el) return;
+    const point = el.getPointAtLength(el.getTotalLength() * v);
+    dotX.set(point.x); dotY.set(point.y);
+    const idx = v <= 0.001 ? -1 : Math.min(n - 1, Math.floor((point.x - 80) / 220 + 0.08));
+    setReached(r => r === idx ? r : idx);
+  });
+  return <div ref={wrap} className="csb-apple-journey is-scrub">
+    <svg viewBox="0 0 1040 260" preserveAspectRatio="none" role="img" aria-label={`Emotion journey across ${items.map(item => item.title).join(', ')}`}>
+      <motion.path d={`${path} L ${80 + (n - 1) * 220} 255 L 80 255 Z`} fill="var(--csb-accent)" style={{ opacity: area }} />
+      <path d={path} fill="none" stroke="var(--csb-accent)" strokeOpacity=".14" strokeWidth="3" strokeDasharray="2 8" strokeLinecap="round" />
+      <motion.path ref={line} d={path} fill="none" stroke="var(--csb-accent)" strokeWidth="3.5" strokeLinecap="round" style={{ pathLength: progress }} />
+      {values.map((value, index) => <motion.circle key={index} cx={80 + index * 220} cy={cy(value)} r={index === lowest ? 8 : 6} fill={index === lowest ? 'var(--csb-accent)' : 'white'} stroke="var(--csb-accent)" strokeWidth="3" style={{ transformBox: 'fill-box', transformOrigin: 'center' }} initial={false} animate={{ scale: reached >= index ? 1 : 0.0001 }} transition={{ type: 'spring', stiffness: 460, damping: 14 }} />)}
+      {reached >= lowest && <motion.circle cx={80 + lowest * 220} cy={cy(values[lowest])} r={8} fill="none" stroke="var(--csb-accent)" strokeWidth="2" style={{ transformBox: 'fill-box', transformOrigin: 'center' }} initial={{ scale: 1, opacity: .6 }} animate={{ scale: 3.4, opacity: 0 }} transition={{ duration: 1.3, repeat: 2, ease: 'easeOut' }} />}
+      <motion.circle cx={dotX} cy={dotY} r={11} fill="var(--csb-accent)" style={{ opacity: dotOpacity, filter: 'drop-shadow(0 0 10px var(--csb-accent))' }} />
+      <motion.circle cx={dotX} cy={dotY} r={4.5} fill="white" style={{ opacity: dotOpacity }} />
+    </svg>
+    <div className="csb-apple-journey-stages">{items.map((item, index) => <div key={index} className={reached >= index ? 'is-reached' : ''}><small>0{index + 1}</small><h3><EditableText field={`items.${index}.title`} value={item.title} /></h3><p className={index === lowest ? 'is-lowest' : ''}><EditableText field={`items.${index}.detail`} value={item.detail} /></p><span>Emotion {item.value || '50'}/100</span></div>)}</div>
+  </div>;
+}
+
+export function Journey({ section }: { section: CaseStudySection }) {
+  return useExpressive() ? <JourneyScrub section={section} /> : <JourneyCalm section={section} />;
 }
 
 const issueColors: Record<string,string> = {A:'#30d158',C:'#bf5af2',R:'#ff453a',COM:'#ff9f0a',S:'#64d2ff'};

@@ -73,6 +73,8 @@ export interface BuilderStudy {
   theme?: "editorial" | "classic";
   /** Optional second accent colour, used through text styles. */
   accent2?: string;
+  /** Motion level: expressive (default) or calm. */
+  motion?: "calm" | "expressive";
   /** Brand tokens: colours, fonts, headline weight, corners. */
   brand?: Partial<import("./brand").Brand>;
   sections: CaseStudySection[];

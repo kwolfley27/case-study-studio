@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { motion, useInView, useScroll, useTransform } from "motion/react";
+import { MotionPrefs, useExpressive, useReducedMotion, useScrollProgress } from "./MotionKit";
 import { ArrowDownRight, ArrowUpRight, FileUp, MoveRight } from "lucide-react";
 import { EditingContext, EditableText } from "./EditableText";
 import { WireframeShowcase } from "./WireframeShowcase";
@@ -20,7 +21,7 @@ function Enter({ children, className = "" }: { children: React.ReactNode; classN
   return <motion.div ref={ref} className={className} initial={reduce ? false : { opacity: 0, y: 32 }} animate={visible ? { opacity: 1, y: 0 } : undefined} transition={{ duration: 0.72, ease: [0.2, 0.8, 0.2, 1] }}>{children}</motion.div>;
 }
 
-function AnimatedValue({ value }: { value: string }) {
+function AnimatedValue({ value, duration = 1000, delay = 0 }: { value: string; duration?: number; delay?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const visible = useInView(ref, { once: true });
   const reduce = useReducedMotion();
@@ -31,9 +32,9 @@ function AnimatedValue({ value }: { value: string }) {
     const target = Number(match[2]);
     const decimals = (match[2].split(".")[1] ?? "").length;
     let frame = 0;
-    const started = performance.now();
+    const started = performance.now() + delay;
     const tick = (now: number) => {
-      const progress = Math.min(1, (now - started) / 1000);
+      const progress = Math.min(1, Math.max(0, (now - started) / duration));
       setNumber((target * (1 - Math.pow(1 - progress, 3))).toFixed(decimals));
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
@@ -52,13 +53,15 @@ function SectionIntro({ section, index }: { section: CaseStudySection; index: nu
 
 function Metrics({ section }: { section: CaseStudySection }) {
   const items = section.items.slice(0, section.layout?.count ?? section.items.length);
-  return <div className="csb-metric-grid" style={{ "--csb-metric-columns": Math.min(3, items.length) } as React.CSSProperties}>{items.map((item, index) => <Enter key={index} className="csb-metric"><span className="csb-metric-number"><EditableText field={`items.${index}.value`} value={item.value || ""}><AnimatedValue value={item.value || "—"} /></EditableText></span><h3><EditableText field={`items.${index}.title`} value={item.title} /></h3><p><EditableText field={`items.${index}.detail`} value={item.detail} /></p></Enter>)}</div>;
+  const expressive = useExpressive();
+  return <div className={`csb-metric-grid ${expressive ? "is-expressive" : ""}`} style={{ "--csb-metric-columns": Math.min(3, items.length) } as React.CSSProperties}>{items.map((item, index) => <Enter key={index} className="csb-metric"><motion.span className="csb-metric-number" initial={expressive ? { opacity: 0, scale: .82, filter: "blur(12px)" } : false} whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }} viewport={{ once: true, amount: .6 }} transition={{ duration: 1, delay: index * .14, ease: [0.22, 1, 0.36, 1] }} style={{ display: "inline-block", transformOrigin: "left bottom" }}><EditableText field={`items.${index}.value`} value={item.value || ""}><AnimatedValue value={item.value || "—"} duration={expressive ? 1800 : 1000} delay={expressive ? index * 140 : 0} /></EditableText></motion.span>{expressive && <motion.i className="csb-metric-bar" initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true, amount: .6 }} transition={{ duration: 1.2, delay: .35 + index * .14, ease: [0.22, 1, 0.36, 1] }} />}<h3><EditableText field={`items.${index}.title`} value={item.title} /></h3><p><EditableText field={`items.${index}.detail`} value={item.detail} /></p></Enter>)}</div>;
 }
 
 function Flow({ section }: { section: CaseStudySection }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 75%", "end 45%"] });
-  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const reduce = useReducedMotion();
+  const scrolled = useScrollProgress(ref, .8, .5);
+  const scaleX = useTransform(scrolled, v => reduce ? 1 : v);
   return <div ref={ref} className="csb-flow"><motion.div className="csb-flow-line" style={{ scaleX }} />{section.items.map((item, index) => <Enter key={index} className="csb-flow-step"><span className="csb-flow-dot">{String(index + 1).padStart(2, "0")}</span><h3>{<EditableText field={`items.${index}.title`} value={item.title} />}</h3><p>{<EditableText field={`items.${index}.detail`} value={item.detail} />}</p></Enter>)}</div>;
 }
 
@@ -150,11 +153,11 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
   </nav>;
 }
 
-export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype, bare = false }: { bare?: boolean; study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
+export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype, bare = false, forceMotion = false }: { bare?: boolean; forceMotion?: boolean; study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
   const showNav = !bare && study.showNav !== false;
   useEffect(() => { if (study.brand?.display) loadFont(study.brand.display); if (study.brand?.text) loadFont(study.brand.text); }, [study.brand?.display, study.brand?.text]);
   const coverFirst = study.sections[0]?.kind === "coverHero";
-  return <article className={`csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent } as React.CSSProperties}>
+  return <MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent } as React.CSSProperties}>
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
     <div className="csb-doc-main">
     {!coverFirst && !bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
@@ -167,5 +170,5 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     </section></EditingContext.Provider>)}
     {!bare && <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>}
     </div>
-  </article>;
+  </article></MotionPrefs.Provider>;
 }

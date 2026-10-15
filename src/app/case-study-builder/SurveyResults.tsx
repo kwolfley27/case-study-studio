@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
+import { useExpressive, useReducedMotion } from './MotionKit';
 import { EditableText } from './EditableText';
 import type { CaseStudySection, SurveyQuestion } from './model';
 import { CountUp } from './MotionKit';
@@ -7,10 +8,11 @@ const percent = (count: number, answered: number) => answered ? Math.round(count
 
 function ResponseBars({ question }: { question: SurveyQuestion }) {
   const reduce = useReducedMotion();
+  const expressive = useExpressive();
   return <div className="csb-apple-survey-bars" role="img" aria-label={`${question.sourceName}. ${question.options.map(option => `${option.label}: ${percent(option.count, question.answered)} percent, ${option.count} of ${question.answered}`).join('; ')}`}>
     {question.options.slice(0, 6).map((option, index) => <div className="csb-apple-survey-bar" key={option.label}>
-      <div><span>{option.label}</span><strong>{percent(option.count, question.answered)}%</strong></div>
-      <div className="csb-apple-survey-track"><motion.span initial={reduce ? false : { scaleX: 0 }} whileInView={{ scaleX: percent(option.count, question.answered) / 100 }} viewport={{ once: true, amount: .4 }} transition={{ duration: .8, delay: index * .1, ease: [0.2, 0.8, 0.2, 1] }} /></div>
+      <div><span>{option.label}</span><strong>{expressive ? <CountUp value={`${percent(option.count, question.answered)}%`} duration={1300} delay={index * 120} /> : `${percent(option.count, question.answered)}%`}</strong></div>
+      <div className="csb-apple-survey-track"><motion.span initial={reduce ? false : { scaleX: 0 }} whileInView={{ scaleX: percent(option.count, question.answered) / 100 }} viewport={{ once: true, amount: .4 }} transition={expressive ? { type: 'spring', stiffness: 70, damping: 11, delay: index * .12 } : { duration: .8, delay: index * .1, ease: [0.2, 0.8, 0.2, 1] }} /></div>
       <small>{option.count} of {question.answered}</small>
     </div>)}
   </div>;

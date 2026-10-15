@@ -612,3 +612,17 @@
 .csb-canvas[data-brand] :is(.csb-gallery-image,.csb-carousel-image,.csb-carousel-card,.csb-hero-art,.csb-cover-media,.csb-full-media img,.csb-apple-persona-portrait,.csb-interviews,.csb-wt-lane,.csb-research-card,.csb-survey-empty,.csb-proto-poster){border-radius:var(--brand-radius,20px)!important}
 .csb-canvas[data-brand] .csb-doc-main .csb-story-section:is(.csb-variant-dark,.csb-variant-tinted){border-radius:calc(var(--brand-radius,20px) + 6px)}
 .csb-canvas[data-brand] .csb-wt-chip{border-radius:calc(var(--brand-radius,20px) * .6)}
+
+/* ── Expressive motion ─────────────────────────────────────────────── */
+.csb-metric-bar{display:block;height:3px;width:56px;margin:14px 0 4px;border-radius:9999px;background:var(--csb-accent);transform-origin:left center}
+.csb-doc-main .csb-metric .csb-metric-bar{margin-inline:auto;transform-origin:center}
+.csb-apple-journey.is-scrub .csb-apple-journey-stages>div{opacity:.32;transform:translateY(6px);transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+.csb-apple-journey.is-scrub .csb-apple-journey-stages>div.is-reached{opacity:1;transform:none}
+.csb-apple-journey.is-scrub .csb-apple-journey-stages>div.is-reached small{color:var(--csb-accent)}
+.csb-wt.is-sweep{position:relative}
+.csb-wt-sweep{position:absolute;top:22px;bottom:0;left:var(--wt-label);right:0;pointer-events:none;z-index:3}
+.csb-wt-sweep i{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:linear-gradient(var(--csb-accent),color-mix(in srgb,var(--csb-accent) 10%,transparent));border-radius:2px}
+.csb-wt-sweep b{position:absolute;top:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 8px;border-radius:9999px;background:var(--csb-accent);color:#fff;font:500 10.5px/1 var(--ed-mono,ui-monospace,monospace);letter-spacing:.06em;text-transform:uppercase}
+.csb-wt-chip{transition:opacity .45s ease,filter .45s ease}
+.csb-wt-chip.is-ahead{filter:saturate(.25) opacity(.32)}
+@container (max-width:620px){.csb-wt-sweep{display:none}.csb-wt-chip.is-ahead{filter:none}}
