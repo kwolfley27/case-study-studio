@@ -68,7 +68,7 @@ export function buildSteinway(): BuilderStudy {
       { title: 'The only action a user can take is fill out the entire form for more information.', detail: '' },
       { title: 'Page ends and there’s no loop back into the product page or suggestion to view any other models.', detail: 'This is a missed opportunity.' },
     ] }),
-    sec('scrollSite', { navLabel: 'Wireframes', eyebrow: 'PDP Page Wireframe', title: 'Desktop and Mobile', body: 'In the mobile wireframe, we’ve adjusted the size of pictures and sections to fit better on smaller screens. By elongating these elements, we’ve made it easier for users to see the details of the refurbished pianos without needing to zoom in. I temporarily removed the chat button to keep the interface clean and focused on essential information. Then I eliminated empty space to ensure that all content is easily accessible without excessive scrolling.', options: { show: 'both' }, items: [
+    sec('scrollSite', { navLabel: 'Wireframes', eyebrow: 'PDP Page Wireframe', title: 'Desktop and Mobile', body: 'In the mobile wireframe, we’ve adjusted the size of pictures and sections to fit better on smaller screens. By elongating these elements, we’ve made it easier for users to see the details of the refurbished pianos without needing to zoom in. I temporarily removed the chat button to keep the interface clean and focused on essential information. Then I eliminated empty space to ensure that all content is easily accessible without excessive scrolling.', options: { show: 'both', gridDesk: 12, gridMob: 4 }, items: [
       { title: 'Desktop wireframe', detail: '', image: '', figmaUrl: F('28:9467') },
       { title: 'Mobile wireframe', detail: '', image: '', figmaUrl: F('43:358') },
       { title: 'Enhanced visual appeal', detail: 'Enhanced visual appeal to align with the elegance of Steinway pianos.', point: '4', value: 'desktop' },
@@ -77,23 +77,12 @@ export function buildSteinway(): BuilderStudy {
       { title: 'Product information carousel', detail: 'More detailed product information carousel.', point: '50', value: 'desktop' },
       { title: 'Tools for visualization', detail: 'Integration of essential tools for customer visualization: requesting floor plan.', point: '72', value: 'desktop' },
     ] }),
-    { ...sec('gallery', { navLabel: 'Desktop grid', eyebrow: 'Grid for Desktop PDP', title: '12 Column Grid', items: [
-      { title: '', detail: '', image: '', figmaUrl: F('64:36'), tileSize: 'standard' },
-      { title: '', detail: '', image: '', figmaUrl: F('64:58'), tileSize: 'standard' },
-    ] }), layout: { count: 2, columns: 2, pattern: 'even', gap: 20, scale: 100, presentation: 'images' } },
-    { ...sec('gallery', { navLabel: 'Mobile grid', eyebrow: 'Mobile PDP Grid Layout', title: '4 Column Grid', items: [
-      { title: '', detail: '', image: '', figmaUrl: F('64:66'), tileSize: 'standard' },
-      { title: '', detail: '', image: '', figmaUrl: F('64:67'), tileSize: 'standard' },
-    ] }), layout: { count: 2, columns: 2, pattern: 'even', gap: 20, scale: 100, presentation: 'images' } },
-    sec('rows', { navLabel: 'Type', eyebrow: 'Typographic Hierarchy', title: 'Typographic Hierarchy', options: { hideEyebrow: true }, items: [
-      { title: 'Header 1', detail: 'DIN Condensed 40pt | 10% kerning' },
-      { title: 'Header 2', detail: 'Lora Italic 38pt' },
-      { title: 'Subheader', detail: 'Lora caps 25pt | 10% kerning' },
-      { title: 'Paragraph', detail: 'Lora Regular 18pt | Leading 25 | Kerning 2%' },
-      { title: 'Section heading & button text', detail: 'DIN Condensed 25pt | 10% kerning' },
-    ] }),
-    sec('fullMedia', { navLabel: 'Type specimen', eyebrow: '', title: '', options: quiet, items: [
-      { title: '', detail: '', image: '', figmaUrl: F('56:191') },
+    sec('typeSpec', { navLabel: 'Type', eyebrow: 'Typographic Hierarchy', title: 'Typographic Hierarchy', options: { hideEyebrow: true }, items: [
+      { title: 'Header 1', detail: 'DIN Condensed 40pt | 10% kerning', value: 'Certified Pre-Owned Steinway Center', font: { family: 'DIN Condensed', size: 40, upper: true, tracking: 10 } },
+      { title: 'Header 2', detail: 'Lora Italic 38pt', value: 'Envision a Model B in your Home', font: { family: 'Lora', size: 38, italic: true } },
+      { title: 'Subheader', detail: 'Lora caps 25pt | 10% kerning', value: 'Classic Grand Piano', font: { family: 'Lora', size: 25, upper: true, tracking: 10 } },
+      { title: 'Paragraph', detail: 'Lora Regular 18pt | Leading 25 | Kerning 2%', value: 'Elevate your home with timeless beauty and joy with our Model B Classic Grand piano, beloved for its versatility and elegance.', font: { family: 'Lora', size: 18, leading: 25, tracking: 2 } },
+      { title: 'Section heading & button text', detail: 'DIN Condensed 25pt | 10% kerning', value: 'See Financing Options', font: { family: 'DIN Condensed', size: 25, upper: true, tracking: 10 } },
     ] }),
     sec('scrollSite', { navLabel: 'Final PDP', eyebrow: 'Final PDP', title: 'High Fidelity', options: { show: 'both' }, items: [
       { title: 'Final PDP: Desktop', detail: '', image: '', figmaUrl: F('84:22') },

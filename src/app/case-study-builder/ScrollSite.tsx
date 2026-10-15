@@ -16,7 +16,8 @@ import type { CaseStudySection } from './model';
 */
 type Note = { title: string; detail: string; at: number; device: 'desktop' | 'mobile'; i: number };
 
-function Screen({ image, progress, slot, label, emptyHint, editorMode }: { image?: string; progress: MotionValue<number>; slot: string; label: string; emptyHint: string; editorMode?: boolean }) {
+type Grid = { cols: number; margin: number; gutter: number } | null;
+function Screen({ image, progress, slot, label, emptyHint, editorMode, grid }: { image?: string; progress: MotionValue<number>; slot: string; label: string; emptyHint: string; editorMode?: boolean; grid?: Grid }) {
   const box = useRef<HTMLDivElement>(null); const img = useRef<HTMLImageElement>(null);
   const [travel, setTravel] = useState(0);
   useLayoutEffect(() => {
@@ -28,6 +29,10 @@ function Screen({ image, progress, slot, label, emptyHint, editorMode }: { image
   return <div ref={box} className={`csb-ss-screen ${editorMode ? 'is-editing' : ''}`} data-image-slot={slot}>
     {image ? <motion.img ref={img} src={image} alt={label} style={{ y }} draggable={false} onLoad={() => { const b = box.current, i = img.current; if (b && i) setTravel(Math.max(0, i.offsetHeight - b.clientHeight)); }} />
       : <div className="csb-ss-empty"><strong>{label}</strong><span>{emptyHint}</span></div>}
+    <AnimatePresence>{grid && <motion.div key="grid" className="csb-ss-grid" aria-hidden="true" style={{ paddingLeft: `${grid.margin}%`, paddingRight: `${grid.margin}%`, columnGap: `${grid.gutter}%`, gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .4 }}>
+      {Array.from({ length: grid.cols }, (_, i) => <motion.i key={i} initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: .5, delay: i * .03, ease: [0.22, 1, 0.36, 1] }} />)}
+    </motion.div>}</AnimatePresence>
   </div>;
 }
 
@@ -35,6 +40,12 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const reduce = useReducedMotion(); const expressive = useExpressive();
   const show = (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
   const desk = section.items[0], mob = section.items[1];
+  // Optional layout grid over each screen (e.g. 12 columns on desktop, 4 on mobile), with a visitor toggle.
+  const g = section.options ?? {};
+  const hasGrid = Number(g.gridDesk) > 0 || Number(g.gridMob) > 0;
+  const [gridOn, setGridOn] = useState(g.gridOn !== false);
+  const deskGrid: Grid = hasGrid && gridOn && Number(g.gridDesk) > 0 ? { cols: Number(g.gridDesk), margin: Number(g.gridDeskMargin ?? 5.5), gutter: Number(g.gridDeskGutter ?? 1.4) } : null;
+  const mobGrid: Grid = hasGrid && gridOn && Number(g.gridMob) > 0 ? { cols: Number(g.gridMob), margin: Number(g.gridMobMargin ?? 5), gutter: Number(g.gridMobGutter ?? 4) } : null;
   const notes: Note[] = section.items.slice(2).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: n.value === 'mobile' ? 'mobile' : 'desktop', i: k + 2 }))
     .filter(n => show === 'both' || n.device === show).sort((a, b) => a.at - b.at);
   const wrap = useRef<HTMLDivElement>(null);
@@ -56,12 +67,13 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     <div className="csb-ss-stage">
       <div className="csb-ss-devices">
         {show !== 'mobile' && <div className="csb-ss-mac">
-          <div className="csb-ss-lid"><span className="csb-ss-notch" aria-hidden="true" /><Screen image={desk?.image} progress={p} slot={`${section.id}:0`} label={desk?.title || 'Desktop page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} /></div>
+          <div className="csb-ss-lid"><span className="csb-ss-notch" aria-hidden="true" /><Screen image={desk?.image} progress={p} slot={`${section.id}:0`} label={desk?.title || 'Desktop page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} grid={deskGrid} /></div>
           <div className="csb-ss-base" aria-hidden="true"><i /></div>
         </div>}
-        {show !== 'desktop' && <div className="csb-ss-phone"><span className="csb-ss-island" aria-hidden="true" /><Screen image={mob?.image} progress={p} slot={`${section.id}:1`} label={mob?.title || 'Mobile page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} /></div>}
+        {show !== 'desktop' && <div className="csb-ss-phone"><span className="csb-ss-island" aria-hidden="true" /><Screen image={mob?.image} progress={p} slot={`${section.id}:1`} label={mob?.title || 'Mobile page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} grid={mobGrid} /></div>}
       </div>
       <div className="csb-ss-notes" aria-live="polite">
+        {hasGrid && <button type="button" className="csb-ss-gridtoggle" role="switch" aria-checked={gridOn} onClick={() => setGridOn(v => !v)}><i aria-hidden="true" />Layout grid{Number(g.gridDesk) > 0 ? ` · ${g.gridDesk} col` : ''}{Number(g.gridMob) > 0 ? ` / ${g.gridMob} col` : ''}</button>}
         <div className="csb-ss-ticks" aria-hidden="true">{notes.map((n, k) => <i key={n.i} className={k === active ? 'is-on' : k < active ? 'is-past' : ''} />)}</div>
         <AnimatePresence mode="wait">
           {note && <motion.div key={note.i} className="csb-ss-note" initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
@@ -86,6 +98,14 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <p className="csb-panel-kicker">Show</p>
     <div className="csb-segment" role="group" aria-label="Devices">{([['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={show === v} onClick={() => onChange({ options: { ...(section.options ?? {}), show: v } })}>{l}</button>)}</div>
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link. Use full-length frames: the page scrolls inside the device.</p>
+    <p className="csb-panel-kicker">Layout grid</p>
+    <div className="csb-fc-ctl-grid">
+      <label className="csb-field"><span>Desktop columns</span><input type="number" min={0} max={24} value={Number(section.options?.gridDesk ?? 0)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridDesk: Number(e.target.value) } })} /></label>
+      <label className="csb-field"><span>Mobile columns</span><input type="number" min={0} max={12} value={Number(section.options?.gridMob ?? 0)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridMob: Number(e.target.value) } })} /></label>
+      <label className="csb-field"><span>Desktop margin / gutter %</span><span className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 1fr' }}><input type="number" step={.1} value={Number(section.options?.gridDeskMargin ?? 5.5)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridDeskMargin: Number(e.target.value) } })} /><input type="number" step={.1} value={Number(section.options?.gridDeskGutter ?? 1.4)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridDeskGutter: Number(e.target.value) } })} /></span></label>
+      <label className="csb-field"><span>Mobile margin / gutter %</span><span className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 1fr' }}><input type="number" step={.1} value={Number(section.options?.gridMobMargin ?? 5)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridMobMargin: Number(e.target.value) } })} /><input type="number" step={.1} value={Number(section.options?.gridMobGutter ?? 4)} onChange={e => onChange({ options: { ...(section.options ?? {}), gridMobGutter: Number(e.target.value) } })} /></span></label>
+    </div>
+    <p className="csb-field-note">0 columns hides the grid. Visitors can switch it off and on.</p>
     <p className="csb-panel-kicker">Callouts</p>
     {items.slice(2).map((n, k) => { const i = k + 2; return <div key={i} className="csb-ss-ctl">
       <input value={n.title} aria-label="Callout title" onChange={e => setItem(i, { title: e.target.value })} />

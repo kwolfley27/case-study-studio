@@ -26,6 +26,7 @@ import { FlowDiffControls, UserFlowControls } from "./UserFlow";
 import { JTBDControls } from "./JobsToBeDone";
 import { ScrollSiteControls } from "./ScrollSite";
 import { BarChartControls } from "./BarChart";
+import { TypeSpecimenControls } from "./TypeSpecimen";
 import { FigmaPullBar } from "./FigmaPull";
 import { PublishDialog } from "./Publish";
 import { Globe } from "lucide-react";
@@ -112,8 +113,26 @@ export default function CaseStudyBuilder() {
 
   // One-time starter projects added to the Home library (kept out of the way if deleted later).
   useEffect(() => {
-    try { if (localStorage.getItem("csb-starter-steinway-v3")) return; } catch { return; }
-    void import("./starters/steinway").then(async ({ buildSteinway, STEINWAY_ID }) => { const fresh = migrateStudy(buildSteinway()); let had = false; try { had = !!localStorage.getItem("csb-starter-steinway-v2"); } catch { /* ignore */ } const existing = had ? await getStudy(STEINWAY_ID).catch(() => undefined) : undefined; if (existing && isBuilderStudy(existing)) { const chart = fresh.sections.find(s => s.kind === "barChart"); const next = { ...existing, sections: existing.sections.map(s => s.id === "stw-3-fullMedia" && chart ? chart : s) }; await saveStudy(next); setStudy(current => current.id === STEINWAY_ID ? next : current); return; } await saveStudy(fresh); setStudy(current => current.id === STEINWAY_ID ? fresh : current); }).then(() => { try { localStorage.setItem("csb-starter-steinway-v3", "1"); localStorage.setItem("csb-starter-steinway-v2", "1"); } catch { /* ignore */ } setMessage({ text: "New project added: Steinway PDP redesign. Find it on Home." }); }).catch(() => undefined);
+    try { if (localStorage.getItem("csb-starter-steinway-v4")) return; } catch { return; }
+    void import("./starters/steinway").then(async ({ buildSteinway, STEINWAY_ID }) => {
+      const fresh = migrateStudy(buildSteinway());
+      const existing = await getStudy(STEINWAY_ID).catch(() => undefined);
+      if (existing && isBuilderStudy(existing)) {
+        // Update in place, keeping her edits and any frames already pulled: grid pictures and the type picture go; live type and a grid overlay come in.
+        const typeSpec = fresh.sections.find(s => s.kind === "typeSpec");
+        const chart = fresh.sections.find(s => s.kind === "barChart");
+        const drop = (s: CaseStudySection) => (s.kind === "gallery" && /grid/i.test(s.navLabel ?? "")) || (s.kind === "fullMedia" && s.navLabel === "Type specimen");
+        const sections = existing.sections.filter(s => !drop(s)).map(s => {
+          if (s.kind === "rows" && s.navLabel === "Type" && typeSpec) return typeSpec;
+          if (s.id === "stw-3-fullMedia" && chart) return chart;
+          if (s.kind === "scrollSite" && s.navLabel === "Wireframes") return { ...s, options: { ...(s.options ?? {}), gridDesk: 12, gridMob: 4 } };
+          return s;
+        });
+        const next = { ...existing, sections };
+        await saveStudy(next); setStudy(current => current.id === STEINWAY_ID ? next : current); return false;
+      }
+      await saveStudy(fresh); setStudy(current => current.id === STEINWAY_ID ? fresh : current); return true;
+    }).then(added => { try { ["v2", "v3", "v4"].forEach(v => localStorage.setItem(`csb-starter-steinway-${v}`, "1")); } catch { /* ignore */ } setMessage({ text: added ? "New project added: Steinway PDP redesign. Find it on Home." : "Steinway updated: live type specimen and a layout grid over the wireframes." }); }).catch(() => undefined);
   }, []);
   // Keep every study in the Home library too (debounced; IndexedDB has room for images).
   useEffect(() => { const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
@@ -246,6 +265,7 @@ export default function CaseStudyBuilder() {
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "annotated" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Device</p><div className="csb-segment" role="group" aria-label="Device"><button type="button" aria-pressed={selected.options?.device !== "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "phone" } })}>Phone</button><button type="button" aria-pressed={selected.options?.device === "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "desktop" } })}>Desktop page</button></div><p className="csb-field-note">Click the screen on the page to paste a Figma frame link (Copy link to selection) or drop an image. Up to six callouts; drag each dot to its spot.</p></>}
         {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "typeSpec" && <><div className="csb-inspector-divider" /><TypeSpecimenControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "scrollSite" && <><div className="csb-inspector-divider" /><ScrollSiteControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "jtbd" && <><div className="csb-inspector-divider" /><JTBDControls section={selected} onChange={jtbd => updateSection({ jtbd })} /></>}
         {selected.kind === "userFlow" && <><div className="csb-inspector-divider" /><UserFlowControls section={selected} onChange={userFlow => updateSection({ userFlow })} /></>}
