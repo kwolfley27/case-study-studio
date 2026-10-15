@@ -311,3 +311,11 @@ export function migrateStudy(study: BuilderStudy): BuilderStudy {
     sections: study.sections.slice(1),
   };
 }
+
+/** Which intro parts are hidden for a section (explicit options win; some layouts hide parts by default). */
+export function introHidden(section: Pick<CaseStudySection, "kind" | "options">) {
+  const o = section.options ?? {};
+  const statement = section.kind === "problem" && o.layout !== "rows";
+  const pick = (key: string, fallback: boolean) => o[key] === undefined ? fallback : !!o[key];
+  return { eyebrow: pick("hideEyebrow", false), title: pick("hideTitle", statement), body: pick("hideBody", statement) };
+}

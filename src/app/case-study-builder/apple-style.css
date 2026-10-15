@@ -869,8 +869,8 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 
 /* ── Problem statement sentence ────────────────────────────────────── */
 .csb-ps{max-width:860px;margin:0 auto;text-align:center}
-.csb-ps-sentence{margin:0;font-size:clamp(26px,3.6cqw,44px);line-height:1.32;font-weight:300;letter-spacing:-.02em;color:var(--t-body,#6e6e73);text-wrap:balance}
-.csb-ps-mark{background:linear-gradient(color-mix(in srgb,var(--csb-accent) 28%,transparent),color-mix(in srgb,var(--csb-accent) 28%,transparent)) no-repeat 0 88%/100% 38%;color:var(--t-ink,#1d1d1f);padding:0 .08em;font-weight:400}
+.csb-ps-sentence{margin:0;font-size:clamp(28px,4cqw,48px);line-height:1.28;font-weight:300;letter-spacing:-.02em;color:var(--t-body,#6e6e73);text-wrap:balance}
+.csb-ps-mark{background:linear-gradient(var(--csb-accent),var(--csb-accent)) no-repeat 0 100%/100% 2px;color:var(--t-ink,#1d1d1f);padding:0 0 .06em;font-weight:400}
 .csb-variant-dark .csb-ps-mark{color:var(--t-paper,#fff)}
 .csb-ps-extras{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:clamp(32px,5cqw,52px);text-align:left}
 .csb-ps-extras>div{padding:18px 20px;border-radius:var(--brand-radius,16px);background:var(--t-surface,#f5f5f7)}
@@ -910,3 +910,6 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 /* full width header: bring the device up into the first screen */
 .csb-hx{padding-top:clamp(64px,10vh,120px)}
 .csb-hx-media{margin-top:clamp(40px,8vh,96px)}
+
+.csb-ps-rows .csb-ps-extras{margin-top:28px}
+.csb-kind-problem .csb-section-intro:has(> div:empty){display:none}

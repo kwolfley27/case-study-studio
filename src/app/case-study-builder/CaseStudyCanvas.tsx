@@ -16,7 +16,7 @@ import { ProjectDetails } from "./ProjectDetails";
 import { ImmersiveHero } from "./ImmersiveHero";
 import { DeviceFrame } from "./DeviceFrame";
 import { ProblemStatement } from "./ProblemStatement";
-import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
+import { introHidden, navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
 
 function Enter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -50,7 +50,8 @@ function AnimatedValue({ value, duration = 1000, delay = 0 }: { value: string; d
 }
 
 function SectionIntro({ section, index }: { section: CaseStudySection; index: number }) {
-  const o = section.options ?? {};
+  const hidden = introHidden(section);
+  const o = { hideEyebrow: hidden.eyebrow, hideTitle: hidden.title, hideBody: hidden.body };
   const showBody = section.kind !== "narrative" && !o.hideBody;
   if (o.hideEyebrow && o.hideTitle && !showBody) return null;
   return <div className="csb-section-intro"><span className="csb-section-index">{String(index + 1).padStart(2, "0")}</span><div>{!o.hideEyebrow && <p className="csb-eyebrow"><EditableText field="eyebrow" value={section.eyebrow} /></p>}{!o.hideTitle && <h2><EditableText field="title" value={section.title} /></h2>}{showBody && <p className="csb-section-body"><EditableText field="body" value={section.body} /></p>}</div></div>;

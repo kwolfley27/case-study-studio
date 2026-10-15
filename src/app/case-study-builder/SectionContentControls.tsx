@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Copy, X } from "lucide-react";
-import type { CaseStudySection, SectionKind } from "./model";
+import { introHidden, type CaseStudySection, type SectionKind } from "./model";
 import { personaBlockPresets, personaBlockType } from "./AppleExtras";
 import { detailPresets, isTeam } from "./ProjectDetails";
 
@@ -30,12 +30,13 @@ const withCount = (section: CaseStudySection, items: Item[]): Partial<CaseStudyS
 export function IntroToggles({ section, onChange }: { section: CaseStudySection; onChange: Change }) {
   if (section.kind === "coverHero") return null;
   const o = section.options ?? {};
-  const set = (key: string, hidden: boolean) => onChange({ options: { ...o, [key]: hidden } });
+  const hidden = introHidden(section);
+  const set = (key: string, value: boolean) => onChange({ options: { ...o, [key]: value } });
   return <div className="csb-show-toggles">
     <p className="csb-panel-kicker">Show</p>
-    <label className="csb-check-field"><input type="checkbox" checked={!o.hideEyebrow} onChange={e => set("hideEyebrow", !e.target.checked)} /> Label above the title</label>
-    <label className="csb-check-field"><input type="checkbox" checked={!o.hideTitle} onChange={e => set("hideTitle", !e.target.checked)} /> Title</label>
-    {section.kind !== "narrative" && <label className="csb-check-field"><input type="checkbox" checked={!o.hideBody} onChange={e => set("hideBody", !e.target.checked)} /> Intro text</label>}
+    <label className="csb-check-field"><input type="checkbox" checked={!hidden.eyebrow} onChange={e => set("hideEyebrow", !e.target.checked)} /> Label above the title</label>
+    <label className="csb-check-field"><input type="checkbox" checked={!hidden.title} onChange={e => set("hideTitle", !e.target.checked)} /> Title</label>
+    {section.kind !== "narrative" && <label className="csb-check-field"><input type="checkbox" checked={!hidden.body} onChange={e => set("hideBody", !e.target.checked)} /> Intro text</label>}
   </div>;
 }
 

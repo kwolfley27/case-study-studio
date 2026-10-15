@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { EditableText } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
+import { ResearchVisual } from './ResearchVisuals';
 
 /*
   Problem statement as one clear sentence:
@@ -21,7 +22,13 @@ const connector = (title: string | undefined, fallback: string) => {
 export function ProblemStatement({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const [who, need, why, hmw, success] = section.items;
-  const mark = (index: number, value: string) => <motion.mark className="csb-ps-mark" initial={reduce ? false : { backgroundSize: '0% 38%' }} whileInView={{ backgroundSize: '100% 38%' }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
+  const extras = ((hmw && !hmw.hidden) || (success && !success.hidden)) ? <div className="csb-ps-extras">
+      {hmw && !hmw.hidden && <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .6, delay: .6 }}><small><EditableText field="items.3.title" value={hmw.title || 'How might we'} /></small><p><EditableText field="items.3.detail" value={hmw.detail} /></p></motion.div>}
+      {success && !success.hidden && <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .6, delay: .75 }}><small><EditableText field="items.4.title" value={success.title || "We'll know it worked when"} /></small><p><EditableText field="items.4.detail" value={success.detail} /></p></motion.div>}
+    </div> : null;
+  // Rows layout: Who / Needs / Because as labeled rows under the normal heading.
+  if (section.options?.layout === 'rows') return <div className="csb-ps-rows"><ResearchVisual section={{ ...section, items: [who, need, why].filter(Boolean).map((item, i) => ({ ...item, title: i === 0 ? (item.title || 'Who') : i === 1 ? 'Needs' : 'Because' })) }} />{extras}</div>;
+  const mark = (index: number, value: string) => <motion.mark className="csb-ps-mark" initial={reduce ? false : { backgroundSize: '0% 2px' }} whileInView={{ backgroundSize: '100% 2px' }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
       {mark(0, who?.detail || '')}{' '}
@@ -30,9 +37,6 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
       <EditableText field="items.2.title" value={connector(why?.title, 'because')} />{' '}
       {mark(2, why?.detail || '')}.
     </motion.p>
-    {((hmw && !hmw.hidden) || (success && !success.hidden)) && <div className="csb-ps-extras">
-      {hmw && !hmw.hidden && <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .6, delay: .9 }}><small><EditableText field="items.3.title" value={hmw.title || 'How might we'} /></small><p><EditableText field="items.3.detail" value={hmw.detail} /></p></motion.div>}
-      {success && !success.hidden && <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .6, delay: 1.05 }}><small><EditableText field="items.4.title" value={success.title || "We'll know it worked when"} /></small><p><EditableText field="items.4.detail" value={success.detail} /></p></motion.div>}
-    </div>}
+    {extras}
   </div>;
 }
