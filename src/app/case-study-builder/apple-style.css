@@ -841,23 +841,22 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-jm-text{margin:0;color:var(--t-ink,#1d1d1f)}
 .csb-jm-add{margin-top:6px;padding:2px 8px;border:1px dashed var(--t-line,#d2d2d7);border-radius:9999px;background:none;color:var(--t-muted,#86868b);font-size:11px;cursor:pointer}
 /* emotion */
-.csb-jm-emotion>.csb-jm-label:first-child{grid-row:span 2}
+
 .csb-jm-emotion{grid-auto-rows:auto}
 .csb-jm-scale{position:absolute;top:0;bottom:0;right:100%;width:var(--jm-label);pointer-events:none}
-.csb-jm-scale span{position:absolute;left:0;display:flex;align-items:center;gap:6px;transform:translateY(-50%);font-size:11px;color:var(--t-muted,#86868b)}
-.csb-jm-scale .csb-jm-face{width:18px;height:18px}
-.csb-jm-chart{position:relative;grid-column:2/-1;height:160px;margin:16px 0 6px}
-.csb-jm-emotion>.csb-jm-label:first-child{grid-row:1/3}
+.csb-jm-scale span{position:absolute;left:0;transform:translateY(-50%);font-size:11.5px;color:var(--t-muted,#a59f97)}
+.csb-jm-chart{position:relative;grid-column:2/-1;height:190px;margin:34px 0 34px}
+.csb-jm-emotion>.csb-jm-label:first-child{grid-row:1}
 .csb-jm-chart>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .csb-jm-zone{display:none}
 .csb-jm-col{stroke:var(--t-line2,#e5e5e7);stroke-width:1}
 .csb-jm-base{stroke:var(--t-muted,#a1a1a6);stroke-width:1;stroke-dasharray:4 4}
-.csb-jm-area.is-pos{fill:color-mix(in srgb,var(--jm-pos) 15%,transparent)}
-.csb-jm-area.is-neg{fill:color-mix(in srgb,var(--jm-neg) 13%,transparent)}
 .csb-jm-line{fill:none;stroke:var(--t-ink,#1d1d1f);stroke-width:2.5;stroke-linecap:round}
-.csb-jm-dot{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2.5px solid var(--t-paper,#fff);box-shadow:0 2px 6px #0003}
-.csb-jm-dot.is-pos{background:var(--jm-pos)}.csb-jm-dot.is-neu{background:var(--jm-neu)}.csb-jm-dot.is-neg{background:var(--jm-neg)}
-.csb-jm-dot.is-lowest{width:18px;height:18px;margin:-9px 0 0 -9px}
+.csb-jm-point{position:absolute;width:0;height:0;z-index:1}
+.csb-jm-point .csb-jm-face{position:absolute;left:-8px;top:-30px;width:16px;height:16px}
+.csb-jm-dot{position:absolute;left:-6px;top:-6px;width:12px;height:12px;border-radius:50%;border:2px solid var(--t-paper,#fdfcfc);box-shadow:0 0 1px #0006,0 1px 2px #00000014}
+.csb-jm-point.is-pos .csb-jm-dot{background:var(--jm-pos)}.csb-jm-point.is-neu .csb-jm-dot{background:var(--jm-neu)}.csb-jm-point.is-neg .csb-jm-dot{background:var(--jm-neg)}
+.csb-jm-word{position:absolute;left:0;top:12px;transform:translateX(-50%);white-space:nowrap;font-size:12.5px;letter-spacing:.01em;color:var(--t-muted,#777169)}
 .csb-jm-feeling{display:flex;gap:8px;align-items:flex-start;border-top:0}
 .csb-jm-feeling p{margin:0;color:var(--t-ink,#1d1d1f)}
 .csb-jm-face{flex:none}
@@ -1130,3 +1129,11 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-ae-none{display:block!important;color:var(--t-muted,#a59f97);font-size:14px}
 .csb-variant-dark .csb-ae :is(.csb-ae-text,.csb-ae-insight,.csb-ae-lenses li.is-on button){color:var(--t-paper,#fdfcfc)}
 @container (max-width:760px){.csb-ae{grid-template-columns:1fr}}
+/* With a device frame the header sits on the page itself: glow and caption use the page colour, so there's no band or edge. */
+.csb-cover.has-device{--csb-cover-bg:var(--t-paper,#fdfcfc)}
+.csb-cover.has-device .csb-cover-caption{background:transparent;margin-top:-8px}
+.csb-jm{--jm-bg:var(--t-paper,#fdfcfc)}
+.csb-variant-tinted .csb-jm{--jm-bg:var(--t-surface,#f5f3f1)}
+.csb-variant-dark .csb-jm{--jm-bg:#161411}
+.csb-jm-word{z-index:2;padding:0 4px;text-shadow:0 0 3px var(--jm-bg),0 0 3px var(--jm-bg),0 0 6px var(--jm-bg),0 0 6px var(--jm-bg),0 0 10px var(--jm-bg)}
+.csb-jm-point .csb-jm-face{filter:drop-shadow(0 0 3px var(--jm-bg)) drop-shadow(0 0 3px var(--jm-bg))}

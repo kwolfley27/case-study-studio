@@ -83,7 +83,7 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
         ? <div key="emotion" className="csb-jm-emotion" style={{ gridColumn: '1 / -1' }}>
             <div className="csb-jm-label"><strong>{row.label}</strong></div>
             <div className="csb-jm-chart">
-              <div className="csb-jm-scale" aria-hidden="true"><span style={{ top: `${Y(80) / 120 * 100}%` }}><Face mood="pos" />Positive</span><span style={{ top: "50%" }}><Face mood="neu" />Neutral</span><span style={{ top: `${Y(20) / 120 * 100}%` }}><Face mood="neg" />Negative</span></div>
+              <div className="csb-jm-scale" aria-hidden="true"><span style={{ top: `${Y(80) / 120 * 100}%` }}>Positive</span><span style={{ top: "50%" }}>Neutral</span><span style={{ top: `${Y(20) / 120 * 100}%` }}>Negative</span></div>
               <svg viewBox={`0 0 ${W} 120`} preserveAspectRatio="none" role="img" aria-label={`Emotion across stages: ${stages.map((s, i) => `${s.title} ${values[i]} of 100`).join(', ')}`}>
                 <defs>
                   <clipPath id={`jm-up-${section.id}`}><rect x="0" y="0" width={W} height="60" /></clipPath>
@@ -93,14 +93,15 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
                 <rect x="0" y="80" width={W} height="40" className="csb-jm-zone is-neg" />
                 {Array.from({ length: n - 1 }, (_, i) => <line key={i} x1={(i + 1) * 100} x2={(i + 1) * 100} y1="0" y2="120" className="csb-jm-col" vectorEffect="non-scaling-stroke" />)}
                 <line x1="0" x2={W} y1="60" y2="60" className="csb-jm-base" vectorEffect="non-scaling-stroke" />
-                <path d={`${d} L ${W - 50} 60 L 50 60 Z`} className="csb-jm-area is-pos" clipPath={`url(#jm-up-${section.id})`} />
-                <path d={`${d} L ${W - 50} 60 L 50 60 Z`} className="csb-jm-area is-neg" clipPath={`url(#jm-down-${section.id})`} />
                 {expressive ? <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" style={{ pathLength: progress }} />
                   : <motion.path d={d} className="csb-jm-line" vectorEffect="non-scaling-stroke" initial={reduce ? false : { pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true, amount: .4 }} transition={{ duration: 1.3, ease: 'easeInOut' }} />}
               </svg>
-              {values.map((v, i) => <motion.span key={i} className={`csb-jm-dot is-${sentiment(v)} ${i === lowest ? 'is-lowest' : ''}`} style={{ left: `${(i + .5) / n * 100}%`, top: `${Y(v) / 120 * 100}%` }} initial={false} animate={{ scale: show(i) ? 1 : 0 }} transition={{ type: 'spring', stiffness: 420, damping: 16 }} />)}
+              {values.map((v, i) => <motion.div key={i} className={`csb-jm-point is-${sentiment(v)} ${i === lowest ? 'is-lowest' : ''}`} style={{ left: `${(i + .5) / n * 100}%`, top: `${Y(v) / 120 * 100}%` }} initial={false} animate={{ opacity: show(i) ? 1 : 0, scale: show(i) ? 1 : .6 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
+                <Face mood={sentiment(v) as 'pos' | 'neu' | 'neg'} />
+                <span className="csb-jm-dot" />
+                <span className="csb-jm-word"><EditableText field={`items.${i}.detail`} value={(stages[i].detail || '').split(/\s+[·—–-]\s+/)[0]} /></span>
+              </motion.div>)}
             </div>
-            {stages.map((s, i) => cell(i, <><Face mood={sentiment(values[i]) as 'pos' | 'neu' | 'neg'} /><p><EditableText field={`items.${i}.detail`} value={s.detail} /></p></>, `csb-jm-feeling is-${sentiment(values[i])}`))}
           </div>
         : <div key={row.key} className={`csb-jm-row is-${row.key}`} style={{ gridColumn: '1 / -1' }}>
             <div className="csb-jm-label"><strong>{row.label}</strong><small>{row.hint}</small></div>
