@@ -2475,3 +2475,26 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-ss.is-desktop .csb-ss-note{max-width:260px}
 .csb-ss.is-desktop .csb-ss-notes.is-left .csb-ss-note{margin-left:auto}
 @media (max-width:760px){.csb-ss.is-desktop .csb-ss-stage{grid-template-columns:1fr!important}.csb-ss.is-desktop .csb-ss-notes.is-left{text-align:left;order:2}.csb-ss.is-desktop .csb-ss-notes.is-right{order:3}}
+
+/* ── Laptop on its own: as big as the page allows, so the screen is readable ── */
+.csb-ss.is-desktop .csb-ss-stage{grid-template-columns:minmax(120px,200px) minmax(0,1fr) minmax(120px,200px)!important;gap:clamp(16px,2vw,32px)!important;padding-top:0}
+.csb-ss.is-desktop .csb-ss-devices{min-height:0!important;padding-bottom:0}
+.csb-ss.is-desktop .csb-ss-mac{width:min(100%,1180px,calc((var(--ss-vh,800px) - 40px) * 1.62))!important}
+.csb-ss.is-desktop.no-notes .csb-ss-stage{grid-template-columns:minmax(0,1fr)!important}
+.csb-ss.is-desktop.no-notes .csb-ss-notes{display:none}
+.csb-ss.is-desktop.no-notes .csb-ss-mac{width:min(100%,1240px,calc((var(--ss-vh,800px) - 20px) * 1.66))!important}
+/* the page column is narrow, so let a lone laptop break out wider than the text */
+.csb-ss.is-desktop{margin-inline:calc(min(0px,(100% - min(96cqw,1400px)) / 2))}
+.csb-ss.is-mobile .csb-ss-devices{min-height:0!important}
+.csb-ss.is-desktop{margin-inline:calc(min(0px,(100% - min(94cqw,1640px)) / 2))}
+.csb-ss.is-desktop .csb-ss-stage{grid-template-columns:minmax(120px,210px) minmax(0,1fr) minmax(120px,210px)!important}
+.csb-ss.is-desktop{margin-inline:calc(min(0px,(100% - min(100vw - 480px,1600px)) / 2))}
+/* not enough room for notes beside a readable laptop: notes go underneath */
+@media (max-width:1500px){
+  .csb-ss.is-desktop .csb-ss-stage{grid-template-columns:minmax(0,1fr)!important}
+  .csb-ss.is-desktop .csb-ss-notes{order:3;text-align:center!important;min-height:0;align-items:center}
+  .csb-ss.is-desktop .csb-ss-note{max-width:620px!important;margin:0 auto!important}
+  .csb-ss.is-desktop .csb-ss-notes:empty{display:none}
+  .csb-ss.is-desktop .csb-ss-lines{display:none}
+  .csb-ss.is-desktop .csb-ss-note-pos{transform:none!important}
+}
