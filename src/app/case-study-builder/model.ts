@@ -152,7 +152,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
-    timeline: ([["Stakeholder questions", "UX design", "1"], ["Market & competitive research", "UX design", "1"], ["User interviews", "UX design", "1"], ["Empathy map & persona", "UX design", "2"], ["Problem statement", "UX design", "2"], ["Card sorting", "UX design", "2"], ["Information architecture & user flow", "UX design", "2"], ["Design system", "UI design", "3"], ["Sketches & wireframes", "UI design", "3"], ["Prototype", "UI design", "3"], ["Usability testing", "Test", "4"], ["Survey insights", "Test", "4"], ["Improvements", "Test", "4"]] as const).map(([title, value, when]) => ({ title, value, when, detail: "" })),
+    timeline: ([["Stakeholder questions", "Discover", "1"], ["Competitive research", "Discover", "1"], ["User interviews", "Discover", "1-2"], ["Empathy map & persona", "Define", "2"], ["Problem statement", "Define", "2"], ["Card sorting", "Develop", "3"], ["Sketches & wireframes", "Develop", "3"], ["Prototype", "Develop", "3-4"], ["Usability testing", "Deliver", "4"], ["Improvements", "Deliver", "4"]] as const).map(([title, value, when]) => ({ title, value, when, detail: "" })),
     prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],
     findings: ["The first finding", "The second finding", "The third finding", "The fourth finding"].map(title => ({ title, detail: "One or two sentences of evidence: what you saw, how often, and why it matters." })),
     interviews: [["Participant one", "Role or context"], ["Participant two", "Role or context"], ["Participant three", "Role or context"]].map(([title, value]) => ({ title, value, detail: "A one-sentence summary of this conversation and what it revealed.", finding: "The most important thing you learned from this person.", findingNote: "Why it matters for the design.", quote: "A short verbatim quote from the interview.", quoteNote: "What this quote shows." })),
@@ -196,7 +196,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
     findings: { layout: { count: 4 } },
-    timeline: { timeUnit: "Week", phases: [{ title: "UX design", detail: "Empathize\nDefine\nIdeate" }, { title: "UI design", detail: "Wireframes\nUI design\nPrototype" }, { title: "Test", detail: "Check usability\nSurvey insights\nImprovement" }] },
+    timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Understand the people\nResearch the space" }, { title: "Define", detail: "Synthesize findings\nFrame the problem" }, { title: "Develop", detail: "Explore ideas\nPrototype" }, { title: "Deliver", detail: "Test\nRefine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
   } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype" | "phases" | "timeUnit">>>>)[kind],
