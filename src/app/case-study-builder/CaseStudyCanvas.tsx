@@ -1,3 +1,4 @@
+import { ABTest } from "./ABTest";
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "motion/react";
 import { MotionPrefs, useExpressive, useReducedMotion, useScrollProgress } from "./MotionKit";
@@ -117,6 +118,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "annotated": return <AnnotatedScreen section={section} />;
     case "problem": return <ProblemStatement section={section} />;
     case "empathy": return <EmpathyMap section={section} />;
+    case "abtest": return <ABTest section={section} editorMode={editorMode} />;
     case "rows": return <ResearchVisual section={{ ...section, kind: "problem" }} />;
     case "methods": case "columns": case "competitors": case "gap": return <ResearchVisual section={section} />;
     case "wireframes": return <WireframeShowcase section={section} />;

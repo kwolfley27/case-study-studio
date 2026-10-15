@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -48,6 +48,8 @@ export interface CaseStudySection {
   };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
+  /** A/B test: change boxes, metrics and outcome. */
+  abtest?: import("./ABTest").ABTestData;
   prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean; /* the prototype frame size, so the device screen matches it */ size?: { w: number; h: number } };
   fit?: "contain" | "cover";
   criteria?: string;
@@ -88,6 +90,7 @@ export interface BuilderStudy {
 
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
+  abtest: "A/B test",
   details: "Project details",
   empathy: "Empathy map",
   rows: "Labeled rows",
@@ -114,6 +117,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  abtest: "Two versions in one frame, the changes between them, and what happened.",
   empathy: "The user in the centre with what they say, think, do and feel around them.",
   details: "Your role, timeline, team and tools at a glance. Show or hide any detail.",
   screenRecording: "A looping, GIF-like prototype recording that zooms into each tap, on a styled background.",
@@ -140,7 +144,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -158,6 +162,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     timeline: "How the work unfolded",
     details: "Project overview",
     empathy: "Inside their head",
+    abtest: "What changed, and what it did",
     rows: "The essentials",
     screenRecording: "See it in motion",
     prototype: "Try it yourself",
@@ -183,6 +188,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    abtest: [{ title: "A · Original", detail: "The current checkout", image: "" }, { title: "B · New design", detail: "Times shown up front", image: "" }],
     empathy: [
       { title: "Maya, new member", detail: "Busy nurse, books on her phone", image: "" },
       { title: "Says", value: "says", detail: "“I just need to know what's open.”\n“I'll book later.”" },
@@ -244,12 +250,13 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     metrics: { layout: { count: 3, columns: 3 as const } },
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
+    abtest: { abtest: { mode: "wipe" as const, showMarkers: true, result: "b" as const, method: "Split test · 2 weeks · 4,212 sessions · 95% confidence", markers: [], metrics: [{ label: "Booking completion", kind: "rate" as const, a: "31", b: "44", better: "higher" as const }, { label: "Time to book", kind: "number" as const, a: "42", b: "18", unit: "s", better: "lower" as const }] } },
     findings: { layout: { count: 4 } },
     screenRecording: { recording: { src: "", background: "accent" as const, frame: "browser" as const, padding: 64, radius: 14, cursor: "halo" as const, zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 } },
     timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
-  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
