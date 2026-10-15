@@ -687,3 +687,19 @@ body.csb-resizing .csb-panel{transition:none!important}
 .csb-gradpick-bar b{font-weight:500;color:#a1a1a6}
 .csb-gradpick-bar button{padding:7px 14px;border:0;border-radius:9999px;background:rgba(255,255,255,.14);color:inherit;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .csb-gradpick-bar button.is-done{background:#fff;color:#1d1d1f}
+
+/* ── Panels push the page instead of covering it ── */
+.csb-view-canvas .csb-preview-wrap:not(.is-mobile){padding-left:var(--inset-l,0px)!important;padding-right:var(--inset-r,0px)!important;transition:padding .3s cubic-bezier(.22,1,.36,1);box-sizing:border-box}
+.csb-view-canvas .csb-preview-wrap:not(.is-mobile) .csb-preview-viewport .csb-canvas{zoom:var(--fit-zoom,1)}
+.csb-view-canvas .csb-panel-left{transition:width .3s cubic-bezier(.22,1,.36,1),transform .3s,opacity .3s}
+/* Sections panel shrunk to a rail of icons */
+.csb-app.left-rail .csb-panel-left{width:60px!important}
+.csb-app.left-rail .csb-panel-left .csb-panel-scroll{padding:56px 8px 16px!important;overflow-x:hidden}
+.csb-app.left-rail .csb-panel-left .csb-panel-scroll>*:not(.csb-nav){display:none!important}
+.csb-app.left-rail .csb-nav-head h2,.csb-app.left-rail .csb-nav-text,.csb-app.left-rail .csb-nav-row>*:not(.csb-nav-select),.csb-app.left-rail .csb-nav-hidden,.csb-app.left-rail .csb-nav-list~*{display:none!important}
+.csb-app.left-rail .csb-nav-head{justify-content:center;padding:0;margin-bottom:6px}
+.csb-app.left-rail .csb-nav-select{justify-content:center;padding:9px 0!important;grid-template-columns:1fr!important}
+.csb-app.left-rail .csb-nav-icon{margin:0 auto}
+.csb-app.left-rail .csb-panel-left .csb-panel-hide{right:15px}
+.csb-view-canvas .csb-main-toolbar{left:calc(50% + (var(--inset-l,0px) - var(--inset-r,0px)) / 2)!important;transition:left .3s cubic-bezier(.22,1,.36,1)}
+.csb-view-canvas .csb-gradpick-bar{left:calc(50% + (var(--inset-l,0px) - var(--inset-r,0px)) / 2)}

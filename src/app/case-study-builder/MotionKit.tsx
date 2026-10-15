@@ -71,7 +71,7 @@ export function usePinProgress(scene: React.RefObject<HTMLElement | null>, stick
     const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
     let frame = 0;
     const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
-      const pin = box.top + box.height * top; const travel = r.height - (stick.current?.offsetHeight ?? 0);
+      const pin = box.top + box.height * top; const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
       p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
     const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
     measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);

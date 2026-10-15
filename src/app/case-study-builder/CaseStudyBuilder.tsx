@@ -95,8 +95,19 @@ export default function CaseStudyBuilder() {
   const [view, setView] = useState<"canvas" | "framed" | "preview">(() => { try { return localStorage.getItem("csb-view") === "framed" ? "framed" : "canvas"; } catch { return "canvas"; } });
   const readPanel = (key: string) => { try { return localStorage.getItem(key) !== "closed"; } catch { return true; } };
   const [leftOpen, setLeftOpen] = useState(() => readPanel("csb-left"));
+  const [leftRail, setLeftRail] = useState(() => { try { return localStorage.getItem("csb-left-rail") === "1"; } catch { return false; } });
+  useEffect(() => { try { localStorage.setItem("csb-left-rail", leftRail ? "1" : "0"); } catch { /* storage off */ } }, [leftRail]);
   const panelW = usePanelWidths();
   const [gradPick, setGradPick] = useState(false);
+  // The page sits between the panels instead of under them. When that leaves less room than a
+  // desktop page needs, the page is scaled down (like zooming out in Figma) so it keeps its real layout.
+  useEffect(() => {
+    if (view !== "canvas") return;
+    const vp = document.querySelector<HTMLElement>(".csb-view-canvas .csb-preview-viewport"); if (!vp) return;
+    const fit = () => { const w = vp.clientWidth; vp.style.setProperty("--fit-zoom", String(Math.min(1, Math.max(.45, w / 1100)).toFixed(3))); };
+    fit(); const ro = new ResizeObserver(fit); ro.observe(vp);
+    return () => { ro.disconnect(); vp.style.removeProperty("--fit-zoom"); };
+  }, [view, showHome, showResearch]);
   const [rightOpen, setRightOpen] = useState(() => readPanel("csb-right"));
   const [showBrand, setShowBrand] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
@@ -281,10 +292,10 @@ export default function CaseStudyBuilder() {
   if (showResearch) return <Suspense fallback={null}><ResearchWorkspace project={{ id: study.id, title: study.title }} initialId={typeof showResearch === "string" ? showResearch : undefined} onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
   if (showHome) return <HomeGallery onOpenResearch={id => { setShowHome(false); setShowResearch(id ?? true); }} current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
 
-  return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"}`} style={{ ["--csb-left-w" as string]: `${panelW.left}px`, ["--csb-right-w" as string]: `${panelW.right}px` }}>
+  return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"} ${leftOpen && leftRail ? "left-rail" : ""}`} style={{ ["--csb-left-w" as string]: `${leftRail ? 60 : panelW.left}px`, ["--csb-right-w" as string]: `${panelW.right}px`, ["--inset-l" as string]: leftOpen ? `${(leftRail ? 60 : panelW.left) + 32}px` : "0px", ["--inset-r" as string]: rightOpen ? `${panelW.right + 32}px` : "0px" }}>
     <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" onClick={() => setShowResearch(true)} title="Run surveys and studies, then add the results"><FlaskConical size={14} /> Research</button><button className="csb-quiet-button" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)}><Palette size={14} /> Brand</button><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-quiet-button" onClick={startPresenting} title="Present full screen, one section at a time"><Presentation size={14} /> Present</button><button className="csb-quiet-button" onClick={enterPreview}><Eye size={14} /> Preview</button><button className="csb-primary-button" onClick={() => setShowPublish(true)}><Globe size={14} /> Publish</button></div></header>
     <div className="csb-studio-shell">
-      <aside className="csb-panel csb-panel-left" aria-label="Sections and connections"><PanelResizer side="left" width={panelW.left} onWidth={panelW.setLeft} /><button className="csb-panel-hide" onClick={() => setLeftOpen(false)} aria-label="Hide left panel" title="Hide ( [ )"><PanelLeft size={15} /></button><div className="csb-panel-scroll">
+      <aside className="csb-panel csb-panel-left" aria-label="Sections and connections">{!leftRail && <PanelResizer side="left" width={panelW.left} onWidth={panelW.setLeft} />}<button className="csb-panel-hide" onClick={() => setLeftRail(r => !r)} aria-label={leftRail ? "Expand the sections panel" : "Shrink the sections panel to icons"} title={leftRail ? "Expand" : "Shrink to icons"}><PanelLeft size={15} /></button><div className="csb-panel-scroll">
         <SectionNavigator study={study} selectedId={selectedId} onAdd={() => { setAddedComponentName(null); setShowAdd(true); }}
           onSelect={id => { setSelectedId(id); if (id) document.getElementById(`builder-section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
           onMove={(from, to) => setStudy(previous => { if (to < 0 || to >= previous.sections.length) return previous; const sections = [...previous.sections]; const [moved] = sections.splice(from, 1); sections.splice(to, 0, moved); return { ...previous, sections }; })}
