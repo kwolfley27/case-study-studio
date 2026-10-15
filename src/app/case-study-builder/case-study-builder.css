@@ -542,3 +542,8 @@
 .csb-af-outline { font: 12px/1.55 'IBM Plex Mono', ui-monospace, monospace; }
 .csb-af-pass { width: 100%; margin-bottom: 8px; padding: 8px 10px; border: 1px solid var(--csb-line); border-radius: 8px; font-size: 12px; }
 .csb-field-note code { font-size: 11px; background: #eef2ef; padding: 0 3px; border-radius: 3px; }
+.csb-mark-colors { display: flex; flex-wrap: wrap; gap: 6px; }
+.csb-mark-colors button, .csb-mark-custom { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border: 1px solid var(--csb-line); border-radius: 999px; background: #fff; font-size: 12px; cursor: pointer; position: relative; }
+.csb-mark-colors button[aria-pressed=true], .csb-mark-custom.is-on { border-color: #1d2622; box-shadow: 0 0 0 1px #1d2622; }
+.csb-mark-colors i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0000001a; }
+.csb-mark-custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }

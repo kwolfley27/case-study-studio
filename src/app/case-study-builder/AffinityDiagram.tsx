@@ -62,20 +62,21 @@ const START = .78, END = .12; // board top position (fraction of the viewport) w
 function Note({ id, text, field, p, geo, order, total, animate }: { id: string; text: string; field: string; p: MotionValue<number>; geo: React.MutableRefObject<Geometry | null>; order: number; total: number; animate: boolean }) {
   // Each note leaves the pile in its own slice of the scroll, so they peel off one after another.
   const s = .12 + (order / Math.max(1, total)) * .38; const e = s + .32;
-  const x = useMotionValue(0), y = useMotionValue(0), rotate = useMotionValue(0), zIndex = useMotionValue(1);
+  const rest = (((order * 37) % 7) - 3) * .35; // a slight, hand-placed tilt
+  const x = useMotionValue(0), y = useMotionValue(0), rotate = useMotionValue(rest), zIndex = useMotionValue(1);
   useEffect(() => {
     const update = (v: number) => {
       const g = geo.current; const spot = g?.spots[id];
-      if (!animate || !g || !spot) { x.set(0); y.set(0); rotate.set(0); zIndex.set(1); return; }
+      if (!animate || !g || !spot) { x.set(0); y.set(0); rotate.set(rest); zIndex.set(1); return; }
       const k = Math.min(1, Math.max(0, (v - s) / (e - s))); const left = 1 - (1 - Math.pow(1 - k, 3));
-      x.set((g.cx + spot.jx - spot.x) * left); y.set((g.pileY(v) + spot.jy - spot.y) * left); rotate.set(spot.r * left); zIndex.set(k < 1 ? 50 + total - order : 1);
+      x.set((g.cx + spot.jx - spot.x) * left); y.set((g.pileY(v) + spot.jy - spot.y) * left); rotate.set(rest + spot.r * left); zIndex.set(k < 1 ? 50 + total - order : 1);
     };
     update(p.get());
     const off = p.on('change', update);
     const tick = window.setInterval(() => update(p.get()), 250); // picks up re-measured geometry
     return () => { off(); window.clearInterval(tick); };
   }, [p, animate, id, s, e, total, order]);
-  return <motion.li data-note={id} className="csb-af-note" style={{ x, y, rotate, zIndex }}><EditableText field={field} value={text} /></motion.li>;
+  return <motion.li data-note={id} className="csb-af-note" style={{ x, y, rotate, zIndex }}><div className="csb-af-paper"><EditableText field={field} value={text} /></div></motion.li>;
 }
 
 function Reveal({ p, from = .62, children, className, as = 'div' }: { p: MotionValue<number>; from?: number; children: React.ReactNode; className?: string; as?: 'div' | 'h3' | 'h4' | 'p' }) {
@@ -151,7 +152,7 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
         </div>
       </section>)}
     </div>
-    {edit && (data.unsorted?.length ?? 0) > 0 && <div className="csb-af-unsorted"><small>{data.unsorted!.length} notes not sorted yet · sort them in the panel</small><ul>{data.unsorted!.map((n, k) => <li key={k} className="csb-af-note">{n}</li>)}</ul></div>}
+    {edit && (data.unsorted?.length ?? 0) > 0 && <div className="csb-af-unsorted"><small>{data.unsorted!.length} notes not sorted yet · sort them in the panel</small><ul>{data.unsorted!.map((n, k) => <li key={k} className="csb-af-note"><div className="csb-af-paper">{n}</div></li>)}</ul></div>}
   </div>;
 }
 

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FileUp } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useMotionValue, useTransform } from 'motion/react';
 import { useReducedMotion } from './MotionKit';
 import { EditableText } from './EditableText';
 import type { BuilderStudy, CaseStudySection } from './model';
@@ -23,19 +23,47 @@ type ViewProps = {
 export function CoverHeroView({ label, title, body, image, caption, alt, fields, slot, frame, editorMode, onFile, picker }: ViewProps) {
   const reduce = useReducedMotion();
   const [dragging, setDragging] = useState(false);
+  // A device mockup is narrower than the title, so the title would show around it.
+  // Fade the title out as the device rises toward it.
+  const deviceTop = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const rise = useMotionValue(0); // 0 = device below the title, 1 = device has covered the title text
+  const fade = frame !== 'none' && !reduce;
+  useEffect(() => {
+    const device = deviceTop.current, titleBox = titleRef.current; if (!fade || !device || !titleBox) return;
+    const scroller: HTMLElement | Window = (device.closest('.csb-preview-viewport') as HTMLElement | null) ?? window;
+    let frameId = 0;
+    const measure = () => {
+      frameId = 0;
+      const text = Array.from(titleBox.children) as HTMLElement[]; if (!text.length) return;
+      const top = Math.min(...text.map(el => el.getBoundingClientRect().top));
+      const bottom = Math.max(...text.map(el => el.getBoundingClientRect().bottom));
+      const d = device.getBoundingClientRect().top;
+      // Start fading a little before the device touches the text; gone when it reaches the title's middle.
+      rise.set(Math.min(1, Math.max(0, (bottom + 40 - d) / ((bottom - top) * .6 + 40))));
+    };
+    const onScroll = () => { if (!frameId) frameId = requestAnimationFrame(measure); };
+    measure();
+    scroller.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', onScroll);
+    return () => { scroller.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); if (frameId) cancelAnimationFrame(frameId); };
+  }, [fade]);
+  const titleOpacity = useTransform(rise, [0, 1], [1, 0]);
+  const titleScale = useTransform(rise, [0, 1], [1, .97]);
+  const titleBlur = useTransform(rise, [0, 1], ['blur(0px)', 'blur(5px)']);
   const drop = editorMode && onFile ? {
     onDragOver: (event: React.DragEvent) => { event.preventDefault(); setDragging(true); },
     onDragLeave: () => setDragging(false),
     onDrop: (event: React.DragEvent) => { event.preventDefault(); event.stopPropagation(); setDragging(false); const file = event.dataTransfer.files[0]; if (file) onFile(file); },
   } : {};
   return <div className={`csb-cover ${frame !== 'none' ? 'has-device' : ''}`}>
-    <div className="csb-cover-title">
+    <motion.div ref={titleRef} className="csb-cover-title" style={fade ? { opacity: titleOpacity, scale: titleScale, filter: titleBlur } : undefined}>
       <motion.p className="csb-cover-label" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, ease: [0.22, 1, 0.36, 1] }}><EditableText field={fields.label} value={label} /></motion.p>
       <motion.h1 initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08, ease: [0.22, 1, 0.36, 1] }}><EditableText field={fields.title} value={title} /></motion.h1>
       {(editorMode || body) && <motion.p className="csb-cover-summary" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .8, delay: .2 }}><EditableText field={fields.body} value={body} /></motion.p>}
-    </div>
+    </motion.div>
     {picker && <div className="csb-cover-picker"><HeroFramePicker value={frame} /></div>}
-    {frame !== 'none' ? <motion.div className="csb-cover-device" initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}><DeviceFrame frame={frame} image={image} alt={alt} slot={slot} hint={editorMode ? 'Click to add your screen' : undefined} /></motion.div> :
+    {frame !== 'none' && <div ref={deviceTop} aria-hidden="true" />}
+    {frame !== 'none' ? <motion.div className={`csb-cover-device is-${frame}`} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}><DeviceFrame frame={frame} image={image} alt={alt} slot={slot} hint={editorMode ? 'Click to add your screen' : undefined} /></motion.div> :
     <motion.figure data-image-slot={slot} className={`csb-cover-media ${dragging ? 'is-dragging' : ''}`} {...drop} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}>
       {image
         ? <img src={image} alt={alt} />

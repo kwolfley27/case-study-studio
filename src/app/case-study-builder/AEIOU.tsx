@@ -21,94 +21,81 @@ export const AEIOU_CATS: Array<{ key: AEIOUCat; name: string; prompt: string; co
   { key: 'o', name: 'Objects', prompt: 'The building blocks of the space, sometimes put to unintended uses.', color: '#b3871f' },
   { key: 'u', name: 'Users', prompt: 'Who is present? Their roles, relationships, values and biases.', color: '#83559f' },
 ];
-const catOf = (key?: string) => AEIOU_CATS.find(c => c.key === key);
 type Item = CaseStudySection['items'][number];
 export const isPhoto = (item: Item) => item.blockType === 'photo' || !!item.image;
 const hasCat = (item: Item, cat: AEIOUCat) => item.cat === cat || (item.pins ?? []).some(p => p.cat === cat);
 
-function Chip({ cat }: { cat: AEIOUCat }) {
-  const c = catOf(cat)!;
-  return <span className="csb-ae-chip" style={{ '--ae': c.color } as React.CSSProperties}><b>{cat.toUpperCase()}</b>{c.name}</span>;
-}
-
-function Photo({ section, item, index, active, placing, setPlacing }: { section: CaseStudySection; item: Item; index: number; active: AEIOUCat | null; placing: { index: number; cat: AEIOUCat } | null; setPlacing: (p: { index: number; cat: AEIOUCat } | null) => void }) {
-  const { edit } = useContext(EditingContext);
-  const [hover, setHover] = useState<number | null>(null);
-  const pins = item.pins ?? [];
-  const savePins = (next: NonNullable<Item['pins']>) => edit?.('json:items', JSON.stringify(section.items.map((it, i) => i === index ? { ...it, pins: next } : it)));
-  const place = (event: React.MouseEvent) => {
-    if (!placing || placing.index !== index) return;
-    event.stopPropagation();
-    const r = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    savePins([...pins, { x: (event.clientX - r.left) / r.width, y: (event.clientY - r.top) / r.height, cat: placing.cat, note: `${catOf(placing.cat)!.name} note` }]);
-    setPlacing(null);
-  };
-  const cats = Array.from(new Set([item.cat, ...pins.map(p => p.cat)].filter(Boolean))) as AEIOUCat[];
-  return <>
-    <div className="csb-ae-photo" data-image-slot={`${section.id}:${index}`}>
-      {item.image ? <img src={item.image} alt={item.title || 'Observation photo'} draggable={false} /> : <div className="csb-ae-photo-empty"><strong>Add an observation photo</strong><span>Drop a photo, then pin what you noticed</span></div>}
-      {placing?.index === index && <div className="csb-ae-placing" data-no-slot onClick={place}><span>Click where the {catOf(placing.cat)!.name.toLowerCase()} note goes</span></div>}
-      {pins.map((pin, k) => { const c = catOf(pin.cat)!; const on = !active || active === pin.cat; return <span key={k} data-no-slot className={`csb-ae-pin ${on ? '' : 'is-off'} ${hover === k ? 'is-open' : ''}`} style={{ left: `${pin.x * 100}%`, top: `${pin.y * 100}%`, '--ae': c.color } as React.CSSProperties}
-        onPointerEnter={() => setHover(k)} onPointerLeave={() => setHover(null)} onClick={e => { e.stopPropagation(); setHover(hover === k ? null : k); }}>
-        <b>{pin.cat.toUpperCase()}</b>
-        <span className="csb-ae-tip" role="tooltip">{edit ? <EditableText field={`deep:items.${index}.pins.${k}.note`} value={pin.note} /> : pin.note}</span>
-      </span>; })}
-    </div>
-    {edit && <div className="csb-ae-pinbar" data-no-slot onClick={e => e.stopPropagation()}>
-      <span>Pin a note</span>
-      {AEIOU_CATS.map(c => <button key={c.key} type="button" style={{ '--ae': c.color } as React.CSSProperties} aria-pressed={placing?.index === index && placing.cat === c.key} aria-label={`Pin a ${c.name} note on this photo`} onClick={() => setPlacing(placing?.index === index && placing.cat === c.key ? null : { index, cat: c.key })}>{c.key.toUpperCase()}</button>)}
-    </div>}
-    {(item.title || edit) && <p className="csb-ae-caption"><EditableText field={`items.${index}.title`} value={item.title} /></p>}
-    {cats.length > 0 && <div className="csb-ae-chips">{cats.map(c => <Chip key={c} cat={c} />)}</div>}
-  </>;
-}
+type Row = { key: string; text: string; source?: string; field: string; sourceField?: string; photo?: number; pin?: number; num?: number };
 
 export function AEIOUBoard({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const { edit } = useContext(EditingContext);
-  const [hovered, setHovered] = useState<AEIOUCat | null>(null);
-  const [locked, setLocked] = useState<AEIOUCat | null>(null);
-  const [placing, setPlacing] = useState<{ index: number; cat: AEIOUCat } | null>(null);
-  const active = hovered ?? locked;
+  const [lens, setLens] = useState<AEIOUCat>('a');
+  const [hoverRow, setHoverRow] = useState<string | null>(null);
+  const [placing, setPlacing] = useState(false);
   const categories = section.items.slice(0, 5);
-  const artifacts = section.items.slice(5).map((item, k) => ({ item, index: k + 5 })).filter(({ item }) => !item.hidden);
-  const count = (cat: AEIOUCat) => artifacts.filter(({ item }) => hasCat(item, cat)).length;
-  const activeCat = active ? catOf(active)! : null;
-  const activeIndex = active ? AEIOU_CATS.findIndex(c => c.key === active) : -1;
+  const artifacts = section.items.map((item, index) => ({ item, index })).slice(5).filter(({ item }) => !item.hidden);
+  const photos = artifacts.filter(({ item }) => isPhoto(item));
+  const lensPhotos = photos.filter(({ item }) => hasCat(item, lens));
+  const [photoPick, setPhotoPick] = useState<number | null>(null);
+  const current = photos.find(p => p.index === photoPick) ?? lensPhotos[0] ?? photos[0];
 
-  return <div className={`csb-ae ${active ? 'is-filtering' : ''}`} style={activeCat ? { '--ae': activeCat.color } as React.CSSProperties : undefined}>
-    <div className="csb-ae-legend" role="group" aria-label="Filter observations by category" onPointerLeave={() => setHovered(null)}>
-      {AEIOU_CATS.map((c, i) => <motion.button key={c.key} type="button" className={`csb-ae-key ${active === c.key ? 'is-on' : ''}`} style={{ '--ae': c.color } as React.CSSProperties} aria-pressed={locked === c.key}
-        onPointerEnter={() => setHovered(c.key)} onFocus={() => setHovered(c.key)} onBlur={() => setHovered(null)} onClick={e => { e.stopPropagation(); setLocked(locked === c.key ? null : c.key); }}
-        initial={reduce ? false : { opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .4 }} transition={{ duration: .6, delay: i * .08, ease: [0.22, 1, 0.36, 1] }}>
-        <span className="csb-ae-letter">{c.key.toUpperCase()}</span>
-        <span className="csb-ae-key-name">{categories[i]?.title || c.name}</span>
-        <span className="csb-ae-count">{count(c.key)}</span>
-      </motion.button>)}
-    </div>
-    <div className="csb-ae-focus" aria-live="polite">
-      {activeCat && activeIndex >= 0
-        ? <motion.div key={active} initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .3 }}>
-            <small>{activeCat.key.toUpperCase()} · <EditableText field={`items.${activeIndex}.value`} value={categories[activeIndex]?.value ?? activeCat.prompt} /></small>
-            <p><EditableText field={`items.${activeIndex}.detail`} value={categories[activeIndex]?.detail || ''} /></p>
-          </motion.div>
-        : <p className="csb-ae-hint">{edit ? 'Hover a letter to see its observations. Click to keep it selected and edit what you noticed.' : 'Hover a letter to see just those observations.'}</p>}
-    </div>
-    <div className="csb-ae-board">
-      {artifacts.map(({ item, index }, k) => {
-        const on = !active || hasCat(item, active);
-        const c = catOf(item.cat);
-        return <motion.figure key={index} className={`csb-ae-card ${isPhoto(item) ? 'is-photo' : 'is-note'} ${on ? '' : 'is-off'}`} style={c ? { '--ae': c.color } as React.CSSProperties : undefined}
-          initial={reduce ? false : { opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }} transition={{ duration: .6, delay: Math.min(k, 8) * .06, ease: [0.22, 1, 0.36, 1] }}>
-          {isPhoto(item)
-            ? <Photo section={section} item={item} index={index} active={active} placing={placing} setPlacing={setPlacing} />
-            : <>
-                {c && <span className="csb-ae-note-cat"><b>{c.key.toUpperCase()}</b>{categories[AEIOU_CATS.indexOf(c)]?.title || c.name}</span>}
-                <p className="csb-ae-note"><EditableText field={`items.${index}.detail`} value={item.detail} /></p>
-                {(item.title || edit) && <small className="csb-ae-source"><EditableText field={`items.${index}.title`} value={item.title} /></small>}
-              </>}
-        </motion.figure>;
-      })}
+  // Everything observed under this lens: notes, photo captions and pins (pins numbered per photo).
+  const rows: Row[] = [];
+  for (const { item, index } of artifacts) {
+    if (isPhoto(item)) {
+      let n = 0;
+      (item.pins ?? []).forEach((pin, k) => { if (pin.cat !== lens) return; n++; rows.push({ key: `${index}-${k}`, text: pin.note, source: item.title, field: `deep:items.${index}.pins.${k}.note`, photo: index, pin: k, num: index === current?.index ? n : undefined }); });
+    } else if (item.cat === lens) rows.push({ key: `${index}`, text: item.detail, source: item.title, field: `items.${index}.detail`, sourceField: `items.${index}.title` });
+  }
+  const count = (cat: AEIOUCat) => artifacts.reduce((sum, { item }) => sum + (isPhoto(item) ? (item.pins ?? []).filter(p => p.cat === cat).length : item.cat === cat ? 1 : 0), 0);
+  const ci = AEIOU_CATS.findIndex(c => c.key === lens);
+  const pinNumbers = new Map<number, number>(); { let n = 0; (current?.item.pins ?? []).forEach((pin, k) => { if (pin.cat === lens) pinNumbers.set(k, ++n); }); }
+  const savePins = (index: number, next: NonNullable<Item['pins']>) => edit?.('json:items', JSON.stringify(section.items.map((it, i) => i === index ? { ...it, pins: next } : it)));
+  const place = (event: React.MouseEvent) => {
+    if (!placing || !current) return; event.stopPropagation();
+    const r = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    savePins(current.index, [...(current.item.pins ?? []), { x: (event.clientX - r.left) / r.width, y: (event.clientY - r.top) / r.height, cat: lens, note: 'What you noticed here' }]);
+    setPlacing(false);
+  };
+
+  return <div className="csb-ae">
+    <ol className="csb-ae-lenses">
+      {AEIOU_CATS.map((c, i) => { const on = c.key === lens; return <li key={c.key} className={on ? 'is-on' : ''}>
+        <button type="button" aria-expanded={on} onClick={e => { e.stopPropagation(); setLens(c.key); setPhotoPick(null); setPlacing(false); }}>
+          <span className="csb-ae-letter">{c.key.toUpperCase()}</span><span className="csb-ae-name">{categories[i]?.title || c.name}</span><span className="csb-ae-count">{count(c.key)}</span>
+        </button>
+        {on && <motion.div className="csb-ae-detail" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
+          <p className="csb-ae-q"><EditableText field={`items.${i}.value`} value={categories[i]?.value ?? c.prompt} /></p>
+          <p className="csb-ae-insight"><EditableText field={`items.${i}.detail`} value={categories[i]?.detail || ''} /></p>
+        </motion.div>}
+      </li>; })}
+    </ol>
+
+    <div className="csb-ae-evidence">
+      {current && <figure className="csb-ae-figure">
+        <div className="csb-ae-photo" data-image-slot={`${section.id}:${current.index}`}>
+          {current.item.image ? <img src={current.item.image} alt={current.item.title || 'Observation photo'} draggable={false} /> : <div className="csb-ae-photo-empty"><strong>Add an observation photo</strong><span>Then pin what you noticed under each lens</span></div>}
+          {placing && <div className="csb-ae-placing" data-no-slot onClick={place}><span>Click to pin a {AEIOU_CATS[ci].name.toLowerCase()} note</span></div>}
+          {(current.item.pins ?? []).map((pin, k) => pinNumbers.has(k) && <motion.span key={`${lens}-${k}`} data-no-slot className={`csb-ae-dot ${hoverRow === `${current.index}-${k}` ? 'is-hot' : ''}`} style={{ left: `${pin.x * 100}%`, top: `${pin.y * 100}%` }}
+            initial={reduce ? false : { scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 24, delay: (pinNumbers.get(k)! - 1) * .06 }}
+            onPointerEnter={() => setHoverRow(`${current.index}-${k}`)} onPointerLeave={() => setHoverRow(null)} onClick={e => e.stopPropagation()}>{pinNumbers.get(k)}</motion.span>)}
+        </div>
+        <figcaption>
+          <span><EditableText field={`items.${current.index}.title`} value={current.item.title} /></span>
+          {edit && current.item.image && <button type="button" data-no-slot className="csb-ae-addpin" aria-pressed={placing} onClick={e => { e.stopPropagation(); setPlacing(!placing); }}>{placing ? 'Cancel' : `+ Pin a ${AEIOU_CATS[ci].name.toLowerCase()} note`}</button>}
+        </figcaption>
+        {photos.length > 1 && <div className="csb-ae-thumbs" role="group" aria-label="Observation photos">{photos.map(ph => <button key={ph.index} type="button" aria-pressed={ph.index === current.index} aria-label={ph.item.title || 'Photo'} onClick={e => { e.stopPropagation(); setPhotoPick(ph.index); }}>{ph.item.image ? <img src={ph.item.image} alt="" /> : <span />}</button>)}</div>}
+      </figure>}
+
+      <ul className="csb-ae-list" aria-label={`${AEIOU_CATS[ci].name} observations`}>
+        {rows.length ? rows.map((row, k) => <motion.li key={`${lens}-${row.key}`} className={hoverRow === row.key ? 'is-hot' : ''} onPointerEnter={() => setHoverRow(row.key)} onPointerLeave={() => setHoverRow(null)}
+          onClick={() => { if (row.photo !== undefined && row.photo !== current?.index) setPhotoPick(row.photo); }}
+          initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .3, delay: k * .04 }}>
+          <span className="csb-ae-mark">{row.num ?? (row.photo !== undefined ? '◦' : '–')}</span>
+          <span className="csb-ae-text"><EditableText field={row.field} value={row.text} />{(row.source || edit) && row.sourceField ? <small><EditableText field={row.sourceField} value={row.source || ''} /></small> : row.source ? <small>{row.source}</small> : null}</span>
+        </motion.li>) : <li className="csb-ae-none">No {AEIOU_CATS[ci].name.toLowerCase()} observations yet.</li>}
+      </ul>
     </div>
   </div>;
 }
@@ -127,8 +114,8 @@ export function AEIOUControls({ section, onItems }: { section: CaseStudySection;
     {items.slice(5).map((item, k) => { const i = k + 5; return <div key={i} className="csb-ae-ctl">
       <div className="csb-ae-ctl-head"><strong>{isPhoto(item) ? 'Photo' : 'Note'} {k + 1}</strong>
         <span><button type="button" aria-label="Move up" disabled={i === 5} onClick={() => move(i, -1)}>↑</button><button type="button" aria-label="Move down" disabled={i === items.length - 1} onClick={() => move(i, 1)}>↓</button><button type="button" aria-label={`Remove ${isPhoto(item) ? 'photo' : 'note'} ${k + 1}`} onClick={() => onItems(items.filter((_, n) => n !== i))}>×</button></span></div>
-      <div className="csb-segment csb-ae-seg" role="group" aria-label={`Category for item ${k + 1}`}>{AEIOU_CATS.map(c => <button key={c.key} type="button" aria-pressed={item.cat === c.key} title={c.name} style={{ '--ae': c.color } as React.CSSProperties} onClick={() => set(i, { cat: c.key })}>{c.key.toUpperCase()}</button>)}</div>
-      {(item.pins ?? []).map((pin, p) => <div key={p} className="csb-ae-ctl-pin"><b style={{ background: catOf(pin.cat)?.color }}>{pin.cat.toUpperCase()}</b><input aria-label={`Pin ${p + 1} note`} value={pin.note} onChange={e => set(i, { pins: item.pins!.map((pp, n) => n === p ? { ...pp, note: e.target.value } : pp) })} /><button type="button" aria-label={`Remove pin ${p + 1}`} onClick={() => set(i, { pins: item.pins!.filter((_, n) => n !== p) })}>×</button></div>)}
+      <div className="csb-segment csb-ae-seg" role="group" aria-label={`Category for item ${k + 1}`}>{AEIOU_CATS.map(c => <button key={c.key} type="button" aria-pressed={item.cat === c.key} title={c.name} onClick={() => set(i, { cat: c.key })}>{c.key.toUpperCase()}</button>)}</div>
+      {(item.pins ?? []).map((pin, p) => <div key={p} className="csb-ae-ctl-pin"><b>{pin.cat.toUpperCase()}</b><input aria-label={`Pin ${p + 1} note`} value={pin.note} onChange={e => set(i, { pins: item.pins!.map((pp, n) => n === p ? { ...pp, note: e.target.value } : pp) })} /><button type="button" aria-label={`Remove pin ${p + 1}`} onClick={() => set(i, { pins: item.pins!.filter((_, n) => n !== p) })}>×</button></div>)}
     </div>; })}
   </>;
 }
