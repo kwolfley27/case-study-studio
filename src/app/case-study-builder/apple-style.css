@@ -2037,4 +2037,5 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-stack>div{width:100%;background-repeat:no-repeat}
 
 .csb-ss-note.is-long h3{font-size:clamp(20px,1.8vw,25px);line-height:1.25}
-.csb-ss.is-mobile .csb-ss-stage{grid-template-columns:auto minmax(220px,340px)!important;justify-content:center;gap:clamp(32px,6vw,80px)!important}
+/* Phone only: the phone column has a real width (the devices box is a size container, so "auto" would collapse it) */
+.csb-ss.is-mobile .csb-ss-stage{grid-template-columns:minmax(260px,420px) minmax(220px,340px)!important;justify-content:center;gap:clamp(32px,6vw,80px)!important}
