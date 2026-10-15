@@ -2660,3 +2660,12 @@ html.csb-presenting .csb-fd{height:calc(80vh / var(--present-zoom,1))}
 .csb-fd-floor.is-pencil{width:clamp(240px,34cqw,480px);height:clamp(28px,3.6cqw,48px)}
 .csb-fd.is-dark .csb-fd-floor{background:radial-gradient(closest-side,rgba(0,0,0,.6),rgba(0,0,0,.25) 50%,transparent)}
 .csb-fd-floor{background:radial-gradient(closest-side,rgba(40,30,20,.34),rgba(40,30,20,.14) 55%,rgba(40,30,20,0))}
+.csb-fd.is-editing .csb-fd-dev,.csb-fd.is-editing .csb-fd-pencil{cursor:grab;pointer-events:auto}
+body.csb-fd-dragging,body.csb-fd-dragging *{cursor:grabbing!important;user-select:none}
+.csb-fd-hint{position:absolute;left:50%;bottom:14px;translate:-50% 0;margin:0;padding:6px 12px;border-radius:9999px;background:rgba(253,252,252,.85);font-size:12px;color:#777169;white-space:nowrap;pointer-events:none;z-index:3000}
+/* present mode: the whole visual fits on the slide under its heading */
+html.csb-presenting .csb-fd{height:calc(58vh / var(--present-zoom,1))!important;margin-top:calc(2vh / var(--present-zoom,1))}
+html.csb-presenting .csb-iso{height:calc(58vh / var(--present-zoom,1))!important}
+html.csb-presenting .csb-fd-dev{--w:min(clamp(130px,15.5cqw,230px),calc(13vh / var(--present-zoom,1)))}
+html.csb-presenting .csb-fd-floor{--w:min(clamp(130px,15.5cqw,230px),calc(13vh / var(--present-zoom,1)))}
+html.csb-presenting .csb-fd-pencil{width:min(clamp(240px,34cqw,480px),calc(30vh / var(--present-zoom,1)))}
