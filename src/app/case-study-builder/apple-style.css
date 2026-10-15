@@ -721,3 +721,11 @@ i.csb-rec-bg-none{background:repeating-linear-gradient(45deg,#fff 0 5px,#eee 5px
 .csb-variant-dark .csb-detail dd{color:var(--t-paper,#f5f5f7)}
 @container (max-width:700px){.csb-details,.csb-details.has-team{grid-template-columns:repeat(2,minmax(0,1fr))}.csb-details .csb-detail.is-team{grid-column:1/-1!important;grid-row:auto!important;padding-left:0;border-left:0}}
 @container (max-width:460px){.csb-details,.csb-details.has-team{grid-template-columns:1fr}}
+.csb-rec-upload{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--t-surface,#f5f5f7);font-size:12.5px;color:var(--t-body,#6e6e73)}
+.csb-rec-upload.is-done{color:#1f7a3a}
+.csb-rec-upload-bar{flex:0 0 120px;height:5px;border-radius:9999px;background:var(--t-line,#d2d2d7);overflow:hidden}
+.csb-rec-upload-bar i{display:block;height:100%;background:var(--csb-accent);transition:width .2s ease}
+.csb-rec-upload form{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%}
+.csb-rec-upload input{padding:7px 10px;border-radius:9999px;border:1px solid #d2d2d7;font-size:12.5px}
+.csb-rec-upload button,.csb-rec-publish{padding:7px 12px;border-radius:9999px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:12.5px;cursor:pointer}
+.csb-rec-publish{background:#1d1d1f;color:#fff;border-color:#1d1d1f}

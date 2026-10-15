@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { Circle, Link2, Pause, Play, Square, Upload } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
-import { mediaUrl, putMedia, recordScreen } from './media';
+import { mediaUrl, PasscodeError, PASSCODE_KEY, putMedia, recordScreen, uploadToStudio, UploadSetupError } from './media';
 import type { CaseStudySection } from './model';
 
 /*
@@ -69,7 +69,11 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
   const base = crop ? { s: 100 / crop.w, x: crop.x + crop.w / 2, y: crop.y + crop.h / 2 } : { s: 1, x: 50, y: 50 };
   const viewAspect = crop ? aspect * crop.w / crop.h : demo ? 16 / 10 : aspect;
 
-  const save = (patch: Partial<Recording>) => { const next = { ...rec, ...patch }; if (onChange) onChange(next); else edit?.('json:recording', JSON.stringify(next)); };
+  const recRef = useRef(rec); recRef.current = rec;
+  const [upload, setUpload] = useState<{ progress: number; note?: string; needsPasscode?: boolean } | null>(null);
+  const [passcode, setPasscode] = useState('');
+  const pending = useRef<Blob | null>(null);
+  const save = (patch: Partial<Recording>) => { const next = { ...recRef.current, ...patch }; if (onChange) onChange(next); else edit?.('json:recording', JSON.stringify(next)); };
 
   useEffect(() => { let alive = true; setMissing(false); if (!rec.src) { setUrl(null); return; } void mediaUrl(rec.src).then(u => { if (!alive) return; setUrl(u); setMissing(!u); }); return () => { alive = false; }; }, [rec.src]);
 
@@ -131,7 +135,20 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
     video.current.pause();
     save({ clicks: [...clicks.filter(c => Math.abs(c.t - t) > .15), { t, x, y }].sort((a, b) => a.t - b.t) });
   };
-  const useBlob = async (blob: Blob) => { setBusy('saving'); try { save({ src: await putMedia(blob), clicks: [] }); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the video.'); } finally { setBusy(''); } };
+  // Upload to the Studio's storage so the published page can play it.
+  const publish = async (blob: Blob) => {
+    pending.current = blob; setUpload({ progress: 0 });
+    try {
+      const url = await uploadToStudio(blob, section.id.slice(0, 8), progress => setUpload(u => ({ ...(u ?? {}), progress })));
+      pending.current = null; save({ src: url }); setUpload({ progress: 1, note: 'Uploaded · ready for your published page' });
+      window.setTimeout(() => setUpload(u => u?.progress === 1 ? null : u), 3500);
+    } catch (e) {
+      if (e instanceof PasscodeError) setUpload({ progress: 0, needsPasscode: true, note: e.message });
+      else setUpload({ progress: 0, note: e instanceof UploadSetupError ? `${e.message} It's saved in this browser for now.` : (e instanceof Error ? e.message : 'Upload failed.') });
+    }
+  };
+  const useBlob = async (blob: Blob) => { setBusy('saving'); try { save({ src: await putMedia(blob), clicks: [] }); void publish(blob); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the video.'); } finally { setBusy(''); } };
+  const publishStored = async () => { if (!rec.src.startsWith('idb:')) return; const url = await mediaUrl(rec.src); if (!url) return; void publish(await (await fetch(url)).blob()); };
   const record = async () => { setError(''); try { stopRef.current = await recordScreen(blob => { stopRef.current = null; void useBlob(blob); }, on => setBusy(on ? 'recording' : '')); } catch (e) { if (e instanceof Error && e.name !== 'NotAllowedError') setError(e.message); } };
 
   const bgStyle = rec.background === 'image' && rec.bgImage ? { backgroundImage: `url(${rec.bgImage})` } : undefined;
@@ -181,8 +198,12 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
       {rec.crop && !cropping && <button type="button" className="csb-rec-tool" onClick={() => save({ crop: undefined })}>Show full</button>}
       <span className="csb-rec-hint">{cropping ? 'Drag a box around the part to show' : 'Click the video to add a zoom moment'}</span>
     </div>}
-    {editorMode && !demo && <div className="csb-rec-swap">{sourceButtons}{linkMode && <form className="csb-rec-link" onSubmit={e => { e.preventDefault(); if (/^https:\/\/\S+$/i.test(link.trim())) { save({ src: link.trim() }); setLinkMode(false); setLink(''); } }}><input value={link} onChange={e => setLink(e.target.value)} placeholder="https://…/demo.mp4" aria-label="Video link" /><button type="submit">Use link</button></form>}{rec.src.startsWith('idb:') && <small>Saved in this browser. For your published page, add a video link.</small>}{error && <em role="alert">{error}</em>}</div>}
+    {editorMode && !demo && <div className="csb-rec-swap">{sourceButtons}{linkMode && <form className="csb-rec-link" onSubmit={e => { e.preventDefault(); if (/^https:\/\/\S+$/i.test(link.trim())) { save({ src: link.trim() }); setLinkMode(false); setLink(''); } }}><input value={link} onChange={e => setLink(e.target.value)} placeholder="https://…/demo.mp4" aria-label="Video link" /><button type="submit">Use link</button></form>}{rec.src.startsWith('idb:') && !upload && <button type="button" className="csb-rec-publish" onClick={() => void publishStored()}>Upload for my published page</button>}{error && <em role="alert">{error}</em>}</div>}
 
+    {editorMode && upload && <div className={`csb-rec-upload ${upload.progress === 1 ? 'is-done' : ''}`} onClick={e => e.stopPropagation()} role="status">
+      {upload.needsPasscode ? <form onSubmit={e => { e.preventDefault(); try { localStorage.setItem(PASSCODE_KEY, passcode.trim()); } catch { /* storage unavailable */ } if (pending.current) void publish(pending.current); else void publishStored(); }}><span>{upload.note}</span><input type="password" autoComplete="off" value={passcode} onChange={e => setPasscode(e.target.value)} placeholder="Studio passcode" aria-label="Studio passcode" /><button type="submit" disabled={!passcode.trim()}>Upload</button></form>
+        : <><span className="csb-rec-upload-bar"><i style={{ width: `${Math.round(upload.progress * 100)}%` }} /></span><span>{upload.note ?? `Uploading for your published page… ${Math.round(upload.progress * 100)}%`}</span>{upload.note && upload.progress < 1 && <button type="button" onClick={() => setUpload(null)}>Dismiss</button>}</>}
+    </div>}
     {busy === 'recording' && <div className="csb-rec-recording" role="status"><span /> Recording… <button type="button" onClick={() => stopRef.current?.()}><Square size={12} fill="currentColor" /> Stop</button></div>}
     {(editorMode || section.items[0]?.detail) && <p className="csb-rec-caption"><EditableText field="items.0.detail" value={section.items[0]?.detail || ''} /></p>}
   </div>;

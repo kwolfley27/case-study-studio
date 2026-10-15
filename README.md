@@ -45,3 +45,18 @@ It runs in the Supabase Edge Function `supabase/functions/studio-ai-draft`, beca
    - `CLAUDE_MODEL` — optional, defaults to `claude-sonnet-5-5`
 3. In Notion, open the project page → ••• → Connections → add the integration, so it can read that page and its subpages.
 4. In the Studio, paste the Notion page link and the Figma page link under Connections, then press **Draft case study**.
+
+## One-click media upload
+
+Videos added to a **Screen recording** section upload automatically to the
+public `case-study-media` bucket in Supabase Storage, so the published page
+can play them.
+
+1. Deploy the function: `supabase functions deploy studio-media-upload`
+2. It uses the existing `STUDIO_PASSCODE` secret (same as AI drafting).
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided by Supabase.
+3. The bucket is created on first upload. On the free plan files are limited
+   to 50 MB; raise the limit under Storage → Settings on a paid plan.
+
+Until the function is deployed, videos stay in the browser where they were
+added and the section shows an "Upload for my published page" button.

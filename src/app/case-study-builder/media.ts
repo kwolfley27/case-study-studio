@@ -1,3 +1,4 @@
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
 /*
   Large media (screen recordings, uploaded videos) can't live in the browser
   draft, so they are kept in this browser's IndexedDB and referenced as
@@ -37,11 +38,42 @@ export async function recordScreen(onDone: (blob: Blob) => void, onStateChange: 
   if (!navigator.mediaDevices?.getDisplayMedia) throw new Error('This browser cannot record the screen. Try Chrome, Edge or Safari on a computer.');
   const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60, cursor: 'never' } as MediaTrackConstraints, audio: false });
   const type = ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) ?? '';
-  const recorder = new MediaRecorder(stream, type ? { mimeType: type, videoBitsPerSecond: 8_000_000 } : undefined);
+  const recorder = new MediaRecorder(stream, type ? { mimeType: type, videoBitsPerSecond: 5_000_000 } : undefined);
   const chunks: Blob[] = [];
   recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
   recorder.onstop = () => { stream.getTracks().forEach(track => track.stop()); onStateChange(false); onDone(new Blob(chunks, { type: recorder.mimeType || 'video/webm' })); };
   stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (recorder.state !== 'inactive') recorder.stop(); });
   recorder.start(250); onStateChange(true);
   return () => { if (recorder.state !== 'inactive') recorder.stop(); };
+}
+
+/* ── One-click upload to the Studio's Supabase storage ─────────────── */
+const UPLOAD_ENDPOINT = import.meta.env.VITE_STUDIO_UPLOAD_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-media-upload` : '');
+export const PASSCODE_KEY = 'csb-ai-passcode';
+export class UploadSetupError extends Error {}
+export class PasscodeError extends Error {}
+
+export async function uploadToStudio(file: Blob, study: string, onProgress: (fraction: number) => void): Promise<string> {
+  if (!UPLOAD_ENDPOINT) throw new UploadSetupError('One-click upload is not set up for this site yet.');
+  let passcode = ''; try { passcode = localStorage.getItem(PASSCODE_KEY) || ''; } catch { /* storage unavailable */ }
+  const type = file.type.split(';')[0] || 'video/webm';
+  let response: Response;
+  try { response = await fetch(UPLOAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': passcode }, body: JSON.stringify({ type, size: file.size, study }) }); }
+  catch { throw new UploadSetupError('One-click upload is not switched on yet (the upload function is not deployed).'); }
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401) throw new PasscodeError(data.message || 'Enter your Studio passcode.');
+  if (response.status === 404) throw new UploadSetupError('One-click upload is not switched on yet (the upload function is not deployed).');
+  if (!response.ok || !data.uploadUrl) throw new Error(data.error || `Upload failed (${response.status}).`);
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', data.uploadUrl);
+    xhr.setRequestHeader('Content-Type', type);
+    xhr.setRequestHeader('x-upsert', 'false');
+    xhr.upload.onprogress = event => { if (event.lengthComputable) onProgress(event.loaded / event.total); };
+    xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(xhr.status === 413 ? 'That video is larger than your storage plan allows (50 MB on the free plan). Trim it or record a shorter clip.' : `Upload failed (${xhr.status}).`));
+    xhr.onerror = () => reject(new Error('Upload failed. Check your connection and try again.'));
+    xhr.send(file);
+  });
+  onProgress(1);
+  return data.publicUrl as string;
 }
