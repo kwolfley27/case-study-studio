@@ -581,3 +581,6 @@
 .csb-row-confirm button.is-danger { background: #b42318; border-color: #b42318; color: #fff; }
 .csb-section-row.is-hidden .csb-section-label { opacity: .5; }
 .csb-row-hidden { display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.csb-show-size { display: inline-flex; gap: 2px; margin-top: 3px; }
+.csb-items li .csb-show-size button { width: auto; height: 20px; padding: 0 7px; border: 1px solid #e3e3e6; border-radius: 999px; font-size: 10.5px; color: #6e6e73; background: #fff; }
+.csb-items li .csb-show-size button[aria-pressed=true] { background: #1d2622; border-color: #1d2622; color: #fff; }

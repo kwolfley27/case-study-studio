@@ -1,4 +1,4 @@
-export type SectionKind = "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -97,6 +97,7 @@ export const componentNames: Record<SectionKind, string> = {
   abtest: "A/B test",
   aeiou: "AEIOU observations",
   affinity: "Affinity diagram",
+  showcase: "Component showcase",
   screenFocus: "Focus carousel",
   screenStory: "Screen story",
   screenStrip: "Screen filmstrip",
@@ -126,6 +127,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  showcase: "A bento of soft panels, each showing one designed component at its real size. Pull them straight from Figma.",
   screenFocus: "Screens slide past as you scroll; each one comes to the centre big enough to read, with optional spotlights.",
   screenStory: "A big screen stays pinned while short steps scroll beside it and swap what it shows.",
   screenStrip: "One large screen with thumbnails to switch, plus highlight buttons for spotlights.",
@@ -158,7 +160,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -179,6 +181,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     abtest: "What changed, and what it did",
     aeiou: "What we observed",
     affinity: "What the notes added up to",
+    showcase: "Components I designed",
     screenFocus: "The final screens, up close",
     screenStory: "How it works, step by step",
     screenStrip: "The final screens",
@@ -208,6 +211,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
     affinity: [],
+    showcase: [{ title: "Task details", detail: "", image: "", tileSize: "standard" }, { title: "Filter menu", detail: "", image: "", tileSize: "standard" }, { title: "Calendar view", detail: "", image: "", tileSize: "wide" }],
     screenFocus: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],
     screenStory: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],
     screenStrip: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],
