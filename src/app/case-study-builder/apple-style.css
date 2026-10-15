@@ -1839,20 +1839,21 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss{position:relative;margin-top:clamp(20px,3vw,40px)}
 .csb-ss-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,300px);gap:clamp(24px,4vw,56px);align-items:center;padding:24px 0}
 .csb-ss.is-pinned .csb-ss-stage{position:sticky;top:0;height:var(--ss-vh,100vh);padding:clamp(24px,5vh,56px) 0;box-sizing:border-box}
-.csb-ss-devices{position:relative;display:grid;align-items:end;justify-items:center;height:100%;min-height:420px}
+.csb-ss-devices{position:relative;container-type:inline-size;display:grid;align-items:end;justify-items:center;height:100%;min-height:420px}
 .csb-ss.is-both .csb-ss-devices{grid-template-columns:1fr}
-.csb-ss-mac{width:min(100%,calc((var(--ss-vh,800px) - 120px) * 1.5));display:grid;justify-items:center}
+.csb-ss-mac{position:relative;width:min(100%,calc((var(--ss-vh,800px) - 120px) * 1.5));display:grid;justify-items:center}
 .csb-ss.is-both .csb-ss-mac{margin-right:12%}
 .csb-ss-lid{position:relative;width:88%;padding:1.5% 1.5% 2%;border-radius:clamp(10px,1.6vw,20px) clamp(10px,1.6vw,20px) 4px 4px;background:#0d0d0f;box-shadow:0 0 0 1.5px #b9b9be,0 0 0 2.5px #d8d8dc,0 40px 70px -34px #00000059}
 .csb-ss-lid .csb-ss-screen{aspect-ratio:16/10;border-radius:4px}
 .csb-ss-notch{position:absolute;z-index:3;left:50%;top:0;width:12%;height:3%;min-height:7px;transform:translateX(-50%);border-radius:0 0 7px 7px;background:#0d0d0f}
 .csb-ss-base{position:relative;width:100%;height:clamp(8px,1.2vw,14px);border-radius:1px 1px 50% 50%/1px 1px 100% 100%;background:linear-gradient(#f2f2f4,#d7d7db 35%,#a7a7ad);box-shadow:0 22px 34px -14px #00000052}
 .csb-ss-base i{position:absolute;left:50%;top:0;width:14%;height:42%;transform:translateX(-50%);border-radius:0 0 10px 10px;background:linear-gradient(#c6c6cb,#dcdce0)}
-.csb-ss-phone{position:relative;width:clamp(150px,22%,240px);aspect-ratio:9/19.5;padding:2.6%;border-radius:clamp(26px,3.4vw,40px);background:#0d0d0f;box-shadow:0 0 0 1.5px #b9b9be,0 30px 60px -26px #00000066}
-.csb-ss.is-both .csb-ss-phone{position:absolute;right:2%;bottom:-2%;z-index:2}
-.csb-ss.is-mobile .csb-ss-phone{width:min(300px,calc((var(--ss-vh,800px) - 120px) * .46))}
-.csb-ss-phone .csb-ss-screen{height:100%;border-radius:clamp(20px,2.8vw,32px)}
-.csb-ss-island{position:absolute;z-index:3;left:50%;top:3.6%;width:30%;height:3.2%;transform:translateX(-50%);border-radius:9999px;background:#0d0d0f}
+/* iPhone proportions: bezel, corners and island all scale with the phone's width (--pw). */
+.csb-ss-phone{--pw:clamp(120px,19cqw,230px);position:relative;width:var(--pw);aspect-ratio:9/19.5;padding:calc(var(--pw) * .032);border-radius:calc(var(--pw) * .165);background:#0d0d0f;box-shadow:0 0 0 1px #c7c7cc,0 0 0 2px #e5e5ea,0 30px 50px -26px #00000059;box-sizing:border-box}
+.csb-ss.is-both .csb-ss-phone{position:absolute;right:3%;bottom:0;z-index:2}
+.csb-ss.is-mobile .csb-ss-phone{--pw:min(300px,calc((var(--ss-vh,800px) - 120px) * .46))}
+.csb-ss-phone .csb-ss-screen{height:100%;border-radius:calc(var(--pw) * .135)}
+.csb-ss-island{position:absolute;z-index:3;left:50%;top:calc(var(--pw) * .06);width:calc(var(--pw) * .3);height:calc(var(--pw) * .085);transform:translateX(-50%);border-radius:9999px;background:#0d0d0f}
 .csb-ss-screen{position:relative;overflow:hidden;background:#fff}
 .csb-ss-screen img{display:block;width:100%;height:auto;will-change:transform;user-select:none}
 .csb-ss-empty{position:absolute;inset:0;display:grid;place-content:center;gap:6px;padding:12px;text-align:center;background:#f5f5f7;color:#6e6e73;font-size:13px}
@@ -1868,7 +1869,7 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-scrub input{width:100%;accent-color:#000}
 .csb-ss-ctl{display:grid;gap:6px;padding:8px 0;border-bottom:1px solid #ececef}
 .csb-ss-at{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#6e6e73}.csb-ss-at input{width:90px}
-@media (max-width:760px){.csb-ss-stage{grid-template-columns:1fr}.csb-ss.is-both .csb-ss-mac{display:none}.csb-ss.is-both .csb-ss-phone{position:relative;right:auto;bottom:auto;width:min(240px,60%)}.csb-ss-notes{min-height:150px}}
+@media (max-width:760px){.csb-ss-stage{grid-template-columns:1fr}.csb-ss.is-both .csb-ss-mac{display:none}.csb-ss.is-both .csb-ss-phone{position:relative;right:auto;bottom:auto;--pw:min(220px,56cqw)}.csb-ss-notes{min-height:150px}}
 /* Figma pull bar */
 .csb-figpull{position:fixed!important;left:50%;bottom:84px;transform:translateX(-50%);width:min(620px,calc(100vw - 32px));display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0;padding:10px 12px 10px 16px;box-sizing:border-box;border-radius:14px;background:#fff;box-shadow:0 0 0 1px #0000000f,0 6px 20px -10px #00000033;font-size:13px;color:#1d1d1f;z-index:60}
 .csb-figpull b{font-weight:600}
@@ -1911,10 +1912,11 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-grid{position:absolute;inset:0;z-index:2;display:grid;pointer-events:none;box-sizing:border-box}
 /* Figma's default layout grid: red at 10% */
 .csb-ss-grid i{display:block;height:100%;background:rgba(255,0,0,.1)}
-.csb-ss-gridtoggle{justify-self:start;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px 0 10px;border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:9999px;background:transparent;color:inherit;font:500 12.5px/1 Inter,system-ui,sans-serif;cursor:pointer;opacity:.75;transition:opacity .15s,background .15s}
+.csb-ss-gridtoggle{position:absolute;z-index:4;left:6%;bottom:calc(100% + 10px);display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 8px 0 9px;border:1px solid color-mix(in srgb,currentColor 12%,transparent);border-radius:8px;background:color-mix(in srgb,var(--csb-bg,#fdfcfc) 88%,transparent);backdrop-filter:blur(8px);color:inherit;font:500 12px/1 Inter,system-ui,sans-serif;cursor:pointer;opacity:.85;transition:opacity .15s}
+.csb-ss-gridtoggle .is-eye{margin-left:4px;color:color-mix(in srgb,currentColor 55%,transparent)}
 .csb-ss-gridtoggle:hover{opacity:1}
-.csb-ss-gridtoggle[aria-pressed=true]{opacity:1;background:color-mix(in srgb,currentColor 6%,transparent)}
-.csb-ss-gridtoggle svg{color:#e5484d}
+.csb-ss-gridtoggle[aria-pressed=true]{opacity:1}
+.csb-ss-gridtoggle[aria-pressed=false] span{color:color-mix(in srgb,currentColor 55%,transparent)}
 .csb-ss-gridctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px 0;border-top:1px solid #0000000f}
 .csb-ss-gridctl strong{grid-column:1/-1;font-size:12.5px;font-weight:600}
 .csb-ss-gridctl label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#6e6e73}
@@ -1964,3 +1966,5 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-annctl-row .csb-icon-button:disabled{opacity:.3}
 .csb-annctl-side{align-self:flex-start}
 .csb-annctl-side button{padding:4px 12px;font-size:12px}
+
+.csb-ss-phone > .csb-ss-gridtoggle{left:0}

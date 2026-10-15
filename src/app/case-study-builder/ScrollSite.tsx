@@ -1,6 +1,6 @@
 import { useContext, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'motion/react';
-import { Columns3, Plus, Trash2 } from 'lucide-react';
+import { Columns3, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
@@ -46,6 +46,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const pct = (px: unknown, w: unknown, d: number) => (Number(px ?? d) / (Number(w) || 1)) * 100;
   const hasGrid = (Number(g.gridDesk) > 0 && !!desk?.image) || (Number(g.gridMob) > 0 && !!mob?.image);
   const [gridOn, setGridOn] = useState(g.gridOn === true);
+  const layerToggle = hasGrid ? <button type="button" className="csb-ss-gridtoggle" aria-pressed={gridOn} title={gridOn ? 'Hide the layout grid layer' : 'Show the layout grid layer'} onClick={() => setGridOn(v => !v)}><Columns3 size={13} strokeWidth={1.7} color="#e5484d" aria-hidden="true" /><span>Layout grid</span>{gridOn ? <Eye className="is-eye" size={13} strokeWidth={1.7} aria-hidden="true" /> : <EyeOff className="is-eye" size={13} strokeWidth={1.7} aria-hidden="true" />}</button> : null;
   const deskGrid: Grid = gridOn && Number(g.gridDesk) > 0 ? { cols: Number(g.gridDesk), margin: pct(g.gridDeskMarginPx, g.gridDeskW ?? 1440, 80), gutter: pct(g.gridDeskGutterPx, g.gridDeskW ?? 1440, 20) } : null;
   const mobGrid: Grid = gridOn && Number(g.gridMob) > 0 ? { cols: Number(g.gridMob), margin: pct(g.gridMobMarginPx, g.gridMobW ?? 390, 20), gutter: pct(g.gridMobGutterPx, g.gridMobW ?? 390, 16) } : null;
   const notes: Note[] = section.items.slice(2).map((n, k) => ({ title: n.title, detail: n.detail, at: Math.min(100, Math.max(0, Number(n.point) || 0)) / 100, device: n.value === 'mobile' ? 'mobile' : 'desktop', i: k + 2 }))
@@ -68,14 +69,13 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   return <div ref={wrap} className={`csb-ss is-${show} ${pinned ? 'is-pinned' : ''}`} style={{ ['--ss-vh' as string]: `${vh}px`, ...(pinned ? { height: vh * Math.max(2.4, 1.4 + notes.length * .45) } : {}) }}>
     <div className="csb-ss-stage">
       <div className="csb-ss-devices">
-        {show !== 'mobile' && <div className="csb-ss-mac">
+        {show !== 'mobile' && <div className="csb-ss-mac">{layerToggle}
           <div className="csb-ss-lid"><span className="csb-ss-notch" aria-hidden="true" /><Screen image={desk?.image} progress={p} slot={`${section.id}:0`} label={desk?.title || 'Desktop page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} grid={deskGrid} /></div>
           <div className="csb-ss-base" aria-hidden="true"><i /></div>
         </div>}
-        {show !== 'desktop' && <div className="csb-ss-phone"><span className="csb-ss-island" aria-hidden="true" /><Screen image={mob?.image} progress={p} slot={`${section.id}:1`} label={mob?.title || 'Mobile page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} grid={mobGrid} /></div>}
+        {show !== 'desktop' && <div className="csb-ss-phone">{show === 'mobile' && layerToggle}<span className="csb-ss-island" aria-hidden="true" /><Screen image={mob?.image} progress={p} slot={`${section.id}:1`} label={mob?.title || 'Mobile page'} emptyHint="Paste a Figma frame link or drop the full-length page" editorMode={editorMode} grid={mobGrid} /></div>}
       </div>
       <div className="csb-ss-notes" aria-live="polite">
-        {hasGrid && <button type="button" className="csb-ss-gridtoggle" aria-pressed={gridOn} title={gridOn ? 'Hide layout grid' : 'Show layout grid'} onClick={() => setGridOn(v => !v)}><Columns3 size={14} strokeWidth={1.7} aria-hidden="true" />{gridOn ? 'Hide layout grid' : 'Show layout grid'}</button>}
         <div className="csb-ss-ticks" aria-hidden="true">{notes.map((n, k) => <i key={n.i} className={k === active ? 'is-on' : k < active ? 'is-past' : ''} />)}</div>
         <AnimatePresence mode="wait">
           {note && <motion.div key={note.i} className="csb-ss-note" initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
@@ -101,7 +101,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <div className="csb-segment" role="group" aria-label="Devices">{([['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={show === v} onClick={() => onChange({ options: { ...(section.options ?? {}), show: v } })}>{l}</button>)}</div>
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link. Use full-length frames: the page scrolls inside the device.</p>
     <p className="csb-panel-kicker">Layout grid</p>
-    <p className="csb-field-note">Copy the numbers from the frame’s Layout grid in Figma. It stays hidden until a visitor taps “Show layout grid”, the way you toggle grids in Figma. 0 columns turns it off.</p>
+    <p className="csb-field-note">Copy the numbers from the frame’s Layout grid in Figma. It sits on the wireframes as a layer, hidden until someone switches it on with the eye, like in Figma. 0 columns turns it off.</p>
     {([['Desk', 'Desktop frame', 1440, 80, 20], ['Mob', 'Mobile frame', 390, 20, 16]] as const).map(([k, label, w, m, gu]) => { const o = section.options ?? {}; const set = (key: string, v: number) => onChange({ options: { ...o, [key]: v } });
       return <div key={k} className="csb-ss-gridctl">
         <strong>{label}</strong>
