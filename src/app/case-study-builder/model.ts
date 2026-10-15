@@ -109,6 +109,10 @@ export interface BuilderStudy {
   accentGradient?: boolean;
   /** Previews of other case studies at the end of the page. */
   moreStudies?: import("./EndMore").MoreStudy[];
+  /** Closing line at the end of the page. */
+  endThanks?: string;
+  /** Show the More case studies cards (default on). */
+  showMore?: boolean;
   /** Caption under the hero image (Title reveal header). */
   heroCaption?: string;
   /** Motion level: expressive (default) or calm. */

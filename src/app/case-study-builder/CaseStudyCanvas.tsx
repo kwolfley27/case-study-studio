@@ -237,7 +237,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
       }
       return out;
     })()}
-    {!bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><EndMore study={study} editorMode={editorMode} /></EditingContext.Provider>}
+    {!bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><EndMore study={study} editorMode={editorMode} selected={selectedSectionId === "__end"} onSelect={() => onSelectSection?.("__end")} /></EditingContext.Provider>}
     </div>
   </article></MotionPrefs.Provider>;
 }

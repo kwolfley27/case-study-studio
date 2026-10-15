@@ -30,6 +30,7 @@ import { TypeSpecimenControls } from "./TypeSpecimen";
 import { AnnotationControls } from "./AppleExtras";
 import { QuotesControls } from "./Quotes";
 import { InsightsControls } from "./Insights";
+import { EndControls } from "./EndMore";
 import { FigmaPullBar } from "./FigmaPull";
 import { PublishDialog } from "./Publish";
 import { Globe } from "lucide-react";
@@ -305,7 +306,7 @@ export default function CaseStudyBuilder() {
         <button onClick={() => { setReplayKey(k => k + 1); document.querySelector(".csb-preview-viewport")?.scrollTo({ top: 0 }); }}><RotateCcw size={13} /> Replay motion</button>
         {systemReduced && <button aria-pressed={forceMotion} onClick={() => { setForceMotion(f => !f); setReplayKey(k => k + 1); }} title="Your computer has Reduce Motion turned on, so animations are off. Visitors with it on will also see a calm page.">{forceMotion ? "Motion on" : "Play motion (Reduce Motion is on)"}</button>}
         <button onClick={() => setView(lastEditView.current)}><X size={14} /> Exit preview</button></div>}
-      <aside className="csb-panel csb-panel-right" aria-label="Design settings"><button className="csb-panel-hide" onClick={() => setRightOpen(false)} aria-label="Hide design panel" title="Hide ( ] )"><PanelRight size={15} /></button><div className="csb-panel-scroll"><p className="csb-panel-kicker">{selected ? "Design" : "Page settings"}</p><h2 className="csb-panel-title">{selected ? componentNames[selected.kind] : "Project introduction"}</h2><p className="csb-panel-subtitle">{selected ? "Click any text or image on the page to change it. These settings shape how the section looks." : "Click the title, summary, details or hero image on the page to edit them."}</p>{selected ? <>
+      <aside className="csb-panel csb-panel-right" aria-label="Design settings"><button className="csb-panel-hide" onClick={() => setRightOpen(false)} aria-label="Hide design panel" title="Hide ( ] )"><PanelRight size={15} /></button><div className="csb-panel-scroll"><p className="csb-panel-kicker">{selected ? "Design" : "Page settings"}</p><h2 className="csb-panel-title">{selectedId === "__end" ? "Ending" : selected ? componentNames[selected.kind] : "Project introduction"}</h2><p className="csb-panel-subtitle">{selectedId === "__end" ? "The close of the page: your thank-you line and links to your other case studies." : selected ? "Click any text or image on the page to change it. These settings shape how the section looks." : "Click the title, summary, details or hero image on the page to edit them."}</p>{selectedId === "__end" ? <EndControls study={study} update={updateStudy} /> : selected ? <>
         <div className="csb-field"><label htmlFor="csb-surface">Surface</label><select id="csb-surface" value={selected.variant} onChange={event => updateSection({ variant: event.target.value as CaseStudySection["variant"] })}><option value="light">White</option><option value="tinted">Soft tint</option><option value="dark">Dark</option></select></div>
         <IntroToggles section={selected} onChange={updateSection} />
         <LayoutControls section={selected} onChange={updateSection} />

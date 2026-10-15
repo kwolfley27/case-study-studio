@@ -2266,3 +2266,6 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-home-trash-row small{color:#a59f97}
 .csb-home-trash-row button{height:30px;padding:0 14px;border:1px solid #e5e5e5;border-radius:9999px;background:#000;color:#fdfcfc;font:500 13px/1 Inter,system-ui,sans-serif;cursor:pointer}
 .csb-home-trash-row button.is-quiet{background:#fdfcfc;color:#000}
+
+.csb-canvas-editable .csb-canvas-end{cursor:pointer}
+.csb-canvas-end.is-selected{outline:2px solid var(--csb-select,#0071e3);outline-offset:-2px}

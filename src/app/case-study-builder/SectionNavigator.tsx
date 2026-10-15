@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Laptop, GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, Type, Lightbulb, UserRound, Users, Video, Workflow } from 'lucide-react';
+import { Laptop, GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, Type, Lightbulb, Flag, UserRound, Users, Video, Workflow } from 'lucide-react';
 import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, type SectionKind } from './model';
 
 /*
@@ -51,6 +51,12 @@ export function SectionNavigator({ study, selectedId, onSelect, onMove, onHide, 
             onUp={() => onMove(i, i - 1)} onDown={() => onMove(i, i + 1)} onHide={() => onHide(section.id)} onDuplicate={() => onDuplicate(section.id)} onDelete={() => onDelete(section.id)} />
         </li>;
       })}
+      <li className={`csb-nav-row is-fixed ${selectedId === '__end' ? 'is-on' : ''}`}>
+        <button type="button" className="csb-nav-select" onClick={() => onSelect('__end')}>
+          <span className="csb-nav-icon"><Flag size={15} strokeWidth={1.6} /></span>
+          <span className="csb-nav-text"><strong>Ending</strong><small>Thank you + more case studies</small></span>
+        </button>
+      </li>
     </ol>
     <button type="button" className="csb-nav-addrow" onClick={onAdd}><Plus size={14} /> Add section</button>
   </nav>;
