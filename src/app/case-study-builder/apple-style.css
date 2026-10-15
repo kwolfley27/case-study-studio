@@ -2098,3 +2098,14 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 @media (max-width:760px){.csb-ss.is-mobile .csb-ss-stage{grid-template-columns:1fr!important}.csb-ss.is-mobile .csb-ss-notes.is-left{text-align:left;order:2}.csb-ss.is-mobile .csb-ss-notes.is-right{order:3}}
 /* The focus treatment is a light wash, clearly a presentation layer and not part of the design */
 .csb-ss-band{box-shadow:0 0 0 200vmax rgba(253,252,252,.66)!important}
+
+/* Apple-style labels: no monospace, no all-caps tracking. Eyebrows and small labels use the sans in
+   sentence case (as written), quiet weight and warm grey. */
+.csb-canvas{--ed-mono:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+.csb-canvas :is(.csb-eyebrow,.csb-side-nav a,.csb-ss-note small,.csb-more-label,.csb-type-meta span,.csb-bar-col b,.csb-wt-heads span,.csb-wt-num,.csb-detail dt,.csb-detail li i,.csb-detail-solo i,.csb-jm-stage small,.csb-jm-scope small,.csb-jm-label small,.csb-ab-tag,.csb-ab-num,.csb-ab-verdict small,.csb-ab-bars small,.csb-ae-count,.csb-sc-progress,.csb-sc-step small,.csb-pf-facts dt,.csb-af-green small,.csb-af-pink small,.csb-af-unsorted small,.csb-sv-n,.csb-sv-avg b,.csb-rm-week,.csb-rm-weeks button,.csb-fc-stage i,.csb-fx-group,.csb-jtbd-row.is-head,.csb-jtbd-job i,.csb-section-numeral,.csb-section-index,.csb-hero-meta,.csb-hero-footer,.csb-quote-attribution,.csb-comparison-top,.csb-canvas-end>span:last-child,.csb-findings-number,.csb-apple-annotation-side small,.csb-research-card>small,.csb-survey-source-note,.csb-survey-question-heading>span,.csb-survey-card-meta span:last-child,.csb-survey-bar small,.csb-annot-pin,.csb-flow-dot,.csb-gallery-placeholder>span,.csb-af-outline){font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif!important;text-transform:none!important;letter-spacing:-.005em!important;font-variant-numeric:tabular-nums}
+.csb-canvas .csb-eyebrow{font-size:15px!important;font-weight:500!important;line-height:1.4!important;color:var(--t-graphite,#44403b)!important}
+.csb-canvas .csb-variant-dark .csb-eyebrow{color:var(--t-muted,#a59f97)!important}
+.csb-canvas .csb-side-nav a{font-size:13px!important;font-weight:400!important}
+.csb-canvas .csb-side-nav a[aria-current],.csb-canvas .csb-side-nav a.is-active{font-weight:500!important}
+.csb-canvas :is(.csb-ss-note small,.csb-more-label,.csb-type-meta span){font-size:13px!important;font-weight:500!important;color:#a59f97!important}
+.csb-canvas .csb-bar-col b{font-size:12.5px!important}
