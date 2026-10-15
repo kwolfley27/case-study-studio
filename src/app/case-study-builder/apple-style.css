@@ -731,3 +731,8 @@ i.csb-rec-bg-none{background:repeating-linear-gradient(45deg,#fff 0 5px,#eee 5px
 .csb-rec-publish{background:#1d1d1f;color:#fff;border-color:#1d1d1f}
 .csb-rec-play{position:absolute;z-index:6;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;display:grid;place-items:center;border:0;border-radius:50%;background:#ffffffe6;color:#1d1d1f;box-shadow:0 10px 30px #0000004d;cursor:pointer;padding-left:4px}
 .csb-rec-play:hover{transform:scale(1.05)}
+.csb-rec-progress{position:relative;flex:1;min-width:80px;height:4px;border-radius:9999px;background:#ffffff2e}
+.csb-rec-progress i{position:absolute;left:0;top:0;bottom:0;border-radius:inherit;background:#ffffffb3}
+.csb-rec-progress span{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--csb-accent);box-shadow:0 0 0 2px #1d1d1f}
+.csb-rec-editbar{padding:10px 12px}
+.csb-rec-editbar .csb-rec-hint{flex:none}

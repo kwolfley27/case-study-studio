@@ -111,12 +111,10 @@ export function RecordingControls({ section, onChange }: { section: CaseStudySec
     {segment("Cursor", rec.cursor, [["arrow", "Arrow"], ["dot", "Dot"], ["none", "None"]], v => set({ cursor: v }))}
     <div className="csb-layout-control"><div className="csb-layout-label"><span>Zoom on clicks</span><output>{rec.zoom.toFixed(1)}×</output></div><input type="range" min={1} max={3} step={.1} value={rec.zoom} onChange={e => set({ zoom: Number(e.target.value) })} aria-label="Zoom on clicks" /></div>
     {segment("Speed", rec.speed ?? 1, [[0.5, "0.5×"], [0.75, "0.75×"], [1, "1×"], [1.5, "1.5×"], [2, "2×"]], v => set({ speed: v }))}
-    <label className="csb-check-field"><input type="checkbox" checked={rec.loop !== false} onChange={e => set({ loop: e.target.checked })} /> Loop</label>
-    <label className="csb-check-field"><input type="checkbox" checked={!!rec.controls} onChange={e => set({ controls: e.target.checked })} /> Show player controls</label>
     {rec.crop && <p className="csb-field-note">Cropped to a detail ({Math.round(rec.crop.w)}% × {Math.round(rec.crop.h)}% of the screen). <button type="button" className="csb-link-button" onClick={() => set({ crop: undefined })}>Show full screen</button></p>}
 
     <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Click moments · {clicks.length}</p>
-    {!clicks.length ? <p className="csb-field-note">{rec.src ? "Play or scrub the video on the page, then click where you clicked. Each moment zooms in and the cursor glides there." : "Add a video first. Then click the video to mark moments."}</p>
+    {!clicks.length ? <p className="csb-field-note">{rec.src ? "While it loops on the page, click the video when you see a tap. Each moment zooms in and the cursor glides there." : "Add a video first. Then click the video to mark moments."}</p>
       : <ol>{clicks.map((c, i) => <li key={i} className="csb-rec-click">
         <span>{i + 1}</span>
         <input type="number" min={0} step={.1} value={c.t} aria-label={`Click ${i + 1} time in seconds`} onChange={e => set({ clicks: clicks.map((k, j) => j === i ? { ...k, t: Math.max(0, Number(e.target.value) || 0) } : k) })} />

@@ -109,7 +109,7 @@ export const componentNames: Record<SectionKind, string> = {
 
 export const componentDescriptions: Record<SectionKind, string> = {
   details: "Your role, timeline, team and tools at a glance. Show or hide any detail.",
-  screenRecording: "A prototype video on a styled background that zooms into each click.",
+  screenRecording: "A looping, GIF-like prototype recording that zooms into each tap, on a styled background.",
   timeline: "Week-by-week activities grouped into phases, built from your process log.",
   coverHero: "A big title that holds still while your hero image scrolls up and over it.",
   prototype: "Embed a clickable Figma prototype in a phone or laptop frame.",
