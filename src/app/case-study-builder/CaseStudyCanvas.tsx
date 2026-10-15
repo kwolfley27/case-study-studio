@@ -149,13 +149,13 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
   </nav>;
 }
 
-export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype }: { study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
-  const showNav = study.showNav !== false;
+export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype, bare = false }: { bare?: boolean; study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
+  const showNav = !bare && study.showNav !== false;
   const coverFirst = study.sections[0]?.kind === "coverHero";
   return <article className={`csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} style={{ "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent } as React.CSSProperties}>
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
     <div className="csb-doc-main">
-    {!coverFirst && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
+    {!coverFirst && !bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>
       <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>
@@ -163,7 +163,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     {study.sections.map((section, index) => <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} className={`csb-story-section csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
       {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
     </section></EditingContext.Provider>)}
-    <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>
+    {!bare && <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>}
     </div>
   </article>;
 }

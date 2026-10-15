@@ -204,6 +204,6 @@ export default function CaseStudyBuilder() {
     </div>
     <TextStyleBar enabled={view !== "preview"} styleOf={(sectionId, field) => study.sections.find(section => section.id === sectionId)?.textStyles?.[field]} onStyle={(sectionId, field, patch) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== sectionId) return section; const merged = { ...(section.textStyles?.[field] ?? {}), ...patch }; const clean = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined)); const textStyles = { ...(section.textStyles ?? {}) }; if (Object.keys(clean).length) textStyles[field] = clean; else delete textStyles[field]; return { ...section, textStyles }; }) }))} />
     <ImageSlotLayer enabled={view !== "preview"} onFile={handleSlotFile} onUrl={handleSlotUrl} onRemove={slot => setSlotImage(slot, "")} notify={(text, error) => setMessage({ text, error })} />
-    <ComponentLibrary open={showAdd} onOpenChange={setShowAdd} onAdd={addSection}/>
+    <ComponentLibrary open={showAdd} onOpenChange={setShowAdd} onAdd={addSection} study={study}/>
   </div>;
 }

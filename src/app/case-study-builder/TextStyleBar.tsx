@@ -13,7 +13,7 @@ const tones: Array<[TextStyle['tone'] | undefined, string, string]> = [[undefine
 const sizes: Array<[TextStyle['size'] | undefined, string]> = [['s', 'S'], [undefined, 'M'], ['l', 'L'], ['xl', 'XL']];
 const weights: Array<[TextStyle['weight'] | undefined, string]> = [['light', 'Light'], [undefined, 'Auto'], ['bold', 'Bold']];
 
-export function TextStyleBar({ enabled, styleOf, onStyle }: { enabled: boolean; styleOf: (sectionId: string, field: string) => TextStyle | undefined; onStyle: (sectionId: string, field: string, patch: TextStyle) => void }) {
+export function TextStyleBar({ enabled, styleOf, onStyle, colors }: { colors?: { ink: string; muted: string; accent: string; accent2: string }; enabled: boolean; styleOf: (sectionId: string, field: string) => TextStyle | undefined; onStyle: (sectionId: string, field: string, patch: TextStyle) => void }) {
   const [target, setTarget] = useState<Target | null>(null);
 
   useEffect(() => {
@@ -38,12 +38,16 @@ export function TextStyleBar({ enabled, styleOf, onStyle }: { enabled: boolean; 
   if (!target) return null;
   const style = styleOf(target.sectionId, target.field) ?? {};
   const set = (patch: TextStyle) => onStyle(target.sectionId, target.field, patch);
+  // Read the real colours from the page so the swatches match what you'll get.
+  const page = document.querySelector('.csb-preview-viewport .csb-canvas'); const css = page ? getComputedStyle(page) : null;
+  const read = (name: string, fallback: string) => css?.getPropertyValue(name).trim() || fallback;
+  const swatch = { ink: colors?.ink || read('--t-ink', '#1d1d1f'), muted: colors?.muted || read('--t-muted', '#86868b'), accent: colors?.accent || read('--csb-accent', '#c8553d'), accent2: colors?.accent2 || read('--csb-accent-2', read('--csb-accent', '#c8553d')) };
   const keep = (event: React.MouseEvent) => event.preventDefault(); // keep the caret in the text
   const top = target.rect.top > 70 ? target.rect.top - 48 : target.rect.bottom + 8;
   const left = Math.max(8, Math.min(window.innerWidth - 420, target.rect.left));
 
   return <div className="csb-textbar" role="toolbar" aria-label="Text style" style={{ top, left }} onMouseDown={keep}>
-    <div className="csb-textbar-group" aria-label="Colour">{tones.map(([tone, label, swatch]) => <button key={label} type="button" title={label} aria-label={`Colour: ${label}`} aria-pressed={style.tone === tone} className="csb-textbar-swatch" onClick={() => set({ tone })}><i style={{ background: swatch }} className={tone ? '' : 'is-default'} /></button>)}</div>
+    <div className="csb-textbar-group" aria-label="Colour">{tones.map(([tone, label]) => <button key={label} type="button" title={label} aria-label={`Colour: ${label}`} aria-pressed={style.tone === tone} className="csb-textbar-swatch" onClick={() => set({ tone })}><i style={{ background: tone ? swatch[tone] : undefined }} className={tone ? '' : 'is-default'} /></button>)}</div>
     <span className="csb-textbar-sep" />
     <div className="csb-textbar-group" aria-label="Size">{sizes.map(([size, label]) => <button key={label} type="button" aria-label={`Size ${label}`} aria-pressed={style.size === size} onClick={() => set({ size })}>{label}</button>)}</div>
     <span className="csb-textbar-sep" />
