@@ -10,6 +10,7 @@ import { EndMore } from "./EndMore";
 import { PhaseGroup } from "./PhaseGroup";
 import { QuotesView } from "./Quotes";
 import { Insights } from "./Insights";
+import { Iterations } from "./Iterations";
 import { TypeSpecimen } from "./TypeSpecimen";
 import { FeatureCompare, Positioning } from "./CompetitorViews";
 import { AEIOUBoard } from "./AEIOU";
@@ -162,6 +163,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "flow": return <Flow section={section} />;
     case "quotes": return <QuotesView section={section} />;
     case "insights": return <Insights section={section} />;
+    case "iterations": return <Iterations section={section} />;
     case "comparison": return <Comparison section={section} />;
     case "gallery": return <Gallery section={section} />;
     default: return <Enter className="csb-editorial-statement"><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;

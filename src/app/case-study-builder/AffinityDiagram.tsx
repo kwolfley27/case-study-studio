@@ -146,10 +146,10 @@ export function AffinityDiagram({ section, editorMode }: { section: CaseStudySec
         <div className="csb-af-issues">
           {g.issues.map((iss, ii) => <div key={ii} className="csb-af-issue" style={{ '--n': Math.max(1, iss.aspects.length) } as React.CSSProperties}>
             {ii > 0 && <Line p={p} from={.7} vertical />}
-            <Reveal p={p} from={.76} className="csb-af-pink"><small>Issue {ii + 1}</small><h4><EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.title`} value={iss.title} /></h4></Reveal>
+            {!(g.issues.length === 1 && iss.title.trim() === g.title.trim() && !edit) && <Reveal p={p} from={.76} className="csb-af-pink"><small>Issue {ii + 1}</small><h4><EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.title`} value={iss.title} /></h4></Reveal>}
             <div className="csb-af-aspects">
               {iss.aspects.map((asp, ai) => <div key={ai} className="csb-af-aspect">
-                <Reveal p={p} from={.7} as="p" className="csb-af-blue">“<EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.aspects.${ai}.title`} value={asp.title} />”</Reveal>
+                {!(asp.title.trim() === iss.title.trim() && !edit) && <Reveal p={p} from={.7} as="p" className="csb-af-blue">“<EditableText field={`deep:affinity.groups.${gi}.issues.${ii}.aspects.${ai}.title`} value={asp.title} />”</Reveal>}
                 <ul className="csb-af-notes">{asp.notes.map((note, ni) => { const id = `${gi}-${ii}-${ai}-${ni}`; const o = order++; return <Note key={id} id={id} text={note} field={`deep:affinity.groups.${gi}.issues.${ii}.aspects.${ai}.notes.${ni}`} p={p} geo={geo} order={o} total={total} animate={animate} />; })}</ul>
               </div>)}
             </div>

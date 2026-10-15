@@ -2269,3 +2269,35 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 
 .csb-canvas-editable .csb-canvas-end{cursor:pointer}
 .csb-canvas-end.is-selected{outline:2px solid var(--csb-select,#0071e3);outline-offset:-2px}
+
+.csb-figjam{display:grid;gap:8px}
+.csb-figjam input{width:100%;height:32px;padding:0 10px;border:1px solid #e3e3e6;border-radius:8px;font:inherit;font-size:13px}
+.csb-field-note.is-error{color:#b42318}
+
+/* Iterations: one screen through its versions */
+.csb-it{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(28px,5vw,72px);align-items:center;margin-top:clamp(20px,3vw,36px);text-align:left;outline:none}
+.csb-it.is-laptop,.csb-it.is-browser,.csb-it.is-none{grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr)}
+.csb-it-stat{margin:0 0 18px;font:500 14px/1.4 Inter,-apple-system,system-ui,sans-serif;color:#777169}
+.csb-it-track{position:relative;display:flex;justify-content:space-between;align-items:center;max-width:360px;margin-bottom:28px}
+.csb-it-line{position:absolute;left:14px;right:14px;top:50%;height:1px;background:#ebe8e4}
+.csb-it-line i{position:absolute;inset:0;background:#000;transform-origin:left}
+.csb-it-track button{position:relative;z-index:1;display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid #ebe8e4;border-radius:50%;background:#fdfcfc;color:#777169;font:500 11.5px/1 Inter,-apple-system,system-ui,sans-serif;cursor:pointer;transition:background .25s,color .25s,border-color .25s}
+.csb-it-track button.is-past{border-color:#000;color:#000}
+.csb-it-track button.is-on{background:#000;border-color:#000;color:#fdfcfc}
+.csb-it-count{margin:0 0 8px;font:500 13px/1 Inter,-apple-system,system-ui,sans-serif;color:#a59f97}
+.csb-it-copy h3{margin:0 0 12px;font-family:var(--brand-display,"Inter",-apple-system,system-ui,sans-serif);font-weight:300;font-size:clamp(26px,2.6vw,36px);line-height:1.12;letter-spacing:-.02em;color:#000}
+.csb-it-detail{margin:0;font-size:17px;line-height:1.55;color:#44403b}
+.csb-it-why{margin:18px 0 0;padding-top:14px;border-top:1px solid #ebe8e4;font-size:15px;line-height:1.5;color:#777169}
+.csb-it-why span{display:block;margin-bottom:4px;font-size:13px;font-weight:500;color:#a59f97}
+.csb-it-arrows{display:flex;gap:8px;margin-top:24px}
+.csb-it-arrows button{display:grid;place-items:center;width:40px;height:40px;border:1px solid #e5e5e5;border-radius:9999px;background:#fdfcfc;color:#000;cursor:pointer}
+.csb-it-arrows button:disabled{opacity:.35;cursor:default}
+.csb-it-screen{position:relative;display:grid;place-items:center;min-height:clamp(360px,42vw,560px);cursor:pointer}
+.csb-it-frame{width:100%;display:grid;place-items:center}
+.csb-it.is-phone .csb-it-frame>*{width:min(300px,80%)}
+.csb-it-flat{width:100%;aspect-ratio:16/10;border-radius:20px;overflow:hidden;background:#f5f3f1;display:grid;place-items:center;color:#a59f97;font-size:14px}
+.csb-it-flat img{width:100%;height:100%;object-fit:cover;object-position:top}
+.csb-variant-dark .csb-it-copy h3{color:#f5f3f1}.csb-variant-dark .csb-it-detail{color:#d9d4cd}
+@container (max-width:760px){.csb-it,.csb-it.is-laptop,.csb-it.is-browser,.csb-it.is-none{grid-template-columns:1fr}.csb-it-screen{order:-1;min-height:0}}
+/* Any remaining small label on the page: sans, sentence case */
+.csb-canvas small{font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif!important;text-transform:none!important;letter-spacing:-.003em!important}

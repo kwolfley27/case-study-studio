@@ -30,7 +30,9 @@ import { TypeSpecimenControls } from "./TypeSpecimen";
 import { AnnotationControls } from "./AppleExtras";
 import { QuotesControls } from "./Quotes";
 import { InsightsControls } from "./Insights";
+import { IterationsControls } from "./Iterations";
 import { EndControls } from "./EndMore";
+import { FigJamPull } from "./FigJamPull";
 import { FigmaPullBar } from "./FigmaPull";
 import { PublishDialog } from "./Publish";
 import { Globe } from "lucide-react";
@@ -330,10 +332,12 @@ export default function CaseStudyBuilder() {
         {selected.kind === "survey" && <><div className="csb-inspector-divider" /><SurveyDataSource section={selected} onApply={updateSection} onOpenResearch={() => setShowResearch(true)} /></>}
         {selected.kind === "showcase" && <><div className="csb-inspector-divider" /><ShowcaseControls section={selected} onChange={updateSection} /></>}
         {["screenFocus", "screenStory", "screenStrip"].includes(selected.kind) && <><div className="csb-inspector-divider" /><ScreensControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><FigJamPull onImport={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Affinity diagram</p><AffinityControls section={selected} onChange={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "annotated" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Device</p><div className="csb-segment" role="group" aria-label="Device"><button type="button" aria-pressed={selected.options?.device !== "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "phone" } })}>Phone</button><button type="button" aria-pressed={selected.options?.device === "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "desktop" } })}>Desktop page</button></div><p className="csb-field-note">Click the screen on the page to paste a Figma frame link (Copy link to selection).</p></>}
         {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "iterations" && <><div className="csb-inspector-divider" /><IterationsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "insights" && <><div className="csb-inspector-divider" /><InsightsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "quotes" && <><div className="csb-inspector-divider" /><QuotesControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "typeSpec" && <><div className="csb-inspector-divider" /><TypeSpecimenControls section={selected} onChange={updateSection} /></>}
