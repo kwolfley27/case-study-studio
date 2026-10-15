@@ -117,7 +117,7 @@ export function buildSteinway(): BuilderStudy {
     heroFigmaUrl: F('84:22'),
     showNav: true,
     sources: { figmaUrl: F('0:1') },
-    sections: combineStages(sections),
+    sections: combineStages(oldMobileAsPhone(sections)),
   } as BuilderStudy;
 }
 
@@ -139,4 +139,23 @@ export function combineStages(sections: CaseStudySection[]): CaseStudySection[] 
     items: [...pad(w.items), ...pad(f.items), ...w.items.slice(2).map(n => ({ ...n, when: 'a' })), ...f.items.slice(2).map(n => ({ ...n, when: 'b' }))],
   };
   return sections.filter((_, i) => i !== wi).map(s => s === f ? combined : s);
+}
+
+
+/* The old mobile site (three screenshots side by side in her Figma frame) becomes one phone you can
+   scroll, with her notes pinned to the parts they describe. Frames already pulled are kept. */
+const OLD_MOBILE_SPOTS = [42, 17, 28, 62, 95]; // where on the stacked page each of her notes points (drag to adjust)
+export function oldMobileAsPhone(sections: CaseStudySection[]): CaseStudySection[] {
+  const mi = sections.findIndex(s => s.kind === 'fullMedia' && s.navLabel === 'Old mobile');
+  if (mi < 0) return sections;
+  const m = sections[mi];
+  const ni = sections.findIndex(s => s.kind === 'findings' && s.navLabel === 'Old mobile notes');
+  const notes = ni >= 0 ? sections[ni].items : [];
+  const phone: CaseStudySection = {
+    ...m, kind: 'scrollSite',
+    options: { ...(m.options ?? {}), show: 'mobile', stackMob: true },
+    items: [{ title: 'Desktop', detail: '' }, { ...(m.items[0] ?? { title: '', detail: '' }), title: 'Old mobile site' },
+      ...notes.map((n, k) => ({ title: n.title, detail: n.detail, point: String(OLD_MOBILE_SPOTS[k] ?? 50), value: 'mobile' }))],
+  };
+  return sections.filter((_, i) => i !== ni).map((s, i) => i === mi ? phone : s);
 }

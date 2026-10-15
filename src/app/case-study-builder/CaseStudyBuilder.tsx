@@ -159,6 +159,16 @@ export default function CaseStudyBuilder() {
       try { localStorage.setItem("csb-steinway-stages", "1"); } catch { /* ignore */ }
     }).catch(() => undefined);
   }, [study.id, study.sections]);
+  // Steinway: the old mobile screenshots become one scrollable phone with her notes pinned on it.
+  useEffect(() => {
+    if (!study.id.startsWith("starter-steinway") || study.sections.some(s => /^stw-[a-z]/.test(s.id))) return;
+    if (!study.sections.some(s => s.kind === "fullMedia" && s.navLabel === "Old mobile")) return;
+    try { if (localStorage.getItem("csb-steinway-oldmobile")) return; } catch { return; }
+    void import("./starters/steinway").then(({ oldMobileAsPhone }) => {
+      setStudy(current => current.id.startsWith("starter-steinway") ? { ...current, sections: oldMobileAsPhone(current.sections) } : current);
+      try { localStorage.setItem("csb-steinway-oldmobile", "1"); } catch { /* ignore */ }
+    }).catch(() => undefined);
+  }, [study.id, study.sections]);
   // Keep every study in the Home library too (debounced; IndexedDB has room for images).
   useEffect(() => { const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
   // The quick local copy can be too big once Figma frames are pulled in; then only its id is kept and the full study lives in IndexedDB.

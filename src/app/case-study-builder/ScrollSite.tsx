@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Columns3, Crosshair, Eye, EyeOff, MousePointer2, Plus, Trash2 } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
@@ -26,16 +26,52 @@ type Note = { title: string; detail: string; at: number; device: Device; i: numb
 type View = { top: number; bottom: number };
 type Grid = { cols: number; margin: number; gutter: number } | null;
 
+/*
+  A frame that holds several phone screenshots side by side (e.g. the old site captured in 3 screens)
+  is shown as one long page: the screens are found automatically (columns that differ from the
+  background colour) and stacked top to bottom, so it scrolls like the real thing.
+*/
+type Seg = { x: number; y: number; w: number; h: number };
+function useScreens(image: string | undefined, on: boolean) {
+  const [segs, setSegs] = useState<{ W: number; H: number; list: Seg[] } | null>(null);
+  useEffect(() => {
+    setSegs(null); if (!image || !on) return;
+    let dead = false; const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (dead) return;
+      const W = img.naturalWidth, H = img.naturalHeight; const k = Math.min(1, 800 / W);
+      const w = Math.round(W * k), h = Math.round(H * k);
+      try {
+        const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d')!; g.drawImage(img, 0, 0, w, h);
+        const d = g.getImageData(0, 0, w, h).data; const bg = [d[0], d[1], d[2]];
+        const diff = (x: number, y: number) => { const i = (y * w + x) * 4; return Math.abs(d[i] - bg[0]) + Math.abs(d[i + 1] - bg[1]) + Math.abs(d[i + 2] - bg[2]) > 24; };
+        const col = (x: number) => { let n = 0; for (let y = 0; y < h; y += 2) if (diff(x, y)) n++; return n / (h / 2) > .02; };
+        const runs: Array<[number, number]> = []; let start = -1;
+        for (let x = 0; x <= w; x++) { const on = x < w && col(x); if (on && start < 0) start = x; if (!on && start >= 0) { if (x - start > w * .06) runs.push([start, x]); start = -1; } }
+        if (runs.length < 2) { setSegs(null); return; }
+        const list = runs.map(([x0, x1]) => { let y0 = 0, y1 = h; const row = (y: number) => { let n = 0; for (let x = x0; x < x1; x += 2) if (diff(x, y)) n++; return n > 0; };
+          while (y0 < h && !row(y0)) y0++; while (y1 > y0 && !row(y1 - 1)) y1--;
+          return { x: x0 / k, y: y0 / k, w: (x1 - x0) / k, h: (y1 - y0) / k }; });
+        setSegs({ W, H, list });
+      } catch { setSegs(null); }
+    };
+    img.src = image; return () => { dead = true; };
+  }, [image, on]);
+  return segs;
+}
+
 /** Last view of each section's screens, so the inspector can place a note "where I am now". */
 export const lastView = new Map<string, { device: Device; center: number }>();
 
-function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, editorMode, onMoveNote, takeRestore }: {
-  image?: string; slot: string; label: string; grid?: Grid; notes: Note[]; activeI: number | null; takeRestore?: () => number | null;
+function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, editorMode, onMoveNote, takeRestore, stack }: {
+  image?: string; slot: string; label: string; grid?: Grid; notes: Note[]; activeI: number | null; takeRestore?: () => number | null; stack?: boolean;
   onView: (v: View, byUser?: boolean) => void; scrollRef: (el: HTMLDivElement | null) => void; editorMode?: boolean; onMoveNote: (i: number, at: number) => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null); const content = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const silent = useRef(false);
+  const segs = useScreens(image, !!stack);
+  useEffect(() => { report(); }, [segs]);
   const report = (byUser = false) => { const el = scroller.current; if (!el || !el.scrollHeight) return; onView({ top: el.scrollTop / el.scrollHeight, bottom: (el.scrollTop + el.clientHeight) / el.scrollHeight }, byUser); };
   useLayoutEffect(() => { report(); const ro = new ResizeObserver(() => report()); if (scroller.current) ro.observe(scroller.current); return () => ro.disconnect(); }, [image]);
   const drag = (n: Note) => (e: React.PointerEvent) => {
@@ -49,7 +85,8 @@ function Screen({ image, slot, label, grid, notes, activeI, onView, scrollRef, e
   return <div className={`csb-ss-screen ${editorMode ? 'is-editing' : ''}`} data-image-slot={slot}>
     {image ? <div className="csb-ss-scroll" ref={el => { scroller.current = el; scrollRef(el); }} tabIndex={0} aria-label={`${label}: scroll to explore`} onScroll={() => { if (silent.current) { silent.current = false; report(); return; } if (!scrolled) setScrolled(true); report(true); }}>
       <div className="csb-ss-content" ref={content}>
-        <img key={image} className="csb-ss-frame" src={image} alt={label} draggable={false} onLoad={() => { const el = scroller.current; const r = takeRestore?.(); if (el && r != null) { silent.current = true; el.scrollTop = r * el.scrollHeight; } report(); }} />
+        {segs ? <div className="csb-ss-frame csb-ss-stack" role="img" aria-label={label}>{segs.list.map((sg, k) => <div key={k} style={{ aspectRatio: `${sg.w} / ${sg.h}`, backgroundImage: `url("${image}")`, backgroundSize: `${(segs.W / sg.w) * 100}% auto`, backgroundPosition: `${segs.W === sg.w ? 0 : (sg.x / (segs.W - sg.w)) * 100}% ${segs.H === sg.h ? 0 : (sg.y / (segs.H - sg.h)) * 100}%` }} />)}</div>
+          : <img key={image} className="csb-ss-frame" src={image} alt={label} draggable={false} onLoad={() => { const el = scroller.current; const r = takeRestore?.(); if (el && r != null) { silent.current = true; el.scrollTop = r * el.scrollHeight; } report(); }} />}
         {notes.map((n, k) => <span key={n.i} className={`csb-ss-marker ${activeI === n.i ? 'is-on' : ''}`} style={{ top: `${n.at * 100}%` }} onPointerDown={drag(n)} data-no-slot title={editorMode ? 'Drag to move this note on the frame' : n.title}>{k + 1}</span>)}
       </div>
     </div> : <div className="csb-ss-empty"><strong>{label}</strong><span>Paste a Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste it here</span></div>}
@@ -103,7 +140,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const wrap = useRef<HTMLDivElement>(null);
   const [vh, setVh] = useState(800);
   useLayoutEffect(() => { const measure = () => { const sc = wrap.current?.closest('.csb-preview-viewport') as HTMLElement | null; setVh(sc ? sc.clientHeight : window.innerHeight); }; measure(); window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }, []);
-  const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} />; };
+  const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} />; };
   return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''}`} style={{ ['--ss-vh' as string]: `${vh}px` }}>
     {compare && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
       {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={stage === st} onClick={() => setStage(st)}>{stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
@@ -119,7 +156,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
       <div className="csb-ss-notes" aria-live="polite">
         {hasImage && list.length > 0 && <div className="csb-ss-ticks" aria-label={`${device === 'mobile' ? 'Mobile' : 'Desktop'} notes`}>{list.map((n, k) => <button key={n.i} type="button" className={note?.i === n.i ? 'is-on' : ''} title={n.title} aria-label={`Go to note ${k + 1}: ${n.title}`} onClick={() => jump(n)}>{k + 1}</button>)}</div>}
         <AnimatePresence mode="wait">
-          {note ? <motion.div key={note.i} className="csb-ss-note" initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
+          {note ? <motion.div key={note.i} className={`csb-ss-note ${note.title.length > 48 ? 'is-long' : ''}`} initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
             <small>{compare ? `${stage === 'a' ? nameA : nameB} · ` : ''}{note.device === 'mobile' ? 'Mobile' : 'Desktop'} · {list.findIndex(n => n.i === note.i) + 1} of {list.length}</small>
             <h3><EditableText field={`items.${note.i}.title`} value={note.title} /></h3>
             <p><EditableText field={`items.${note.i}.detail`} value={note.detail} /></p>
@@ -149,6 +186,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     <p className="csb-panel-kicker">Show</p>
     <div className="csb-segment" role="group" aria-label="Devices">{([['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={show === v} onClick={() => onChange({ options: { ...(section.options ?? {}), show: v } })}>{l}</button>)}</div>
     <p className="csb-field-note">Click a screen on the page to paste its Figma frame link, or copy the frame as PNG in Figma (⌘⇧C) and paste. Use full-length frames: the page scrolls inside the device.</p>
+    <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
     <p className="csb-panel-kicker">Stages</p>
     <label className="csb-check-field"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Two stages, switched with one click</label>
     {compare && <><div className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 1fr' }}>

@@ -2033,3 +2033,8 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-devices{min-height:clamp(380px,46vw,640px)}
 @container csbview (min-width:1500px){.csb-doc-main .csb-kind-scrollSite .csb-section-inner{width:1080px;max-width:none;margin-inline:calc(50% - 540px)}}
 @container csbview (min-width:1760px){.csb-doc-main .csb-kind-scrollSite .csb-section-inner{width:1240px;margin-inline:calc(50% - 620px)}}
+
+.csb-ss-stack>div{width:100%;background-repeat:no-repeat}
+
+.csb-ss-note.is-long h3{font-size:clamp(20px,1.8vw,25px);line-height:1.25}
+.csb-ss.is-mobile .csb-ss-stage{grid-template-columns:auto minmax(220px,340px)!important;justify-content:center;gap:clamp(32px,6vw,80px)!important}
