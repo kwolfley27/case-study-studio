@@ -1,0 +1,25 @@
+/*
+  Device mockups shared by every hero: laptop, desktop monitor, browser
+  window, phone, or none (the image on its own — great for transparent PNGs).
+  Until an image is added, a sample app screen shows so the frame is visible.
+*/
+
+export type Frame = 'none' | 'laptop' | 'desktop' | 'browser' | 'phone';
+export const frameOptions: Array<[Frame, string]> = [['none', 'No frame'], ['laptop', 'Laptop'], ['desktop', 'Desktop monitor'], ['browser', 'Browser window'], ['phone', 'Phone']];
+
+function SampleScreen({ phone }: { phone?: boolean }) {
+  return phone
+    ? <div className="csb-dev-sample is-phone" aria-hidden="true"><b /><i /><i /><span /><span /><em /></div>
+    : <div className="csb-dev-sample" aria-hidden="true"><div><b /><i /><i /><i /><i /></div><div><b /><p><i /><i /><i /></p><span /><span /><em /></div></div>;
+}
+
+export function DeviceFrame({ frame, image, alt, slot, hint }: { frame: Frame; image?: string; alt: string; slot: string; hint?: string }) {
+  const screen = (phone?: boolean) => <div className="csb-hx-screen" data-image-slot={slot}>
+    {image ? <img src={image} alt={alt} /> : <><SampleScreen phone={phone} />{hint && <span className="csb-dev-hint">{hint}</span>}</>}
+  </div>;
+  if (frame === 'browser') return <div className="csb-hx-browser"><div className="csb-hx-bar" aria-hidden="true"><i /><i /><i /></div>{screen()}</div>;
+  if (frame === 'laptop') return <div className="csb-hx-laptop"><div className="csb-hx-lid">{screen()}</div><div className="csb-hx-base" aria-hidden="true" /></div>;
+  if (frame === 'desktop') return <div className="csb-hx-desktop"><div className="csb-hx-monitor">{screen()}</div><div className="csb-hx-stand" aria-hidden="true" /><div className="csb-hx-foot" aria-hidden="true" /></div>;
+  if (frame === 'phone') return <div className="csb-hx-phone"><span className="csb-hx-island" aria-hidden="true" />{screen(true)}</div>;
+  return <div className="csb-hx-float" data-image-slot={slot}>{image ? <img src={image} alt={alt} /> : <div className="csb-dev-empty"><SampleScreen />{hint && <span className="csb-dev-hint">{hint}</span>}</div>}</div>;
+}

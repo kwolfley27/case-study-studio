@@ -881,3 +881,32 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 /* labeled rows keep the old problem-statement look */
 .csb-kind-rows:not(.csb-variant-dark) .csb-research-problem .csb-research-card{border-color:var(--t-line,#d2d2d7)!important}
 .csb-kind-rows:not(.csb-variant-dark) .csb-research-problem .csb-research-card p{color:var(--t-body,#6e6e73)!important}
+
+/* ── Device frames everywhere (shared) ─────────────────────────────── */
+.csb-hx-foot{width:34%;height:10px;border-radius:8px 8px 3px 3px;background:linear-gradient(#dcdce0,#bdbdc2);box-shadow:0 14px 26px -12px #0006}
+.csb-hx-stand{height:70px}
+.csb-dev-sample{display:grid;grid-template-columns:22% 1fr;width:100%;height:100%;background:#fafafa}
+.csb-dev-sample>div:first-child{display:grid;align-content:start;gap:8%;padding:7% 9%;border-right:1px solid #eee;background:#f3f3f4}
+.csb-dev-sample>div:first-child b{height:10px;width:60%;border-radius:4px;background:var(--csb-accent);opacity:.85;margin-bottom:6px}
+.csb-dev-sample>div:first-child i{height:7px;border-radius:4px;background:#e2e2e6}
+.csb-dev-sample>div:last-child{display:grid;align-content:start;gap:12px;padding:5%}
+.csb-dev-sample>div:last-child>b{height:12px;width:38%;border-radius:5px;background:#d4d4d8}
+.csb-dev-sample p{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0}
+.csb-dev-sample p i{aspect-ratio:1.6;border-radius:10px;background:color-mix(in srgb,var(--csb-accent) 14%,#fff);border:1px solid color-mix(in srgb,var(--csb-accent) 22%,#fff)}
+.csb-dev-sample span{height:8px;border-radius:4px;background:#e4e4e7}.csb-dev-sample span+span{width:72%}
+.csb-dev-sample em{justify-self:start;width:28%;height:20px;border-radius:9999px;background:var(--csb-accent)}
+.csb-dev-sample.is-phone{display:grid;grid-template-columns:1fr;align-content:start;gap:12px;padding:22% 9% 10%}
+.csb-dev-sample.is-phone b{height:14px;width:55%;border-radius:5px;background:#d4d4d8}
+.csb-dev-sample.is-phone i{height:70px;border-radius:14px;background:color-mix(in srgb,var(--csb-accent) 14%,#fff)}
+.csb-dev-sample.is-phone em{width:100%;height:34px;border-radius:9999px;background:var(--csb-accent);margin-top:8px}
+.csb-dev-empty{position:relative;aspect-ratio:16/10;border-radius:18px;overflow:hidden;box-shadow:0 40px 70px -30px #0006}
+.csb-dev-hint{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:6px 12px;border-radius:9999px;background:#1d1d1fd9;color:#fff;font-size:12px;white-space:nowrap;pointer-events:none}
+.csb-hx-screen{position:relative}
+.csb-hx-float{position:relative}
+/* standard header + title reveal with a device */
+.csb-hero-device{display:grid;justify-items:center;width:min(100%,980px);margin:clamp(36px,5cqw,56px) auto 0}
+.csb-cover.has-device{background:none}
+.csb-cover-device{position:relative;z-index:1;display:grid;justify-items:center;width:min(1000px,calc(100% - 32px));margin:0 auto clamp(24px,4cqw,48px)}
+/* full width header: bring the device up into the first screen */
+.csb-hx{padding-top:clamp(64px,10vh,120px)}
+.csb-hx-media{margin-top:clamp(40px,8vh,96px)}

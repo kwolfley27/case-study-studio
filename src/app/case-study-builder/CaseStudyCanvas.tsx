@@ -14,6 +14,7 @@ import { WorkTimeline } from "./WorkTimeline";
 import { ScreenRecording } from "./ScreenRecording";
 import { ProjectDetails } from "./ProjectDetails";
 import { ImmersiveHero } from "./ImmersiveHero";
+import { DeviceFrame } from "./DeviceFrame";
 import { ProblemStatement } from "./ProblemStatement";
 import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
@@ -174,7 +175,8 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     <div className="csb-doc-main">
     {!coverFirst && !bare && !(study.hero?.style === "immersive") && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
-      <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>
+      {study.hero?.frame && study.hero.frame !== "none" ? <div className="csb-hero-device"><DeviceFrame frame={study.hero.frame} image={study.heroImage} alt={`${study.title} hero visual`} slot="hero" hint={editorMode ? "Click to add your screen" : undefined} /></div>
+        : <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>}
       {!study.sections.some(section => section.kind === "details") && <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>}
     </header></EditingContext.Provider>}
     {study.sections.map((section, index) => <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} className={`csb-story-section csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
