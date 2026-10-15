@@ -2301,3 +2301,54 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 @container (max-width:760px){.csb-it,.csb-it.is-laptop,.csb-it.is-browser,.csb-it.is-none{grid-template-columns:1fr}.csb-it-screen{order:-1;min-height:0}}
 /* Any remaining small label on the page: sans, sentence case */
 .csb-canvas small{font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif!important;text-transform:none!important;letter-spacing:-.003em!important}
+
+/* ── Define: problem statement card that flips to "How might we…?" ── */
+.csb-psf{position:relative;height:190vh;max-width:920px;margin:0 auto}
+.csb-psf-stick{position:sticky;top:12vh;display:grid;gap:clamp(20px,3cqw,32px);justify-items:center;min-height:76vh;align-content:center;perspective:1800px}
+.csb-psf-card{position:relative;display:grid;width:100%;transform-style:preserve-3d;will-change:transform}
+.csb-psf-face{grid-area:1/1;display:grid;place-items:center;min-height:clamp(300px,40cqw,440px);padding:clamp(32px,6cqw,72px);border-radius:28px;background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4),0 1px 2px rgba(0,0,0,.03),0 18px 50px rgba(0,0,0,.05);backface-visibility:hidden;-webkit-backface-visibility:hidden;text-align:center}
+.csb-psf-face.is-back{transform:rotateY(180deg);background:var(--t-surface,#f5f3f1)}
+.csb-psf .csb-ps-sentence{margin:0;max-width:760px;font-size:clamp(26px,3.6cqw,44px);line-height:1.28;font-weight:300;letter-spacing:-.02em;color:var(--t-body,#44403b);text-align:center}
+.csb-psf-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-size:13px;color:var(--t-muted,#a59f97);white-space:nowrap}
+.csb-psf-hmw{display:grid;justify-items:center;width:100%}
+.csb-psf-bubble{position:relative;display:grid;gap:12px;max-width:640px;padding:clamp(24px,3.4cqw,36px) clamp(26px,4cqw,44px);border-radius:32px;background:var(--t-ink,#000);color:#fdfcfc;text-align:left;transform-origin:12% 100%}
+.csb-psf-bubble::after{content:"";position:absolute;left:30px;bottom:-9px;width:22px;height:22px;background:inherit;border-bottom-right-radius:18px;transform:skewX(-28deg) rotate(8deg);clip-path:polygon(0 0,100% 0,100% 100%,0 60%)}
+.csb-psf-ask{font-size:clamp(15px,1.6cqw,17px);color:#a59f97}
+.csb-psf-bubble p{margin:0;font-size:clamp(24px,3.1cqw,38px);line-height:1.24;font-weight:300;letter-spacing:-.02em}
+.csb-psf-success{display:grid;grid-template-columns:auto 1fr;gap:6px 20px;align-items:baseline;width:100%;max-width:760px;padding-top:18px;border-top:1px solid var(--t-line2,#ebe8e4);text-align:left}
+.csb-psf-success span{font-size:14px;color:var(--t-muted,#777169);white-space:nowrap}
+.csb-psf-success p{margin:0;font-size:clamp(16px,1.7cqw,18px);line-height:1.5;color:var(--t-ink,#000)}
+.csb-psf.is-static{height:auto;display:grid;gap:20px}
+.csb-psf.is-static .csb-psf-face{backface-visibility:visible;transform:none}
+.csb-variant-dark .csb-psf-face{background:#1c1c1e;box-shadow:0 0 0 1px #2c2c2e}.csb-variant-dark .csb-psf-face.is-back{background:#232325}
+.csb-variant-dark .csb-psf-bubble{background:#fdfcfc;color:#000}.csb-variant-dark .csb-psf .csb-ps-sentence{color:#d6d3cf}
+@container (max-width:620px){.csb-psf-success{grid-template-columns:1fr}.csb-psf{height:170vh}}
+/* the old tiny labels lose the monospace caps */
+.csb-ps-extras small{font-family:inherit!important;font-size:14px!important;letter-spacing:0!important;text-transform:none!important}
+
+/* ── Interview highlights: participant pills, the quote as the hero, two quiet columns ── */
+.csb-iv{margin-top:clamp(28px,4cqw,48px)}
+.csb-iv-people{display:inline-flex;flex-wrap:wrap;gap:2px;max-width:100%;padding:4px;border-radius:9999px;background:var(--t-surface,#f5f3f1)}
+.csb-iv-people button{position:relative;display:inline-flex;align-items:center;gap:9px;padding:7px 16px 7px 7px;border:0;border-radius:9999px;background:none;color:var(--t-muted,#777169);font:inherit;font-size:14px;cursor:pointer;transition:color .2s}
+.csb-iv-people button:hover,.csb-iv-people button.is-active{color:var(--t-ink,#000)}
+.csb-iv-people button>*:not(.csb-iv-pill){position:relative;z-index:1}
+.csb-iv-pill{position:absolute;inset:0;border-radius:9999px;background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px rgba(0,0,0,.04),0 2px 6px rgba(0,0,0,.06)}
+.csb-iv-people i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--t-line2,#ebe8e4);font-style:normal;font-size:10.5px;font-weight:500;color:var(--t-body,#44403b)}
+.csb-iv-people button.is-active i{background:var(--t-ink,#000);color:#fdfcfc}
+.csb-iv-panel{margin-top:clamp(36px,5.5cqw,64px)}
+.csb-iv-quote{margin:0;max-width:880px}
+.csb-iv-quote blockquote{margin:0;font-size:clamp(28px,4cqw,50px);line-height:1.18;font-weight:300;letter-spacing:-.025em;color:var(--t-ink,#000);text-indent:-.4em}
+.csb-iv-quote figcaption{margin-top:20px;font-size:15px;color:var(--t-muted,#777169)}
+.csb-iv-quote figcaption strong{font-weight:500;color:var(--t-ink,#000)}
+.csb-iv-note{margin:8px 0 0;font-size:15px;line-height:1.55;color:var(--t-muted,#777169)}
+.csb-iv-cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5cqw,64px);margin-top:clamp(36px,5cqw,56px);padding-top:clamp(22px,3cqw,30px);border-top:1px solid var(--t-line2,#ebe8e4)}
+.csb-iv-cols>div{display:grid;align-content:start;gap:10px}
+.csb-iv-cols span{font-size:14px;color:var(--t-muted,#777169)}
+.csb-iv-cols p{margin:0;font-size:clamp(17px,1.9cqw,19px);line-height:1.55;color:var(--t-body,#44403b)}
+.csb-iv-cols p.is-finding{color:var(--t-ink,#000);font-weight:500;letter-spacing:-.01em}
+.csb-iv-cols small{font-size:15px;line-height:1.55;color:var(--t-muted,#777169)}
+.csb-variant-dark .csb-iv-people{background:#ffffff12}.csb-variant-dark .csb-iv-pill{background:#2c2c2e}
+.csb-variant-dark :is(.csb-iv-quote blockquote,.csb-iv-quote figcaption strong,.csb-iv-cols p.is-finding,.csb-iv-people button.is-active){color:#fdfcfc}
+.csb-variant-dark .csb-iv-cols p{color:#d6d3cf}.csb-variant-dark .csb-iv-cols{border-color:#ffffff1f}
+@container (max-width:640px){.csb-iv-cols{grid-template-columns:1fr}.csb-iv-people{display:flex;flex-wrap:nowrap;overflow-x:auto;border-radius:22px}}
+.csb-psf-bubble::after{left:34px;bottom:-7px;width:18px;height:18px;border-radius:3px;transform:rotate(45deg);clip-path:none}

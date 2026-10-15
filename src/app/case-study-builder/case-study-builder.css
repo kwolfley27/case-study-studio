@@ -599,3 +599,19 @@
 .csb-study-pick, .csb-study-empty { display: grid; gap: 8px; margin-top: 10px; }
 .csb-study-qs { display: grid; gap: 4px; }
 .csb-link-button { justify-self: start; border: 0; background: none; padding: 0; font-size: 12px; color: #476759; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Resizable panels: wider by default so controls have room; drag the inner edge ── */
+.csb-view-canvas .csb-panel-left{width:var(--csb-left-w,300px)}
+.csb-view-canvas .csb-panel-right{width:var(--csb-right-w,600px)}
+@media (max-width:900px){.csb-view-canvas .csb-panel-left{width:min(var(--csb-left-w,300px),46vw)}.csb-view-canvas .csb-panel-right{width:min(var(--csb-right-w,600px),60vw)}}
+.csb-panel-resize{position:absolute;top:18px;bottom:18px;z-index:3;width:12px;cursor:col-resize;touch-action:none;outline:none}
+.csb-panel-resize.is-left{right:-6px}.csb-panel-resize.is-right{left:-6px}
+.csb-panel-resize::after{content:"";position:absolute;top:50%;left:5px;width:2px;height:36px;margin-top:-18px;border-radius:2px;background:rgba(0,0,0,.14);opacity:0;transition:opacity .15s}
+.csb-panel:hover .csb-panel-resize::after,.csb-panel-resize:focus-visible::after,body.csb-resizing .csb-panel-resize::after{opacity:1}
+.csb-panel-resize:hover::after,.csb-panel-resize:focus-visible::after{background:rgba(0,0,0,.4)}
+body.csb-resizing{cursor:col-resize;user-select:none}
+body.csb-resizing .csb-panel{transition:none!important}
+.csb-view-canvas .csb-panel-scroll{overflow-x:hidden}
+/* Roomier inputs once the panel has space */
+.csb-view-canvas .csb-panel-right .csb-field input,.csb-view-canvas .csb-panel-right .csb-field textarea,.csb-view-canvas .csb-panel-right select{font-size:13.5px}
+.csb-view-canvas .csb-panel-right .csb-field textarea{min-height:88px}

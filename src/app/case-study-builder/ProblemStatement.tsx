@@ -1,6 +1,7 @@
-import { motion } from 'motion/react';
+import { useRef } from 'react';
+import { motion, useTransform } from 'motion/react';
 import { EditableText } from './EditableText';
-import { useReducedMotion } from './MotionKit';
+import { useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
 import { ResearchVisual } from './ResearchVisuals';
 
@@ -34,6 +35,15 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   const marker = section.options?.markStyle !== 'underline';
   const band = marker ? '58%' : '2px';
   const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className={`csb-ps-mark ${marker ? 'is-marker' : ''}`} initial={reduce ? false : { backgroundSize: `0% ${band}` }} whileInView={{ backgroundSize: `100% ${band}` }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
+  const sentence = <>
+      {mark(0, who?.detail || '')}{' '}
+      <EditableText field="items.1.title" value={connector(need?.title, 'need')} />{' '}
+      {mark(1, need?.detail || '')}{' '}
+      <EditableText field="items.2.title" value={connector(why?.title, 'because')} />{' '}
+      {mark(2, why?.detail || '')}.
+    </>;
+  // With a "How might we" question the statement sits on a card that turns over as you scroll.
+  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
       {mark(0, who?.detail || '')}{' '}
@@ -43,5 +53,37 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
       {mark(2, why?.detail || '')}.
     </motion.p>
     {extras}
+  </div>;
+}
+
+/* The flip: a tall scroll scene with a sticky card. Front = the problem statement,
+   back = a speech bubble asking "How might we…?". Rotation follows the scroll, so it
+   turns back if you scroll up. Reduced motion shows the two faces one after the other. */
+function FlipStatement({ sentence, hmwTitle, hmwDetail, success }: { sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
+  const reduce = useReducedMotion();
+  const scene = useRef<HTMLDivElement>(null);
+  const p = useScrollProgress(scene, .12, .88);
+  const rotate = useTransform(p, [.28, .62], [0, 180]);
+  const lift = useTransform(p, [.28, .45, .62], [1, .94, 1]);
+  const bubble = useTransform(p, [.6, .74], [0, 1]);
+  const bubbleY = useTransform(p, [.6, .74], [14, 0]);
+  const bubbleScale = useTransform(bubble, [0, 1], [.92, 1]);
+  const hint = useTransform(p, [0, .22, .3], [1, 1, 0]);
+  const back = <div className="csb-psf-hmw">
+    <motion.div className="csb-psf-bubble" style={reduce ? undefined : { opacity: bubble, y: bubbleY, scale: bubbleScale }}>
+      <span className="csb-psf-ask"><EditableText field="items.3.title" value={/\?$/.test(hmwTitle.trim()) ? hmwTitle : hmwTitle.replace(/[.…]*$/, '…')} /></span>
+      <p><EditableText field="items.3.detail" value={hmwDetail} /></p>
+    </motion.div>
+  </div>;
+  const successRow = success && <div className="csb-psf-success"><span><EditableText field="items.4.title" value={success.title || "We'll know it worked when"} /></span><p><EditableText field="items.4.detail" value={success.detail} /></p></div>;
+  if (reduce) return <div className="csb-psf is-static"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p></div><div className="csb-psf-face is-back">{back}</div>{successRow}</div>;
+  return <div className="csb-psf" ref={scene}>
+    <div className="csb-psf-stick">
+      <motion.div className="csb-psf-card" style={{ rotateY: rotate, scale: lift }}>
+        <div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p><motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Scroll to turn</motion.span></div>
+        <div className="csb-psf-face is-back">{back}</div>
+      </motion.div>
+      {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
+    </div>
   </div>;
 }

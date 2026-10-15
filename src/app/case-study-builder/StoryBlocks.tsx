@@ -28,18 +28,24 @@ export function Interviews({ section }: { section: CaseStudySection }) {
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
   const move = (next: number) => { const target = (next + people.length) % people.length; setActive(target); tabs.current[target]?.focus(); };
   if (!person) return null;
-  return <div className="csb-interviews">
-    <div className="csb-interviews-people" role="tablist" aria-label="Interview participants" aria-orientation="vertical">
+  const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase() || '•';
+  return <div className="csb-iv">
+    <div className="csb-iv-people" role="tablist" aria-label="Interview participants">
       {people.map((item, i) => <button key={i} ref={node => { tabs.current[i] = node; }} role="tab" id={`${section.id}-tab-${i}`} aria-selected={i === index} aria-controls={`${section.id}-panel`} tabIndex={i === index ? 0 : -1} className={i === index ? 'is-active' : ''} onClick={event => { event.stopPropagation(); setActive(i); }} onKeyDown={event => { if (['ArrowDown', 'ArrowRight'].includes(event.key)) { event.preventDefault(); move(i + 1); } if (['ArrowUp', 'ArrowLeft'].includes(event.key)) { event.preventDefault(); move(i - 1); } }}>
-        <strong><EditableText field={`items.${i}.title`} value={item.title} /></strong>
-        <small><EditableText field={`items.${i}.value`} value={item.value || ''} /></small>
+        {i === index && <motion.span className="csb-iv-pill" layoutId={reduce ? undefined : `${section.id}-iv-pill`} transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
+        <i aria-hidden="true">{initials(item.title)}</i>
+        <span><EditableText field={`items.${i}.title`} value={item.title} /></span>
       </button>)}
     </div>
-    <motion.div key={index} className="csb-interviews-panel" role="tabpanel" id={`${section.id}-panel`} aria-labelledby={`${section.id}-tab-${index}`} initial={reduce ? false : { opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45, ease }}>
-      <p className="csb-interviews-summary"><EditableText field={`items.${index}.detail`} value={person.detail} /></p>
-      <div className="csb-interviews-evidence">
-        <div className="is-finding"><span>Finding</span><p><EditableText field={`items.${index}.finding`} value={person.finding || ''} /></p><small><EditableText field={`items.${index}.findingNote`} value={person.findingNote || ''} /></small></div>
-        <div className="is-quote"><span>In their words</span><blockquote>“<EditableText field={`items.${index}.quote`} value={person.quote || ''} />”</blockquote><small><EditableText field={`items.${index}.quoteNote`} value={person.quoteNote || ''} /></small></div>
+    <motion.div key={index} className="csb-iv-panel" role="tabpanel" id={`${section.id}-panel`} aria-labelledby={`${section.id}-tab-${index}`} initial={reduce ? false : { opacity: 0, y: 10, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: .5, ease }}>
+      <figure className="csb-iv-quote">
+        <blockquote>“<EditableText field={`items.${index}.quote`} value={person.quote || ''} />”</blockquote>
+        <figcaption><strong><EditableText field={`items.${index}.title`} value={person.title} /></strong>{(person.value || '').trim() && <> · <EditableText field={`items.${index}.value`} value={person.value || ''} /></>}</figcaption>
+        {(person.quoteNote || '').trim() && <p className="csb-iv-note"><EditableText field={`items.${index}.quoteNote`} value={person.quoteNote || ''} /></p>}
+      </figure>
+      <div className="csb-iv-cols">
+        <div><span>The conversation</span><p><EditableText field={`items.${index}.detail`} value={person.detail} /></p></div>
+        <div><span>What we learned</span><p className="is-finding"><EditableText field={`items.${index}.finding`} value={person.finding || ''} /></p>{(person.findingNote || '').trim() && <small><EditableText field={`items.${index}.findingNote`} value={person.findingNote || ''} /></small>}</div>
       </div>
     </motion.div>
   </div>;
