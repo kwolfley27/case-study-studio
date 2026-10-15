@@ -3,6 +3,7 @@ import { Media } from './Media';
 import { motion, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
+import { ColorDots } from './ColorDots';
 
 /*
   Floating devices: phones and a tablet hanging in space at different angles, built in real 3D
@@ -65,8 +66,8 @@ export function FloatingDevices({ section, editorMode }: { section: CaseStudySec
   const raw = useScrollProgress(ref, 1, 0);
   const p = useSpring(raw, { stiffness: 70, damping: 20, mass: .6 });
   const items = section.items.slice(0, 5);
-  const bg = String(section.options?.bg ?? 'tint');
-  return <div ref={ref} className={`csb-fd is-${bg}`}>
+  const bg = String(section.options?.bg ?? 'tint'); const custom = bg.startsWith('#') ? bg : '';
+  return <div ref={ref} className={`csb-fd is-${custom ? 'custom' : bg}`} style={custom ? { background: `radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, ${custom} 70%, #fff), ${custom})` } : undefined}>
     <div className="csb-fd-stage">
       {section.options?.pencil === true && <Pencil p={p} reduce={reduce} />}
       {items.map((it, k) => <Device key={k} k={k} p={p} reduce={reduce} img={it.image} alt={it.title || 'Screen'} tablet={it.value ? it.value === 'tablet' : k === 0 && items.length > 1} slot={editorMode ? `${section.id}:${k}` : undefined} />)}
@@ -78,8 +79,7 @@ export function FloatingDevicesControls({ section, onChange }: { section: CaseSt
   const o = section.options ?? {}; const items = section.items;
   const set = (i: number, v: string) => onChange({ items: items.map((it, k) => k === i ? { ...it, value: v } : it) });
   return <div className="csb-tsc">
-    <div className="csb-sb-row"><span className="csb-sb-label">Background</span>
-      <div className="csb-sb-chips" role="radiogroup" aria-label="Background">{([['tint', 'Soft accent'], ['stone', 'Warm grey'], ['white', 'White'], ['dark', 'Dark']] as const).map(([v, l]) => { const on = String(o.bg ?? 'tint') === v; return <button key={v} type="button" role="radio" aria-checked={on} aria-pressed={on} onClick={() => onChange({ options: { ...o, bg: v } })}>{l}</button>; })}</div></div>
+    <div className="csb-sb-row"><span className="csb-sb-label">Background</span><ColorDots label="Background" custom value={String(o.bg ?? 'tint')} onChange={v => onChange({ options: { ...o, bg: v } })} options={[{ value: 'tint', label: 'Soft accent', color: 'color-mix(in srgb, var(--csb-accent, #c8553d) 30%, #fdfcfc)' }, { value: 'stone', label: 'Warm grey', color: '#ebe8e4' }, { value: 'white', label: 'White', color: '#f5f3f1' }, { value: 'dark', label: 'Dark', color: '#161411' }]} /></div>
     <label className="csb-sb-switch"><span><b>Apple Pencil</b><small>Float a pencil over the tablet.</small></span><input type="checkbox" role="switch" checked={o.pencil === true} onChange={e => onChange({ options: { ...o, pencil: e.target.checked } })} /><i aria-hidden="true" /></label>
     <div className="csb-sb-row"><span className="csb-sb-label">Devices (up to five)</span>
       {items.slice(0, 5).map((it, i) => { const tab = it.value ? it.value === 'tablet' : i === 0 && items.length > 1; return <div key={i} className="csb-sg-ctl-row" style={{ gridTemplateColumns: '34px minmax(0,1fr) auto' }}>

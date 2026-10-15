@@ -10,7 +10,7 @@ export type TaskRecord = { taskId: string; status: Outcome; ms: number; notes?: 
 export type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; audioUrl?: string; notes?: string; tasks: TaskRecord[]; transcript?: Transcript; notionPageId?: string };
 export type TranscriptLine = { s: number; e: number; spk: number; text: string };
 export type Transcript = { at: string; speakers: string[]; segments: TranscriptLine[] };
-export type Study = { id: string; kind: 'survey' | 'usability'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+export type Study = { id: string; kind: 'survey' | 'usability'; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 export type Response = { id: string; at: string; ms: number; answers: Record<string, string | number | string[]> };
 
 export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
@@ -125,6 +125,10 @@ export const writeDrafts = (list: Study[]) => { try { localStorage.setItem(DRAFT
 
 /* ---------- Usability tests ---------- */
 export const newTask = (n: number): Task => ({ id: crypto.randomUUID().slice(0, 8), title: ['Sign in', 'Book a class', 'Cancel a booking', 'Find your receipt'][n % 4], scenario: 'You want to … Show me how you would do that.', success: 'Reaches the confirmation screen' });
+export const newQuestionStep = (n: number): Task => ({ id: crypto.randomUUID().slice(0, 8), title: ['Tell me about the last time you…', 'What was the hardest part of that?', 'How do you deal with that today?', 'If you could change one thing, what would it be?'][n % 4], scenario: 'Can you tell me more about that? What happened next?', success: '' });
+export const newInterview = (project?: { id: string; title: string }): Study => ({ ...newUsability(project), format: 'interview', title: 'Untitled interview guide', tasks: [newQuestionStep(0), newQuestionStep(1), newQuestionStep(2), newQuestionStep(3)] });
+/* An interview's questions in time order: when each started and ended in the recording (seconds). */
+export const questionWindows = (study: Study, session: Session) => { let t = 0; return (study.tasks ?? []).map(q => { const ms = session.tasks.find(x => x.taskId === q.id)?.ms ?? 0; const w = { q, from: t / 1000, to: (t + ms) / 1000 }; t += ms; return w; }); };
 export const newUsability = (project?: { id: string; title: string }): Study => ({ id: crypto.randomUUID(), kind: 'usability', title: 'Untitled usability test', projectId: project?.id, projectTitle: project?.title, status: 'open', questions: [], tasks: [newTask(0), newTask(1), newTask(2)], published: false });
 export const OUTCOME_LABEL: Record<Outcome, string> = { success: 'Success', help: 'With help', fail: 'Failed', skipped: 'Skipped' };
 export const QUICK_TAGS = ['Hesitated', 'Misclick', 'Backtracked', 'Asked for help', 'Confused by label', 'Delighted'];

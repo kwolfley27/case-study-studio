@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, BarChart3, Copy, ExternalLink, Link2, ListChecks, PenLine, Plus, Smartphone, Trash2, X } from 'lucide-react';
+import { MessagesSquare, ArrowDown, ArrowUp, BarChart3, Copy, ExternalLink, Link2, ListChecks, PenLine, Plus, Smartphone, Trash2, X } from 'lucide-react';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { aggregate, call, getPasscode, NeedsPasscode, newQuestion, newStudy, newUsability, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, setPasscode, susQuestions, susScore, writeDrafts, type Question, type QuestionResult, type Response, type Study } from './research';
+import { aggregate, call, getPasscode, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, setPasscode, susQuestions, susScore, writeDrafts, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -19,7 +19,7 @@ export function ResearchWorkspace({ onExit, onAddSections, project, initialId }:
   useEffect(() => { call<{ studies: Study[] }>('list', {}, true).then(d => setCounts(Object.fromEntries(d.studies.map(s => [s.id, s.responses ?? 0])))).catch(() => undefined); }, []);
   const study = studies.find(s => s.id === currentId) ?? null;
   const update = (patch: Partial<Study>) => setStudies(list => list.map(s => s.id === currentId ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s));
-  const create = (kind: Study['kind'] = 'survey') => { const s = kind === 'usability' ? newUsability(project) : newStudy(project); setStudies(list => [s, ...list]); setCurrentId(s.id); setTab('build'); setPreviewAt(-1); };
+  const create = (kind: Study['kind'] | 'interview' = 'survey') => { const s = kind === 'interview' ? newInterview(project) : kind === 'usability' ? newUsability(project) : newStudy(project); setStudies(list => [s, ...list]); setCurrentId(s.id); setTab('build'); setPreviewAt(-1); };
   const remove = async (id: string) => {
     if (!window.confirm('Delete this study? Published responses are deleted too.')) return;
     const s = studies.find(x => x.id === id); if (s?.published) await call('remove', { id }, true).catch(() => undefined);
@@ -36,16 +36,17 @@ export function ResearchWorkspace({ onExit, onAddSections, project, initialId }:
       <aside className="rw-list">
         <button type="button" className="csb-primary-button" onClick={() => create('survey')}><Plus size={14} /> New survey</button>
         <button type="button" className="csb-quiet-button rw-new-ut" onClick={() => create('usability')}><ListChecks size={14} /> New usability test</button>
+        <button type="button" className="csb-quiet-button rw-new-ut" onClick={() => create('interview')}><MessagesSquare size={14} /> New interview guide</button>
         <p className="rw-list-kicker">Studies</p>
         {!studies.length && <p className="rw-empty">Surveys: share a link and chart the answers. Usability tests: run sessions from your phone and score each task.</p>}
         {studies.map(s => <div key={s.id} className={`rw-study ${s.id === currentId ? 'is-on' : ''}`}>
-          <button type="button" onClick={() => { setCurrentId(s.id); setPreviewAt(-1); }}><strong>{s.title}</strong><small>{s.kind === 'usability' ? 'Usability test' : 'Survey'} · {s.published ? (s.kind === 'usability' ? 'Saved' : s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{counts[s.id] !== undefined ? ` · ${counts[s.id]} ${s.kind === 'usability' ? 'sessions' : 'responses'}` : ''}{s.projectTitle ? ` · ${s.projectTitle}` : ''}</small></button>
+          <button type="button" onClick={() => { setCurrentId(s.id); setPreviewAt(-1); }}><strong>{s.title}</strong><small>{s.format === 'interview' ? 'Interview' : s.kind === 'usability' ? 'Usability test' : 'Survey'} · {s.published ? (s.kind === 'usability' ? 'Saved' : s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{counts[s.id] !== undefined ? ` · ${counts[s.id]} ${s.kind === 'usability' ? 'sessions' : 'responses'}` : ''}{s.projectTitle ? ` · ${s.projectTitle}` : ''}</small></button>
           <button type="button" className="rw-icon" aria-label={`Delete ${s.title}`} onClick={() => void remove(s.id)}><Trash2 size={13} /></button>
         </div>)}
       </aside>
       {study ? <section className="rw-main">
         <div className="rw-tabs" role="tablist">
-          {(study.kind === 'usability' ? [['build', 'Tasks', PenLine], ['share', 'Run', Smartphone], ['results', 'Results', BarChart3]] as const : [['build', 'Build', PenLine], ['share', 'Share', Link2], ['results', 'Results', BarChart3]] as const).map(([k, l, Icon]) => <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}><Icon size={14} /> {l}</button>)}
+          {(study.kind === 'usability' ? [['build', study.format === 'interview' ? 'Questions' : 'Tasks', PenLine], ['share', 'Run', Smartphone], ['results', 'Results', BarChart3]] as const : [['build', 'Build', PenLine], ['share', 'Share', Link2], ['results', 'Results', BarChart3]] as const).map(([k, l, Icon]) => <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}><Icon size={14} /> {l}</button>)}
         </div>
         {study.kind === 'usability' ? <>
           {tab === 'build' && <UsabilityBuilder study={study} update={update} />}
@@ -56,7 +57,7 @@ export function ResearchWorkspace({ onExit, onAddSections, project, initialId }:
           {tab === 'share' && <Share study={study} update={update} />}
           {tab === 'results' && <Results study={study} onAddSections={onAddSections} />}
         </>}
-      </section> : <section className="rw-main rw-blank"><h2>Your own research tool</h2><p>Write a survey and send participants a link, or run a moderated usability test from your phone: tasks, a recording, a transcript and success for each task. Everything saves to your server and Notion, and goes into a case study in one click.</p><div className="rw-row"><button type="button" className="csb-primary-button" onClick={() => create('survey')}><Plus size={14} /> New survey</button><button type="button" className="csb-quiet-button" onClick={() => create('usability')}><ListChecks size={14} /> New usability test</button></div></section>}
+      </section> : <section className="rw-main rw-blank"><h2>Your own research tool</h2><p>Write a survey and send participants a link, run a moderated usability test, or record interviews from your phone: tasks, a recording, a transcript and success for each task. Everything saves to your server and Notion, and goes into a case study in one click.</p><div className="rw-row"><button type="button" className="csb-primary-button" onClick={() => create('survey')}><Plus size={14} /> New survey</button><button type="button" className="csb-quiet-button" onClick={() => create('usability')}><ListChecks size={14} /> New usability test</button></div></section>}
     </div>
   </main>;
 }

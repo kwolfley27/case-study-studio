@@ -5,6 +5,7 @@ import { GradientPicker } from "./GradientElements";
 import { ScreenGroupsControls } from "./ScreenGroups";
 import { IsoShowcaseControls } from "./IsoShowcase";
 import { FloatingDevicesControls } from "./FloatingDevices";
+import { InterviewQuestionsControls } from "./InterviewQuestions";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { MoreHorizontal, ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, FlaskConical, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
@@ -290,6 +291,7 @@ export default function CaseStudyBuilder() {
   const setSlotImage = useCallback((slot: string, url: string) => {
     if (slot === "hero") { setStudy(previous => ({ ...previous, heroImage: url || undefined })); return; }
     if (slot.startsWith("more:")) { const k = Number(slot.slice(5)); setStudy(previous => { const list = [...(previous.moreStudies?.length ? previous.moreStudies : [{ title: "" }, { title: "" }, { title: "" }])]; list[k] = { ...list[k], image: url || undefined }; return { ...previous, moreStudies: list }; }); return; }
+    if (slot.startsWith("art:")) { const id = slot.slice(4); setStudy(previous => ({ ...previous, sections: previous.sections.map(section => section.id !== id ? section : { ...section, options: { ...section.options, art: url || undefined } }) })); return; }
     const [sectionId, rawIndex] = slot.split(":"); const index = Number(rawIndex);
     setStudy(previous => ({ ...previous, sections: previous.sections.map(section => section.id !== sectionId ? section : { ...section, items: section.items.map((item, i) => i === index ? { ...item, image: url, ...(url ? {} : { frameId: undefined }) } : item) }) }));
   }, []);
@@ -370,6 +372,7 @@ export default function CaseStudyBuilder() {
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "annotated" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Device</p><div className="csb-segment" role="group" aria-label="Device"><button type="button" aria-pressed={selected.options?.device !== "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "phone" } })}>Phone</button><button type="button" aria-pressed={selected.options?.device === "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "desktop" } })}>Desktop page</button></div><p className="csb-field-note">Click the screen on the page to paste a Figma frame link (Copy link to selection).</p></>}
         {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "interviewQs" && <><div className="csb-inspector-divider" /><InterviewQuestionsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "floatDevices" && <><div className="csb-inspector-divider" /><FloatingDevicesControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "isoShowcase" && <><div className="csb-inspector-divider" /><IsoShowcaseControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "screenGroups" && <><div className="csb-inspector-divider" /><ScreenGroupsControls section={selected} onChange={updateSection} /></>}

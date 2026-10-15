@@ -12,7 +12,7 @@ export const GRAD_EL = [
   '.csb-persona-meter i', '.csb-metric-bar', '.csb-ab-bar.is-b', '.csb-sv-track i', '.csb-sv-col i.is-top',
   '.csb-tsr.is-accent .csb-tsr-arc', '.csb-survey-arc-fill', '.csb-radar-fill', '.csb-journey-line', '.csb-flow-line',
   '.csb-proto-play', '.csb-annot-pin', '.csb-ss-marker', '.csb-detail li:first-child i', '.csb-detail-solo i',
-  '.csb-type-glyph', '.csb-type-bar-top span', '.csb-ps-mark.is-acc', '.csb-wt-sweep b', '.csb-dev-sample em',
+  '.csb-type-glyph', '.csb-type-bar-top span', '.csb-iq-list li', '.csb-ps-mark.is-acc', '.csb-wt-sweep b', '.csb-dev-sample em',
 ].join(',');
 
 const keysIn = (root: HTMLElement) => {

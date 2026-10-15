@@ -53,6 +53,7 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
   const sessionId = useRef(crypto.randomUUID());
   const audioBlob = useRef<Blob | null>(null);
   const [pending, setPending] = useState(() => readPending().filter(p => p.studyId === study.id));
+  const iv = study.format === 'interview';
   const n = tasks.length; const task = step >= 0 && step < n ? tasks[step] : null;
   const rec = task ? records[task.id] : undefined;
   useEffect(() => { if (step < 0 || step > n) return; const t = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(t); }, [step, n]);
@@ -72,7 +73,7 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
   };
   const setRec = (patch: Partial<TaskRecord>) => task && setRecords(r => ({ ...r, [task.id]: { taskId: task.id, status: r[task.id]?.status ?? 'skipped', ms: r[task.id]?.ms ?? 0, notes: r[task.id]?.notes ?? '', tags: r[task.id]?.tags ?? [], ...patch } }));
   const choose = (status: Outcome) => setRec({ status, ms: Date.now() - taskStart.current });
-  const next = () => { if (task && !records[task.id]) setRec({ status: 'skipped', ms: Date.now() - taskStart.current }); taskStart.current = Date.now(); setStep(s => s + 1); };
+  const next = () => { if (task && (iv || !records[task.id])) setRec({ status: records[task.id]?.status ?? 'skipped', ms: (iv ? records[task.id]?.ms ?? 0 : 0) + Date.now() - taskStart.current }); taskStart.current = Date.now(); setStep(s => s + 1); };
 
   const stopAudio = () => new Promise<Blob | null>(resolve => {
     const r = recorder.current; if (!r || r.state === 'inactive') { resolve(chunks.current.length ? new Blob(chunks.current, { type: r?.mimeType || 'audio/webm' }) : null); return; }
@@ -109,7 +110,7 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
       <span className="ss-title">{study.title}</span>
       {step >= 0 && step <= n && <span className={`ss-rec ${recorder.current ? 'is-on' : ''}`}>{recorder.current ? <i aria-hidden="true" /> : null}{recorder.current ? 'Recording' : 'Not recording'} · {elapsed}</span>}
     </header>
-    {step >= 0 && step < n && <div className="ss-progress">{tasks.map((t, i) => <i key={t.id} className={i < step ? `is-${records[t.id]?.status ?? 'skipped'}` : i === step ? 'is-now' : ''} />)}</div>}
+    {step >= 0 && step < n && <div className="ss-progress">{tasks.map((t, i) => <i key={t.id} className={i < step ? (iv ? 'is-success' : `is-${records[t.id]?.status ?? 'skipped'}`) : i === step ? 'is-now' : ''} />)}</div>}
     <AnimatePresence mode="wait">
       <motion.main key={step} className="ss-body" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: .28, ease: [0.22, 1, 0.36, 1] }}>
         {step === -1 && <div className="ss-setup">
@@ -118,7 +119,7 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
           <label className="ss-check"><input type="checkbox" checked={recordAudio} onChange={e => setRecordAudio(e.target.checked)} /> Record audio for the whole session</label>
           {recordAudio && <label className="ss-check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> They agreed to be recorded</label>}
           {study.intro && <details className="ss-script"><summary>Your intro script</summary><p>{study.intro}</p></details>}
-          <p className="ss-hint">{n} task{n === 1 ? '' : 's'}. Read each task out loud, then tap how it went. Times are measured per task.</p>
+          <p className="ss-hint">{iv ? `${n} question${n === 1 ? '' : 's'}. Ask each one, jot the key points, then tap Next question. The recording is split by question so every answer lines up with what you asked.` : `${n} task${n === 1 ? '' : 's'}. Read each task out loud, then tap how it went. Times are measured per task.`}</p>
           <button type="button" className="ss-primary" disabled={!n || (recordAudio && !consent)} onClick={() => void start()}>Start session</button>
           {error && <p className="ss-error" role="alert">{error}</p>}
           {pending.length > 0 && <div className="ss-pending">
@@ -127,7 +128,13 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
             <button type="button" className="ss-ghost" disabled={!!busy} onClick={() => void retryPending()}>{busy || 'Save them now'}</button>
           </div>}
         </div>}
-        {task && <div className="ss-task">
+        {task && iv && <div className="ss-task">
+          <small>Question {step + 1} of {n} · {fmtMs((rec?.ms ?? 0) + now - taskStart.current)}</small>
+          <h2>{task.title}</h2>
+          {task.scenario && <p className="ss-success">Follow-up: {task.scenario}</p>}
+          <textarea rows={5} placeholder="Key points from their answer, or a line worth quoting" value={rec?.notes ?? ''} onChange={e => setRec({ notes: e.target.value })} />
+        </div>}
+        {task && !iv && <div className="ss-task">
           <small>Task {step + 1} of {n} · {fmtMs(rec?.ms ?? now - taskStart.current)}</small>
           <h2>{task.title}</h2>
           {task.scenario && <blockquote>{task.scenario}</blockquote>}
@@ -140,7 +147,7 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
         </div>}
         {step === n && <div className="ss-setup">
           <h1>Wrap up</h1>
-          <ul className="ss-summary">{tasks.map(t => <li key={t.id}><span>{t.title}</span><b className={`is-${records[t.id]?.status ?? 'skipped'}`}>{OUTCOME_LABEL[records[t.id]?.status ?? 'skipped']}</b><em>{fmtMs(records[t.id]?.ms ?? 0)}</em></li>)}</ul>
+          <ul className="ss-summary">{tasks.map(t => <li key={t.id}><span>{t.title}</span>{!iv && <b className={`is-${records[t.id]?.status ?? 'skipped'}`}>{OUTCOME_LABEL[records[t.id]?.status ?? 'skipped']}</b>}<em>{fmtMs(records[t.id]?.ms ?? 0)}</em></li>)}</ul>
           <textarea rows={4} placeholder="Session notes: overall impressions, quotes…" value={notes} onChange={e => setNotes(e.target.value)} />
           {needPass && <input className="ss-pass" type="password" placeholder="Studio passcode" value={pass} onChange={e => setPass(e.target.value)} aria-label="Studio passcode" />}
           <button type="button" className="ss-primary" disabled={!!busy} onClick={() => void save()}>{busy || 'Save session'}</button>
@@ -155,8 +162,8 @@ export function SessionRunner({ study, onDone, embedded }: { study: Study; onDon
       </motion.main>
     </AnimatePresence>
     {task && <footer className="ss-nav">
-      <button type="button" className="ss-ghost" onClick={() => { taskStart.current = Date.now(); setStep(s => s - 1); }} disabled={step === 0}>Back</button>
-      <button type="button" className="ss-primary" onClick={next}>{step === n - 1 ? 'Finish' : rec ? 'Next task' : 'Skip task'}</button>
+      <button type="button" className="ss-ghost" onClick={() => { if (iv && task) setRec({ ms: (records[task.id]?.ms ?? 0) + Date.now() - taskStart.current }); taskStart.current = Date.now(); setStep(s => s - 1); }} disabled={step === 0}>Back</button>
+      <button type="button" className="ss-primary" onClick={next}>{step === n - 1 ? 'Finish' : iv ? 'Next question' : rec ? 'Next task' : 'Skip task'}</button>
     </footer>}
   </div>;
 }

@@ -3,6 +3,7 @@ import { Media } from './Media';
 import { motion, useTransform } from 'motion/react';
 import { useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
+import { ColorDots } from './ColorDots';
 
 /*
   Tilted showcase: your screens laid out on a tilted plane, like pages spread across a table,
@@ -32,7 +33,8 @@ export function IsoShowcase({ section, editorMode }: { section: CaseStudySection
   const cols = Array.from({ length: COLS }, (_, c) => filled.filter((_, k) => k % COLS === c));
   // Each column drifts a different amount; the middle ones the most.
   const drift = [useTransform(p, [0, 1], [60, -60]), useTransform(p, [0, 1], [-90, 90]), useTransform(p, [0, 1], [40, -40]), useTransform(p, [0, 1], [-70, 70]), useTransform(p, [0, 1], [50, -50])];
-  return <div ref={ref} className={`csb-iso is-${String(o.bg ?? 'stone')} ${phone ? 'is-phone' : ''}`}>
+  const custom = /^#/.test(String(o.bg ?? '')) ? String(o.bg) : '';
+  return <div ref={ref} className={`csb-iso is-${custom ? 'custom' : String(o.bg ?? 'stone')} ${phone ? 'is-phone' : ''} ${o.corners === 'round' ? 'is-round' : ''}`} style={custom ? { background: custom } : undefined}>
     <div className="csb-iso-plane" style={{ transform: `translate(-50%, -50%) ${angle}` }}>
       {cols.map((col, c) => <motion.div key={c} className="csb-iso-col" style={reduce ? { marginTop: c % 2 ? '18%' : 0 } : { y: drift[c], marginTop: c % 2 ? '18%' : 0 }}>
         {col.map(({ it, i, copy }, k) => <div key={k} className="csb-iso-card" data-image-slot={editorMode && !copy ? `${section.id}:${i}` : undefined}>
@@ -52,7 +54,8 @@ export function IsoShowcaseControls({ section, onChange }: { section: CaseStudyS
   return <div className="csb-tsc">
     {chips('shape', 'Screens', [['web', 'Web pages'], ['phone', 'Phone screens']], 'web')}
     {chips('angle', 'Angle', [['flat', 'Gentle'], ['tilt', 'Tilted'], ['steep', 'Steep']], 'tilt')}
-    {chips('bg', 'Background', [['stone', 'Warm grey'], ['white', 'White'], ['dark', 'Dark']], 'stone')}
+    {chips('corners', 'Corners', [['soft', 'Subtle'], ['round', 'Rounded']], 'soft')}
+    <div className="csb-sb-row"><span className="csb-sb-label">Background</span><ColorDots label="Background" custom value={String(o.bg ?? 'stone')} onChange={v => set('bg', v)} options={[{ value: 'stone', label: 'Warm grey', color: '#ebe8e4' }, { value: 'white', label: 'White', color: '#f5f3f1' }, { value: 'dark', label: 'Dark', color: '#161411' }, { value: '#1f3d3f', label: 'Deep teal', color: '#1f3d3f' }]} /></div>
     <p className="csb-field-note">Click any screen on the page to paste a Figma frame or image. With fewer than nine, they repeat to fill the table. Add or remove screens in Content below.</p>
   </div>;
 }

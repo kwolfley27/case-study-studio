@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { ArrowDown, ArrowUp, Copy, ExternalLink, Mic, Plus, X } from 'lucide-react';
 import { SessionRunner } from './SessionRunner';
-import { aggregateTasks, call, fmtMs, getPasscode, NeedsPasscode, newTask, OUTCOME_LABEL, setPasscode, type Session, type Study, type Transcript } from './research';
+import { aggregateTasks, call, fmtMs, questionWindows, getPasscode, NeedsPasscode, newTask, OUTCOME_LABEL, setPasscode, type Session, type Study, type Transcript } from './research';
 import { transcribe } from './transcribe';
 import { taskItems } from '../TaskSuccess';
 import { createSection, type CaseStudySection } from '../model';
@@ -16,6 +16,33 @@ export function UsabilityBuilder({ study, update }: { study: Study; update: (p: 
   const setT = (i: number, patch: Partial<NonNullable<Study['tasks']>[number]>) => update({ tasks: tasks.map((t, k) => k === i ? { ...t, ...patch } : t) });
   const move = (i: number, j: number) => { const n = [...tasks]; [n[i], n[j]] = [n[j], n[i]]; update({ tasks: n }); setAt(j); };
   const t = tasks[Math.min(at, tasks.length - 1)];
+  if (study.format === 'interview') return <div className="rw-build">
+    <div className="rw-editor">
+      <label className="rw-field"><span>Guide name</span><input value={study.title} onChange={e => update({ title: e.target.value })} /></label>
+      <label className="rw-field"><span>Your intro script <small>(only you see this)</small></span><textarea rows={3} value={study.intro ?? ''} placeholder="Thanks for talking with me. There are no right answers. I'd love to hear about your own experience…" onChange={e => update({ intro: e.target.value })} /></label>
+      <p className="rw-kicker">Questions · {tasks.length}</p>
+      {tasks.map((task, i) => <div key={task.id} className={`rw-q ${at === i ? 'is-on' : ''}`} onFocusCapture={() => setAt(i)} onClick={() => setAt(i)}>
+        <div className="rw-q-head">
+          <span className="rw-q-num">{i + 1}</span>
+          <span className="rw-q-tools">
+            <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
+            <button type="button" aria-label="Move down" disabled={i === tasks.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>
+            <button type="button" aria-label="Delete question" onClick={() => update({ tasks: tasks.filter((_, k) => k !== i) })}><X size={13} /></button>
+          </span>
+        </div>
+        <textarea className="rw-prompt" rows={2} value={task.title} placeholder="How would you describe your experience with…?" aria-label={`Question ${i + 1}`} onChange={e => setT(i, { title: e.target.value })} />
+        <label className="rw-inline"><span>Follow-up</span><input value={task.scenario ?? ''} placeholder="Can you tell me more about that?" onChange={e => setT(i, { scenario: e.target.value })} /></label>
+      </div>)}
+      <div className="rw-addbar"><button type="button" onClick={() => { update({ tasks: [...tasks, { id: crypto.randomUUID().slice(0, 8), title: '', scenario: '', success: '' }] }); setAt(tasks.length); }}>+ Add question</button></div>
+    </div>
+    <div className="rw-preview" aria-label="Phone preview">
+      <div className="rw-phone"><div className="ss is-embed is-preview"><header className="ss-top"><span className="ss-title">{study.title}</span><span className="ss-rec is-on"><i aria-hidden="true" />Recording · 6:40</span></header>
+        <div className="ss-progress">{tasks.map((x, i) => <i key={x.id} className={i < at ? 'is-success' : i === at ? 'is-now' : ''} />)}</div>
+        {t ? <main className="ss-body"><div className="ss-task"><small>Question {at + 1} of {tasks.length} · 1:12</small><h2>{t.title || 'Untitled question'}</h2>{t.scenario && <p className="ss-success">Follow-up: {t.scenario}</p>}<textarea rows={3} tabIndex={-1} placeholder="Key points from their answer" readOnly /></div></main> : <main className="ss-body"><p className="ss-hint">Add a question.</p></main>}
+      </div></div>
+      <small>Your screen during the interview. The recording is split by question, so each answer lines up with its question.</small>
+    </div>
+  </div>;
   return <div className="rw-build">
     <div className="rw-editor">
       <label className="rw-field"><span>Test name</span><input value={study.title} onChange={e => update({ title: e.target.value })} /></label>
@@ -71,15 +98,15 @@ export function UsabilityRun({ study, update, onOpenResults }: { study: Study; u
   return <div className="rw-share">
     <div className="rw-card">
       <h3>1 · Save sessions to Notion <small>(optional)</small></h3>
-      <p>Paste a Notion page link. A database named “{study.title} · responses” is made inside it: one row per session, a column per task (Success, With help, Failed), times, your notes, and the transcript inside each row.</p>
+      <p>Paste a Notion page link. A database named “{study.title} · responses” is made inside it: one row per session, {study.format === 'interview' ? 'a column per question with your notes and how long it took' : 'a column per task (Success, With help, Failed), times, your notes'}, and the transcript inside each row.</p>
       <input className="rw-input" placeholder="https://www.notion.so/…" value={study.notion?.pageUrl ?? ''} onChange={e => update({ notion: { ...study.notion, pageUrl: e.target.value } })} />
       {study.notion?.databaseId && <small className="rw-ok">Connected to a Notion database.</small>}
     </div>
     <div className="rw-card">
       <h3>2 · Save the test</h3>
-      <p>Save again whenever you change the tasks.</p>
+      <p>Save again whenever you change the {study.format === 'interview' ? 'questions' : 'tasks'}.</p>
       {needPass && <input className="rw-input" type="password" placeholder="Studio passcode" value={pass} onChange={e => { setPass(e.target.value); setPasscode(e.target.value); }} aria-label="Studio passcode" />}
-      <div className="rw-row"><button type="button" className="csb-primary-button" disabled={busy || !(study.tasks ?? []).length} onClick={() => void save()}>{busy ? 'Saving…' : study.published ? 'Save changes' : 'Save test'}</button></div>
+      <div className="rw-row"><button type="button" className="csb-primary-button" disabled={busy || !(study.tasks ?? []).length} onClick={() => void save()}>{busy ? 'Saving…' : study.published ? 'Save changes' : study.format === 'interview' ? 'Save guide' : 'Save test'}</button></div>
       {note && <p className={`csb-field-note ${note.error ? 'is-error' : ''}`} role="status">{note.text}</p>}
     </div>
     <div className={`rw-card ${study.published ? '' : 'is-muted'}`}>
@@ -113,7 +140,8 @@ export function UsabilityResults({ study, onAddSections }: { study: Study; onAdd
   const [picked, setPicked] = useState<Record<string, Picked>>({});
   const load = () => { setError(''); call<{ study: Study; sessions?: Session[] }>('results', { id: study.id }, true).then(d => setData({ study: d.study, sessions: d.sessions ?? [] }), e => setError(e instanceof Error ? e.message : 'Could not load results.')); };
   useEffect(load, [study.id]);
-  const s = data?.study ?? study; const sessions = data?.sessions ?? [];
+  const s = data?.study ? { ...data.study, format: data.study.format ?? study.format } : study; const sessions = data?.sessions ?? [];
+  const iv = s.format === 'interview';
   const results = useMemo(() => aggregateTasks(s, sessions), [data]);
   const attempts = results.reduce((a, r) => a + r.attempts, 0), wins = results.reduce((a, r) => a + r.success, 0);
   const medianSession = sessions.length ? [...sessions].sort((a, b) => a.durationMs - b.durationMs)[Math.floor(sessions.length / 2)].durationMs : 0;
@@ -135,17 +163,18 @@ export function UsabilityResults({ study, onAddSections }: { study: Study; onAdd
   return <div className="rw-results">
     <div className="rw-stats">
       <div><strong>{sessions.length}</strong><small>Sessions</small></div>
-      <div><strong>{attempts ? `${Math.round(wins / attempts * 100)}%` : '—'}</strong><small>Tasks done on their own</small></div>
+      {iv ? <div><strong>{(s.tasks ?? []).length}</strong><small>Questions</small></div> : <div><strong>{attempts ? `${Math.round(wins / attempts * 100)}%` : '—'}</strong><small>Tasks done on their own</small></div>}
       <div><strong>{medianSession ? fmtMs(medianSession) : '—'}</strong><small>Median session</small></div>
       <button type="button" className="csb-quiet-button" onClick={load}>Refresh</button>
     </div>
     {!sessions.length ? <p className="rw-empty">No sessions yet. Open the test on your phone from the Run tab.</p> : <>
       <div className="rw-addrow">
         <span>Add to the case study:</span>
-        <button type="button" className="csb-quiet-button" onClick={addRings}>Task success rings</button>
+        {iv ? <button type="button" className="csb-quiet-button" onClick={() => onAddSections([{ ...createSection('interviewQs'), title: 'Interview questions', eyebrow: 'Research', items: (s.tasks ?? []).map(q => ({ title: q.title, detail: '' })), body: `${sessions.length} interview${sessions.length === 1 ? '' : 's'}.` }], 'Added the interview questions.')}>Interview questions</button>
+          : <button type="button" className="csb-quiet-button" onClick={addRings}>Task success rings</button>}
         <button type="button" className="csb-quiet-button" disabled={!Object.keys(picked).length} onClick={addQuotes}>Selected quotes{Object.keys(picked).length ? ` (${Object.keys(picked).length})` : ''}</button>
       </div>
-      <div className="rw-res">
+      {iv ? <AnswersByQuestion study={s} sessions={sessions} picked={picked} onPick={togglePick} /> : <div className="rw-res">
         <h4>Tasks<small>on their own · with help · failed</small></h4>
         <div className="rw-tasks">{results.map(r => <div key={r.task.id} className="rw-taskrow">
           <span>{r.task.title}</span>
@@ -153,7 +182,7 @@ export function UsabilityResults({ study, onAddSections }: { study: Study; onAdd
           <em>{r.attempts ? `${r.rate}%` : '—'}</em>
           <small>{r.medianMs ? fmtMs(r.medianMs) : ''}</small>
         </div>)}</div>
-      </div>
+      </div>}
       {[...sessions].reverse().map(ss => <SessionCard key={ss.id} study={s} session={ss} picked={picked} onPick={togglePick} onChange={patch => setSession(ss.id, patch)} />)}
     </>}
   </div>;
@@ -165,7 +194,7 @@ function SessionCard({ study, session, picked, onPick, onChange }: { study: Stud
   const seek = (t: number) => { if (audio.current) { audio.current.currentTime = t; void audio.current.play(); } };
   return <div className="rw-res rw-session">
     <h4><span>{session.participant}</span><small>{new Date(session.at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} · {fmtMs(session.durationMs)}</small></h4>
-    <div className="rw-chips">{(study.tasks ?? []).map(t => { const r = session.tasks.find(x => x.taskId === t.id); return <span key={t.id} className={`is-${r?.status ?? 'skipped'}`} title={OUTCOME_LABEL[r?.status ?? 'skipped']}>{t.title}{r?.ms ? ` · ${fmtMs(r.ms)}` : ''}</span>; })}</div>
+    <div className="rw-chips">{(study.tasks ?? []).map(t => { const r = session.tasks.find(x => x.taskId === t.id); return <span key={t.id} className={study.format === 'interview' ? 'is-neutral' : `is-${r?.status ?? 'skipped'}`} title={study.format === 'interview' ? t.title : OUTCOME_LABEL[r?.status ?? 'skipped']}>{t.title}{r?.ms ? ` · ${fmtMs(r.ms)}` : ''}</span>; })}</div>
     {session.audioUrl && <audio ref={audio} controls preload="none" src={session.audioUrl} />}
     {(session.notes || session.tasks.some(t => t.notes || t.tags?.length)) && <button type="button" className="csb-link-button" onClick={() => setOpen(o => !o)}>{open ? 'Hide notes' : 'Show notes'}</button>}
     {open && <ul className="rw-quotes">
@@ -218,5 +247,24 @@ function TranscriptBlock({ study, session, picked, onPick, onSeek, onChange }: {
       <label className="rw-pick" title="Use as a quote"><input type="checkbox" checked={!!picked[key]} onChange={() => onPick({ key, text: seg.text, who })} /><span className="csb-sr-only">Use as a quote</span></label>
     </li>; })}</ol>}
     {t && !progress && <button type="button" className="csb-link-button" onClick={() => { if (window.confirm('Transcribe this recording again? Your edits to this transcript will be replaced.')) { setT(null); void run(); } }}>Transcribe again</button>}
+  </div>;
+}
+
+/* Interviews: every question with what each person said. Your notes from the session, and the lines of
+   the transcript that fall inside that question's time window (from Next question to the next one). */
+function AnswersByQuestion({ study, sessions, picked, onPick }: { study: Study; sessions: Session[]; picked: Record<string, Picked>; onPick: (p: Picked) => void }) {
+  return <div className="rw-res rw-answers">
+    <h4>Answers by question<small>your notes, and what they said while each question was open</small></h4>
+    {(study.tasks ?? []).map((q, qi) => <details key={q.id} className="rw-answer" open={qi === 0}>
+      <summary><span className="rw-q-num">{qi + 1}</span>{q.title || 'Untitled question'}</summary>
+      {sessions.map(ss => { const w = questionWindows(study, ss).find(x => x.q.id === q.id); const rec = ss.tasks.find(x => x.taskId === q.id);
+        const lines = w && ss.transcript ? ss.transcript.segments.map((seg, i) => ({ seg, i })).filter(({ seg }) => seg.s >= w.from - .5 && seg.s < w.to && (ss.transcript!.speakers.length < 2 || seg.spk !== 0)) : [];
+        if (!rec?.notes && !lines.length) return null;
+        return <div key={ss.id} className="rw-answer-who"><strong>{ss.participant}</strong>
+          {rec?.notes && <p className="rw-answer-note">{rec.notes}</p>}
+          {lines.map(({ seg, i }) => { const key = `${ss.id}-t-${i}`; return <label key={i} className="rw-answer-line"><input type="checkbox" checked={!!picked[key]} onChange={() => onPick({ key, text: seg.text, who: ss.participant })} /><span>“{seg.text}”</span></label>; })}
+        </div>; })}
+    </details>)}
+    <p className="csb-field-note">Transcribe a session below to fill in what people said. Tick lines to add them as quotes.</p>
   </div>;
 }

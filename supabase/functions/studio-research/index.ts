@@ -31,7 +31,7 @@ type Task = { id: string; title: string; scenario?: string; success?: string };
 type Outcome = 'success' | 'help' | 'fail' | 'skipped';
 type Transcript = { at: string; speakers: string[]; segments: Array<{ s: number; e: number; spk: number; text: string }> };
 type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; notes?: string; notionPageId?: string; transcript?: Transcript; tasks: Array<{ taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] }> };
-type Study = { id: string; kind: 'survey' | 'usability'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
+type Study = { id: string; kind: 'survey' | 'usability'; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
 
 const cleanId = (v: unknown) => String(v ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 const text = (v: unknown, n = 2000) => String(v ?? '').slice(0, n);
@@ -103,7 +103,7 @@ Deno.serve(async (request) => {
       const id = cleanId(s.id) || crypto.randomUUID();
       const prev = await readJson<Study>(`studies/${id}.json`);
       const study: Study = {
-        id, kind: s.kind === 'usability' ? 'usability' : 'survey', tasks: Array.isArray(s.tasks) ? s.tasks.slice(0, 30).map(t => ({ id: cleanId(t.id) || crypto.randomUUID().slice(0, 8), title: text(t.title, 200), scenario: text(t.scenario, 1500), success: text(t.success, 500) })) : undefined, title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
+        id, kind: s.kind === 'usability' ? 'usability' : 'survey', format: s.kind === 'usability' && s.format === 'interview' ? 'interview' : undefined, tasks: Array.isArray(s.tasks) ? s.tasks.slice(0, 30).map(t => ({ id: cleanId(t.id) || crypto.randomUUID().slice(0, 8), title: text(t.title, 200), scenario: text(t.scenario, 1500), success: text(t.success, 500) })) : undefined, title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
         status: s.status === 'closed' ? 'closed' : 'open',
         questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 60).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined })),
         notion: { pageUrl: s.notion?.pageUrl ? text(s.notion.pageUrl, 500) : undefined, databaseId: prev?.notion?.databaseId },
@@ -221,11 +221,12 @@ function propSchema(q: Question) {
   return { rich_text: {} };
 }
 const OUTCOMES = [{ name: 'Success', color: 'green' }, { name: 'With help', color: 'yellow' }, { name: 'Failed', color: 'red' }, { name: 'Skipped', color: 'gray' }];
-const taskName = (t: Task, i: number) => `T${i + 1} ${t.title}`.slice(0, 80).replace(/[.,]+$/, '');
+const taskName = (t: Task, i: number, iv?: boolean) => `${iv ? 'Q' : 'T'}${i + 1} ${t.title}`.slice(0, 80).replace(/[.,?]+$/, '');
 async function ensureDatabase(study: Study): Promise<string> {
   const properties: Record<string, unknown> = { Participant: { title: {} }, Submitted: { date: {} }, 'Time (s)': { number: { format: 'number' } } };
   if (study.kind === 'usability') {
-    (study.tasks ?? []).forEach((t, i) => { properties[taskName(t, i)] = { select: { options: OUTCOMES } }; properties[`${taskName(t, i)} · time (s)`] = { number: { format: 'number' } }; properties[`${taskName(t, i)} · notes`] = { rich_text: {} }; });
+    const iv = study.format === 'interview';
+    (study.tasks ?? []).forEach((t, i) => { if (!iv) properties[taskName(t, i)] = { select: { options: OUTCOMES } }; properties[`${taskName(t, i, iv)} · time (s)`] = { number: { format: 'number' } }; properties[`${taskName(t, i, iv)} · notes`] = { rich_text: {} }; });
     properties['Session notes'] = { rich_text: {} };
   } else study.questions.forEach((q, i) => { properties[propName(q, i)] = propSchema(q); });
   if (study.notion?.databaseId) {
@@ -264,10 +265,11 @@ async function notionSession(study: Study, session: Session) {
   };
   (study.tasks ?? []).forEach((t, i) => {
     const r = session.tasks.find(x => x.taskId === t.id); if (!r) return;
-    properties[taskName(t, i)] = { select: { name: label[r.status] } };
-    properties[`${taskName(t, i)} · time (s)`] = { number: Math.round(r.ms / 1000) };
+    const iv = study.format === 'interview';
+    if (!iv) properties[taskName(t, i)] = { select: { name: label[r.status] } };
+    properties[`${taskName(t, i, iv)} · time (s)`] = { number: Math.round(r.ms / 1000) };
     const note = [r.tags?.length ? `[${r.tags.join(', ')}]` : '', r.notes || ''].filter(Boolean).join(' ');
-    if (note) properties[`${taskName(t, i)} · notes`] = { rich_text: [{ text: { content: note.slice(0, 1990) } }] };
+    if (note) properties[`${taskName(t, i, study.format === 'interview')} · notes`] = { rich_text: [{ text: { content: note.slice(0, 1990) } }] };
   });
   const page = await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
   return page.id as string;
