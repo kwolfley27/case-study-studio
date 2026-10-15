@@ -48,7 +48,7 @@ export interface CaseStudySection {
   };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
-  prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean };
+  prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean; /* the prototype frame size, so the device screen matches it */ size?: { w: number; h: number } };
   fit?: "contain" | "cover";
   criteria?: string;
   columns?: 2 | 3 | 4;

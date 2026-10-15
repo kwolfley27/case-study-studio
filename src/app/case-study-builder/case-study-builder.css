@@ -522,3 +522,6 @@
 .csb-home-actions button:hover { background: #eef2ef; color: var(--csb-ink); }
 .csb-home-loading { color: var(--csb-muted); font-size: 13px; align-self: center; }
 @media (max-width: 640px) { .csb-home-head, .csb-home-section { padding-left: 16px; padding-right: 16px; } }
+
+.csb-proto-size-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; } .csb-proto-size-row input { width: 100%; min-width: 0; } .csb-proto-size-row span { color: var(--csb-muted); font-size: 12px; }
+.csb-field-note.is-error { color: #b42318; }
