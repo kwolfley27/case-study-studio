@@ -108,13 +108,14 @@ export function RecordingControls({ section, onChange }: { section: CaseStudySec
     <div className="csb-layout-control"><div className="csb-layout-label"><span>Corner radius</span><output>{rec.radius}px</output></div><input type="range" min={0} max={32} value={rec.radius} onChange={e => set({ radius: Number(e.target.value) })} aria-label="Corner radius" /></div>
 
     <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Motion</p>
-    {segment("Cursor", rec.cursor, [["arrow", "Arrow"], ["dot", "Dot"], ["none", "None"]], v => set({ cursor: v }))}
+    {segment("Cursor", rec.cursor, [["halo", "Highlight"], ["arrow", "Arrow"], ["dot", "Dot"], ["none", "None"]], v => set({ cursor: v }))}
+    <p className="csb-field-note">{rec.cursor === "halo" ? "Highlight puts a soft halo on your real cursor." : rec.cursor === "none" ? "No cursor effects." : "Draws a cursor that glides between clicks. Use this for videos that don’t show a cursor."}</p>
     <div className="csb-layout-control"><div className="csb-layout-label"><span>Zoom on clicks</span><output>{rec.zoom.toFixed(1)}×</output></div><input type="range" min={1} max={3} step={.1} value={rec.zoom} onChange={e => set({ zoom: Number(e.target.value) })} aria-label="Zoom on clicks" /></div>
     {segment("Speed", rec.speed ?? 1, [[0.5, "0.5×"], [0.75, "0.75×"], [1, "1×"], [1.5, "1.5×"], [2, "2×"]], v => set({ speed: v }))}
     {rec.crop && <p className="csb-field-note">Cropped to a detail ({Math.round(rec.crop.w)}% × {Math.round(rec.crop.h)}% of the screen). <button type="button" className="csb-link-button" onClick={() => set({ crop: undefined })}>Show full screen</button></p>}
 
     <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Click moments · {clicks.length}</p>
-    {!clicks.length ? <p className="csb-field-note">{rec.src ? "While it loops on the page, click the video when you see a tap. Each moment zooms in and the cursor glides there." : "Add a video first. Then click the video to mark moments."}</p>
+    {!clicks.length ? <p className="csb-field-note">{rec.src ? "Studio finds your clicks automatically after you add a video. Use Find my clicks on the page, or Add a moment to place one yourself." : "Add a video first. Then click the video to mark moments."}</p>
       : <ol>{clicks.map((c, i) => <li key={i} className="csb-rec-click">
         <span>{i + 1}</span>
         <input type="number" min={0} step={.1} value={c.t} aria-label={`Click ${i + 1} time in seconds`} onChange={e => set({ clicks: clicks.map((k, j) => j === i ? { ...k, t: Math.max(0, Number(e.target.value) || 0) } : k) })} />

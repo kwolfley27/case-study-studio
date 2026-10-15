@@ -755,3 +755,6 @@ html.csb-presenting .csb-doc-main .csb-story-section:is(.csb-variant-dark,.csb-v
 .csb-present-hud span[aria-live]{min-width:52px;text-align:center;font-variant-numeric:tabular-nums}
 .csb-present-sep{width:1px;height:18px;background:#ffffff33}
 .csb-present-open{position:fixed;z-index:20;top:20px;right:20px}
+.csb-rec-halo{position:absolute;left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;background:color-mix(in srgb,var(--csb-accent) 22%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--csb-accent) 55%,transparent),0 6px 18px #00000026}
+.csb-rec-cursor.is-halo{transition:transform .18s ease}
+.csb-rec-tool:disabled{opacity:.5;cursor:default}

@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { Circle, Link2, Square, Upload } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
+import { analyzeRecording, trackAt } from './clickDetect';
 import { mediaUrl, PasscodeError, PASSCODE_KEY, putMedia, recordScreen, uploadToStudio, UploadSetupError } from './media';
 import type { CaseStudySection } from './model';
 
@@ -15,7 +16,7 @@ import type { CaseStudySection } from './model';
 
 export type RecClick = { t: number; x: number; y: number; zoom?: number; hold?: number };
 export type Recording = NonNullable<CaseStudySection['recording']>;
-export const defaultRecording: Recording = { src: '', background: 'accent', frame: 'browser', padding: 64, radius: 14, cursor: 'arrow', zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 };
+export const defaultRecording: Recording = { src: '', background: 'accent', frame: 'browser', padding: 64, radius: 14, cursor: 'halo', zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 };
 
 const LEAD = .55, HOLD = 1.7, TRAVEL = .8;
 const DEMO: RecClick[] = [{ t: 1.1, x: 24, y: 24 }, { t: 3.2, x: 72, y: 46 }, { t: 5.3, x: 40, y: 78 }];
@@ -60,6 +61,8 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
   const [error, setError] = useState('');
   const [aspect, setAspect] = useState(16 / 10);
   const [cropping, setCropping] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [analyzing, setAnalyzing] = useState<number | null>(null);
   const [draft, setDraft] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const stopRef = useRef<(() => void) | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -92,7 +95,9 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
       const dt = Math.min(.1, (now - lastNow) / 1000); lastNow = now;
       const list = demo ? DEMO : clicks;
       const t = demo ? (reduce ? 0 : (now / 1000) % DEMO_LENGTH) : (video.current?.currentTime ?? 0);
-      const want = reduce || cropping ? base : cameraAt(t, list, rec.zoom ?? 1.8, base);
+      let want = reduce || cropping ? base : cameraAt(t, list, rec.zoom ?? 1.8, base);
+      const real = !demo && rec.track?.length ? trackAt(rec.track, t) : null;
+      if (real && want !== base) want = { ...want, x: want.x * .45 + real.x * .55, y: want.y * .45 + real.y * .55 };
       const L = live.current;
       if (Math.abs(t - L.last) > .6 || cropping) { L.s = want.s; L.x = want.x; L.y = want.y; }
       else { const k = 1 - Math.exp(-dt * 5.5); L.s += (want.s - L.s) * k; L.x += (want.x - L.x) * k; L.y += (want.y - L.y) * k; }
@@ -103,7 +108,7 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
         const tx = clamp(Wv / 2 - L.s * L.x / 100 * W, Wv - L.s * W, 0), ty = clamp(Hv / 2 - L.s * L.y / 100 * H, Hv - L.s * H, 0);
         cam.current.style.transform = `translate(${tx}px, ${ty}px) scale(${L.s})`;
       }
-      const p = cursorAt(t, list);
+      const p = rec.cursor === 'halo' && real ? real : cursorAt(t, list);
       const hit = list.find(c => t - c.t >= 0 && t - c.t < .6);
       if (cursor.current) { cursor.current.style.left = `${p.x}%`; cursor.current.style.top = `${p.y}%`; cursor.current.style.transform = `scale(${hit && t - hit.t < .18 ? .82 : 1})`; }
       if (ripple.current) { if (hit) { const k = (t - hit.t) / .6; ripple.current.style.left = `${hit.x}%`; ripple.current.style.top = `${hit.y}%`; ripple.current.style.opacity = String(.55 * (1 - k)); ripple.current.style.transform = `translate(-50%,-50%) scale(${.4 + k * 1.8})`; } else ripple.current.style.opacity = '0'; }
@@ -112,7 +117,7 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [demo, JSON.stringify(clicks), rec.zoom, reduce, editorMode, base.s, base.x, base.y, cropping]);
+  }, [demo, JSON.stringify(clicks), rec.zoom, reduce, editorMode, base.s, base.x, base.y, cropping, rec.cursor, rec.track?.length]);
 
   useEffect(() => { if (video.current) video.current.playbackRate = rec.speed ?? 1; }, [url, rec.speed]);
 
@@ -128,12 +133,12 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
   };
   const addClick = (event: React.MouseEvent) => {
     if (cropping) { event.stopPropagation(); return; }
-    if (!editorMode || demo || !video.current || !cam.current) return;
+    if (!editorMode || demo || !adding || !video.current || !cam.current) return;
     event.stopPropagation();
     const r = cam.current.getBoundingClientRect();
     const x = Math.round(clamp((event.clientX - r.left) / r.width * 100, 1, 99)), y = Math.round(clamp((event.clientY - r.top) / r.height * 100, 1, 99));
     const t = Math.round(video.current.currentTime * 10) / 10;
-    save({ clicks: [...clicks.filter(c => Math.abs(c.t - t) > .15), { t, x, y }].sort((a, b) => a.t - b.t) });
+    save({ clicks: [...clicks.filter(c => Math.abs(c.t - t) > .15), { t, x, y }].sort((a, b) => a.t - b.t) }); setAdding(false);
   };
   // Upload to the Studio's storage so the published page can play it.
   const publish = async (blob: Blob) => {
@@ -147,7 +152,14 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
       else setUpload({ progress: 0, note: e instanceof UploadSetupError ? `${e.message} It's saved in this browser for now.` : (e instanceof Error ? e.message : 'Upload failed.') });
     }
   };
-  const useBlob = async (blob: Blob) => { setBusy('saving'); try { save({ src: await putMedia(blob), clicks: [] }); void publish(blob); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the video.'); } finally { setBusy(''); } };
+  const findClicks = async (source?: string) => {
+    const src = source ?? (await mediaUrl(recRef.current.src)); if (!src) return;
+    setAnalyzing(0);
+    try { const { clicks: found, track } = await analyzeRecording(src, f => setAnalyzing(f)); save({ clicks: found, track, analyzed: true, cursor: track.length > 6 && ['arrow', 'dot'].includes(recRef.current.cursor) ? 'halo' : recRef.current.cursor }); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not analyse the video.'); }
+    finally { setAnalyzing(null); }
+  };
+  const useBlob = async (blob: Blob) => { setBusy('saving'); try { save({ src: await putMedia(blob), clicks: [], track: [], analyzed: false }); const local = URL.createObjectURL(blob); void findClicks(local).finally(() => URL.revokeObjectURL(local)); void publish(blob); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the video.'); } finally { setBusy(''); } };
   const publishStored = async () => { if (!rec.src.startsWith('idb:')) return; const url = await mediaUrl(rec.src); if (!url) return; void publish(await (await fetch(url)).blob()); };
   const record = async () => { setError(''); try { stopRef.current = await recordScreen(blob => { stopRef.current = null; if (blob.size < 30_000) { setError('That recording came out empty. Choose a window or screen to share, keep it shared while you record, then press Stop.'); return; } void useBlob(blob); }, on => setBusy(on ? 'recording' : '')); } catch (e) { if (e instanceof Error && e.name !== 'NotAllowedError') setError(e.message); } };
 
@@ -164,11 +176,11 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
       <div className="csb-rec-device">
         {(rec.frame === 'browser' || rec.frame === 'mac') && <div className="csb-rec-bar" aria-hidden="true"><i /><i /><i />{rec.frame === 'browser' && <span>{(section.items[0]?.title || 'yourproduct.com').slice(0, 40)}</span>}</div>}
         {rec.frame === 'phone' && <span className="csb-rec-island" aria-hidden="true" />}
-        <div className={`csb-rec-viewport ${editorMode && !demo ? 'is-markable' : ''} ${cropping ? 'is-cropping' : ''}`} style={{ aspectRatio: String(viewAspect) }} onClick={addClick} onPointerDown={startCrop}>
+        <div className={`csb-rec-viewport ${editorMode && !demo && adding ? 'is-markable' : ''} ${cropping ? 'is-cropping' : ''}`} style={{ aspectRatio: String(viewAspect) }} onClick={addClick} onPointerDown={startCrop}>
           <div ref={cam} className="csb-rec-cam" style={{ aspectRatio: String(demo ? 16 / 10 : aspect) }}>
             {url ? <video ref={video} src={url} muted playsInline loop autoPlay preload="auto" disablePictureInPicture onDurationChange={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) setDuration(d); }} onLoadedMetadata={e => { const v = e.currentTarget; if (!Number.isFinite(v.duration)) { const reset = () => { v.removeEventListener('timeupdate', reset); v.currentTime = 0; void v.play().catch(() => undefined); }; v.addEventListener('timeupdate', reset); v.currentTime = 1e101; } else setDuration(v.duration || 0); if (e.currentTarget.videoWidth) setAspect(e.currentTarget.videoWidth / e.currentTarget.videoHeight); e.currentTarget.playbackRate = rec.speed ?? 1; }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} aria-label={section.title} />
               : <div className="csb-rec-demo" aria-hidden="true"><div className="csb-rec-demo-side"><b /><i /><i /><i /><i /></div><div className="csb-rec-demo-main"><b /><div><i /><i /><i /></div><span /><span /><em /></div></div>}
-            {rec.cursor !== 'none' && !reduce && <div ref={cursor} className={`csb-rec-cursor is-${rec.cursor}`} aria-hidden="true">{rec.cursor === 'arrow' ? <svg viewBox="0 0 24 24" width="26" height="26"><path d="M5 2.8 19.4 13.6l-6.5.9 3.8 7.2-2.9 1.5-3.8-7.3-4.9 4.5z" fill="#fff" stroke="#111" strokeWidth="1.4" strokeLinejoin="round" /></svg> : <i />}</div>}
+            {(rec.cursor !== 'none' && !(rec.cursor === 'halo' && demo)) && !reduce && <div ref={cursor} className={`csb-rec-cursor is-${rec.cursor === 'halo' && demo ? 'arrow' : rec.cursor}`} aria-hidden="true">{rec.cursor === 'halo' ? <i className="csb-rec-halo" /> : rec.cursor === 'arrow' ? <svg viewBox="0 0 24 24" width="26" height="26"><path d="M5 2.8 19.4 13.6l-6.5.9 3.8 7.2-2.9 1.5-3.8-7.3-4.9 4.5z" fill="#fff" stroke="#111" strokeWidth="1.4" strokeLinejoin="round" /></svg> : <i />}</div>}
             <span ref={ripple} className="csb-rec-ripple" aria-hidden="true" />
             {draft && <span className="csb-rec-cropbox" style={{ left: `${draft.x}%`, top: `${draft.y}%`, width: `${draft.w}%`, height: `${draft.h}%` }} />}
             {cropping && !draft && rec.crop && <span className="csb-rec-cropbox is-current" style={{ left: `${rec.crop.x}%`, top: `${rec.crop.y}%`, width: `${rec.crop.w}%`, height: `${rec.crop.h}%` }} />}
@@ -177,7 +189,7 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
             <strong>Add a screen recording</strong>
             <span>Clicks you mark become zoom-ins, like this demo.</span>
             {sourceButtons}
-            {linkMode && <form className="csb-rec-link" onSubmit={e => { e.preventDefault(); if (/^https:\/\/\S+$/i.test(link.trim())) { save({ src: link.trim(), clicks: [] }); setLinkMode(false); setLink(''); } else setError('Paste an https link to a video file (.mp4, .webm or .mov).'); }}><input autoFocus value={link} onChange={e => setLink(e.target.value)} placeholder="https://…/demo.mp4" aria-label="Video link" /><button type="submit">Use link</button></form>}
+            {linkMode && <form className="csb-rec-link" onSubmit={e => { e.preventDefault(); if (/^https:\/\/\S+$/i.test(link.trim())) { save({ src: link.trim(), clicks: [], track: [], analyzed: false }); setLinkMode(false); setLink(''); void findClicks(link.trim()); } else setError('Paste an https link to a video file (.mp4, .webm or .mov).'); }}><input autoFocus value={link} onChange={e => setLink(e.target.value)} placeholder="https://…/demo.mp4" aria-label="Video link" /><button type="submit">Use link</button></form>}
             {busy === 'saving' && <small>Saving video…</small>}
             {error && <em role="alert">{error}</em>}
           </div>}
@@ -189,10 +201,11 @@ export function ScreenRecording({ section, editorMode, onChange }: { section: Ca
 
     {editorMode && !demo && <div className="csb-rec-editbar" onClick={e => e.stopPropagation()}>
       <div className="csb-rec-progress" aria-hidden="true"><i style={{ width: `${duration ? Math.min(100, time / duration * 100) : 0}%` }} />{duration > 0 && clicks.map((c, i) => <span key={i} style={{ left: `${c.t / duration * 100}%` }} title={`Zoom moment ${i + 1}`} />)}</div>
-      <span className="csb-rec-hint">{cropping ? 'Drag a box around the part to show' : clicks.length ? `${clicks.length} zoom moment${clicks.length > 1 ? 's' : ''} · click the video to add more` : 'Click the video when you see a tap — it becomes a zoom'}</span>
-      <button type="button" className={`csb-rec-tool ${cropping ? 'is-on' : ''}`} onClick={() => setCropping(c => !c)}>{cropping ? 'Cancel' : rec.crop ? 'Re-crop' : 'Crop to a detail'}</button>
+      <span className="csb-rec-hint">{analyzing !== null ? `Finding your clicks… ${Math.round(analyzing * 100)}%` : cropping ? 'Drag a box around the part to show' : adding ? 'Click where the tap happens' : clicks.length ? `${clicks.length} zoom moment${clicks.length > 1 ? 's' : ''} found from your clicks` : rec.analyzed ? 'No clicks found — add a moment yourself' : 'Zoom moments come from your clicks'}</span>
+      <button type="button" className="csb-rec-tool" disabled={analyzing !== null} onClick={() => void findClicks()}>{rec.analyzed ? 'Find clicks again' : 'Find my clicks'}</button>
+      <button type="button" className={`csb-rec-tool ${adding ? 'is-on' : ''}`} onClick={() => { setCropping(false); setAdding(a => !a); }}>{adding ? 'Cancel' : 'Add a moment'}</button>
+      <button type="button" className={`csb-rec-tool ${cropping ? 'is-on' : ''}`} onClick={() => { setAdding(false); setCropping(c => !c); }}>{cropping ? 'Cancel' : rec.crop ? 'Re-crop' : 'Crop to a detail'}</button>
       {rec.crop && !cropping && <button type="button" className="csb-rec-tool" onClick={() => save({ crop: undefined })}>Show full</button>}
-      {clicks.length > 0 && !cropping && <button type="button" className="csb-rec-tool" onClick={() => save({ clicks: [] })}>Clear moments</button>}
     </div>}
     {editorMode && !demo && <div className="csb-rec-swap">{sourceButtons}{linkMode && <form className="csb-rec-link" onSubmit={e => { e.preventDefault(); if (/^https:\/\/\S+$/i.test(link.trim())) { save({ src: link.trim() }); setLinkMode(false); setLink(''); } }}><input value={link} onChange={e => setLink(e.target.value)} placeholder="https://…/demo.mp4" aria-label="Video link" /><button type="submit">Use link</button></form>}{rec.src.startsWith('idb:') && !upload && <button type="button" className="csb-rec-publish" onClick={() => void publishStored()}>Upload for my published page</button>}{error && <em role="alert">{error}</em>}</div>}
 

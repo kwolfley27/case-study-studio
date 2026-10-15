@@ -27,7 +27,7 @@ export interface CaseStudySection {
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
-  recording?: { src: string; background: "accent" | "sunset" | "ocean" | "aurora" | "paper" | "night" | "image" | "none"; bgImage?: string; frame: "none" | "browser" | "mac" | "laptop" | "phone"; padding: number; radius: number; cursor: "arrow" | "dot" | "none"; zoom: number; clicks: Array<{ t: number; x: number; y: number; zoom?: number; hold?: number }>; loop?: boolean; controls?: boolean; speed?: number; crop?: { x: number; y: number; w: number; h: number } };
+  recording?: { src: string; background: "accent" | "sunset" | "ocean" | "aurora" | "paper" | "night" | "image" | "none"; bgImage?: string; frame: "none" | "browser" | "mac" | "laptop" | "phone"; padding: number; radius: number; cursor: "halo" | "arrow" | "dot" | "none"; zoom: number; clicks: Array<{ t: number; x: number; y: number; zoom?: number; hold?: number }>; track?: Array<{ t: number; x: number; y: number }>; analyzed?: boolean; loop?: boolean; controls?: boolean; speed?: number; crop?: { x: number; y: number; w: number; h: number } };
   /** Token text styles per field, e.g. { title: { tone: "accent", size: "l" } }. */
   textStyles?: Record<string, { tone?: "ink" | "muted" | "accent" | "accent2"; size?: "s" | "l" | "xl"; weight?: "light" | "regular" | "bold" }>;
   /** Work timeline phases (bars under the weeks). detail = one note per line. */
@@ -218,7 +218,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
     findings: { layout: { count: 4 } },
-    screenRecording: { recording: { src: "", background: "accent" as const, frame: "browser" as const, padding: 64, radius: 14, cursor: "arrow" as const, zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 } },
+    screenRecording: { recording: { src: "", background: "accent" as const, frame: "browser" as const, padding: 64, radius: 14, cursor: "halo" as const, zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 } },
     timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
