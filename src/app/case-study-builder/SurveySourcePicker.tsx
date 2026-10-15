@@ -26,8 +26,8 @@ export function SurveySourcePicker({ section, onApply }: { section: CaseStudySec
   };
 
   const fetchSheet = async (sourceUrl: string) => {
-    const endpoint = import.meta.env.DEV ? '/__studio/survey' : `https://${projectId}.supabase.co/functions/v1/studio-survey-csv`;
-    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(import.meta.env.DEV ? { 'x-studio-source': '1' } : { Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey }) }, body: JSON.stringify({ sourceUrl }) });
+    const endpoint = projectId ? `https://${projectId}.supabase.co/functions/v1/studio-survey-csv` : '/__studio/survey';
+    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(projectId ? { Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey } : { 'x-studio-source': '1' }) }, body: JSON.stringify({ sourceUrl }) });
     const data = await response.json();
     if (!response.ok || typeof data.csv !== 'string') throw new Error(data.error || 'Could not load response Sheet.');
     return data.csv as string;

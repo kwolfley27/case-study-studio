@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import type { CaseStudySection } from './model';
 import { parseFigmaSource } from '../../../server/figma-source.mjs';
+import { publicAnonKey } from '../../utils/supabase/info';
 export const MACROAI_URL='';
 type Frame={id:string;name:string;group:string;width:number;height:number;image:string|null};
 type Catalog={fileKey:string;nodeId:string;url:string;fileName:string;importedAt:string;mode:'snapshot'|'live';frames:Frame[];missing?:string[];truncated?:boolean};
@@ -14,7 +15,7 @@ export function FigmaSourcePicker({section,sourceUrl,onApply,onSourceChange}:{se
   if(!token)throw new Error('Add a Figma access token to load or refresh this page.');
   const endpoint=import.meta.env.VITE_FIGMA_PROXY_URL;
   if(!endpoint)throw new Error('Live Figma import is not configured for this deployment. Paste screen image URLs in the inspector.');
-  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-Figma-Token':token},body:JSON.stringify({sourceUrl:url,ids})});
+  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-Figma-Token':token,Authorization:`Bearer ${publicAnonKey}`,apikey:publicAnonKey},body:JSON.stringify({sourceUrl:url,ids})});
   if(!r.headers.get('content-type')?.includes('application/json'))throw new Error('Figma import service returned an unexpected response.');
   const data=await r.json();if(!r.ok)throw new Error(data.error||'Unable to load Figma frames.');return data;
  }

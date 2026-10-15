@@ -17,8 +17,8 @@ Edits save in your browser. Export JSON to back up a study and import JSON to re
 
 ## Data connections
 
-- **Google Forms:** Link responses to a Google Sheet, publish an anonymized CSV tab, then connect the CSV URL. You can also import a CSV file without a server.
-- **Figma:** Add a page URL and a personal access token in the wireframe picker. Set `VITE_FIGMA_PROXY_URL` to a trusted server endpoint to enable live frame import. The token is held only in memory in the browser and sent to that endpoint for the request. Without a proxy, paste screen image URLs directly in the inspector.
+- **Google Forms:** Link responses to a Google Sheet, publish an anonymized CSV tab, then connect the CSV URL for refreshable charts. You can also import a CSV file without a server.
+- **Figma:** Add a page URL and a personal access token in the wireframe picker. This deployment uses a scoped Supabase Edge Function for live frame import and refresh. Set `VITE_FIGMA_PROXY_URL` to your own trusted endpoint when forking. The token is held only in memory in the browser and sent to that endpoint for the request. You can also paste screen image URLs directly in the inspector.
 - **Notion:** Save a research page URL in Project sources and include it in the AI assistance brief. Automatic Notion syncing requires your own server integration and is not configured in this public starter.
 - **Images:** Paste image URLs, or upload small images into your browser draft. Export a backup regularly. Large production media should use durable storage.
 
