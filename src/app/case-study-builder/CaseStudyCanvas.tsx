@@ -149,7 +149,7 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
 export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype }: { study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
   const showNav = study.showNav !== false;
   const coverFirst = study.sections[0]?.kind === "coverHero";
-  return <article className={`csb-canvas ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} style={{ "--csb-accent": study.accent } as React.CSSProperties}>
+  return <article className={`csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} style={{ "--csb-accent": study.accent } as React.CSSProperties}>
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
     <div className="csb-doc-main">
     {!coverFirst && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>

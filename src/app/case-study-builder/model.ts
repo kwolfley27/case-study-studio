@@ -65,6 +65,8 @@ export interface BuilderStudy {
   sources?: { notionUrl?: string; figmaUrl?: string };
   /** Show the case study side menu (default on). */
   showNav?: boolean;
+  /** Page style. Defaults to editorial. */
+  theme?: "editorial" | "classic";
   sections: CaseStudySection[];
 }
 
@@ -210,7 +212,7 @@ export const lucidExample: BuilderStudy = {
   client: "Project name",
   role: "Product designer",
   timeframe: "2026",
-  accent: "#0071e3",
+  accent: "#c8553d",
   sections: [
     { ...createSection("problem"), eyebrow: "01 / Define", variant: "dark" },
     { ...createSection("methods"), eyebrow: "02 / Discover" },
