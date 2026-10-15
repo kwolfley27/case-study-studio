@@ -1,4 +1,4 @@
-export type SectionKind = "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -23,7 +23,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter"; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo"; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -91,6 +91,7 @@ export interface BuilderStudy {
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
   abtest: "A/B test",
+  aeiou: "AEIOU observations",
   details: "Project details",
   empathy: "Empathy map",
   rows: "Labeled rows",
@@ -117,6 +118,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  aeiou: "Code observation photos and notes as Activities, Environments, Interactions, Objects and Users; hover a letter to see just those.",
   abtest: "Two versions in one frame, the changes between them, and what happened.",
   empathy: "The user in the centre with what they say, think, do and feel around them.",
   details: "Your role, timeline, team and tools at a glance. Show or hide any detail.",
@@ -144,7 +146,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -163,6 +165,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     details: "Project overview",
     empathy: "Inside their head",
     abtest: "What changed, and what it did",
+    aeiou: "What we observed",
     rows: "The essentials",
     screenRecording: "See it in motion",
     prototype: "Try it yourself",
@@ -188,6 +191,19 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    aeiou: [
+      { title: "Activities", value: "Goal-directed actions. What pathways do people take to get things done?", detail: "People plan around the class, not the studio: booking happens in stolen minutes between other tasks." },
+      { title: "Environments", value: "The whole arena: atmosphere, function, individual and shared spaces.", detail: "The lobby doubles as a waiting room and a checkout, so the 6 pm rush feels chaotic." },
+      { title: "Interactions", value: "Between people, and between people and things. Routine or special?", detail: "Staff repeat the same pass explanation to almost every new member." },
+      { title: "Objects", value: "The building blocks of the space, sometimes put to unintended uses.", detail: "A paper sign-up sheet works as the real waitlist, outside the app." },
+      { title: "Users", value: "Who is present? Their roles, relationships, values and biases.", detail: "Shift workers book last-minute and value certainty over price." },
+      { title: "Front desk, 6:05 pm", detail: "", image: "", cat: "e", blockType: "photo", pins: [{ x: .3, y: .38, cat: "o", note: "Paper waitlist taped to the counter" }, { x: .66, y: .55, cat: "i", note: "Staff explain the class pass, again" }, { x: .5, y: .78, cat: "u", note: "Three people waiting, all on phones" }] },
+      { title: "Lobby, Tuesday", detail: "Checks the schedule on her phone while standing in line", cat: "a", blockType: "text" },
+      { title: "Interview, P3", detail: "“I only find out it's full after I've already driven here.”", cat: "u", blockType: "text" },
+      { title: "Front desk", detail: "Asks a friend to hold a spot by writing both names on the sheet", cat: "i", blockType: "text" },
+      { title: "Lobby", detail: "No seating, so people lean on the merch shelf while waiting", cat: "e", blockType: "text" },
+      { title: "Changing room", detail: "Phone propped on a water bottle to show the class QR code", cat: "o", blockType: "text" },
+    ],
     abtest: [{ title: "A · Original", detail: "The current checkout", image: "" }, { title: "B · New design", detail: "Times shown up front", image: "" }],
     empathy: [
       { title: "Maya, new member", detail: "Busy nurse, books on her phone", image: "" },
