@@ -66,7 +66,7 @@ export function AEIOUBoard({ section }: { section: CaseStudySection }) {
           <span className="csb-ae-letter">{c.key.toUpperCase()}</span><span className="csb-ae-name">{categories[i]?.title || c.name}</span><span className="csb-ae-count">{count(c.key)}</span>
         </button>
         {on && <motion.div className="csb-ae-detail" initial={reduce ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
-          <p className="csb-ae-q"><EditableText field={`items.${i}.value`} value={categories[i]?.value ?? c.prompt} /></p>
+          {edit && <p className="csb-ae-q" title="Only you see this prompt; it's hidden on the published page">{categories[i]?.value ?? c.prompt}</p>}
           <p className="csb-ae-insight"><EditableText field={`items.${i}.detail`} value={categories[i]?.detail || ''} /></p>
         </motion.div>}
       </li>; })}
