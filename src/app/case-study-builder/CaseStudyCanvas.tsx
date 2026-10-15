@@ -8,7 +8,8 @@ import { SurveyResults } from "./SurveyResults";
 import { AnnotatedScreen, IssueFlow, Journey, Persona } from "./AppleExtras";
 import { CoverHero } from "./CoverHero";
 import { PrototypeEmbed } from "./PrototypeEmbed";
-import type { BuilderStudy, CaseStudySection } from "./model";
+import { Findings, Interviews, ScreenCarousel } from "./StoryBlocks";
+import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 
 function Enter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -88,6 +89,9 @@ function FullWidthMedia({ section, editorMode, onUploadMedia }: { section: CaseS
 
 function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: { section: CaseStudySection; editorMode: boolean; onUploadMedia?: (sectionId: string, index: number, file: File) => void; onSetPrototype?: (sectionId: string, link: string) => void }) {
   switch (section.kind) {
+    case "findings": return <Findings section={section} />;
+    case "interviews": return <Interviews section={section} />;
+    case "carousel": return <ScreenCarousel section={section} />;
     case "prototype": return <PrototypeEmbed section={section} editorMode={editorMode} onSetLink={onSetPrototype} />;
     case "persona": return <Persona section={section} />;
     case "journey": return <Journey section={section} />;
@@ -106,16 +110,55 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
   }
 }
 
+/* Case study side menu, like katelynwolfley.design: lists sections automatically,
+   highlights the one being read, jumps on click. Labels are editable in place. */
+function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; editorMode: boolean; onEditSection?: (id: string, field: string, value: string) => void }) {
+  const ref = useRef<HTMLElement>(null);
+  const items = study.sections.filter(section => !section.hideFromNav);
+  const [active, setActive] = useState<string | null>(items[0]?.id ?? null);
+  useEffect(() => {
+    const nav = ref.current; if (!nav) return;
+    const root = (nav.closest(".csb-preview-viewport") as HTMLElement | null);
+    const target: HTMLElement | Window = root ?? window;
+    const update = () => {
+      const top = root ? root.getBoundingClientRect().top : 0;
+      const line = top + (root ? root.clientHeight : window.innerHeight) * 0.35;
+      let current: string | null = null;
+      for (const section of items) { const el = document.getElementById(`builder-section-${section.id}`); if (el && el.getBoundingClientRect().top <= line) current = section.id; }
+      setActive(current ?? items[0]?.id ?? null);
+    };
+    update();
+    target.addEventListener("scroll", update, { passive: true });
+    return () => target.removeEventListener("scroll", update);
+  }, [items.map(section => section.id).join()]);
+  if (!items.length) return null;
+  return <nav ref={ref} className="csb-side-nav" aria-label="Case study sections">
+    <p className="csb-side-nav-title">{study.client}</p>
+    <ol>{items.map(section => <li key={section.id}>
+      <EditingContext.Provider value={{ edit: editorMode ? (field, value) => onEditSection?.(section.id, field, value) : undefined }}>
+        <a href={`#builder-section-${section.id}`} aria-current={active === section.id ? "true" : undefined} className={active === section.id ? "is-active" : ""} onClick={event => { if ((event.target as HTMLElement).isContentEditable) { event.preventDefault(); return; } event.preventDefault(); document.getElementById(`builder-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+          <EditableText field="navLabel" value={navLabelFor(section)} />
+        </a>
+      </EditingContext.Provider>
+    </li>)}</ol>
+  </nav>;
+}
+
 export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype }: { study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
-  return <article className={`csb-canvas ${editorMode ? "csb-canvas-editable" : ""}`} style={{ "--csb-accent": study.accent } as React.CSSProperties}>
-    <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
+  const showNav = study.showNav !== false;
+  const coverFirst = study.sections[0]?.kind === "coverHero";
+  return <article className={`csb-canvas ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} style={{ "--csb-accent": study.accent } as React.CSSProperties}>
+    {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
+    <div className="csb-doc-main">
+    {!coverFirst && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>
       <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>
-    </header></EditingContext.Provider>
+    </header></EditingContext.Provider>}
     {study.sections.map((section, index) => <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined}}><section id={`builder-section-${section.id}`} className={`csb-story-section csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
       {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
     </section></EditingContext.Provider>)}
     <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>
+    </div>
   </article>;
 }

@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "prototype" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -23,7 +23,11 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large" }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string }>;
+  /** Short label for the case study side menu. Falls back to navDefaults[kind]. */
+  navLabel?: string;
+  /** Hide this section from the side menu. */
+  hideFromNav?: boolean;
   layout?: {
     count?: number;
     columns?: 1 | 2 | 3;
@@ -55,12 +59,17 @@ export interface BuilderStudy {
   sourcePageId?: string;
   lastSyncedAt?: string;
   sources?: { notionUrl?: string; figmaUrl?: string };
+  /** Show the case study side menu (default on). */
+  showNav?: boolean;
   sections: CaseStudySection[];
 }
 
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
   prototype: "Interactive prototype",
+  findings: "Numbered findings",
+  interviews: "Interview highlights",
+  carousel: "Screen carousel",
   wireframes: "Linked wireframe showcase",
   fullMedia: "Full width image / GIF",
   survey: "Survey results",
@@ -80,6 +89,9 @@ export const componentNames: Record<SectionKind, string> = {
 export const componentDescriptions: Record<SectionKind, string> = {
   coverHero: "A big title that holds still while your hero image scrolls up and over it.",
   prototype: "Embed a clickable Figma prototype in a phone or laptop frame.",
+  findings: "A numbered list of problems or findings, one idea per row.",
+  interviews: "Pick a participant to see their summary, a finding and a quote.",
+  carousel: "Large screens in a horizontal scroller with arrows.",
   wireframes: "Import Figma screens into staggered iPhone mockups, then refresh by frame ID.",
   fullMedia: "Show an image or animated GIF edge to edge at its natural proportions.",
   survey: "Turn Google Forms responses into clear, evidence-backed charts.",
@@ -96,6 +108,14 @@ export const componentDescriptions: Record<SectionKind, string> = {
   gallery: "A restrained frame for mockups, artifacts, and prototypes.",
 };
 
+export const navDefaults: Record<SectionKind, string> = {
+  coverHero: "Overview", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
+  annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
+  narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
+};
+export const navLabelFor = (section: Pick<CaseStudySection, "kind" | "navLabel">) => section.navLabel?.trim() || navDefaults[section.kind];
+
 export const createSection = (kind: SectionKind): CaseStudySection => ({
   id: crypto.randomUUID(),
   kind,
@@ -103,6 +123,9 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   title: {
     coverHero: "Making access feel obvious, not accidental.",
     prototype: "Try it yourself",
+    findings: "What kept coming up",
+    interviews: "Interview highlights",
+    carousel: "Screens I explored",
     wireframes: "From wireframes to a clear direction",
     fullMedia: "See the work in detail",
     survey: "User research & key insights",
@@ -123,6 +146,9 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
     prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],
+    findings: ["The first finding", "The second finding", "The third finding", "The fourth finding"].map(title => ({ title, detail: "One or two sentences of evidence: what you saw, how often, and why it matters." })),
+    interviews: [["Participant one", "Role or context"], ["Participant two", "Role or context"], ["Participant three", "Role or context"]].map(([title, value]) => ({ title, value, detail: "A one-sentence summary of this conversation and what it revealed.", finding: "The most important thing you learned from this person.", findingNote: "Why it matters for the design.", quote: "A short verbatim quote from the interview.", quoteNote: "What this quote shows." })),
+    carousel: ["Screen one", "Screen two", "Screen three", "Screen four"].map(title => ({ title, detail: "Why this screen was explored, kept or shelved.", image: "" })),
     wireframes: Array.from({length:4}, (_, i) => ({title:`Screen ${i+1}`, detail:"Add a caption explaining this step.", image:""})),
     fullMedia: [{ title: "Visual detail", detail: "Add a caption about what this shows.", image: "" }],
     survey: [{ title: "Survey question one", detail: "Add a short takeaway from this result." }, { title: "Survey question two", detail: "Explain what this result changed in the design." }],
@@ -161,6 +187,9 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     metrics: { layout: { count: 3, columns: 3 as const } },
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
+    findings: { layout: { count: 4 } },
+    interviews: { layout: { count: 3 } },
+    carousel: { layout: { count: 4 } },
   } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype">>>>)[kind],
 });
 

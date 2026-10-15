@@ -3,16 +3,19 @@ import type { CaseStudySection } from "./model";
 type Layout = NonNullable<CaseStudySection["layout"]>;
 
 export function LayoutControls({ section, onChange }: { section: CaseStudySection; onChange: (patch: Partial<CaseStudySection>) => void }) {
-  if (!["gallery", "metrics", "wireframes"].includes(section.kind)) return null;
+  if (!["gallery", "metrics", "wireframes", "findings", "interviews", "carousel"].includes(section.kind)) return null;
   const layout = section.layout ?? {};
-  const max = section.kind === "gallery" ? 8 : section.kind === "metrics" ? 6 : 4;
+  const max = ["gallery", "findings", "carousel"].includes(section.kind) ? 8 : section.kind === "metrics" ? 6 : section.kind === "interviews" ? 6 : 4;
   const count = Math.min(max, Math.max(1, layout.count ?? section.items.length));
   const changeLayout = (patch: Partial<Layout>) => onChange({ layout: { ...layout, ...patch } });
   const changeCount = (next: number) => {
     const items = [...section.items];
     while (items.length < next) {
       const index = items.length;
-      items.push(section.kind === "metrics"
+      items.push(section.kind === "findings" ? { title: `Finding ${index + 1}`, detail: "Add the evidence behind this finding." }
+        : section.kind === "interviews" ? { title: `Participant ${index + 1}`, value: "Role or context", detail: "A one-sentence summary of this conversation.", finding: "The key finding.", findingNote: "Why it matters.", quote: "A short verbatim quote.", quoteNote: "What it shows." }
+        : section.kind === "carousel" ? { title: `Screen ${index + 1}`, detail: "Why this screen was explored.", image: "" }
+        : section.kind === "metrics"
         ? { title: `Metric ${index + 1}`, detail: "Explain what this number means.", value: "0" }
         : { title: section.kind === "wireframes" ? `Screen ${index + 1}` : `Artifact ${String(index + 1).padStart(2, "0")}`, detail: "Add a caption explaining why this matters.", image: "", tileSize: "standard" });
     }
@@ -22,7 +25,7 @@ export function LayoutControls({ section, onChange }: { section: CaseStudySectio
     <div className="csb-inspector-divider" />
     <p className="csb-panel-kicker">Layout controls</p>
     <p className="csb-layout-intro">Adjust the composition. Hidden items keep their content.</p>
-    <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-count">{section.kind === "metrics" ? "Data points" : section.kind === "wireframes" ? "Mockups" : "Images / mockups"}</label><output htmlFor="csb-layout-count">{count}</output></div><input id="csb-layout-count" type="range" min="1" max={max} step="1" value={count} onChange={event => changeCount(Number(event.target.value))} /></div>
+    <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-count">{section.kind === "metrics" ? "Data points" : section.kind === "wireframes" ? "Mockups" : section.kind === "findings" ? "Findings" : section.kind === "interviews" ? "Participants" : section.kind === "carousel" ? "Screens" : "Images / mockups"}</label><output htmlFor="csb-layout-count">{count}</output></div><input id="csb-layout-count" type="range" min="1" max={max} step="1" value={count} onChange={event => changeCount(Number(event.target.value))} /></div>
     {section.kind === "gallery" && <>
       <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-columns">Grid columns</label><output htmlFor="csb-layout-columns">{layout.columns ?? 2}</output></div><input id="csb-layout-columns" type="range" min="1" max="3" step="1" value={layout.columns ?? 2} onChange={event => changeLayout({ columns: Number(event.target.value) as 1 | 2 | 3 })} /></div>
       <div className="csb-field"><label htmlFor="csb-layout-pattern">Arrangement</label><select id="csb-layout-pattern" value={layout.pattern ?? "even"} onChange={event => changeLayout({ pattern: event.target.value as Layout["pattern"] })}><option value="even">Even grid</option><option value="bento">Bento grid</option></select></div>
