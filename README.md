@@ -18,6 +18,7 @@ Select a gallery, metric, or linked wireframe section and use **Layout controls*
 ## Publish
 
 `npm run build` writes the GitHub Pages site into `docs/`. Serve the `main` branch's `/docs` folder under GitHub Pages settings.
+The build keeps earlier hashed assets so a browser with a cached HTML entry still loads a working editor during deployment. Prune old assets only after their cached entries have expired.
 
 ## Data connections
 
