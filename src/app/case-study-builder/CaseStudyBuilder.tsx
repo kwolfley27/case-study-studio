@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, FlaskConical, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { CaseStudyCanvas } from "./CaseStudyCanvas";
 import { componentDescriptions, componentNames, createSection, isBuilderStudy, lucidExample, labelFromEyebrow, migrateStudy, navLabelFor, type BuilderStudy, type CaseStudySection, type SectionKind } from "./model";
@@ -25,6 +25,7 @@ import { ScreensControls } from "./Screens";
 import { ShowcaseControls } from "./Showcase";
 import { HomeGallery } from "./HomeGallery";
 import { SectionMenu } from "./SectionMenu";
+const ResearchWorkspace = lazy(() => import("./research/ResearchWorkspace").then(m => ({ default: m.ResearchWorkspace })));
 import { freshCopy, newId, saveStudy } from "./studyLibrary";
 import "./case-study-builder.css";
 import "./apple-style.css";
@@ -55,6 +56,7 @@ export default function CaseStudyBuilder() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showHome, setShowHome] = useState(false);
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [showResearch, setShowResearch] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [addedComponentName, setAddedComponentName] = useState<string | null>(null);
   const pendingAddedSection = useRef<string | null>(null);
@@ -168,10 +170,11 @@ export default function CaseStudyBuilder() {
   };
 
   const openStudy = (next: BuilderStudy) => { void saveStudy(study).catch(() => undefined); setStudy(migrateStudy(next)); setSelectedId(null); setShowHome(false); setMessage(null); window.scrollTo(0, 0); };
+  if (showResearch) return <Suspense fallback={null}><ResearchWorkspace onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
   if (showHome) return <HomeGallery current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
 
   return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"}`}>
-    <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)}><Palette size={14} /> Brand</button><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-quiet-button" onClick={startPresenting} title="Present full screen, one section at a time"><Presentation size={14} /> Present</button><button className="csb-primary-button" onClick={enterPreview}><Eye size={14} /> Preview</button></div></header>
+    <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" onClick={() => setShowResearch(true)} title="Run surveys and studies, then add the results"><FlaskConical size={14} /> Research</button><button className="csb-quiet-button" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)}><Palette size={14} /> Brand</button><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-quiet-button" onClick={startPresenting} title="Present full screen, one section at a time"><Presentation size={14} /> Present</button><button className="csb-primary-button" onClick={enterPreview}><Eye size={14} /> Preview</button></div></header>
     <div className="csb-studio-shell">
       <aside className="csb-panel csb-panel-left" aria-label="Sections and connections"><button className="csb-panel-hide" onClick={() => setLeftOpen(false)} aria-label="Hide left panel" title="Hide ( [ )"><PanelLeft size={15} /></button><div className="csb-panel-scroll">
         <p className="csb-panel-kicker">Story</p><h2 className="csb-panel-title">Sections</h2><p className="csb-panel-subtitle">Edit text and images right on the page. Select a section to see its settings.</p>
