@@ -82,7 +82,7 @@ export function JourneyMap({ section }: { section: CaseStudySection }) {
   const lowest = values.indexOf(Math.min(...values));
   const o = section.options ?? {};
   const wrap = useRef<HTMLDivElement>(null);
-  const progress = useSpring(useScrollProgress(wrap, .9, .45), { stiffness: 120, damping: 24, restDelta: .001 });
+  const progress = useSpring(useScrollProgress(chartRef, .95, .72), { stiffness: 120, damping: 24, restDelta: .001 });
   const [reached, setReached] = useState(expressive ? -1 : n);
   useMotionValueEvent(progress, 'change', v => { if (!expressive) return; const k = v <= .01 ? -1 : Math.min(n - 1, Math.floor(v * n + .15)); setReached(r => r === k ? r : k); });
   const show = (i: number) => !expressive || reached >= i;
