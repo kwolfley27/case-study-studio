@@ -4,6 +4,7 @@ import { Roadmap } from "./Roadmap";
 import { FlowCompare } from "./FlowCompare";
 import { FlowDiff, UserFlow } from "./UserFlow";
 import { useSolidElements } from "./GradientElements";
+import { ScreenGroups } from "./ScreenGroups";
 import { JobsToBeDone } from "./JobsToBeDone";
 import { ScrollSite } from "./ScrollSite";
 import { BarChart } from "./BarChart";
@@ -165,6 +166,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "quotes": return <QuotesView section={section} />;
     case "insights": return <Insights section={section} />;
     case "iterations": return <Iterations section={section} />;
+    case "screenGroups": return <ScreenGroups section={section} editorMode={editorMode} />;
     case "comparison": return <Comparison section={section} />;
     case "gallery": return <Gallery section={section} />;
     default: return <Enter className="csb-editorial-statement"><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;

@@ -25,9 +25,9 @@ export function LayoutControls({ section, onChange }: { section: CaseStudySectio
     <div className="csb-inspector-divider" />
     <p className="csb-panel-kicker">Layout controls</p>
     <p className="csb-layout-intro">Adjust the composition. Hidden items keep their content.</p>
-    <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-count">{section.kind === "metrics" ? "Data points" : section.kind === "wireframes" ? "Mockups" : section.kind === "findings" ? "Findings" : section.kind === "interviews" ? "Participants" : section.kind === "carousel" ? "Screens" : "Images / mockups"}</label><output htmlFor="csb-layout-count">{count}</output></div><input id="csb-layout-count" type="range" min="1" max={max} step="1" value={count} onChange={event => changeCount(Number(event.target.value))} /></div>
+    <NumberPick label={section.kind === "metrics" ? "How many numbers" : section.kind === "wireframes" ? "How many mockups" : section.kind === "findings" ? "How many findings" : section.kind === "interviews" ? "How many participants" : section.kind === "carousel" ? "How many screens" : "How many images"} value={count} min={1} max={max} onChange={changeCount} />
     {section.kind === "gallery" && <>
-      <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-columns">Grid columns</label><output htmlFor="csb-layout-columns">{layout.columns ?? 2}</output></div><input id="csb-layout-columns" type="range" min="1" max="3" step="1" value={layout.columns ?? 2} onChange={event => changeLayout({ columns: Number(event.target.value) as 1 | 2 | 3 })} /></div>
+      <NumberPick label="Columns" value={layout.columns ?? 2} min={1} max={3} onChange={n => changeLayout({ columns: n as 1 | 2 | 3 })} />
       <div className="csb-field"><label htmlFor="csb-layout-pattern">Arrangement</label><select id="csb-layout-pattern" value={layout.pattern ?? "even"} onChange={event => changeLayout({ pattern: event.target.value as Layout["pattern"] })}><option value="even">Even grid</option><option value="bento">Bento grid</option></select></div>
       <div className="csb-field"><label htmlFor="csb-layout-presentation">Presentation</label><select id="csb-layout-presentation" value={layout.presentation ?? "images"} onChange={event => changeLayout({ presentation: event.target.value as Layout["presentation"], ...(event.target.value === "phones" ? { pattern: "even" as const } : {}) })}><option value="images">Images / GIFs</option><option value="phones">iPhone mockups</option></select></div>
       <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-gap">Spacing</label><output htmlFor="csb-layout-gap">{layout.gap ?? 20}px</output></div><input id="csb-layout-gap" type="range" min="8" max="40" step="2" value={layout.gap ?? 20} onChange={event => changeLayout({ gap: Number(event.target.value) })} /></div>
@@ -35,5 +35,16 @@ export function LayoutControls({ section, onChange }: { section: CaseStudySectio
       {layout.pattern === "bento" && <div className="csb-layout-tiles"><span className="csb-field-note">Tile sizes</span>{section.items.slice(0, count).map((item, index) => <div className="csb-layout-tile" key={index}><label htmlFor={`csb-tile-${section.id}-${index}`}>{String(index + 1).padStart(2, "0")} · {item.title}</label><select id={`csb-tile-${section.id}-${index}`} value={item.tileSize ?? (index === 0 ? "wide" : "standard")} onChange={event => onChange({ items: section.items.map((current, itemIndex) => itemIndex === index ? { ...current, tileSize: event.target.value as NonNullable<typeof item.tileSize> } : current) })}><option value="standard">Standard</option><option value="wide">Wide</option><option value="large">Large</option></select></div>)}</div>}
     </>}
     {section.kind === "wireframes" && <div className="csb-layout-control"><div className="csb-layout-label"><label htmlFor="csb-layout-phone-scale">Phone size</label><output htmlFor="csb-layout-phone-scale">{layout.scale ?? 100}%</output></div><input id="csb-layout-phone-scale" type="range" min="70" max="130" step="5" value={layout.scale ?? 100} onChange={event => changeLayout({ scale: Number(event.target.value) })} /></div>}
+  </div>;
+}
+
+/* A small number choice: tap a number (up to 8 options), or use − and + beyond that. */
+function NumberPick({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
+  const n = Math.max(min, Math.min(max, value));
+  const opts = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  return <div className="csb-numpick"><span className="csb-sb-label">{label}</span>
+    {opts.length <= 8
+      ? <div className="csb-numpick-row" role="radiogroup" aria-label={label}>{opts.map(o => <button key={o} type="button" role="radio" aria-checked={o === n} onClick={() => onChange(o)}>{o}</button>)}</div>
+      : <div className="csb-numpick-step"><button type="button" aria-label="Fewer" disabled={n <= min} onClick={() => onChange(n - 1)}>−</button><output aria-live="polite">{n}</output><button type="button" aria-label="More" disabled={n >= max} onClick={() => onChange(n + 1)}>+</button></div>}
   </div>;
 }

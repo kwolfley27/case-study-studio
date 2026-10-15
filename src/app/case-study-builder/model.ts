@@ -1,4 +1,4 @@
-export type SectionKind = "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -27,7 +27,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo" | "facts" | "chips"; /** Task success: % completed with help. */ assist?: string; /** Figma frame link this image comes from (pull / refresh). */ figmaUrl?: string; /** Scrolling site: which side of the phone a note sits on. */ side?: string; /** Scrolling site: the note's highlight, "x,y,w,h" in % of the frame. */ box?: string; /** Type specimen style. */ font?: import("./TypeSpecimen").FontSpec; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo" | "facts" | "chips"; /** Task success: % completed with help. */ assist?: string; /** Figma frame link this image comes from (pull / refresh). */ figmaUrl?: string; /** Scrolling site: which side of the phone a note sits on. */ side?: string; /** Scrolling site: the note's highlight, "x,y,w,h" in % of the frame. */ box?: string; /** Type specimen style. */ font?: import("./TypeSpecimen").FontSpec; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string; /** Screen gallery: the page this screen belongs to, and its version badge. */ group?: string; tag?: string }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -140,6 +140,7 @@ export const componentNames: Record<SectionKind, string> = {
   barChart: "Bar chart",
   insights: "Insights",
   iterations: "Iterations",
+  screenGroups: "Screen gallery",
   typeSpec: "Type specimen",
   flowDiff: "Flow redesign",
   featureCompare: "Feature comparison",
@@ -190,6 +191,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   scrollSite: "A long page scrolling inside a MacBook and an iPhone, with callouts as each part arrives.",
   barChart: "A live column chart: type the numbers, the bars rise as you scroll.",
   insights: "Three findings side by side: a picture, a headline with emphasis, one sentence each.",
+  screenGroups: "Screens grouped by page in collapsible rows; click any screen to see it full size.",
   iterations: "One screen through its versions: step v1 → v2 → v3 in the same device, with what changed and why.",
   typeSpec: "Your type system set in the real fonts, as live text.",
   flowDiff: "The old flow and the new one, with the steps you cut and added.",
@@ -222,7 +224,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -255,6 +257,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     barChart: "How the numbers moved",
     insights: "What we learned",
     iterations: "How it evolved",
+    screenGroups: "Wireframes",
     typeSpec: "Typographic hierarchy",
     flowDiff: "From nine steps to four",
     featureCompare: "What each option actually offers",
@@ -313,6 +316,14 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     userFlow: [],
     jtbd: [],
     typeSpec: [{ title: "Header", detail: "Inter · 40pt", value: "A clear, confident headline", font: { family: "Inter", size: 40, weight: 600 } }, { title: "Paragraph", detail: "Inter · 18pt", value: "Body copy that reads easily at length.", font: { family: "Inter", size: 18, leading: 27 } }],
+    screenGroups: [
+      { title: "First layout", detail: "A traditional table to start: everything on one screen.", group: "Home page", tag: "V1", image: "" },
+      { title: "Cards with filters", detail: "Cards with photos instead of rows, plus filter chips for faster scanning.", group: "Home page", tag: "V2", image: "" },
+      { title: "Detail view", detail: "What someone sees after opening an item.", group: "Home page", tag: "V2", image: "" },
+      { title: "Checkout, step 1", detail: "Shipping and contact in one short form.", group: "Checkout", tag: "V1", image: "" },
+      { title: "Checkout, step 2", detail: "Payment with the order summary alongside.", group: "Checkout", tag: "V1", image: "" },
+      { title: "Settings", detail: "Account and notification preferences.", group: "Settings", tag: "V1", image: "" },
+    ],
     iterations: [{ title: "First draft", detail: "The starting point: every question on one long page.", value: "" }, { title: "Split into steps", detail: "One question per screen, with progress at the top.", value: "Testers stalled halfway down the long form" }, { title: "Shorter path", detail: "Optional questions moved after sign-up.", value: "3 of 5 testers skipped the optional fields anyway" }],
     insights: [{ title: "The *exploration* felt [[limited]]", detail: "Too few combinations and too few visible responses, so there was little to discover." }, { title: "The *exploration* was [[hard to build]]", detail: "Bugs, overlapping nodes and confusing interactions got in the way." }, { title: "The *exploration* felt [[irrelevant]]", detail: "People were engaged with the activity, but not with what it was teaching." }],
     barChart: [["2022", "120"], ["2023", "150"], ["2024", "190"], ["2025", "240"]].map(([title, value]) => ({ title, value, detail: "" })),
