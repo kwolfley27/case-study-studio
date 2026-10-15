@@ -6,6 +6,7 @@ import { WireframeShowcase } from "./WireframeShowcase";
 import { ResearchVisual } from "./ResearchVisuals";
 import { SurveyResults } from "./SurveyResults";
 import { AnnotatedScreen, IssueFlow, Journey, Persona } from "./AppleExtras";
+import { CoverHero } from "./CoverHero";
 import type { BuilderStudy, CaseStudySection } from "./model";
 
 function Enter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -111,7 +112,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
       <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>
     </header></EditingContext.Provider>
     {study.sections.map((section, index) => <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined}}><section id={`builder-section-${section.id}`} className={`csb-story-section csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
-      <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /></div>
+      {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /></div>}
     </section></EditingContext.Provider>)}
     <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>
   </article>;

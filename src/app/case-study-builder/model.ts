@@ -1,4 +1,4 @@
-export type SectionKind = "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -58,6 +58,7 @@ export interface BuilderStudy {
 }
 
 export const componentNames: Record<SectionKind, string> = {
+  coverHero: "Title reveal hero",
   wireframes: "Linked wireframe showcase",
   fullMedia: "Full width image / GIF",
   survey: "Survey results",
@@ -75,6 +76,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  coverHero: "A big title that holds still while your hero image scrolls up and over it.",
   wireframes: "Import Figma screens into staggered iPhone mockups, then refresh by frame ID.",
   fullMedia: "Show an image or animated GIF edge to edge at its natural proportions.",
   survey: "Turn Google Forms responses into clear, evidence-backed charts.",
@@ -96,6 +98,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   kind,
   eyebrow: componentNames[kind],
   title: {
+    coverHero: "Making access feel obvious, not accidental.",
     wireframes: "From wireframes to a clear direction",
     fullMedia: "See the work in detail",
     survey: "User research & key insights",
@@ -111,9 +114,10 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     comparison: "From the original brief to the real problem",
     gallery: "The work, up close",
   }[kind],
-  body: kind === "fullMedia" ? "Add a short introduction, or leave this blank to let the media speak for itself." : "Add the key idea you want a reader to remember. Keep it short enough to let the visual carry the story.",
+  body: kind === "coverHero" ? "" : kind === "fullMedia" ? "Add a short introduction, or leave this blank to let the media speak for itself." : "Add the key idea you want a reader to remember. Keep it short enough to let the visual carry the story.",
   variant: "light",
   items: {
+    coverHero: [{ title: "Hero visual", detail: "", image: "" }],
     wireframes: Array.from({length:4}, (_, i) => ({title:`Screen ${i+1}`, detail:"Add a caption explaining this step.", image:""})),
     fullMedia: [{ title: "Visual detail", detail: "Add a caption about what this shows.", image: "" }],
     survey: [{ title: "Survey question one", detail: "Add a short takeaway from this result." }, { title: "Survey question two", detail: "Explain what this result changed in the design." }],

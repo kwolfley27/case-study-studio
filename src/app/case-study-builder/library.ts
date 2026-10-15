@@ -3,6 +3,7 @@ export const phases = ['All', 'Story setup', 'Discover', 'Define', 'Develop', 'D
 export type Phase = typeof phases[number];
 export interface ComponentTemplate { id: string; name: string; phase: Phase; kind: SectionKind; description: string; tags: string; columns?: 2 | 3 | 4; ai: string; reference?: string }
 export const templates: ComponentTemplate[] = [
+ {id:'title-reveal',name:'Title reveal hero',phase:'Story setup',kind:'coverHero',description:'Your title holds still while the hero image scrolls up over it.',tags:'hero header cover opening intro title sticky scroll reveal image parallax top',ai:'Draft a short project label and a headline of eight words or fewer from the project overview. Leave the hero image as a designed-media slot for me to supply.'},
  {id:'full-media',name:'Full width image / GIF',phase:'Flexible layouts',kind:'fullMedia',description:'Drop in any image or animated GIF without cropping.',tags:'full width full bleed image gif animation media screenshot visual upload flexible',ai:'Suggest where this image or GIF best supports the case study narrative. Draft a concise, evidence-based caption and alt text from the supplied description. Do not fabricate visual details.'},
  {id:'wireframes',name:'Linked wireframe showcase',phase:'Develop',kind:'wireframes',description:'Pull Figma screens into staggered iPhone mockups.',tags:'figma link sync phone iphone wireframe mockup screens',ai:'Use the saved Notion research source and Figma file/page source. Review only frames within that design source, suggest a 2–4 screen sequence, and explain how each supports the story. Preserve frame IDs and distinguish observed designs from proposed changes. Never claim you accessed a link unless you did.'},
  {id:'context', name:'Context introduction', phase:'Story setup', kind:'narrative', description:'Set the scene one idea at a time.', tags:'intro background story', ai:'Draft a brief context paragraph from project notes. Introduce the feature before discussing the problem. Flag missing context.', reference:'45-12'},
@@ -31,6 +32,7 @@ export function sectionFromTemplate(template: ComponentTemplate) {
  if(['metrics','quotes','gap','problem','issueFlow'].includes(template.kind)) section.variant = 'dark';
  if(['narrative','gallery','persona','journey','annotated'].includes(template.kind)) section.variant = 'tinted';
  if(template.columns) { section.columns = template.columns; section.items = Array.from({length:template.columns},(_,i)=>({...section.items[i % section.items.length], title:`Highlight ${i+1}`})); }
+ if(template.kind==='coverHero') section.eyebrow = 'Project name / Product design';
  if(template.kind==='competitors') section.criteria = 'Usability, Accessibility, Personalization, Integration, Guidance, Value';
  if(template.kind==='competitors') section.body = 'Replace the six criteria below with your comparison criteria. Scores start at zero; add evidence-backed ratings from 0–5.';
  if(template.kind==='gap') section.body = 'Describe the shared unmet need revealed by the approaches below.';

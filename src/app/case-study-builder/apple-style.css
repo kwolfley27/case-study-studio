@@ -252,3 +252,35 @@
 .csb-kind-problem:not(.csb-variant-dark) .csb-research-problem .csb-research-card{border-color:#d2d2d7!important}
 .csb-kind-problem:not(.csb-variant-dark) .csb-research-problem .csb-research-card p{color:#6e6e73!important}
 @container (max-width:700px){.csb-research-problem .csb-research-card{grid-template-columns:42px 1fr;gap:12px}.csb-research-problem .csb-research-card p{grid-column:2}}
+
+/* ── Title reveal hero (from katelynwolfley.design) ────────────────────────
+   The title is sticky inside an inset panel; the media sits one layer above
+   and scrolls up and over it. overflow:clip keeps the title inside the panel. */
+.csb-story-section.csb-kind-coverHero{padding:0!important;background:transparent!important}
+.csb-cover{--csb-cover-bg:#f5f5f7;--csb-cover-ink:#1d1d1f;--csb-cover-muted:#6e6e73;position:relative;margin:12px;padding:clamp(56px,9cqw,112px) 0 0;background:var(--csb-cover-bg);color:var(--csb-cover-ink);border-radius:28px;overflow:clip;timeline-scope:--csb-cover-media}
+.csb-variant-dark .csb-cover{--csb-cover-bg:#000;--csb-cover-ink:#f5f5f7;--csb-cover-muted:#86868b}
+.csb-variant-tinted .csb-cover{--csb-cover-bg:color-mix(in srgb,var(--csb-accent) 9%,#fbfbfd)}
+.csb-cover-title{position:sticky;top:var(--csb-cover-top,clamp(72px,10cqw,132px));z-index:0;max-width:880px;margin:0 auto;padding:0 32px clamp(40px,6cqw,72px);text-align:center}
+.csb-cover-label{margin:0 0 20px;font-size:13px;letter-spacing:.02em;color:var(--csb-cover-muted)}
+.csb-cover-title h1{margin:0;font-size:clamp(40px,7cqw,88px);line-height:1.04;font-weight:600;letter-spacing:-.035em;text-wrap:balance}
+.csb-cover-summary{max-width:620px;margin:22px auto 0;font-size:clamp(17px,1.9cqw,22px);line-height:1.45;color:var(--csb-cover-muted);text-wrap:pretty}
+.csb-cover-media{position:relative;z-index:1;width:min(1064px,calc(100% - clamp(32px,8cqw,96px)));margin:0 auto;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 30px 80px rgba(0,0,0,.16);view-timeline-name:--csb-cover-media;border-radius:18px 18px 0 0;overflow:hidden}
+.csb-cover-media img{display:block;width:100%;height:auto}
+.csb-cover-empty{display:grid;place-items:center;align-content:center;gap:8px;aspect-ratio:16/10;color:#6e6e73;text-align:center;cursor:pointer;background:#fff}
+.csb-cover-empty strong{font-size:17px;font-weight:600;color:#1d1d1f}.csb-cover-empty span{font-size:13px}.csb-cover-empty input{position:absolute;width:1px;height:1px;opacity:0}
+.csb-cover-media.is-dragging{outline:3px solid var(--csb-accent);outline-offset:-3px}
+.csb-cover-replace{position:absolute;right:14px;bottom:14px;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;opacity:0;transition:opacity .2s}.csb-cover-media:hover .csb-cover-replace{opacity:1}
+.csb-cover-caption{position:relative;z-index:1;margin:0;padding:18px 32px 28px;text-align:center;font-size:13px;color:var(--csb-cover-muted);background:var(--csb-cover-bg)}
+.csb-cover-caption:empty{display:none}
+@supports (animation-timeline: view()){
+  @media (prefers-reduced-motion: no-preference){
+    .csb-cover-title{animation:csb-cover-recede linear both;animation-timeline:--csb-cover-media;animation-range:cover 42% cover 70%}
+  }
+}
+@keyframes csb-cover-recede{to{opacity:.35;transform:scale(.96)}}
+@container (max-width:700px){
+  .csb-cover{margin:8px;border-radius:20px;padding-top:48px}
+  .csb-cover-title{top:64px;padding:0 20px 32px;text-align:left}
+  .csb-cover-summary{margin-left:0}
+  .csb-cover-media{width:calc(100% - 24px);border-radius:12px 12px 0 0}
+}

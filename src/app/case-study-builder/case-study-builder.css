@@ -299,3 +299,49 @@
 .csb-survey-checkbox input{accent-color:var(--csb-accent);margin-top:2px}
 .art-survey .csb-mini-items i{display:block;background:#fff;border-radius:6px;padding:9px}.art-survey .csb-mini-items b{width:100%;height:5px;border-radius:4px}.art-survey .csb-mini-items em{height:5px;background:linear-gradient(90deg,#a7ccae,#6c9a77);border-radius:3px}.art-survey .csb-mini-items i:last-child{border-radius:50% 50% 0 0}
 @container (max-width:760px){.csb-survey-results{grid-template-columns:1fr;gap:48px}.csb-survey-question,.csb-survey-question:nth-child(even){grid-column:1}.csb-survey-question-heading{min-height:0}.csb-survey-card{min-height:0}}
+
+/* ── Workspace modes ─────────────────────────────────────────────────────────
+   canvas  : the case study fills the window at real size; panels float above it
+   framed  : original three-column layout with a browser-frame preview
+   preview : no editing UI — exactly what a visitor sees (Esc to exit)        */
+.csb-panel-hide,.csb-panel-tab,.csb-preview-exit{display:none}
+.csb-view-toggle{white-space:nowrap}
+
+.csb-view-canvas .csb-studio-shell,.csb-view-preview .csb-studio-shell{display:block;min-height:0}
+.csb-view-canvas .csb-preview-wrap,.csb-view-preview .csb-preview-wrap{padding:0}
+.csb-view-canvas .csb-browser-frame,.csb-view-preview .csb-browser-frame{width:100%;max-width:none;border:0;border-radius:0;box-shadow:none}
+.csb-view-canvas .csb-browser-chrome,.csb-view-preview .csb-browser-chrome{display:none}
+.csb-view-canvas .csb-preview-viewport{height:calc(100dvh - 68px);min-height:0}
+.csb-view-preview .csb-preview-viewport{height:100dvh;min-height:0}
+
+/* floating panels */
+.csb-view-canvas .csb-panel{position:fixed;top:84px;bottom:16px;z-index:40;width:284px;border:1px solid rgba(0,0,0,.08);border-radius:18px;background:rgba(251,251,253,.86);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 22px 56px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.06);overflow:hidden;transition:transform .38s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+.csb-view-canvas .csb-panel-left{left:16px}
+.csb-view-canvas .csb-panel-right{right:16px;width:316px}
+.csb-view-canvas .csb-panel-scroll{position:static;top:auto;height:100%;padding-top:22px}
+.csb-view-canvas.hide-left .csb-panel-left{transform:translateX(calc(-100% - 28px));opacity:0;pointer-events:none}
+.csb-view-canvas.hide-right .csb-panel-right{transform:translateX(calc(100% + 28px));opacity:0;pointer-events:none}
+.csb-view-canvas .csb-panel-hide{display:grid;place-items:center;position:absolute;top:12px;right:12px;z-index:2;width:30px;height:30px;border:0;border-radius:50%;background:rgba(0,0,0,.05);color:#1d1d1f}
+.csb-view-canvas .csb-panel-hide:hover{background:rgba(0,0,0,.09)}
+.csb-view-canvas .csb-panel-tab{position:fixed;top:84px;z-index:40;display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid rgba(0,0,0,.08);border-radius:999px;background:rgba(251,251,253,.88);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 10px 30px rgba(0,0,0,.12);font-size:12px;font-weight:600;color:#1d1d1f}
+.csb-panel-tab-left{left:16px}.csb-panel-tab-right{right:16px}
+
+/* floating device toolbar */
+.csb-view-canvas .csb-main-toolbar{position:fixed;left:50%;bottom:20px;z-index:45;height:auto;padding:5px;transform:translateX(-50%);border:1px solid rgba(0,0,0,.08);border-radius:999px;background:rgba(255,255,255,.88);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 12px 34px rgba(0,0,0,.14)}
+.csb-view-canvas .csb-main-toolbar>div:first-child{display:none}
+.csb-view-canvas .csb-main-toolbar .csb-icon-button{border-radius:999px}
+
+/* mobile preview inside the full-screen canvas: a phone-width column */
+.csb-view-canvas .csb-preview-wrap.is-mobile,.csb-view-preview .csb-preview-wrap.is-mobile{display:grid;place-items:center;height:calc(100dvh - 68px);background:#e8e8ed}
+.csb-view-preview .csb-preview-wrap.is-mobile{height:100dvh}
+.csb-view-canvas .csb-preview-wrap.is-mobile .csb-browser-frame,.csb-view-preview .csb-preview-wrap.is-mobile .csb-browser-frame{width:390px;border-radius:44px;box-shadow:0 0 0 10px #1d1d1f,0 30px 80px rgba(0,0,0,.3)}
+.csb-view-canvas .csb-preview-wrap.is-mobile .csb-preview-viewport,.csb-view-preview .csb-preview-wrap.is-mobile .csb-preview-viewport{height:min(844px,calc(100dvh - 120px))}
+
+/* preview: no editing UI */
+.csb-view-preview .csb-studio-header,.csb-view-preview .csb-panel,.csb-view-preview .csb-main-toolbar{display:none}
+.csb-view-preview .csb-preview-exit{position:fixed;top:16px;right:16px;z-index:60;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 16px;border-radius:999px;background:rgba(29,29,31,.78);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);color:#f5f5f7;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:.55;transition:opacity .2s}
+.csb-view-preview .csb-preview-exit:hover,.csb-view-preview .csb-preview-exit:focus-within{opacity:1}
+.csb-preview-exit button{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:0;border-radius:999px;background:rgba(255,255,255,.14);color:inherit;font-size:12px;font-weight:600}
+
+@media (max-width:900px){.csb-view-canvas .csb-panel{width:260px}.csb-view-canvas .csb-panel-right{width:280px}}
+@media (prefers-reduced-motion:reduce){.csb-view-canvas .csb-panel{transition:none}}

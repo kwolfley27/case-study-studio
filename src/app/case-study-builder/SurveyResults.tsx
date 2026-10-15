@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { EditableText } from './EditableText';
 import type { CaseStudySection, SurveyQuestion } from './model';
+import { CountUp } from './MotionKit';
 
 const percent = (count: number, answered: number) => answered ? Math.round(count / answered * 100) : 0;
 
@@ -30,7 +31,7 @@ export function SurveyResults({ section }: { section: CaseStudySection }) {
   const rankQuestion = source.questions[2] || detailQuestion;
   return <div className="csb-apple-survey">
     <div className="csb-apple-survey-feature">
-      <div><motion.strong initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .65 }}>{leadPercent}%</motion.strong><p><EditableText field="items.0.title" value={section.items[0]?.title || lead.sourceName} /></p><small>{top?.label} · {top?.count} of {lead.answered} respondents</small></div>
+      <div><motion.strong initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .65 }}><CountUp value={`${leadPercent}%`} duration={1400} /></motion.strong><p><EditableText field="items.0.title" value={section.items[0]?.title || lead.sourceName} /></p><small>{top?.label} · {top?.count} of {lead.answered} respondents</small></div>
       <div className="csb-apple-pictogram" role="img" aria-label={`${filledDots} of 25 dots highlighted to represent ${leadPercent} percent`}>{Array.from({ length: 25 }, (_, index) => <motion.i key={index} className={index < filledDots ? 'is-filled' : ''} initial={{ opacity: 0, scale: .4 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: index * .025, duration: .3 }} />)}</div>
     </div>
     <div className="csb-apple-survey-detail">
