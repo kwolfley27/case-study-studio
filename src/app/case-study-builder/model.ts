@@ -77,6 +77,8 @@ export interface BuilderStudy {
   accent2?: string;
   /** Motion level: expressive (default) or calm. */
   motion?: "calm" | "expressive";
+  /** Header layout: standard, or full width with the hero image rising over the title. */
+  hero?: { style: "standard" | "immersive"; bg: "accent" | "soft" | "paper" | "night" | "image"; bgImage?: string; frame: "none" | "laptop" | "desktop" | "browser" | "phone" };
   /** Brand tokens: colours, fonts, headline weight, corners. */
   brand?: Partial<import("./brand").Brand>;
   sections: CaseStudySection[];

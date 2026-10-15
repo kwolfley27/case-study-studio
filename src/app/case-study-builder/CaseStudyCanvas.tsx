@@ -13,6 +13,7 @@ import { Findings, Interviews, ScreenCarousel } from "./StoryBlocks";
 import { WorkTimeline } from "./WorkTimeline";
 import { ScreenRecording } from "./ScreenRecording";
 import { ProjectDetails } from "./ProjectDetails";
+import { ImmersiveHero } from "./ImmersiveHero";
 import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
 
@@ -129,6 +130,7 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
   const ref = useRef<HTMLElement>(null);
   const items = study.sections.filter(section => !section.hideFromNav);
   const [active, setActive] = useState<string | null>(items[0]?.id ?? null);
+  const [revealed, setRevealed] = useState(false);
   useEffect(() => {
     const nav = ref.current; if (!nav) return;
     const root = (nav.closest(".csb-preview-viewport") as HTMLElement | null);
@@ -139,13 +141,15 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
       let current: string | null = null;
       for (const section of items) { const el = document.getElementById(`builder-section-${section.id}`); if (el && el.getBoundingClientRect().top <= line) current = section.id; }
       setActive(current ?? items[0]?.id ?? null);
+      const first = document.getElementById(`builder-section-${study.sections[0]?.id}`);
+      setRevealed(!!first && first.getBoundingClientRect().top <= top + (root ? root.clientHeight : window.innerHeight) * 0.7);
     };
     update();
     target.addEventListener("scroll", update, { passive: true });
     return () => target.removeEventListener("scroll", update);
   }, [items.map(section => section.id).join()]);
   if (!items.length) return null;
-  return <nav ref={ref} className="csb-side-nav" aria-label="Case study sections">
+  return <nav ref={ref} className={`csb-side-nav ${revealed || editorMode ? "is-revealed" : ""}`} aria-label="Case study sections">
     <p className="csb-side-nav-title">{study.client}</p>
     <ol>{items.map(section => <li key={section.id}>
       <EditingContext.Provider value={{ edit: editorMode ? (field, value) => onEditSection?.(section.id, field, value) : undefined, styles: section.textStyles }}>
@@ -163,8 +167,9 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
   const coverFirst = study.sections[0]?.kind === "coverHero";
   return <MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent } as React.CSSProperties}>
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
+    {!coverFirst && !bare && study.hero?.style === "immersive" && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><ImmersiveHero study={study} editorMode={editorMode} /></EditingContext.Provider>}
     <div className="csb-doc-main">
-    {!coverFirst && !bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
+    {!coverFirst && !bare && !(study.hero?.style === "immersive") && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>
       {!study.sections.some(section => section.kind === "details") && <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>}
