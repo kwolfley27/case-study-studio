@@ -32,6 +32,33 @@ async function figmaFrameImage(link: string): Promise<string> {
   return url as string;
 }
 
+/* Download a remote image and store it inside the draft as a compressed
+   data URL, so it never depends on the original link (Figma render links
+   expire after ~30 days). Resized to at most 2400px wide and re-encoded as
+   WebP until it fits the browser-draft budget. */
+const DRAFT_IMAGE_BUDGET = 1_400_000;
+async function downloadIntoDraft(url: string): Promise<string> {
+  const response = await fetch(url, { mode: 'cors' });
+  if (!response.ok) throw new Error(`Download failed (${response.status}).`);
+  const blob = await response.blob();
+  if (blob.type === 'image/gif' && blob.size <= DRAFT_IMAGE_BUDGET) return blobToDataUrl(blob);
+  const bitmap = await createImageBitmap(blob);
+  let width = Math.min(2400, bitmap.width);
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const height = Math.round(bitmap.height * width / bitmap.width);
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d'); if (!context) break;
+    context.drawImage(bitmap, 0, 0, width, height);
+    for (const quality of [0.9, 0.82, 0.72]) {
+      const encoded = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+      if (encoded && encoded.size <= DRAFT_IMAGE_BUDGET) return blobToDataUrl(encoded);
+    }
+    width = Math.round(width * 0.8);
+  }
+  throw new Error('That image is too large to store in the draft.');
+}
+const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('Could not read the image.')); reader.readAsDataURL(blob); });
+
 type Menu = { slot: string; x: number; y: number; hasImage: boolean; mode: 'menu' | 'link' };
 
 export function ImageSlotLayer({ enabled, onFile, onUrl, onRemove, notify }: {
@@ -64,8 +91,12 @@ export function ImageSlotLayer({ enabled, onFile, onUrl, onRemove, notify }: {
     try {
       if (isFigmaFrameLink(value)) {
         const url = await figmaFrameImage(value);
-        onUrl(slot, url, 'Figma frame added. Figma image links expire after about 30 days, so paste the link again to refresh it, or upload an export.');
-      } else if (isImageLink(value)) onUrl(slot, value);
+        try { onUrl(slot, await downloadIntoDraft(url), 'Figma frame downloaded into your case study.'); }
+        catch { onUrl(slot, url, 'Figma frame added as a link (it could not be downloaded). Figma links expire after about 30 days; paste it again to refresh.'); }
+      } else if (isImageLink(value)) {
+        try { onUrl(slot, await downloadIntoDraft(value), 'Image downloaded into your case study.'); }
+        catch { onUrl(slot, value, 'Image added as a link. That site did not allow downloading, so it will show as long as the link works.'); }
+      }
       else throw new Error('Paste a Figma frame link or an https image link.');
       setMenu(null); setLink('');
     } catch (error) { notify(error instanceof Error ? error.message : 'Could not add that link.', true); }
@@ -139,7 +170,7 @@ export function ImageSlotLayer({ enabled, onFile, onUrl, onRemove, notify }: {
           <div className="csb-slot-link-head"><strong>Add from a link</strong><button type="button" aria-label="Close" onClick={() => setMenu(null)}><X size={14} /></button></div>
           <input autoFocus value={link} onChange={event => setLink(event.target.value)} placeholder="https://www.figma.com/design/…?node-id=… or image URL" />
           {isFigmaFrameLink(link) && !figmaToken && <><input type="password" autoComplete="off" value={token} onChange={event => setToken(event.target.value)} placeholder="Figma personal access token" /><small>Kept in memory for this tab only. <a href="https://www.figma.com/developers/api#access-tokens" target="_blank" rel="noreferrer">Create a token ↗</a></small></>}
-          <button type="submit" className="csb-primary-button" disabled={busy || !link.trim() || (isFigmaFrameLink(link) && !figmaToken && !token.trim())} onClick={() => { if (token.trim()) figmaToken = token.trim(); }}>{busy ? 'Adding…' : 'Add image'}</button>
+          <button type="submit" className="csb-primary-button" disabled={busy || !link.trim() || (isFigmaFrameLink(link) && !figmaToken && !token.trim())} onClick={() => { if (token.trim()) figmaToken = token.trim(); }}>{busy ? 'Downloading…' : 'Add image'}</button>
         </form>}
       </div>
     </>}
