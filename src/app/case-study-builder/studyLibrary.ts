@@ -22,10 +22,28 @@ const tx = async <T,>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => 
 
 export const saveStudy = (study: BuilderStudy) => tx('readwrite', s => s.put({ ...study, updatedAt: new Date().toISOString() }));
 export const getStudy = (id: string) => tx<SavedStudy | undefined>('readonly', s => s.get(id));
-export const deleteStudy = (id: string) => tx('readwrite', s => s.delete(id));
+/* Deleting moves a study to Recently deleted (kept 30 days) instead of removing it. */
+export type Trashed = SavedStudy & { deletedAt?: string };
+export const deleteStudy = async (id: string) => { const s = await getStudy(id); if (s) await tx('readwrite', st => st.put({ ...s, deletedAt: new Date().toISOString() })); };
+export const restoreStudy = async (id: string) => { const s = await getStudy(id) as Trashed | undefined; if (s) { const { deletedAt: _d, ...rest } = s; void _d; await tx('readwrite', st => st.put(rest)); } };
+export const purgeStudy = (id: string) => tx('readwrite', s => s.delete(id));
+/** Read every study one by one, so a single unreadable record never hides the others. */
+async function readAll(): Promise<Trashed[]> {
+  const db = await open();
+  return new Promise((resolve, reject) => {
+    const out: Trashed[] = []; const req = db.transaction(STORE, 'readonly').objectStore(STORE).openCursor();
+    req.onsuccess = () => { const c = req.result; if (!c) { resolve(out); return; } try { const v = c.value as Trashed; if (v && typeof v === 'object' && typeof v.id === 'string') out.push(v); } catch { /* skip */ } c.continue(); };
+    req.onerror = () => reject(req.error);
+  });
+}
 export async function listStudies(): Promise<SavedStudy[]> {
-  const all = await tx<SavedStudy[]>('readonly', s => s.getAll());
-  return all.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  const all = await readAll();
+  return all.filter(s => !s.deletedAt).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+}
+export async function listTrash(): Promise<Trashed[]> {
+  const all = await readAll(); const cutoff = Date.now() - 30 * 864e5;
+  all.filter(s => s.deletedAt && Date.parse(s.deletedAt) < cutoff).forEach(s => void purgeStudy(s.id).catch(() => undefined));
+  return all.filter(s => s.deletedAt && Date.parse(s.deletedAt) >= cutoff).sort((a, b) => (b.deletedAt || '').localeCompare(a.deletedAt || ''));
 }
 
 export const newId = () => crypto.randomUUID();

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Copy, FileText, Figma, Plus, Trash2 } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
-import { deleteStudy, freshCopy, listStudies, saveStudy, type SavedStudy } from './studyLibrary';
+import { deleteStudy, freshCopy, listStudies, listTrash, purgeStudy, restoreStudy, saveStudy, type SavedStudy, type Trashed } from './studyLibrary';
+import { publishedJsonUrl } from './Publish';
+import { migrateStudy } from './model';
 import { isBuilderStudy, type BuilderStudy } from './model';
 import { call, readDrafts, type Study } from './research/research';
 
@@ -38,7 +40,22 @@ export function HomeGallery({ current, onOpen, onNew, onOpenResearch }: { curren
   useEffect(() => { call<{ studies: Study[] }>('list', {}, true).then(d => setResearch(list => { const byId = new Map(list.map(s => [s.id, s])); for (const s of d.studies) byId.set(s.id, { ...s, ...byId.get(s.id), responses: s.responses, published: true }); return [...byId.values()]; })).catch(() => undefined); }, []);
   const [studies, setStudies] = useState<SavedStudy[] | null>(null);
   const [published, setPublished] = useState<BuilderStudy[]>([]);
-  const refresh = () => listStudies().then(setStudies).catch(() => setStudies([]));
+  const [trash, setTrash] = useState<Trashed[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [restoring, setRestoring] = useState('');
+  const refresh = () => { listStudies().then(s => { setStudies(s); setLoadError(''); }).catch(e => { setLoadError(e instanceof Error ? e.message : 'Could not read your saved case studies.'); setStudies(prev => prev ?? []); }); listTrash().then(setTrash).catch(() => undefined); };
+  // The Steinway project can always be brought back: the published copy first (it has your frames), else rebuilt from the starter.
+  const steinwayMissing = studies !== null && !loadError && current.id !== 'starter-steinway-pdp' && !studies.some(s => s.id === 'starter-steinway-pdp') && !trash.some(s => s.id === 'starter-steinway-pdp');
+  const restoreSteinway = async () => {
+    setRestoring('Restoring…');
+    try {
+      let restored: BuilderStudy | null = null;
+      try { const r = await fetch(publishedJsonUrl('steinway'), { cache: 'no-store' }); if (r.ok) { const d = await r.json(); if (isBuilderStudy(d)) restored = { ...d, id: 'starter-steinway-pdp' }; } } catch { /* not published */ }
+      if (!restored) { const { buildSteinway } = await import('./starters/steinway'); restored = migrateStudy(buildSteinway()); }
+      await saveStudy(restored); refresh(); setRestoring('');
+      onOpen(restored);
+    } catch { setRestoring('Could not restore. Try again.'); }
+  };
   useEffect(() => { void saveStudy(current).then(refresh, refresh); }, []);
   useEffect(() => {
     if (!projectId) return;
@@ -56,13 +73,21 @@ export function HomeGallery({ current, onOpen, onNew, onOpenResearch }: { curren
       <div className="csb-home-title"><h1>Your case studies</h1><p>Everything saves automatically in this browser. Open one to keep working.</p></div>
       <div className="csb-home-grid">
         <button type="button" className="csb-home-new" onClick={onNew}><Plus size={22} /><strong>New case study</strong><small>Start from the starter layout</small></button>
+        {steinwayMissing && <button type="button" className="csb-home-new is-restore" onClick={() => void restoreSteinway()}><strong>{restoring || 'Restore Steinway PDP Redesign'}</strong><small>Brings it back from your published page, or rebuilds it from your Figma links and words</small></button>}
         {studies === null ? <div className="csb-home-loading">Loading…</div> : studies.map(study => <Card key={study.id} study={study} current={study.id === current.id} note={ago(study.updatedAt)} onOpen={() => onOpen(study)}
           actions={<>
             <button type="button" aria-label={`Duplicate ${study.title}`} title="Duplicate" onClick={async () => { await saveStudy(freshCopy(study, `${study.title} (copy)`)); refresh(); }}><Copy size={14} /></button>
-            {study.id !== current.id && <button type="button" aria-label={`Delete ${study.title}`} title="Delete" onClick={async () => { if (window.confirm(`Delete “${study.title}”? This can't be undone.`)) { await deleteStudy(study.id); refresh(); } }}><Trash2 size={14} /></button>}
+            {study.id !== current.id && <button type="button" aria-label={`Delete ${study.title}`} title="Delete" onClick={async () => { if (window.confirm(`Move “${study.title}” to Recently deleted? You can restore it for 30 days.`)) { await deleteStudy(study.id); refresh(); } }}><Trash2 size={14} /></button>}
           </>} />)}
       </div>
+      {loadError && <p className="csb-home-error" role="alert">Couldn’t read every saved case study ({loadError}). Nothing has been removed. <button type="button" onClick={refresh}>Try again</button></p>}
     </section>
+    {trash.length > 0 && <section className="csb-home-section">
+      <div className="csb-home-title"><h2>Recently deleted</h2><p>Kept for 30 days, then removed for good.</p></div>
+      <div className="csb-home-trash">{trash.map(t => <div key={t.id} className="csb-home-trash-row"><strong>{t.title}</strong><small>Deleted {new Date(t.deletedAt!).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</small>
+        <button type="button" onClick={async () => { await restoreStudy(t.id); refresh(); }}>Restore</button>
+        <button type="button" className="is-quiet" onClick={async () => { if (window.confirm(`Delete “${t.title}” for good?`)) { await purgeStudy(t.id); refresh(); } }}>Delete now</button></div>)}</div>
+    </section>}
     {onOpenResearch && <section className="csb-home-section">
       <div className="csb-home-title"><h2>Research</h2><p>Surveys and usability tests. Results save to your server and Notion, and connect to charts in any case study.</p></div>
       <div className="csb-home-research">

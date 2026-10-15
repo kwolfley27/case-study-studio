@@ -51,6 +51,11 @@ const STORAGE_KEY = "katelyn-case-study-builder-v1";
 const NOTION_DATABASE_URL = "https://www.notion.so/";
 const NOTION_PROJECT_URL = "https://www.notion.so/";
 
+// When the open study was too big for the quick local copy, only its id is kept; read that pointer
+// once, before anything writes to storage, so the full study is reopened from IndexedDB.
+let pendingRestoreId: string | null = null;
+try { if (!localStorage.getItem("katelyn-case-study-builder-v1")) pendingRestoreId = localStorage.getItem("katelyn-case-study-builder-v1:id"); } catch { /* ignore */ }
+
 function readLocalStudy(): BuilderStudy {
   // Each study needs its own id so Home can keep several side by side.
   const own = (s: BuilderStudy) => s.id === lucidExample.id ? { ...s, id: newId() } : s;
@@ -183,10 +188,15 @@ export default function CaseStudyBuilder() {
     }).catch(() => undefined);
   }, [study.id, study.sections]);
   // Keep every study in the Home library too (debounced; IndexedDB has room for images).
-  useEffect(() => { const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
+  // While the real study is still being reopened from IndexedDB, don't save the placeholder over anything.
+  const restoring = useRef(!!pendingRestoreId);
+  useEffect(() => { if (restoring.current) return; const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
   // The quick local copy can be too big once Figma frames are pulled in; then only its id is kept and the full study lives in IndexedDB.
-  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(study)); localStorage.removeItem(STORAGE_KEY + ":id"); } catch { try { localStorage.removeItem(STORAGE_KEY); localStorage.setItem(STORAGE_KEY + ":id", study.id); } catch { /* ignore */ } } }, [study]);
-  useEffect(() => { let id: string | null = null; try { if (!localStorage.getItem(STORAGE_KEY)) id = localStorage.getItem(STORAGE_KEY + ":id"); } catch { /* ignore */ } if (id) void getStudy(id).then(saved => { if (saved && isBuilderStudy(saved)) setStudy(migrateStudy(saved)); }).catch(() => undefined); }, []);
+  useEffect(() => { if (restoring.current) return; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(study)); localStorage.removeItem(STORAGE_KEY + ":id"); } catch { try { localStorage.removeItem(STORAGE_KEY); localStorage.setItem(STORAGE_KEY + ":id", study.id); } catch { /* ignore */ } } }, [study]);
+  useEffect(() => { const id = pendingRestoreId; pendingRestoreId = null; if (!id) return;
+    void getStudy(id).then(saved => { restoring.current = false; if (saved && isBuilderStudy(saved)) setStudy(migrateStudy(saved)); else if (saved) { setStudy(migrateStudy(saved as BuilderStudy)); } }).catch(() => { restoring.current = false; }); }, []);
+  // Ask the browser to keep this site's storage (so it isn't cleared when the disk is low).
+  useEffect(() => { void navigator.storage?.persist?.().catch(() => undefined); }, []);
   useEffect(() => {
     if (showAdd || !pendingAddedSection.current) return;
     const id = pendingAddedSection.current;

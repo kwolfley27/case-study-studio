@@ -2257,3 +2257,12 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-phase-nav button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .csb-canvas .csb-phase-step .csb-section-intro>div::before{text-align:left!important;width:100%}
 .csb-canvas .csb-phase-step .csb-section-intro :is(h2,p,.csb-section-body){text-align:left!important;margin-left:0!important}
+
+/* Home: restore + recently deleted */
+.csb-home-new.is-restore{border-style:solid;background:#f5f3f1}
+.csb-home-error{margin:16px 0 0;font-size:14px;color:#44403b}.csb-home-error button{margin-left:6px;border:0;background:none;text-decoration:underline;cursor:pointer;font:inherit}
+.csb-home-trash{display:grid;gap:6px;max-width:720px}
+.csb-home-trash-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:12px;padding:10px 14px;border:1px solid #ebe8e4;border-radius:14px;background:#fdfcfc}
+.csb-home-trash-row small{color:#a59f97}
+.csb-home-trash-row button{height:30px;padding:0 14px;border:1px solid #e5e5e5;border-radius:9999px;background:#000;color:#fdfcfc;font:500 13px/1 Inter,system-ui,sans-serif;cursor:pointer}
+.csb-home-trash-row button.is-quiet{background:#fdfcfc;color:#000}
