@@ -6,7 +6,7 @@ import type { BuilderStudy } from './model';
 type Hero = NonNullable<BuilderStudy['hero']>;
 const SWATCHES = ['#c8553d', '#375c45', '#3d6b8c', '#0447ff', '#ff4704', '#6b5b95', '#000000'];
 
-function Swatches({ value, onChange, allowNone, label }: { value?: string; onChange: (v?: string) => void; allowNone?: boolean; label: string }) {
+export function Swatches({ value, onChange, allowNone, label }: { value?: string; onChange: (v?: string) => void; allowNone?: boolean; label: string }) {
   const custom = useRef<HTMLInputElement>(null);
   const v = (value || '').toLowerCase();
   const isPreset = SWATCHES.includes(v);

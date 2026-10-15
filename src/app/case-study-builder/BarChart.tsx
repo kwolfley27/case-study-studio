@@ -4,10 +4,12 @@ import { Plus, Trash2 } from 'lucide-react';
 import { EditableText } from './EditableText';
 import { CountUp, useExpressive, useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
+import { Swatches } from './ProjectSettings';
 
 /*
   Bar chart: a live, editable column chart (no pictures of charts).
   items: title = label (e.g. a year), value = number. options.unit, options.note, options.labels = 'ends' | 'all'.
+  options.color = undefined (ink) | 'accent' (project colour) | '#hex'; options.fill = 'ramp' (light → dark) | 'solid' | 'last' (highlight the last bar).
   Columns rise one after another; the bars darken from first to last, and the end values count up.
 */
 const num = (v?: string) => Number(String(v ?? '').replace(/[^\d.-]/g, '')) || 0;
@@ -22,11 +24,13 @@ export function BarChart({ section }: { section: CaseStudySection }) {
   const labelsAll = section.options?.labels === 'all';
   const unit = String(section.options?.unit ?? '');
   const n = items.length;
-  return <figure className="csb-bar" ref={ref}>
+  const color = section.options?.color === 'accent' ? 'var(--csb-accent, currentColor)' : String(section.options?.color || 'currentColor');
+  const fill = String(section.options?.fill ?? 'ramp');
+  return <figure className="csb-bar" ref={ref} style={{ ['--bar-c' as string]: color }}>
     <div className="csb-bar-plot" role="img" aria-label={`${section.title}: ${items.map(i => `${i.title} ${i.value}`).join(', ')}`}>
       {items.map((it, i) => {
         const h = ((vals[i] - floor) / (max - floor || 1)) * 100; const end = i === 0 || i === n - 1;
-        const shade = n > 1 ? .16 + .84 * (i / (n - 1)) : 1;
+        const shade = fill === 'solid' ? 1 : fill === 'last' ? (i === n - 1 ? 1 : .2) : n > 1 ? .16 + .84 * (i / (n - 1)) : 1;
         return <div key={i} className={`csb-bar-col ${end ? 'is-end' : ''}`} style={{ ['--h' as string]: `${Math.max(1.5, h)}%` }}>
           {(labelsAll || end) && <motion.span className="csb-bar-val" initial={false} animate={{ opacity: seen ? 1 : 0 }} transition={{ duration: .4, delay: expressive ? .3 + i * .07 : 0 }}>
             {expressive && seen ? <CountUp value={fmt(vals[i])} duration={1100} delay={i * 70} /> : fmt(vals[i])}
@@ -52,6 +56,12 @@ export function BarChartControls({ section, onChange }: { section: CaseStudySect
       <button type="button" className="csb-icon-button" aria-label="Remove" onClick={() => onChange({ items: items.filter((_, k) => k !== i) })}><Trash2 size={13} /></button>
     </div>)}
     <button type="button" className="csb-quiet-button" onClick={() => onChange({ items: [...items, { title: 'New', value: items[items.length - 1]?.value ?? '0', detail: '' }] })}><Plus size={13} /> Add bar</button>
+    <p className="csb-panel-kicker">Colour</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 6 }}>
+    <div className="csb-segment" role="group" aria-label="Bar colour">{([['', 'Ink'], ['accent', 'Project'], ['custom', 'Custom']] as const).map(([v, l]) => { const cur = !section.options?.color ? '' : section.options.color === 'accent' ? 'accent' : 'custom'; return <button key={v} type="button" aria-pressed={cur === v} onClick={() => opt('color', v === 'custom' ? (cur === 'custom' ? String(section.options?.color) : '#ff4704') : v)}>{l}</button>; })}</div>
+    {section.options?.color && section.options.color !== 'accent' && <Swatches label="Bar colour" value={String(section.options.color)} onChange={v => opt('color', v ?? '')} />}
+    <div className="csb-segment" role="group" aria-label="Bar shading">{([['ramp', 'Light to dark'], ['solid', 'Solid'], ['last', 'Highlight last']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={String(section.options?.fill ?? 'ramp') === v} onClick={() => opt('fill', v)}>{l}</button>)}</div>
+    </div>
     <label className="csb-field"><span>Unit</span><input value={String(section.options?.unit ?? '')} placeholder="USD million" onChange={e => opt('unit', e.target.value)} /></label>
     <label className="csb-field"><span>Source / note</span><input value={String(section.options?.note ?? '')} onChange={e => opt('note', e.target.value)} /></label>
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.labels === 'all'} onChange={e => opt('labels', e.target.checked ? 'all' : 'ends')} /> Show every value</label>

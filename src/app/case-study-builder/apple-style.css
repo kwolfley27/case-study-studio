@@ -1901,7 +1901,7 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-bar{margin:clamp(24px,4vw,44px) 0 0;--bar-ink:currentColor}
 .csb-bar-plot{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:clamp(6px,1.2vw,16px);align-items:end;height:clamp(220px,32vw,360px);padding-top:36px;border-bottom:1px solid color-mix(in srgb,currentColor 14%,transparent)}
 .csb-bar-col{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
-.csb-bar-col i{display:block;width:min(100%,44px);border-radius:6px 6px 0 0;background:color-mix(in srgb,currentColor calc(var(--shade,1) * 100%),transparent);transform-origin:bottom}
+.csb-bar-col i{display:block;width:min(100%,44px);border-radius:6px 6px 0 0;background:color-mix(in srgb,var(--bar-c,currentColor) calc(var(--shade,1) * 100%),transparent);transform-origin:bottom}
 .csb-bar-col b{position:absolute;top:calc(100% + 10px);font:400 12px/1 "IBM Plex Mono",ui-monospace,monospace;color:color-mix(in srgb,currentColor 50%,transparent);white-space:nowrap}
 .csb-bar-col.is-end b{color:currentColor}
 .csb-bar-val{position:absolute;bottom:calc(var(--h) + 8px);left:50%;transform:translateX(-50%);font-family:var(--brand-display,var(--ed-display,"Inter",ui-sans-serif,system-ui,sans-serif));font-weight:300;font-size:clamp(18px,2vw,26px);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
