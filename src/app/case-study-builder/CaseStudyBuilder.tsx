@@ -4,7 +4,7 @@ import { SectionBasics } from "./SectionBasics";
 import { GradientPicker } from "./GradientElements";
 import { ScreenGroupsControls } from "./ScreenGroups";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, FlaskConical, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
+import { MoreHorizontal, ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, FlaskConical, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { CaseStudyCanvas } from "./CaseStudyCanvas";
 import { componentDescriptions, componentNames, createSection, isBuilderStudy, lucidExample, labelFromEyebrow, migrateStudy, navLabelFor, type BuilderStudy, type CaseStudySection, type SectionKind } from "./model";
@@ -294,7 +294,22 @@ export default function CaseStudyBuilder() {
   if (showHome) return <HomeGallery onOpenResearch={id => { setShowHome(false); setShowResearch(id ?? true); }} current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
 
   return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"} ${leftOpen && leftRail ? "left-rail" : ""}`} style={{ ["--csb-left-w" as string]: `${leftRail ? 60 : panelW.left}px`, ["--csb-right-w" as string]: `${panelW.right}px`, ["--inset-l" as string]: leftOpen ? `${(leftRail ? 60 : panelW.left) + 32}px` : "0px", ["--inset-r" as string]: rightOpen ? `${panelW.right + 32}px` : "0px" }}>
-    <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" onClick={() => setShowResearch(true)} title="Run surveys and studies, then add the results"><FlaskConical size={14} /> Research</button><button className="csb-quiet-button" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)}><Palette size={14} /> Brand</button><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-quiet-button" onClick={startPresenting} title="Present full screen, one section at a time"><Presentation size={14} /> Present</button><button className="csb-quiet-button" onClick={enterPreview}><Eye size={14} /> Preview</button><button className="csb-primary-button" onClick={() => setShowPublish(true)}><Globe size={14} /> Publish</button></div></header>
+    <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project" title={study.title}>{study.title}</span><div className="csb-hdr-modes" role="group" aria-label="Mode">
+        <button type="button" aria-pressed={view !== "preview"} className="is-on">Edit</button>
+        <button type="button" onClick={enterPreview} title="See the page as a visitor will">Preview</button>
+        <button type="button" onClick={startPresenting} title="Full screen, one section at a time">Present</button>
+      </div>
+      <div className="csb-header-actions">
+        <button type="button" className="csb-hdr-btn" onClick={() => setShowResearch(true)} title="Run surveys and studies, then add the results"><FlaskConical size={15} strokeWidth={1.7} /><span>Research</span></button>
+        <button type="button" className="csb-hdr-btn" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)} title="Fonts, colours and logo"><Palette size={15} strokeWidth={1.7} /><span>Brand</span></button>
+        <span className="csb-hdr-sep" aria-hidden="true" />
+        <button type="button" className="csb-hdr-icon" onClick={togglePanels} aria-pressed={panelsHidden} aria-label={panelsHidden ? "Show the side panels" : "Hide the side panels"} title={panelsHidden ? "Show panels ( \\ )" : "Hide panels ( \\ )"}><PanelLeft size={16} strokeWidth={1.7} /></button>
+        <HeaderMore items={[
+          { label: view === "canvas" ? "Framed layout" : "Full-screen canvas", hint: view === "canvas" ? "Show the page inside a browser window" : "Edit the page edge to edge", onClick: () => setView(view === "canvas" ? "framed" : "canvas") },
+          { label: "Download a copy", hint: "Save this case study as a file", onClick: () => downloadStudy(study) },
+        ]} />
+        <button className="csb-primary-button csb-hdr-publish" onClick={() => setShowPublish(true)}><Globe size={14} /> Publish</button>
+      </div></header>
     <div className="csb-studio-shell">
       <aside className="csb-panel csb-panel-left" aria-label="Sections and connections">{!leftRail && <PanelResizer side="left" width={panelW.left} onWidth={panelW.setLeft} />}<button className="csb-panel-hide" onClick={() => setLeftRail(r => !r)} aria-label={leftRail ? "Expand the sections panel" : "Shrink the sections panel to icons"} title={leftRail ? "Expand" : "Shrink to icons"}><PanelLeft size={15} /></button><div className="csb-panel-scroll">
         <SectionNavigator study={study} selectedId={selectedId} onAdd={() => { setAddedComponentName(null); setShowAdd(true); }}
@@ -402,5 +417,16 @@ export default function CaseStudyBuilder() {
     <TextStyleBar accent={study.accent} accent2={study.accent2} enabled={view !== "preview"} styleOf={(sectionId, field) => study.sections.find(section => section.id === sectionId)?.textStyles?.[field]} onStyle={(sectionId, field, patch) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== sectionId) return section; const merged = { ...(section.textStyles?.[field] ?? {}), ...patch }; const clean = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined)); const textStyles = { ...(section.textStyles ?? {}) }; if (Object.keys(clean).length) textStyles[field] = clean; else delete textStyles[field]; return { ...section, textStyles }; }) }))} />
     <ImageSlotLayer enabled={view !== "preview"} onFile={handleSlotFile} onUrl={handleSlotUrl} onRemove={slot => setSlotImage(slot, "")} notify={(text, error) => setMessage({ text, error })} />
     <ComponentLibrary open={showAdd} onOpenChange={setShowAdd} onAdd={addSection} study={study}/>
+  </div>;
+}
+
+/* "More" menu in the header for the things you rarely need. */
+function HeaderMore({ items }: { items: Array<{ label: string; hint: string; onClick: () => void }> }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (!open) return; const close = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); }; const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); }; document.addEventListener("mousedown", close); document.addEventListener("keydown", esc); return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); }; }, [open]);
+  return <div className="csb-hdr-more" ref={ref}>
+    <button type="button" className="csb-hdr-icon" aria-label="More" aria-expanded={open} title="More" onClick={() => setOpen(o => !o)}><MoreHorizontal size={16} strokeWidth={1.7} /></button>
+    {open && <div className="csb-hdr-menu" role="menu">{items.map(it => <button key={it.label} type="button" role="menuitem" onClick={() => { setOpen(false); it.onClick(); }}><b>{it.label}</b><small>{it.hint}</small></button>)}</div>}
   </div>;
 }
