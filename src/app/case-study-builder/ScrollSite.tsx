@@ -266,7 +266,8 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const col = useRef<HTMLDivElement>(null); const pos = useRef<HTMLDivElement>(null);
   const [noteY, setNoteY] = useState(0);
   // Phone on its own: the phone sits in the middle and notes alternate left and right (or the side you pick).
-  const centered = show === 'mobile';
+  // One device on its own (phone or laptop) sits in the middle with notes on either side.
+  const centered = show === 'mobile' || show === 'desktop';
   const noteSide = !centered || !note ? 'right' : note.side === 'left' || note.side === 'right' ? note.side : (list.findIndex(n => n.i === note.i) % 2 === 0 ? 'left' : 'right');
   useLayoutEffect(() => {
     const st = stageEl.current; if (!st || !note) { setLine(''); return; }

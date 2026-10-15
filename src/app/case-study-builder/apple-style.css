@@ -2463,3 +2463,15 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-ufd .csb-uf-node.is-removed .csb-uf-label{text-decoration-color:currentColor}
 .csb-ufd .csb-uf-lines path.is-removed{stroke:var(--uf-muted);stroke-dasharray:4 4;opacity:.6}
 .csb-ufd .csb-uf-scroll{padding-top:18px;box-sizing:content-box}
+
+/* ── Scrolling site: toggle on its own row above the devices; one device always centred ── */
+.csb-ss-stages{margin-bottom:clamp(28px,4vw,48px)!important}
+.csb-ss-sbs .csb-ss-phone{position:relative!important;right:auto!important;bottom:auto!important}
+.csb-ss.is-desktop .csb-ss-stage{grid-template-columns:minmax(150px,1fr) minmax(0,3.2fr) minmax(150px,1fr)!important;justify-content:stretch!important;gap:clamp(24px,3vw,48px)!important}
+.csb-ss.is-desktop .csb-ss-devices{justify-items:center}
+.csb-ss.is-desktop .csb-ss-mac{margin:0 auto!important}
+.csb-ss.is-desktop .csb-ss-notes{padding-top:0;min-height:0}
+.csb-ss.is-desktop .csb-ss-notes.is-left{text-align:right}
+.csb-ss.is-desktop .csb-ss-note{max-width:260px}
+.csb-ss.is-desktop .csb-ss-notes.is-left .csb-ss-note{margin-left:auto}
+@media (max-width:760px){.csb-ss.is-desktop .csb-ss-stage{grid-template-columns:1fr!important}.csb-ss.is-desktop .csb-ss-notes.is-left{text-align:left;order:2}.csb-ss.is-desktop .csb-ss-notes.is-right{order:3}}
