@@ -4,7 +4,7 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long';
 export type Question = { id: string; type: QuestionType; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string };
-export type Study = { id: string; kind: 'survey'; title: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+export type Study = { id: string; kind: 'survey'; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 export type Response = { id: string; at: string; ms: number; answers: Record<string, string | number | string[]> };
 
 export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
@@ -40,7 +40,7 @@ export const SUS_ITEMS = [
 export const susQuestions = (): Question[] => SUS_ITEMS.map((prompt, i) => ({ id: qid(), type: 'scale', prompt, min: 1, max: 5, minLabel: 'Strongly disagree', maxLabel: 'Strongly agree', required: true, preset: `sus-${i + 1}` }));
 export const npsQuestion = (): Question => ({ ...newQuestion('nps'), preset: 'nps' });
 
-export const newStudy = (): Study => ({ id: crypto.randomUUID(), kind: 'survey', title: 'Untitled survey', intro: 'Thanks for helping! This takes about 3 minutes. There are no right or wrong answers.', thanks: 'Thank you — your answers really help.', status: 'open', questions: [newQuestion('single'), newQuestion('scale'), newQuestion('text')], published: false });
+export const newStudy = (project?: { id: string; title: string }): Study => ({ id: crypto.randomUUID(), kind: 'survey', title: 'Untitled survey', projectId: project?.id, projectTitle: project?.title, intro: 'Thanks for helping! This takes about 3 minutes. There are no right or wrong answers.', thanks: 'Thank you — your answers really help.', status: 'open', questions: [newQuestion('single'), newQuestion('scale'), newQuestion('text')], published: false });
 
 /* ---------- Scoring ---------- */
 export type QuestionResult =
@@ -81,6 +81,15 @@ export function susScore(study: Study, responses: Response[]): { score: number; 
   const grade = score >= 85 ? 'Excellent' : score >= 72 ? 'Good' : score >= 68 ? 'Above average' : score >= 51 ? 'OK' : 'Poor';
   return { score: Math.round(score * 10) / 10, n: scores.length, grade };
 }
+
+/** Turn choice and scale results into the survey chart component's data. */
+export function toSurveyQuestions(results: QuestionResult[], ids?: string[]) {
+  const usable = results.filter(r => (r.kind === 'choice' || (r.kind === 'scale' && !r.q.preset)) && r.answered > 0 && (!ids || ids.includes(r.q.id)));
+  return usable.map((r, i) => r.kind === 'choice'
+    ? { sourceName: r.q.prompt, columnIndex: i, chart: 'bars' as const, multiSelect: r.q.type === 'multi', answered: r.answered, options: [...r.options].sort((a, b) => b.count - a.count) }
+    : r.kind === 'scale' ? { sourceName: r.q.prompt, columnIndex: i, chart: 'bars' as const, multiSelect: false, answered: r.answered, options: r.dist.map((count, k) => ({ label: `${(r.q.min ?? 1) + k}${k === 0 && r.q.minLabel ? ` · ${r.q.minLabel}` : k === r.dist.length - 1 && r.q.maxLabel ? ` · ${r.q.maxLabel}` : ''}`, count })) } : null).filter((q): q is NonNullable<typeof q> => !!q);
+}
+export const chartable = (results: QuestionResult[]) => results.filter(r => (r.kind === 'choice' || (r.kind === 'scale' && !r.q.preset)));
 
 /* ---------- Server ---------- */
 export const RESEARCH_URL = import.meta.env.VITE_STUDIO_RESEARCH_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-research` : '');

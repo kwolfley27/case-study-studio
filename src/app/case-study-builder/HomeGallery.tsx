@@ -3,6 +3,7 @@ import { Copy, FileText, Figma, Plus, Trash2 } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { deleteStudy, freshCopy, listStudies, saveStudy, type SavedStudy } from './studyLibrary';
 import { isBuilderStudy, type BuilderStudy } from './model';
+import { call, readDrafts, type Study } from './research/research';
 
 /* Home: every case study you've worked on, plus case studies published from Notion. */
 
@@ -32,7 +33,9 @@ function Card({ study, current, onOpen, actions, note }: { study: BuilderStudy; 
   </article>;
 }
 
-export function HomeGallery({ current, onOpen, onNew }: { current: BuilderStudy; onOpen: (study: BuilderStudy) => void; onNew: () => void }) {
+export function HomeGallery({ current, onOpen, onNew, onOpenResearch }: { current: BuilderStudy; onOpen: (study: BuilderStudy) => void; onNew: () => void; onOpenResearch?: (id?: string) => void }) {
+  const [research, setResearch] = useState<Study[]>(() => readDrafts());
+  useEffect(() => { call<{ studies: Study[] }>('list', {}, true).then(d => setResearch(list => { const byId = new Map(list.map(s => [s.id, s])); for (const s of d.studies) byId.set(s.id, { ...s, ...byId.get(s.id), responses: s.responses, published: true }); return [...byId.values()]; })).catch(() => undefined); }, []);
   const [studies, setStudies] = useState<SavedStudy[] | null>(null);
   const [published, setPublished] = useState<BuilderStudy[]>([]);
   const refresh = () => listStudies().then(setStudies).catch(() => setStudies([]));
@@ -60,6 +63,18 @@ export function HomeGallery({ current, onOpen, onNew }: { current: BuilderStudy;
           </>} />)}
       </div>
     </section>
+    {onOpenResearch && <section className="csb-home-section">
+      <div className="csb-home-title"><h2>Research</h2><p>Surveys you're running. Responses save to your server and Notion; connect results to a survey chart in any case study.</p></div>
+      <div className="csb-home-research">
+        <button type="button" className="csb-home-study is-new" onClick={() => onOpenResearch()}><Plus size={16} /><strong>New survey</strong></button>
+        {research.map(s => <button key={s.id} type="button" className="csb-home-study" onClick={() => onOpenResearch(s.id)}>
+          <span className={`csb-home-dot is-${s.published ? s.status : 'draft'}`} aria-hidden="true" />
+          <strong>{s.title}</strong>
+          <small>{s.published ? (s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{typeof s.responses === 'number' ? ` · ${s.responses} response${s.responses === 1 ? '' : 's'}` : ''}</small>
+          {s.projectTitle && <small className="csb-home-study-project">{s.projectTitle}</small>}
+        </button>)}
+      </div>
+    </section>}
     {published.length > 0 && <section className="csb-home-section">
       <div className="csb-home-title"><h2>From Notion</h2><p>Case studies published from your Notion workspace. Open a copy to edit it here.</p></div>
       <div className="csb-home-grid">{published.map(study => <Card key={study.slug} study={study} note="Published" onOpen={async () => { const copy = freshCopy(study); await saveStudy(copy); onOpen(copy); }} />)}</div>

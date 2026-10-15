@@ -7,9 +7,9 @@ import './research.css';
 
 type Tab = 'build' | 'share' | 'results';
 
-export function ResearchWorkspace({ onExit, onAddSections }: { onExit: () => void; onAddSections: (sections: CaseStudySection[], note: string) => void }) {
+export function ResearchWorkspace({ onExit, onAddSections, project, initialId }: { onExit: () => void; onAddSections: (sections: CaseStudySection[], note: string) => void; project?: { id: string; title: string }; initialId?: string }) {
   const [studies, setStudies] = useState<Study[]>(() => readDrafts());
-  const [currentId, setCurrentId] = useState<string | null>(() => readDrafts()[0]?.id ?? null);
+  const [currentId, setCurrentId] = useState<string | null>(() => initialId && readDrafts().some(s => s.id === initialId) ? initialId : (readDrafts().find(s => s.projectId === project?.id) ?? readDrafts()[0])?.id ?? null);
   const [tab, setTab] = useState<Tab>('build');
   const [previewAt, setPreviewAt] = useState(-1);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -18,7 +18,7 @@ export function ResearchWorkspace({ onExit, onAddSections }: { onExit: () => voi
   useEffect(() => { call<{ studies: Study[] }>('list', {}, true).then(d => setCounts(Object.fromEntries(d.studies.map(s => [s.id, s.responses ?? 0])))).catch(() => undefined); }, []);
   const study = studies.find(s => s.id === currentId) ?? null;
   const update = (patch: Partial<Study>) => setStudies(list => list.map(s => s.id === currentId ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s));
-  const create = () => { const s = newStudy(); setStudies(list => [s, ...list]); setCurrentId(s.id); setTab('build'); setPreviewAt(-1); };
+  const create = () => { const s = newStudy(project); setStudies(list => [s, ...list]); setCurrentId(s.id); setTab('build'); setPreviewAt(-1); };
   const remove = async (id: string) => {
     if (!window.confirm('Delete this study? Published responses are deleted too.')) return;
     const s = studies.find(x => x.id === id); if (s?.published) await call('remove', { id }, true).catch(() => undefined);
@@ -29,7 +29,7 @@ export function ResearchWorkspace({ onExit, onAddSections }: { onExit: () => voi
     <header className="csb-home-head rw-head">
       <button type="button" className="csb-wordmark csb-wordmark-home" onClick={onExit} title="Back to the studio"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button>
       <span className="csb-header-separator" /><strong className="rw-title">Research</strong>
-      <button type="button" className="csb-quiet-button rw-back" onClick={onExit}>Back to case study</button>
+      <button type="button" className="csb-quiet-button rw-back" onClick={onExit}>Back to {project?.title ? `“${project.title.length > 28 ? project.title.slice(0, 28) + '…' : project.title}”` : 'case study'}</button>
     </header>
     <div className="rw-shell">
       <aside className="rw-list">
@@ -37,7 +37,7 @@ export function ResearchWorkspace({ onExit, onAddSections }: { onExit: () => voi
         <p className="rw-list-kicker">Studies</p>
         {!studies.length && <p className="rw-empty">Make a survey, share the link, and turn the answers into case study charts. More study types (prototype tests, card sorts, tree tests) are coming.</p>}
         {studies.map(s => <div key={s.id} className={`rw-study ${s.id === currentId ? 'is-on' : ''}`}>
-          <button type="button" onClick={() => { setCurrentId(s.id); setPreviewAt(-1); }}><strong>{s.title}</strong><small>Survey · {s.published ? (s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{counts[s.id] !== undefined ? ` · ${counts[s.id]} responses` : ''}</small></button>
+          <button type="button" onClick={() => { setCurrentId(s.id); setPreviewAt(-1); }}><strong>{s.title}</strong><small>{s.published ? (s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{counts[s.id] !== undefined ? ` · ${counts[s.id]} responses` : ''}{s.projectTitle ? ` · ${s.projectTitle}` : ''}</small></button>
           <button type="button" className="rw-icon" aria-label={`Delete ${s.title}`} onClick={() => void remove(s.id)}><Trash2 size={13} /></button>
         </div>)}
       </aside>

@@ -11,6 +11,10 @@ export interface SurveyQuestion {
 
 export interface SurveySource {
   url?: string;
+  /** Connected Research survey (live results) and the question ids shown. */
+  studyId?: string;
+  studyTitle?: string;
+  questionIds?: string[];
   updatedAt: string;
   totalResponses: number;
   questions: SurveyQuestion[];
@@ -145,7 +149,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   carousel: "Large screens in a horizontal scroller with arrows.",
   wireframes: "Import Figma screens into staggered iPhone mockups, then refresh by frame ID.",
   fullMedia: "Show an image or animated GIF edge to edge at its natural proportions.",
-  survey: "Turn Google Forms responses into clear, evidence-backed charts.",
+  survey: "Live charts from a survey you run in Research, or from Google Forms responses.",
   persona: "A portrait, goals, pain points, and a day-in-the-life timeline.",
   journey: "Stages as columns with actions, thoughts, an emotion curve, pain points and opportunities. Pick which rows to show.",
   issueFlow: "Trace task steps and color-code the issues found in research.",

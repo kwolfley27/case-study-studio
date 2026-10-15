@@ -13,7 +13,7 @@ import { TextStyleBar } from "./TextStyleBar";
 import { BrandPanel } from "./BrandPanel";
 import { PresentMode } from "./PresentMode";
 import { parseWhen, timelinePhases } from "./WorkTimeline";
-import { SurveySourcePicker } from "./SurveySourcePicker";
+import { SurveyDataSource } from "./research/StudyPicker";
 import { templates, sectionFromTemplate, type ComponentTemplate } from "./library";
 import { ImageSlotLayer } from "./ImageSlots";
 import { AiDraftCard } from "./AiDraft";
@@ -56,7 +56,7 @@ export default function CaseStudyBuilder() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showHome, setShowHome] = useState(false);
   const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [showResearch, setShowResearch] = useState(false);
+  const [showResearch, setShowResearch] = useState<boolean | string>(false);
   const [showAdd, setShowAdd] = useState(false);
   const [addedComponentName, setAddedComponentName] = useState<string | null>(null);
   const pendingAddedSection = useRef<string | null>(null);
@@ -170,8 +170,8 @@ export default function CaseStudyBuilder() {
   };
 
   const openStudy = (next: BuilderStudy) => { void saveStudy(study).catch(() => undefined); setStudy(migrateStudy(next)); setSelectedId(null); setShowHome(false); setMessage(null); window.scrollTo(0, 0); };
-  if (showResearch) return <Suspense fallback={null}><ResearchWorkspace onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
-  if (showHome) return <HomeGallery current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
+  if (showResearch) return <Suspense fallback={null}><ResearchWorkspace project={{ id: study.id, title: study.title }} initialId={typeof showResearch === "string" ? showResearch : undefined} onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
+  if (showHome) return <HomeGallery onOpenResearch={id => { setShowHome(false); setShowResearch(id ?? true); }} current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
 
   return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"}`}>
     <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" onClick={() => setShowResearch(true)} title="Run surveys and studies, then add the results"><FlaskConical size={14} /> Research</button><button className="csb-quiet-button" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)}><Palette size={14} /> Brand</button><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-quiet-button" onClick={startPresenting} title="Present full screen, one section at a time"><Presentation size={14} /> Present</button><button className="csb-primary-button" onClick={enterPreview}><Eye size={14} /> Preview</button></div></header>
@@ -186,7 +186,7 @@ export default function CaseStudyBuilder() {
         {study.sources?.notionUrl && /^https:\/\/(?:www\.)?(?:notion\.so|notion\.site|app\.notion\.com)\//.test(study.sources.notionUrl) && <a className="csb-connection-link" href={study.sources.notionUrl} target="_blank" rel="noreferrer">Open in Notion <ExternalLink size={11} /></a>}
         {renderField("Figma design file", study.sources?.figmaUrl || "", figmaUrl => updateStudy({ sources: { ...study.sources, figmaUrl } }), false, "The file your wireframe sections pull frames from.")}
         <AiDraftCard study={study} onApply={next => { setStudy(migrateStudy(next)); setSelectedId(null); }} notify={(text, error) => setMessage({ text, error })} />
-        {selected?.kind === "survey" && <div className="csb-connection-section"><p className="csb-panel-kicker">This section · Google Forms</p><SurveySourcePicker key={selected.id} section={selected} onApply={updateSection} /></div>}
+        {selected?.kind === "survey" && <SurveyDataSource section={selected} onApply={updateSection} onOpenResearch={() => setShowResearch(true)} />}
         {selected?.kind === "wireframes" && <div className="csb-connection-section"><FigmaSourcePicker key={selected.id} section={selected} sourceUrl={study.sources?.figmaUrl || MACROAI_URL} onApply={updateSection} onSourceChange={figmaUrl => updateStudy({ sources: { ...study.sources, figmaUrl } })} /></div>}
         {selected && !["survey", "wireframes"].includes(selected.kind) && <p className="csb-field-note">Survey and wireframe sections show their data connection here when selected.</p>}
         {message && <div className={`csb-inline-status ${message.error ? "csb-inline-error" : ""}`} role="status">{message.text}</div>}

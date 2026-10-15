@@ -19,12 +19,12 @@ function ResponseBars({ question }: { question: SurveyQuestion }) {
 }
 
 function RankedAnswers({ question }: { question: SurveyQuestion }) {
-  return <div className="csb-apple-survey-ranks">{question.options.slice(0, 6).map((option, index) => <motion.div key={option.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .1 }}><span>{index + 1}</span><strong>{option.label}</strong><small>{option.count}/{question.answered}</small></motion.div>)}</div>;
+  return <div className="csb-apple-survey-ranks">{[...question.options].sort((x, y) => y.count - x.count).slice(0, 6).map((option, index) => <motion.div key={option.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .1 }}><span>{index + 1}</span><strong>{option.label}</strong><small>{option.count}/{question.answered}</small></motion.div>)}</div>;
 }
 
 export function SurveyResults({ section }: { section: CaseStudySection }) {
   const source = section.surveySource;
-  if (!source?.questions.length) return <div className="csb-survey-empty"><span>RESEARCH DATA</span><strong>Connect a Google Forms response Sheet or import a CSV</strong><p>Choose your questions in the inspector. Counts and percentages will appear here.</p></div>;
+  if (!source?.questions.length) return <div className="csb-survey-empty"><span>RESEARCH DATA</span><strong>Connect one of your surveys, or Google Forms</strong><p>Choose your questions in the inspector. Counts and percentages will appear here.</p></div>;
   const lead = source.questions[0];
   const top = lead.options[0];
   const leadPercent = top ? percent(top.count, lead.answered) : 0;

@@ -24,7 +24,7 @@ const NOTION_VERSION = '2022-06-28';
 const MAX_BODY = 60_000;
 
 type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string };
-type Study = { id: string; kind: 'survey'; title: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
+type Study = { id: string; kind: 'survey'; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
 
 const cleanId = (v: unknown) => String(v ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 const text = (v: unknown, n = 2000) => String(v ?? '').slice(0, n);
@@ -96,7 +96,7 @@ Deno.serve(async (request) => {
       const id = cleanId(s.id) || crypto.randomUUID();
       const prev = await readJson<Study>(`studies/${id}.json`);
       const study: Study = {
-        id, kind: 'survey', title: text(s.title, 200) || 'Untitled study', intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
+        id, kind: 'survey', title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
         status: s.status === 'closed' ? 'closed' : 'open',
         questions: s.questions.slice(0, 60).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined })),
         notion: { pageUrl: s.notion?.pageUrl ? text(s.notion.pageUrl, 500) : undefined, databaseId: prev?.notion?.databaseId },
