@@ -2703,3 +2703,11 @@ html.csb-presenting .csb-fd-pencil{width:min(clamp(240px,34cqw,480px),calc(30vh 
 .csb-doc-main .csb-story-section.csb-kind-annotated:is(.csb-variant-tinted,.csb-variant-dark):has(.csb-apple-annotated.is-desktop){margin-inline:calc(min(0px,(100% - min(100vw - 420px,1500px)) / 2))!important;padding-inline:clamp(20px,2.4vw,40px)!important}
 .csb-story-section:is(.csb-variant-tinted,.csb-variant-dark) .csb-apple-annotated.is-desktop{margin-inline:0}
 @media (max-width:1300px){.csb-doc-main .csb-story-section.csb-kind-annotated:is(.csb-variant-tinted,.csb-variant-dark):has(.csb-apple-annotated.is-desktop){margin-inline:0!important}}
+/* Figma pull bar: centred over the page between the panels, with a live busy state and Stop */
+.csb-figpull{left:calc(50% + (var(--inset-l,0px) - var(--inset-r,0px)) / 2);width:min(620px,calc(100vw - var(--inset-l,0px) - var(--inset-r,0px) - 32px))}
+.csb-figpull-busy{display:inline-flex;align-items:center;gap:8px;color:#44403b}
+.csb-figpull-busy i{width:12px;height:12px;border-radius:50%;border:1.5px solid #d6d3d1;border-top-color:#000;animation:csb-figspin .8s linear infinite}
+@keyframes csb-figspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.csb-figpull-busy i{animation:none;border-top-color:#d6d3d1}}
+.csb-figpull button.is-ghost{background:transparent;color:#000;box-shadow:inset 0 0 0 1px #0000001f}
+.csb-figpull.is-done{width:auto}
