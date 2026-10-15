@@ -117,6 +117,26 @@ export function buildSteinway(): BuilderStudy {
     heroFigmaUrl: F('84:22'),
     showNav: true,
     sources: { figmaUrl: F('0:1') },
-    sections,
+    sections: combineStages(sections),
   } as BuilderStudy;
+}
+
+/* Wireframes + Final PDP become one section: her wireframe, then one click to the high-fidelity page,
+   keeping your place. Frames already pulled and any edits are carried over. */
+export function combineStages(sections: CaseStudySection[]): CaseStudySection[] {
+  const wi = sections.findIndex(s => s.kind === 'scrollSite' && s.navLabel === 'Wireframes' && !s.options?.compare);
+  const fi = sections.findIndex(s => s.kind === 'scrollSite' && s.navLabel === 'Final PDP' && !s.options?.compare);
+  if (wi < 0 || fi < 0) return sections;
+  const w = sections[wi], f = sections[fi];
+  const pad = (items: CaseStudySection['items']) => [items[0] ?? { title: 'Desktop wireframe', detail: '' }, items[1] ?? { title: 'Mobile wireframe', detail: '' }];
+  const combined: CaseStudySection = {
+    ...f,
+    navLabel: 'Wireframe to final',
+    eyebrow: 'PDP Page Wireframe → Final PDP',
+    title: 'Wireframe to High Fidelity',
+    body: w.body,
+    options: { ...(w.options ?? {}), ...(f.options ?? {}), gridDesk: w.options?.gridDesk ?? 12, gridMob: w.options?.gridMob ?? 4, show: 'both', compare: true, stageA: 'Wireframe', stageB: 'High fidelity', hideBody: false },
+    items: [...pad(w.items), ...pad(f.items), ...w.items.slice(2).map(n => ({ ...n, when: 'a' })), ...f.items.slice(2).map(n => ({ ...n, when: 'b' }))],
+  };
+  return sections.filter((_, i) => i !== wi).map(s => s === f ? combined : s);
 }
