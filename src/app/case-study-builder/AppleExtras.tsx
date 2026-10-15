@@ -276,8 +276,13 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   // then draw a straight hairline from the label to the dot.
   useLayoutEffect(() => {
     const measure = () => {
-      const box = wrap.current?.getBoundingClientRect(); const outer = phone.current?.getBoundingClientRect();
-      if (!box || !outer || !phone.current) return;
+      // Present mode zooms the page (CSS zoom): screen rects come back zoomed while sizes and SVG
+      // units don't, so bring every rect back into the page's own units first.
+      const raw = wrap.current?.getBoundingClientRect(); if (!raw || !wrap.current) return;
+      const z = wrap.current.offsetWidth ? raw.width / wrap.current.offsetWidth || 1 : 1;
+      const rc = (el: Element) => { const r = el.getBoundingClientRect(); return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z, height: r.height / z }; };
+      const box = rc(wrap.current); const outer = phone.current ? rc(phone.current) : null;
+      if (!outer || !phone.current) return;
       const ph = phone.current;
       const screenBox = { left: outer.left + ph.clientLeft, top: outer.top + ph.clientTop, width: ph.clientWidth, height: ph.clientHeight, right: outer.left + ph.clientLeft + ph.clientWidth };
       const stacked = getComputedStyle(wrap.current!).getPropertyValue('--annot-stacked').trim() === '1';
@@ -285,7 +290,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
       const next: number[] = [];
       for (const side of [0, 1]) {
         const ids = points.map((_, k) => k).filter(k => sideOf(k) === side && anchors.current[k]);
-        const sideEl = sideRefs.current[side]; const sideTop = sideEl ? sideEl.getBoundingClientRect().top : box.top;
+        const sideEl = sideRefs.current[side]; const sideTop = sideEl ? rc(sideEl).top : box.top;
         const want = ids.map(k => ({ k, y: screenBox.top - sideTop + screenBox.height * points[k][1] / 100 - 12, h: anchors.current[k]!.offsetHeight }));
         want.sort((p, q) => p.y - q.y);
         let floor = -Infinity;
@@ -295,7 +300,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
       setPaths(points.map(([x, y], k) => {
         const el = anchors.current[k]; if (!el || next[k] === undefined) return '';
         const sideEl = sideRefs.current[sideOf(k)]; if (!sideEl) return '';
-        const sr = sideEl.getBoundingClientRect(); const left = sideOf(k) === 0;
+        const sr = rc(sideEl); const left = sideOf(k) === 0;
         const ly = sr.top - box.top + next[k] + 12;
         const lx = left ? sr.right - box.left + 14 : sr.left - box.left - 14;
         const px = screenBox.left - box.left + screenBox.width * x / 100; const py = screenBox.top - box.top + screenBox.height * y / 100;

@@ -3,6 +3,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Columns3, Crosshair, Eye, EyeOff, MousePointer2, Plus, Trash2 } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive } from './MotionKit';
+
+/* Rect in the page's own units, undoing any CSS zoom on an ancestor (present mode zooms the page). */
+const zoomOf = (el: HTMLElement) => { const w = el.getBoundingClientRect().width; return el.offsetWidth && w ? w / el.offsetWidth : 1; };
+const zr = (el: Element, z: number) => { const r = el.getBoundingClientRect(); return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z, height: r.height / z }; };
 import type { CaseStudySection } from './model';
 
 /*
@@ -165,7 +169,7 @@ function TwoScreens({ section, panes, editorMode, annotate, scrollersRef, takeRe
       const m = note && paneEl ? paneEl.querySelector<HTMLElement>(`.csb-ss-band[data-i="${note.i}"]`) ?? paneEl.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`) : null;
       const scr = m?.closest('.csb-ss-screen'); const dev = m?.closest('.csb-ss-mac, .csb-ss-phone');
       if (!note || !m || !scr || !dev || !col || !pos || !h) return { y: 0, d: '' };
-      const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect(), K = col.getBoundingClientRect(), H = h.getBoundingClientRect(), PR = pos.getBoundingClientRect();
+      const z = zoomOf(st); const S = zr(st, z), M = zr(m, z), C = zr(scr, z), D = zr(dev, z), K = zr(col, z), H = zr(h, z), PR = zr(pos, z);
       const my = Math.min(C.bottom - 4, Math.max(C.top + 4, M.top + M.height / 2)) - S.top;
       const headOff = H.top - PR.top + Math.min(16, H.height / 2);
       const y = Math.round(Math.max(-pos.offsetTop, Math.min(K.height - pos.offsetTop - pos.offsetHeight, (my + S.top - K.top) - pos.offsetTop - headOff)));
@@ -269,8 +273,8 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     const m = st.querySelector<HTMLElement>(`.csb-ss-band[data-i="${note.i}"]`) ?? st.querySelector<HTMLElement>(`.csb-ss-marker[data-i="${note.i}"]`); const h = head.current;
     const scr = m?.closest('.csb-ss-screen'); const dev = m?.closest('.csb-ss-mac, .csb-ss-phone');
     if (!m || !h || !scr || !dev || !col.current || !pos.current) { setLine(''); return; }
-    const S = st.getBoundingClientRect(), M = m.getBoundingClientRect(), C = scr.getBoundingClientRect(), D = dev.getBoundingClientRect(), K = col.current.getBoundingClientRect();
-    const P = pos.current, H = h.getBoundingClientRect(), PR = P.getBoundingClientRect();
+    const z = zoomOf(st); const S = zr(st, z), M = zr(m, z), C = zr(scr, z), D = zr(dev, z), K = zr(col.current, z);
+    const P = pos.current, H = zr(h, z), PR = zr(P, z);
     const my = Math.min(C.bottom - 4, Math.max(C.top + 4, M.top + M.height / 2)) - S.top;
     const headOff = H.top - PR.top + Math.min(16, H.height / 2);
     const want = (my + S.top - K.top) - P.offsetTop - headOff;
