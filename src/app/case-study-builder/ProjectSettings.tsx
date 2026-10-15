@@ -6,6 +6,14 @@ import type { BuilderStudy } from './model';
 type Hero = NonNullable<BuilderStudy['hero']>;
 const SWATCHES = ['#c8553d', '#375c45', '#3d6b8c', '#0447ff', '#ff4704', '#6b5b95', '#000000'];
 
+export const GRAD_KINDS: Array<[string, string, string]> = [
+  ['charts', 'Charts and numbers', 'Bars, rings, arcs, radar, meters'],
+  ['marks', 'Highlighted words', 'The problem statement highlights'],
+  ['lines', 'Lines and progress', 'Journey and flow lines, side menu, progress'],
+  ['dots', 'Dots, pins and buttons', 'Annotation pins, play buttons, markers'],
+  ['type', 'Display type', 'The big “Aa” in the type system'],
+];
+
 export function Swatches({ value, onChange, allowNone, label }: { value?: string; onChange: (v?: string) => void; allowNone?: boolean; label: string }) {
   const custom = useRef<HTMLInputElement>(null);
   const v = (value || '').toLowerCase();
@@ -76,6 +84,11 @@ export function ProjectSettings({ study, update, pickBgImage }: { study: Builder
         {([[false, 'Solid'], [true, 'Gradient']] as const).map(([v, l]) => <button key={l} type="button" role="radio" aria-checked={!!study.accentGradient === v} onClick={() => update(v ? { accentGradient: true, accent2: study.accent2 || '#6c4cff' } : { accentGradient: false })}><span>{l}</span></button>)}
       </div>
       {study.accentGradient && <div className="csb-ps-grad" style={{ background: `linear-gradient(120deg, ${study.accent}, ${study.accent2 || '#6c4cff'})` }} aria-hidden="true" />}
+      {study.accentGradient && <div className="csb-ps-gradon" role="group" aria-label="Use the gradient on">
+        <p className="csb-ps-label">Use the gradient on</p>
+        {GRAD_KINDS.map(([k, l, hint]) => { const on = !(study.gradientOff ?? []).includes(k); return <label key={k} className="csb-ps-check" title={hint}><input type="checkbox" checked={on} onChange={e => update({ gradientOff: e.target.checked ? (study.gradientOff ?? []).filter(x => x !== k) : [...(study.gradientOff ?? []), k] })} /><span>{l}<small>{hint}</small></span></label>; })}
+        <p className="csb-ps-hint">Anything unticked uses the solid accent. You can also turn the gradient on or off for one section in its settings.</p>
+      </div>}
       <p className="csb-ps-label">{study.accentGradient ? 'Gradient to' : <>Second accent <small>optional, for text you style</small></>}</p>
       <Swatches label={study.accentGradient ? 'Gradient end colour' : 'Second accent'} allowNone={!study.accentGradient} value={study.accent2} onChange={c => update({ accent2: c })} />
     </section>

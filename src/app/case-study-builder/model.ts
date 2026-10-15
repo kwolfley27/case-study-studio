@@ -107,6 +107,8 @@ export interface BuilderStudy {
   accent2?: string;
   /** Use the accent as a gradient from accent to accent2. */
   accentGradient?: boolean;
+  /** Which kinds of things get the gradient (when accentGradient). Missing = all. */
+  gradientOff?: string[];
   /** Previews of other case studies at the end of the page. */
   moreStudies?: import("./EndMore").MoreStudy[];
   /** Closing line at the end of the page. */

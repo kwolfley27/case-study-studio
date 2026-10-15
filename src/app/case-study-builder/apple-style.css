@@ -2352,3 +2352,55 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-variant-dark .csb-iv-cols p{color:#d6d3cf}.csb-variant-dark .csb-iv-cols{border-color:#ffffff1f}
 @container (max-width:640px){.csb-iv-cols{grid-template-columns:1fr}.csb-iv-people{display:flex;flex-wrap:nowrap;overflow-x:auto;border-radius:22px}}
 .csb-psf-bubble::after{left:34px;bottom:-7px;width:18px;height:18px;border-radius:3px;transform:rotate(45deg);clip-path:none}
+
+/* ── Choosing where the gradient goes ──
+   Page: data-nograd="charts marks lines dots type" turns a kind back to the solid accent.
+   Section: data-grad-sec="off" makes one section solid; "on" keeps the gradient there even if its kind is off. */
+.csb-canvas[data-grad] .csb-story-section[data-grad-sec=off]{--csb-accent-fill:var(--csb-accent);--csb-accent-grad-v:var(--csb-accent)}
+.csb-canvas[data-grad] .csb-story-section[data-grad-sec=off] :is(.csb-tsr.is-accent .csb-tsr-arc,.csb-survey-arc-fill,.csb-journey-line){stroke:var(--csb-accent)}
+.csb-canvas[data-grad] .csb-story-section[data-grad-sec=off] .csb-radar-fill{fill:var(--csb-accent)}
+.csb-canvas[data-grad] .csb-story-section[data-grad-sec=off] :is(.csb-type-glyph,.csb-type-bar-top span){background:none;color:inherit}
+
+.csb-canvas[data-nograd~=charts] .csb-story-section:not([data-grad-sec=on]) :is(.csb-bar,.csb-survey-bar-fill,.csb-apple-pictogram i,.csb-apple-survey-track span,.csb-apple-persona-day i,.csb-persona-meter i,.csb-metric-bar,.csb-ab-bar,.csb-sv-track i,.csb-sv-col i,.csb-tsr-key .is-ok){--csb-accent-fill:var(--csb-accent);--csb-accent-grad-v:var(--csb-accent)}
+.csb-canvas[data-nograd~=charts] .csb-story-section:not([data-grad-sec=on]) :is(.csb-tsr.is-accent .csb-tsr-arc,.csb-survey-arc-fill){stroke:var(--csb-accent)}
+.csb-canvas[data-nograd~=charts] .csb-story-section:not([data-grad-sec=on]) .csb-radar-fill{fill:var(--csb-accent)}
+.csb-canvas[data-nograd~=lines] :is(.csb-side-nav a,.csb-present-progress i){--csb-accent-fill:var(--csb-accent)}
+.csb-canvas[data-nograd~=lines] .csb-story-section:not([data-grad-sec=on]) :is(.csb-flow-line,.csb-apple-annotation-side>div){--csb-accent-fill:var(--csb-accent)}
+.csb-canvas[data-nograd~=lines] .csb-story-section:not([data-grad-sec=on]) .csb-journey-line{stroke:var(--csb-accent)}
+.csb-canvas[data-nograd~=dots] .csb-story-section:not([data-grad-sec=on]) :is(.csb-proto-play,.csb-annot-pin,.csb-apple-annotation-side small,.csb-ss-marker,.csb-ss-ticks button,.csb-detail i,.csb-detail-solo i,.csb-jm-list li,.csb-wt-sweep b,.csb-dev-sample b,.csb-dev-sample em,.csb-rec-mark,.csb-rec-tool){--csb-accent-fill:var(--csb-accent)}
+.csb-canvas[data-nograd~=type] .csb-story-section:not([data-grad-sec=on]) :is(.csb-type-glyph,.csb-type-bar-top span){background:none;color:inherit}
+
+/* Highlighted words in the problem statement take the gradient too (unless turned off). */
+.csb-canvas[data-grad]:not([data-nograd~=marks]) .csb-story-section:not([data-grad-sec=off]) .csb-ps-mark.is-acc.is-marker,
+.csb-canvas[data-grad][data-nograd~=marks] .csb-story-section[data-grad-sec=on] .csb-ps-mark.is-acc.is-marker{background-image:linear-gradient(90deg,color-mix(in srgb,var(--csb-accent) 34%,transparent),color-mix(in srgb,var(--csb-accent-2) 34%,transparent))}
+.csb-canvas[data-grad]:not([data-nograd~=marks]) .csb-story-section:not([data-grad-sec=off]) .csb-ps-mark.is-acc:not(.is-marker),
+.csb-canvas[data-grad][data-nograd~=marks] .csb-story-section[data-grad-sec=on] .csb-ps-mark.is-acc:not(.is-marker){background-image:linear-gradient(90deg,var(--csb-accent),var(--csb-accent-2))}
+/* "on" in a section whose kind is off on the page: put the gradient back */
+.csb-canvas[data-grad] .csb-story-section[data-grad-sec=on]{--csb-accent-fill:linear-gradient(120deg,var(--csb-accent),var(--csb-accent-2));--csb-accent-grad-v:linear-gradient(to top,var(--csb-accent),var(--csb-accent-2))}
+
+/* settings list */
+.csb-ps-gradon{display:grid;gap:2px;margin-top:6px}
+.csb-ps-check{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:start;padding:7px 0;font-size:13px;color:#1d1d1f;cursor:pointer}
+.csb-ps-check input{margin:2px 0 0;accent-color:#1d1d1f}
+.csb-ps-check span{display:grid;gap:1px}.csb-ps-check small{font-size:11.5px;color:#86868b}
+
+/* ── Bar chart: compact by default ── */
+.csb-bar{max-width:760px;margin-left:auto;margin-right:auto}
+.csb-bar.is-small .csb-bar-plot{height:clamp(140px,16cqw,200px);padding-top:30px;gap:clamp(6px,1cqw,12px)}
+.csb-bar.is-small .csb-bar-col i{width:min(100%,26px);border-radius:4px 4px 0 0}
+.csb-bar.is-small .csb-bar-val{font-size:clamp(14px,1.5cqw,17px)}
+.csb-bar.is-medium{max-width:920px}.csb-bar.is-medium .csb-bar-plot{height:clamp(180px,22cqw,260px)}.csb-bar.is-medium .csb-bar-col i{width:min(100%,34px)}.csb-bar.is-medium .csb-bar-val{font-size:clamp(16px,1.7cqw,21px)}
+.csb-bar.is-large{max-width:none}
+.csb-bar:is(.is-small,.is-medium) figcaption{margin-top:30px;font-size:12.5px}
+
+/* ── Define flip: no card on a card. Just the words turning over, much shorter scroll ── */
+.csb-psf{height:auto;padding-bottom:55vh}
+.csb-psf-stick{top:30vh;min-height:0;gap:18px}
+.csb-psf-face,.csb-psf-face.is-back{min-height:0;padding:8px 0;border-radius:0;background:none!important;box-shadow:none!important}
+.csb-psf .csb-ps-sentence{font-size:clamp(24px,3cqw,38px)}
+.csb-psf-bubble p{font-size:clamp(22px,2.6cqw,32px)}
+.csb-psf-bubble{padding:clamp(20px,2.6cqw,28px) clamp(22px,3cqw,34px);border-radius:26px}
+.csb-psf-hint{position:static;transform:none;display:block;margin-top:14px}
+.csb-psf-face.is-front{display:grid;justify-items:center}
+.csb-psf-success{padding-top:14px}
+.csb-psf{padding-bottom:0}.csb-psf-run{height:55vh}

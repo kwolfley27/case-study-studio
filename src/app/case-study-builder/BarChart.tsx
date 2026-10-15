@@ -27,7 +27,7 @@ export function BarChart({ section }: { section: CaseStudySection }) {
   // The project colour follows the page: a gradient when the accent is set to gradient.
   const color = section.options?.color === 'accent' ? 'var(--csb-accent-grad-v, var(--csb-accent, currentColor))' : String(section.options?.color || 'currentColor');
   const fill = String(section.options?.fill ?? 'ramp');
-  return <figure className="csb-bar" ref={ref} style={{ ['--bar-c' as string]: color }}>
+  return <figure className={`csb-bar is-${String(section.options?.size ?? 'small')}`} ref={ref} style={{ ['--bar-c' as string]: color }}>
     <div className="csb-bar-plot" role="img" aria-label={`${section.title}: ${items.map(i => `${i.title} ${i.value}`).join(', ')}`}>
       {items.map((it, i) => {
         const h = ((vals[i] - floor) / (max - floor || 1)) * 100; const end = i === 0 || i === n - 1;
@@ -50,6 +50,7 @@ export function BarChartControls({ section, onChange }: { section: CaseStudySect
   const set = (i: number, patch: Partial<CaseStudySection['items'][number]>) => onChange({ items: items.map((it, k) => k === i ? { ...it, ...patch } : it) });
   const opt = (k: string, v: string | boolean) => onChange({ options: { ...(section.options ?? {}), [k]: v } });
   return <div className="csb-connection-section csb-fc-ctl">
+    <div className="csb-field"><label htmlFor="bar-size">Chart size</label><select id="bar-size" value={String(section.options?.size ?? 'small')} onChange={e => opt('size', e.target.value)}><option value="small">Compact</option><option value="medium">Medium</option><option value="large">Large</option></select></div>
     <p className="csb-panel-kicker">Data</p>
     {items.map((it, i) => <div key={i} className="csb-fc-ctl-line is-prod">
       <input value={it.title} aria-label={`Label ${i + 1}`} onChange={e => set(i, { title: e.target.value })} />

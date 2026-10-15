@@ -1,7 +1,7 @@
-import { useRef } from 'react';
-import { motion, useTransform } from 'motion/react';
+import { useEffect, useRef } from 'react';
+import { motion, useMotionValue, useTransform } from 'motion/react';
 import { EditableText } from './EditableText';
-import { useReducedMotion, useScrollProgress } from './MotionKit';
+import { useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
 import { ResearchVisual } from './ResearchVisuals';
 
@@ -34,7 +34,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   // Highlighter marker (default) or a thin underline, in any colour.
   const marker = section.options?.markStyle !== 'underline';
   const band = marker ? '58%' : '2px';
-  const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className={`csb-ps-mark ${marker ? 'is-marker' : ''}`} initial={reduce ? false : { backgroundSize: `0% ${band}` }} whileInView={{ backgroundSize: `100% ${band}` }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
+  const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className={`csb-ps-mark ${marker ? 'is-marker' : ''} ${markColor === 'accent' ? 'is-acc' : ''}`} initial={reduce ? false : { backgroundSize: `0% ${band}` }} whileInView={{ backgroundSize: `100% ${band}` }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
   const sentence = <>
       {mark(0, who?.detail || '')}{' '}
       <EditableText field="items.1.title" value={connector(need?.title, 'need')} />{' '}
@@ -62,13 +62,26 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
 function FlipStatement({ sentence, hmwTitle, hmwDetail, success }: { sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
   const reduce = useReducedMotion();
   const scene = useRef<HTMLDivElement>(null);
-  const p = useScrollProgress(scene, .12, .88);
-  const rotate = useTransform(p, [.28, .62], [0, 180]);
-  const lift = useTransform(p, [.28, .45, .62], [1, .94, 1]);
-  const bubble = useTransform(p, [.6, .74], [0, 1]);
-  const bubbleY = useTransform(p, [.6, .74], [14, 0]);
+  const stick = useRef<HTMLDivElement>(null);
+  // 0 when the card first pins, 1 when it lets go.
+  const p = useMotionValue(0);
+  useEffect(() => {
+    const el = scene.current; if (!el) return;
+    const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
+    let frame = 0;
+    const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
+      const pin = box.top + box.height * .3; const travel = r.height - (stick.current?.offsetHeight ?? 0);
+      p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
+    const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
+    measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
+    return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
+  }, [p]);
+  const rotate = useTransform(p, [.2, .6], [0, 180]);
+  const lift = useTransform(p, [.2, .4, .6], [1, .95, 1]);
+  const bubble = useTransform(p, [.55, .72], [0, 1]);
+  const bubbleY = useTransform(p, [.55, .72], [14, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.92, 1]);
-  const hint = useTransform(p, [0, .22, .3], [1, 1, 0]);
+  const hint = useTransform(p, [0, .12, .2], [1, 1, 0]);
   const back = <div className="csb-psf-hmw">
     <motion.div className="csb-psf-bubble" style={reduce ? undefined : { opacity: bubble, y: bubbleY, scale: bubbleScale }}>
       <span className="csb-psf-ask"><EditableText field="items.3.title" value={/\?$/.test(hmwTitle.trim()) ? hmwTitle : hmwTitle.replace(/[.…]*$/, '…')} /></span>
@@ -78,12 +91,13 @@ function FlipStatement({ sentence, hmwTitle, hmwDetail, success }: { sentence: R
   const successRow = success && <div className="csb-psf-success"><span><EditableText field="items.4.title" value={success.title || "We'll know it worked when"} /></span><p><EditableText field="items.4.detail" value={success.detail} /></p></div>;
   if (reduce) return <div className="csb-psf is-static"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p></div><div className="csb-psf-face is-back">{back}</div>{successRow}</div>;
   return <div className="csb-psf" ref={scene}>
-    <div className="csb-psf-stick">
+    <div className="csb-psf-stick" ref={stick}>
       <motion.div className="csb-psf-card" style={{ rotateY: rotate, scale: lift }}>
         <div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p><motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Scroll to turn</motion.span></div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
     </div>
+    <div className="csb-psf-run" aria-hidden="true" />
   </div>;
 }
