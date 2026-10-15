@@ -1622,3 +1622,60 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-pm-dot .csb-editable-text{white-space:nowrap}
 .csb-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .csb-fc-label,.csb-fc-label *{overflow-wrap:normal!important;word-break:normal!important}
+
+/* ---------- User flow (flowchart) ---------- */
+.csb-uf{--uf-line:color-mix(in srgb,currentColor 18%,transparent);--uf-soft:color-mix(in srgb,currentColor 4.5%,transparent);--uf-muted:color-mix(in srgb,currentColor 52%,transparent);--uf-paper:#fdfcfc;--uf-ink:#000;--uf-spark:#ff4704;margin-top:clamp(28px,4vw,48px);position:relative}
+.csb-variant-dark .csb-uf{--uf-paper:#161411;--uf-ink:#fdfcfc}
+.csb-uf-scroll{position:relative;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.csb-uf-canvas{position:absolute;left:0;top:0;transform-origin:0 0}
+.csb-uf-lines{position:absolute;inset:0;overflow:visible}
+.csb-uf-lines path{fill:none;stroke:var(--uf-ink);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.csb-uf-lines path.is-alt{stroke:var(--uf-muted);stroke-width:1.1}
+.csb-uf-lines path.is-removed{stroke:var(--uf-spark);opacity:.55}
+.csb-uf-elabel{position:absolute;z-index:2;width:max-content;transform:translate(-50%,-50%);padding:3px 9px;border-radius:9999px;background:var(--uf-paper);box-shadow:inset 0 0 0 1px var(--uf-line);font-size:11.5px;font-weight:500;line-height:1.3;white-space:nowrap;color:inherit}
+.csb-uf-elabel.is-alt{color:var(--uf-muted)}
+.csb-uf-node{position:absolute;z-index:3;display:grid;place-items:center;align-content:center;gap:8px;padding:0 14px;text-align:center;font-size:13.5px;font-weight:500;line-height:1.25;box-sizing:border-box}
+.csb-uf-node.is-screen{border-radius:14px;background:var(--uf-paper);box-shadow:inset 0 0 0 1px var(--uf-line)}
+.csb-uf-node.is-terminal{border-radius:9999px;background:var(--uf-ink);color:var(--uf-paper)}
+.csb-uf-node.is-decision{padding:0 22px}
+.csb-uf-diamond{position:absolute;inset:14.6%;z-index:-1;border-radius:10px;transform:rotate(45deg);background:var(--uf-soft);box-shadow:inset 0 0 0 1px var(--uf-line)}
+.csb-uf-node.is-decision .csb-uf-label{font-size:12.5px}
+.csb-uf-node.has-img{align-content:start;padding:8px 8px 10px;border-radius:18px}
+.csb-uf-node.has-img img{display:block;width:100%;height:200px;object-fit:cover;object-position:top;border-radius:10px;box-shadow:0 0 0 1px var(--uf-line)}
+.csb-uf-node.has-img .csb-uf-label{font-size:12.5px}
+.csb-uf-label{overflow-wrap:normal}
+.csb-uf-tag{position:absolute;top:-9px;right:-6px;padding:2px 8px;border-radius:9999px;font-size:10.5px;font-style:normal;font-weight:600;letter-spacing:.02em;line-height:1.4;white-space:nowrap}
+.csb-uf-node.is-added{box-shadow:inset 0 0 0 1.5px var(--uf-ink)}
+.csb-uf-node.is-decision.is-added{box-shadow:none}.csb-uf-node.is-decision.is-added .csb-uf-diamond{box-shadow:inset 0 0 0 1.5px var(--uf-ink)}
+.csb-uf-node.is-added .csb-uf-tag{background:var(--uf-ink);color:var(--uf-paper)}
+.csb-uf-node.is-removed{color:var(--uf-muted)}
+.csb-uf-node.is-removed .csb-uf-label{text-decoration:line-through;text-decoration-color:var(--uf-spark);text-decoration-thickness:1.5px}
+.csb-uf-node.is-removed .csb-uf-tag{background:var(--uf-spark);color:#fff}
+.csb-uf.is-editing .csb-uf-node{cursor:pointer}
+.csb-uf-node.is-sel{outline:2px solid #0071e3;outline-offset:3px}
+.csb-uf-node.is-decision.is-sel{outline:none}.csb-uf-node.is-decision.is-sel .csb-uf-diamond{box-shadow:inset 0 0 0 2px #0071e3}
+.csb-uf-tools{position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:2px;padding:4px;border-radius:9999px;background:#fdfcfc;color:#000;box-shadow:rgba(0,0,0,.4) 0 0 1px,rgba(0,0,0,.06) 0 2px 4px,rgba(0,0,0,.08) 0 10px 24px;white-space:nowrap;font-weight:400}
+.csb-uf-tools button{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:0;border-radius:9999px;background:none;color:inherit;font:inherit;font-size:12px;cursor:pointer}
+.csb-uf-tools button:hover{background:#f5f3f1}
+.csb-uf-seg{display:inline-flex;margin:0 2px;padding:0 4px;border-left:1px solid #ebe8e4;border-right:1px solid #ebe8e4}
+.csb-uf-seg button{padding:0 7px}
+.csb-uf-seg button[aria-pressed=true]{background:#ebe8e4}
+.csb-uf-shape{display:block;width:14px;height:10px;box-shadow:inset 0 0 0 1.4px currentColor}
+.csb-uf-shape.is-terminal{border-radius:9999px;background:currentColor}
+.csb-uf-shape.is-screen{border-radius:3px}
+.csb-uf-shape.is-decision{width:10px;height:10px;border-radius:2px;transform:rotate(45deg)}
+/* before / after */
+.csb-ufd-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;margin-bottom:22px}
+.csb-ufd-toggle{display:inline-flex;padding:3px;border-radius:9999px;box-shadow:inset 0 0 0 1px var(--uf-line)}
+.csb-ufd-toggle button{position:relative;height:32px;padding:0 18px;border:0;border-radius:9999px;background:none;color:inherit;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer}
+.csb-ufd-toggle button span{position:relative;z-index:1;transition:color .2s}
+.csb-ufd-toggle button[aria-selected=true] span{color:var(--uf-paper)}
+.csb-ufd-pill{position:absolute;inset:0;border-radius:9999px;background:var(--uf-ink)}
+.csb-ufd-sum{margin:0;font-size:15px;color:var(--uf-muted)}
+.csb-ufd-sum strong{font-family:var(--brand-display,var(--ed-display,"Inter",ui-sans-serif,system-ui,sans-serif));font-weight:300;font-size:26px;letter-spacing:-.02em;color:currentColor;vertical-align:-2px}
+.csb-ufd .csb-ufd-sum strong{color:var(--uf-ink)}
+.csb-ufd-sum em{font-style:normal;font-weight:500}
+.csb-ufd-sum em.is-removed{color:var(--uf-spark)}
+.csb-ufd-sum em.is-added{color:var(--uf-ink)}
+.csb-uf-ctl .csb-uf-script{width:100%;min-height:140px;padding:10px 12px;border:1px solid #d2d2d7;border-radius:10px;background:#fff;font:400 12.5px/1.6 "IBM Plex Mono",ui-monospace,monospace;resize:vertical;tab-size:2;box-sizing:border-box}
+.csb-uf-ctl code{font:400 11px/1 "IBM Plex Mono",ui-monospace,monospace;padding:1px 4px;border-radius:4px;background:#f0f0f2}

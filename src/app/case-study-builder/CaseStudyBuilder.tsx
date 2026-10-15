@@ -22,6 +22,7 @@ import { ABTestControls } from "./ABTest";
 import { TaskSuccessControls } from "./TaskSuccess";
 import { RoadmapControls } from "./Roadmap";
 import { FlowCompareControls } from "./FlowCompare";
+import { FlowDiffControls, UserFlowControls } from "./UserFlow";
 import { FeatureCompareControls, PositioningControls } from "./CompetitorViews";
 import { AEIOUControls } from "./AEIOU";
 import { AffinityControls } from "./AffinityDiagram";
@@ -227,6 +228,8 @@ export default function CaseStudyBuilder() {
         {["screenFocus", "screenStory", "screenStrip"].includes(selected.kind) && <><div className="csb-inspector-divider" /><ScreensControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Affinity diagram</p><AffinityControls section={selected} onChange={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
+        {selected.kind === "userFlow" && <><div className="csb-inspector-divider" /><UserFlowControls section={selected} onChange={userFlow => updateSection({ userFlow })} /></>}
+        {selected.kind === "flowDiff" && <><div className="csb-inspector-divider" /><FlowDiffControls section={selected} onChange={flowDiff => updateSection({ flowDiff })} /></>}
         {selected.kind === "flowCompare" && <><div className="csb-inspector-divider" /><FlowCompareControls section={selected} onChange={flowCompare => updateSection({ flowCompare })} /></>}
         {selected.kind === "featureCompare" && <><div className="csb-inspector-divider" /><FeatureCompareControls section={selected} onChange={featureCompare => updateSection({ featureCompare })} /></>}
         {selected.kind === "positioning" && <><div className="csb-inspector-divider" /><PositioningControls section={selected} onChange={positioning => updateSection({ positioning })} /></>}

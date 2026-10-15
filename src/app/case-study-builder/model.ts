@@ -1,4 +1,4 @@
-export type SectionKind = "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -58,6 +58,10 @@ export interface CaseStudySection {
   roadmap?: import("./Roadmap").RoadmapData;
   /** Competitive analysis: the same task in each product, stage by stage. */
   flowCompare?: import("./FlowCompare").FlowCompareData;
+  /** User flow: a real flowchart (ovals, screens, decisions). */
+  userFlow?: import("./UserFlow").UserFlowData;
+  /** Flow redesign: the old and new flow, with what changed. */
+  flowDiff?: import("./UserFlow").FlowDiffData;
   /** Competitive analysis: feature checklist across products. */
   featureCompare?: import("./CompetitorViews").FeatureCompareData;
   /** Competitive analysis: two-axis positioning matrix. */
@@ -112,6 +116,8 @@ export const componentNames: Record<SectionKind, string> = {
   taskSuccess: "Task success",
   roadmap: "Roadmap",
   flowCompare: "Flow comparison",
+  userFlow: "User flow",
+  flowDiff: "Flow redesign",
   featureCompare: "Feature comparison",
   positioning: "Positioning matrix",
   aeiou: "AEIOU observations",
@@ -155,6 +161,8 @@ export const componentDescriptions: Record<SectionKind, string> = {
   taskSuccess: "How many people finished each flow, as rings.",
   roadmap: "A sprint-by-sprint plan: teams, weeks, breaks and milestones.",
   flowCompare: "The same task in each product, stage by stage, with the friction marked.",
+  userFlow: "A flowchart of the path through the product: screens, decisions and branches.",
+  flowDiff: "The old flow and the new one, with the steps you cut and added.",
   featureCompare: "Which products have which features, with ours first.",
   positioning: "Where each product sits on two axes, and the gap ours fills.",
   abtest: "Two versions in one frame, the changes between them, and what happened.",
@@ -184,7 +192,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -195,6 +203,7 @@ export const labelFromEyebrow = (eyebrow: string) => { const t = eyebrow.replace
 
 import { defaultRoadmap as defaultRoadmapData } from "./Roadmap";
 import { defaultFlowCompare } from "./FlowCompare";
+import { defaultFlowDiff, defaultUserFlow } from "./UserFlow";
 import { defaultFeatureCompare, defaultPositioning } from "./CompetitorViews";
 export const createSection = (kind: SectionKind): CaseStudySection => ({
   id: crypto.randomUUID(),
@@ -209,6 +218,8 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     taskSuccess: "Could people finish the key flows?",
     roadmap: "How we planned the build",
     flowCompare: "Same task, very different effort",
+    userFlow: "How someone gets through it",
+    flowDiff: "From nine steps to four",
     featureCompare: "What each option actually offers",
     positioning: "Where the alternatives sit",
     aeiou: "What we observed",
@@ -262,6 +273,8 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     ],
     roadmap: [],
     flowCompare: [],
+    userFlow: [],
+    flowDiff: [],
     featureCompare: [],
     positioning: [],
     taskSuccess: [{ title: "Book a class", value: "80", assist: "20", detail: "4 of 5 on their own · 1 with help" }, { title: "Join the waitlist", value: "60", assist: "0", detail: "3 of 5 on their own" }, { title: "Cancel a booking", value: "100", assist: "0", detail: "5 of 5 on their own" }],
@@ -337,6 +350,8 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     roadmap: { roadmap: defaultRoadmapData() },
     flowCompare: { flowCompare: defaultFlowCompare() },
+    userFlow: { userFlow: defaultUserFlow() },
+    flowDiff: { flowDiff: defaultFlowDiff() },
     featureCompare: { featureCompare: defaultFeatureCompare() },
     positioning: { positioning: defaultPositioning() },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
@@ -347,7 +362,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
-  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "affinity" | "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "affinity" | "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
