@@ -8,7 +8,7 @@ import type { CaseStudySection } from './model';
 /*
   Type system: shown in the real fonts as live text, never a picture. Three parts, each can be hidden:
   1. Typefaces: one panel per family with a large "Aa", its name, what it's used for, the styles in use and the alphabet.
-  2. Scale: a column per style whose height follows its size (largest first), with an "Ag" set in that style.
+  2. Scale (off unless switched on): a column per style whose height follows its size (largest first), with an "Ag" set in that style.
   3. In use: each style set at its size with its role and spec.
   items: title = role, detail = spec line, value = sample text, font = FontSpec.
   options.showFaces / showScale / showRows (default on); options["use:<family>"] = what that face is for.
@@ -39,7 +39,7 @@ const styleOf = (f: FontSpec, px: number, leading?: boolean): CSSProperties => (
   letterSpacing: `${(f.tracking ?? 0) / 100}em`, fontWeight: f.weight ?? 400, lineHeight: leading && f.leading ? (f.leading / f.size).toFixed(2) : 1.12,
 });
 // Points on the page scale with the viewport but keep their proportions.
-const fluid = (pt: number) => `clamp(${Math.max(13, pt * .55).toFixed(1)}px, ${(pt * 1.333 / 12).toFixed(2)}vw, ${(pt * 1.333).toFixed(1)}px)`;
+const fluid = (pt: number) => `clamp(${Math.max(13, pt * .5).toFixed(1)}px, ${(pt * .075).toFixed(2)}vw, ${(pt * 1.05).toFixed(1)}px)`;
 
 type Face = { family: string; roles: string[]; styles: string[] };
 function facesOf(items: CaseStudySection['items']): Face[] {
@@ -73,12 +73,12 @@ export function TypeSpecimen({ section }: { section: CaseStudySection }) {
             <h3>{face.family}</h3>
             <p className="csb-type-use"><EditableText field={`options.use:${face.family}`} value={String(o[`use:${face.family}`] ?? face.roles.join(' · '))} /></p>
             <ul className="csb-type-styles">{face.styles.map(s => <li key={s}>{s}</li>)}</ul>
-            <p className="csb-type-alpha" style={styleOf(regular, 17)}>ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />abcdefghijklmnopqrstuvwxyz<br />0123456789 &amp;!?@#$%</p>
+            <p className="csb-type-alpha" style={styleOf(regular, 15)}>ABCDEFGHIJKLM abcdefghijklm 0123456789</p>
           </motion.div>
         </div>; })}
     </div>}
 
-    {o.showScale !== false && items.length > 1 && <div className="csb-type-scale" role="list" aria-label="Type scale">
+    {o.showScale === true && items.length > 1 && <div className="csb-type-scale" role="list" aria-label="Type scale">
       {bySize.map(({ it, f }, k) => <div key={k} className="csb-type-step" role="listitem">
         <motion.div className="csb-type-bar" style={{ height: `${Math.max(22, (f.size / max) * 100)}%` }} initial={false} animate={{ scaleY: seen ? 1 : 0 }} transition={t(.2 + k * .08, .9)}>
           <motion.div className="csb-type-bar-top" initial={false} animate={{ opacity: seen ? 1 : 0 }} transition={t(.6 + k * .08, .5)}>
@@ -107,7 +107,7 @@ export function TypeSpecimenControls({ section, onChange }: { section: CaseStudy
   return <div className="csb-connection-section csb-fc-ctl">
     <p className="csb-panel-kicker">Show</p>
     <label className="csb-check-field"><input type="checkbox" checked={o.showFaces !== false} onChange={e => opt('showFaces', e.target.checked)} /> Typefaces (Aa)</label>
-    <label className="csb-check-field"><input type="checkbox" checked={o.showScale !== false} onChange={e => opt('showScale', e.target.checked)} /> Size scale</label>
+    <label className="csb-check-field"><input type="checkbox" checked={o.showScale === true} onChange={e => opt('showScale', e.target.checked)} /> Size scale</label>
     <label className="csb-check-field"><input type="checkbox" checked={o.showRows !== false} onChange={e => opt('showRows', e.target.checked)} /> Styles in use</label>
     <p className="csb-panel-kicker">Styles</p>
     <p className="csb-field-note">Click the samples and labels on the page to change the words. Any Google Font name works.</p>
