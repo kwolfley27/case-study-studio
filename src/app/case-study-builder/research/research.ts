@@ -4,7 +4,13 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long';
 export type Question = { id: string; type: QuestionType; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string };
-export type Study = { id: string; kind: 'survey'; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+export type Task = { id: string; title: string; scenario?: string; success?: string };
+export type Outcome = 'success' | 'help' | 'fail' | 'skipped';
+export type TaskRecord = { taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] };
+export type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; audioUrl?: string; notes?: string; tasks: TaskRecord[]; transcript?: Transcript; notionPageId?: string };
+export type TranscriptLine = { s: number; e: number; spk: number; text: string };
+export type Transcript = { at: string; speakers: string[]; segments: TranscriptLine[] };
+export type Study = { id: string; kind: 'survey' | 'usability'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 export type Response = { id: string; at: string; ms: number; answers: Record<string, string | number | string[]> };
 
 export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
@@ -116,3 +122,21 @@ export async function call<T>(action: string, body: Record<string, unknown> = {}
 const DRAFTS = 'csb-research-drafts';
 export const readDrafts = (): Study[] => { try { return JSON.parse(localStorage.getItem(DRAFTS) || '[]'); } catch { return []; } };
 export const writeDrafts = (list: Study[]) => { try { localStorage.setItem(DRAFTS, JSON.stringify(list)); } catch { /* ignore */ } };
+
+/* ---------- Usability tests ---------- */
+export const newTask = (n: number): Task => ({ id: crypto.randomUUID().slice(0, 8), title: ['Sign in', 'Book a class', 'Cancel a booking', 'Find your receipt'][n % 4], scenario: 'You want to … Show me how you would do that.', success: 'Reaches the confirmation screen' });
+export const newUsability = (project?: { id: string; title: string }): Study => ({ id: crypto.randomUUID(), kind: 'usability', title: 'Untitled usability test', projectId: project?.id, projectTitle: project?.title, status: 'open', questions: [], tasks: [newTask(0), newTask(1), newTask(2)], published: false });
+export const OUTCOME_LABEL: Record<Outcome, string> = { success: 'Success', help: 'With help', fail: 'Failed', skipped: 'Skipped' };
+export const QUICK_TAGS = ['Hesitated', 'Misclick', 'Backtracked', 'Asked for help', 'Confused by label', 'Delighted'];
+
+export type TaskResult = { task: Task; attempts: number; success: number; help: number; fail: number; rate: number; medianMs: number; notes: Array<{ participant: string; text: string; tags: string[] }> };
+export function aggregateTasks(study: Study, sessions: Session[]): TaskResult[] {
+  return (study.tasks ?? []).map(task => {
+    const rec = sessions.map(s => ({ s, r: s.tasks.find(t => t.taskId === task.id) })).filter((x): x is { s: Session; r: TaskRecord } => !!x.r && x.r.status !== 'skipped');
+    const success = rec.filter(x => x.r.status === 'success').length, help = rec.filter(x => x.r.status === 'help').length, fail = rec.filter(x => x.r.status === 'fail').length;
+    const times = rec.map(x => x.r.ms).sort((a, b) => a - b);
+    return { task, attempts: rec.length, success, help, fail, rate: rec.length ? Math.round(success / rec.length * 100) : 0, medianMs: times.length ? times[Math.floor(times.length / 2)] : 0,
+      notes: rec.filter(x => x.r.notes || x.r.tags?.length).map(x => ({ participant: x.s.participant, text: x.r.notes || '', tags: x.r.tags ?? [] })) };
+  });
+}
+export const fmtMs = (ms: number) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };

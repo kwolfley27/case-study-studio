@@ -12,6 +12,9 @@
 //   list     passcode {}                  → your studies with response counts
 //   results  passcode { id }              → all responses for one study
 //   remove   passcode { id }              → deletes a study and its responses
+//   audioUpload passcode { id, sessionId, type } → signed upload link for a session recording
+//   session  passcode { id, session }     → saves a moderated usability session (+ Notion row)
+//   transcript passcode { id, sessionId, transcript } → saves a transcript (+ appends it to the Notion row)
 //
 // Secrets: STUDIO_PASSCODE, NOTION_TOKEN (same as AI drafting).
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
@@ -21,10 +24,14 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const allowed = new Set(['https://kwolfley27.github.io', 'http://localhost:5173', 'http://127.0.0.1:5173']);
 const BUCKET = 'case-study-research';
 const NOTION_VERSION = '2022-06-28';
-const MAX_BODY = 60_000;
+const MAX_BODY = 400_000;
 
 type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string };
-type Study = { id: string; kind: 'survey'; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
+type Task = { id: string; title: string; scenario?: string; success?: string };
+type Outcome = 'success' | 'help' | 'fail' | 'skipped';
+type Transcript = { at: string; speakers: string[]; segments: Array<{ s: number; e: number; spk: number; text: string }> };
+type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; notes?: string; notionPageId?: string; transcript?: Transcript; tasks: Array<{ taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] }> };
+type Study = { id: string; kind: 'survey' | 'usability'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
 
 const cleanId = (v: unknown) => String(v ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 const text = (v: unknown, n = 2000) => String(v ?? '').slice(0, n);
@@ -70,7 +77,7 @@ Deno.serve(async (request) => {
     if (action === 'submit') {
       const id = cleanId(body.id);
       const study = await readJson<Study>(`studies/${id}.json`);
-      if (!study || study.status !== 'open') return reply({ error: 'This study is closed.' }, 410);
+      if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ error: 'This study is closed.' }, 410);
       const answers = (body.answers && typeof body.answers === 'object') ? body.answers as Record<string, unknown> : {};
       const clean: Record<string, string | number | string[]> = {};
       for (const q of study.questions) {
@@ -92,13 +99,13 @@ Deno.serve(async (request) => {
 
     if (action === 'publish') {
       const s = body.study as Study;
-      if (!s || typeof s !== 'object' || !Array.isArray(s.questions)) return reply({ error: 'Send a study.' }, 400);
+      if (!s || typeof s !== 'object' || (!Array.isArray(s.questions) && !Array.isArray(s.tasks))) return reply({ error: 'Send a study.' }, 400);
       const id = cleanId(s.id) || crypto.randomUUID();
       const prev = await readJson<Study>(`studies/${id}.json`);
       const study: Study = {
-        id, kind: 'survey', title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
+        id, kind: s.kind === 'usability' ? 'usability' : 'survey', tasks: Array.isArray(s.tasks) ? s.tasks.slice(0, 30).map(t => ({ id: cleanId(t.id) || crypto.randomUUID().slice(0, 8), title: text(t.title, 200), scenario: text(t.scenario, 1500), success: text(t.success, 500) })) : undefined, title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
         status: s.status === 'closed' ? 'closed' : 'open',
-        questions: s.questions.slice(0, 60).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined })),
+        questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 60).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined })),
         notion: { pageUrl: s.notion?.pageUrl ? text(s.notion.pageUrl, 500) : undefined, databaseId: prev?.notion?.databaseId },
         createdAt: prev?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString(),
       };
@@ -115,7 +122,7 @@ Deno.serve(async (request) => {
       const studies = [];
       for (const file of data ?? []) {
         const s = await readJson<Study>(`studies/${file.name}`); if (!s) continue;
-        const { data: rs } = await store.list(`responses/${s.id}`, { limit: 1000 });
+        const { data: rs } = await store.list(`${s.kind === 'usability' ? 'sessions' : 'responses'}/${s.id}`, { limit: 1000 });
         studies.push({ ...s, responses: (rs ?? []).length });
       }
       studies.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
@@ -127,14 +134,68 @@ Deno.serve(async (request) => {
       if (!study) return reply({ error: 'Study not found.' }, 404);
       const { data } = await store.list(`responses/${id}`, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
       const responses = (await Promise.all((data ?? []).map(f => readJson(`responses/${id}/${f.name}`)))).filter(Boolean);
-      return reply({ study, responses });
+      if (study.kind !== 'usability') return reply({ study, responses });
+      const { data: sf } = await store.list(`sessions/${id}`, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+      const sessions = (await Promise.all((sf ?? []).map(f => readJson<Session>(`sessions/${id}/${f.name}`)))).filter((x): x is Session => !!x);
+      const withAudio = await Promise.all(sessions.map(async ss => { if (!ss.audioPath) return ss; const { data: signed } = await store.createSignedUrl(ss.audioPath, 3600); return { ...ss, audioUrl: signed?.signedUrl }; }));
+      return reply({ study, responses, sessions: withAudio });
     }
     if (action === 'remove') {
       const id = cleanId(body.id);
       const { data } = await store.list(`responses/${id}`, { limit: 1000 });
-      const paths = [`studies/${id}.json`, ...(data ?? []).map(f => `responses/${id}/${f.name}`)];
+      const { data: sf } = await store.list(`sessions/${id}`, { limit: 1000 });
+      const { data: af } = await store.list(`audio/${id}`, { limit: 1000 });
+      const paths = [`studies/${id}.json`, ...(data ?? []).map(f => `responses/${id}/${f.name}`), ...(sf ?? []).map(f => `sessions/${id}/${f.name}`), ...(af ?? []).map(f => `audio/${id}/${f.name}`)];
       await store.remove(paths);
       return reply({ ok: true });
+    }
+    if (action === 'audioUpload') {
+      const id = cleanId(body.id), sid = cleanId(body.sessionId);
+      const type = String(body.type || 'audio/webm');
+      if (!/^audio\/(webm|ogg|mp4|mpeg|aac|x-m4a)/.test(type)) return reply({ error: 'Upload an audio recording.' }, 400);
+      const ext = type.includes('mp4') || type.includes('m4a') || type.includes('aac') ? 'm4a' : type.includes('ogg') ? 'ogg' : type.includes('mpeg') ? 'mp3' : 'webm';
+      const path = `audio/${id}/${sid}.${ext}`;
+      const { data, error } = await store.createSignedUploadUrl(path, { upsert: true });
+      if (error || !data) return reply({ error: `Storage: ${error?.message || 'could not create an upload link.'}` }, 500);
+      return reply({ uploadUrl: data.signedUrl, token: data.token, path });
+    }
+    if (action === 'session') {
+      const id = cleanId(body.id);
+      const study = await readJson<Study>(`studies/${id}.json`);
+      if (!study || study.kind !== 'usability') return reply({ error: 'Save the usability test first.' }, 404);
+      const raw = body.session as Session;
+      const valid = new Set((study.tasks ?? []).map(t => t.id));
+      const session: Session = {
+        id: cleanId(raw?.id) || crypto.randomUUID(), at: new Date().toISOString(), participant: text(raw?.participant, 80) || 'Participant',
+        durationMs: Math.max(0, Math.min(14_400_000, Number(raw?.durationMs) || 0)), audioPath: raw?.audioPath && String(raw.audioPath).startsWith(`audio/${id}/`) ? text(raw.audioPath, 200) : undefined, notes: text(raw?.notes, 4000),
+        tasks: (Array.isArray(raw?.tasks) ? raw.tasks : []).filter(t => valid.has(String(t.taskId))).map(t => ({ taskId: String(t.taskId), status: (['success', 'help', 'fail', 'skipped'].includes(t.status) ? t.status : 'skipped') as Outcome, ms: Math.max(0, Math.min(7_200_000, Number(t.ms) || 0)), notes: text(t.notes, 2000), tags: (Array.isArray(t.tags) ? t.tags : []).map(x => text(x, 40)).slice(0, 10) })),
+      };
+      let notionError: string | undefined;
+      if (study.notion?.databaseId) session.notionPageId = await notionSession(study, session).catch(e => { notionError = e instanceof Error ? e.message : 'Notion failed.'; return undefined; });
+      await writeJson(`sessions/${id}/${session.at.replace(/[:.]/g, '-')}-${session.id.slice(0, 8)}.json`, session);
+      return reply({ ok: true, notionError });
+    }
+    if (action === 'transcript') {
+      // Save a transcript made in the browser onto a session, and add it to the session's Notion page.
+      const id = cleanId(body.id), sid = cleanId(body.sessionId);
+      const study = await readJson<Study>(`studies/${id}.json`);
+      const { data: sf } = await store.list(`sessions/${id}`, { limit: 1000 });
+      const file = (sf ?? []).find(f => f.name.endsWith(`-${sid.slice(0, 8)}.json`));
+      if (!study || !file) return reply({ error: 'Session not found.' }, 404);
+      const session = await readJson<Session>(`sessions/${id}/${file.name}`); if (!session) return reply({ error: 'Session not found.' }, 404);
+      const t = body.transcript as Transcript;
+      session.transcript = {
+        at: new Date().toISOString(),
+        speakers: (Array.isArray(t?.speakers) ? t.speakers : []).slice(0, 6).map(x => text(x, 40) || 'Speaker'),
+        segments: (Array.isArray(t?.segments) ? t.segments : []).slice(0, 5000).map(x => ({ s: Math.max(0, Number(x.s) || 0), e: Math.max(0, Number(x.e) || 0), spk: Math.max(0, Math.min(5, Math.round(Number(x.spk) || 0))), text: text(x.text, 2000) })).filter(x => x.text),
+      };
+      await writeJson(`sessions/${id}/${file.name}`, session);
+      let notionError: string | undefined;
+      if (body.toNotion !== false) {
+        if (!session.notionPageId) notionError = study.notion?.databaseId ? 'This session was saved before transcripts could go to Notion.' : undefined;
+        else await notionTranscript(session.notionPageId, session.transcript).catch(e => { notionError = e instanceof Error ? e.message : 'Notion failed.'; });
+      }
+      return reply({ ok: true, notionError });
     }
     return reply({ error: 'Unknown action.' }, 400);
   } catch (error) {
@@ -159,9 +220,14 @@ function propSchema(q: Question) {
   if (q.type === 'scale' || q.type === 'nps') return { number: { format: 'number' } };
   return { rich_text: {} };
 }
+const OUTCOMES = [{ name: 'Success', color: 'green' }, { name: 'With help', color: 'yellow' }, { name: 'Failed', color: 'red' }, { name: 'Skipped', color: 'gray' }];
+const taskName = (t: Task, i: number) => `T${i + 1} ${t.title}`.slice(0, 80).replace(/[.,]+$/, '');
 async function ensureDatabase(study: Study): Promise<string> {
   const properties: Record<string, unknown> = { Participant: { title: {} }, Submitted: { date: {} }, 'Time (s)': { number: { format: 'number' } } };
-  study.questions.forEach((q, i) => { properties[propName(q, i)] = propSchema(q); });
+  if (study.kind === 'usability') {
+    (study.tasks ?? []).forEach((t, i) => { properties[taskName(t, i)] = { select: { options: OUTCOMES } }; properties[`${taskName(t, i)} · time (s)`] = { number: { format: 'number' } }; properties[`${taskName(t, i)} · notes`] = { rich_text: {} }; });
+    properties['Session notes'] = { rich_text: {} };
+  } else study.questions.forEach((q, i) => { properties[propName(q, i)] = propSchema(q); });
   if (study.notion?.databaseId) {
     await notion(`databases/${study.notion.databaseId}`, { method: 'PATCH', body: JSON.stringify({ title: [{ text: { content: `${study.title} · responses` } }], properties }) });
     return study.notion.databaseId;
@@ -186,4 +252,36 @@ async function notionRow(study: Study, response: { id: string; at: string; ms: n
     else properties[name] = { rich_text: [{ text: { content: String(v).slice(0, 1990) } }] };
   });
   await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
+}
+
+async function notionSession(study: Study, session: Session) {
+  const label: Record<Outcome, string> = { success: 'Success', help: 'With help', fail: 'Failed', skipped: 'Skipped' };
+  const properties: Record<string, unknown> = {
+    Participant: { title: [{ text: { content: session.participant } }] },
+    Submitted: { date: { start: session.at } },
+    'Time (s)': { number: Math.round(session.durationMs / 1000) },
+    'Session notes': { rich_text: session.notes ? [{ text: { content: session.notes.slice(0, 1990) } }] : [] },
+  };
+  (study.tasks ?? []).forEach((t, i) => {
+    const r = session.tasks.find(x => x.taskId === t.id); if (!r) return;
+    properties[taskName(t, i)] = { select: { name: label[r.status] } };
+    properties[`${taskName(t, i)} · time (s)`] = { number: Math.round(r.ms / 1000) };
+    const note = [r.tags?.length ? `[${r.tags.join(', ')}]` : '', r.notes || ''].filter(Boolean).join(' ');
+    if (note) properties[`${taskName(t, i)} · notes`] = { rich_text: [{ text: { content: note.slice(0, 1990) } }] };
+  });
+  const page = await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
+  return page.id as string;
+}
+
+/* The transcript goes inside the session's Notion page: one paragraph per turn, speaker in bold. */
+async function notionTranscript(pageId: string, t: Transcript) {
+  const stamp = (n: number) => `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, '0')}`;
+  const turns: Array<{ spk: number; s: number; text: string }> = [];
+  for (const seg of t.segments) { const last = turns[turns.length - 1]; if (last && last.spk === seg.spk && last.text.length < 1700) last.text += ` ${seg.text}`; else turns.push({ spk: seg.spk, s: seg.s, text: seg.text }); }
+  const blocks: unknown[] = [{ object: 'block', type: 'heading_2', heading_2: { rich_text: [{ text: { content: 'Transcript' } }] } }, ...turns.map(turn => ({ object: 'block', type: 'paragraph', paragraph: { rich_text: [
+    { text: { content: `${t.speakers[turn.spk] || `Speaker ${turn.spk + 1}`}` }, annotations: { bold: true } },
+    { text: { content: `  ${stamp(turn.s)}\n` }, annotations: { color: 'gray' } },
+    { text: { content: turn.text.slice(0, 1900) } },
+  ] } }))];
+  for (let i = 0; i < blocks.length; i += 100) await notion(`blocks/${pageId}/children`, { method: 'PATCH', body: JSON.stringify({ children: blocks.slice(i, i + 100) }) });
 }

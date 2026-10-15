@@ -1,4 +1,4 @@
-export type SectionKind = "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -27,7 +27,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo" | "facts" | "chips"; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "person" | "list" | "text" | "quote" | "day" | "meter" | "photo" | "facts" | "chips"; /** Task success: % completed with help. */ assist?: string; /** AEIOU category letter. */ cat?: "a" | "e" | "i" | "o" | "u"; /** Coded notes pinned on a photo (0–1 positions). */ pins?: Array<{ x: number; y: number; cat: "a" | "e" | "i" | "o" | "u"; note: string }>; /** Spotlights on a screen (0–1 box) with a note. */ spots?: Array<{ x: number; y: number; w: number; h: number; note: string }>; hidden?: boolean; actions?: string; touchpoints?: string; thoughts?: string; pains?: string; opportunities?: string; owner?: string }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -54,6 +54,8 @@ export interface CaseStudySection {
   };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
+  /** Task success: live link to a moderated usability test in Research. */
+  taskSource?: { studyId: string; studyTitle: string; taskIds: string[]; sessions: number; updatedAt: string };
   /** A/B test: change boxes, metrics and outcome. */
   abtest?: import("./ABTest").ABTestData;
   /** Affinity diagram: green areas > pink issues > blue clusters > yellow notes. */
@@ -99,6 +101,7 @@ export interface BuilderStudy {
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
   abtest: "A/B test",
+  taskSuccess: "Task success",
   aeiou: "AEIOU observations",
   affinity: "Affinity diagram",
   showcase: "Component showcase",
@@ -137,6 +140,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   screenStrip: "One large screen with thumbnails to switch, plus highlight buttons for spotlights.",
   affinity: "Observations that scatter from a pile into clusters as you scroll, under issues and areas of concern.",
   aeiou: "Code observation photos and notes as Activities, Environments, Interactions, Objects and Users; hover a letter to see just those.",
+  taskSuccess: "How many people finished each flow, as rings.",
   abtest: "Two versions in one frame, the changes between them, and what happened.",
   empathy: "The user in the centre with what they say, think, do and feel around them.",
   details: "Your role, timeline, team and tools at a glance. Show or hide any detail.",
@@ -164,7 +168,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -183,6 +187,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     details: "Project overview",
     empathy: "Inside their head",
     abtest: "What changed, and what it did",
+    taskSuccess: "Could people finish the key flows?",
     aeiou: "What we observed",
     affinity: "What the notes added up to",
     showcase: "Components I designed",
@@ -232,6 +237,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
       { title: "Lobby", detail: "No seating, so people lean on the merch shelf while waiting", cat: "e", blockType: "text" },
       { title: "Changing room", detail: "Phone propped on a water bottle to show the class QR code", cat: "o", blockType: "text" },
     ],
+    taskSuccess: [{ title: "Book a class", value: "80", assist: "20", detail: "4 of 5 on their own · 1 with help" }, { title: "Join the waitlist", value: "60", assist: "0", detail: "3 of 5 on their own" }, { title: "Cancel a booking", value: "100", assist: "0", detail: "5 of 5 on their own" }],
     abtest: [{ title: "A · Original", detail: "The current checkout", image: "" }, { title: "B · New design", detail: "Times shown up front", image: "" }],
     empathy: [
       { title: "Maya, new member", detail: "Busy nurse, books on her phone", image: "" },

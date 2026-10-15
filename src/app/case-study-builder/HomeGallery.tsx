@@ -64,13 +64,13 @@ export function HomeGallery({ current, onOpen, onNew, onOpenResearch }: { curren
       </div>
     </section>
     {onOpenResearch && <section className="csb-home-section">
-      <div className="csb-home-title"><h2>Research</h2><p>Surveys you're running. Responses save to your server and Notion; connect results to a survey chart in any case study.</p></div>
+      <div className="csb-home-title"><h2>Research</h2><p>Surveys and usability tests. Results save to your server and Notion, and connect to charts in any case study.</p></div>
       <div className="csb-home-research">
-        <button type="button" className="csb-home-study is-new" onClick={() => onOpenResearch()}><Plus size={16} /><strong>New survey</strong></button>
+        <button type="button" className="csb-home-study is-new" onClick={() => onOpenResearch()}><Plus size={16} /><strong>New study</strong></button>
         {research.map(s => <button key={s.id} type="button" className="csb-home-study" onClick={() => onOpenResearch(s.id)}>
           <span className={`csb-home-dot is-${s.published ? s.status : 'draft'}`} aria-hidden="true" />
           <strong>{s.title}</strong>
-          <small>{s.published ? (s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{typeof s.responses === 'number' ? ` · ${s.responses} response${s.responses === 1 ? '' : 's'}` : ''}</small>
+          <small>{s.kind === 'usability' ? 'Usability test' : 'Survey'} · {s.published ? (s.kind === 'usability' ? 'Saved' : s.status === 'open' ? 'Live' : 'Closed') : 'Draft'}{typeof s.responses === 'number' ? ` · ${s.responses} ${s.kind === 'usability' ? 'session' : 'response'}${s.responses === 1 ? '' : 's'}` : ''}</small>
           {s.projectTitle && <small className="csb-home-study-project">{s.projectTitle}</small>}
         </button>)}
       </div>

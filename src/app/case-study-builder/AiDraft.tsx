@@ -48,6 +48,7 @@ export function applyDraft(study: BuilderStudy, draft: Draft, images: Record<str
       const next: CaseStudySection['items'][number] = { ...shape };
       for (const key of ['title', 'detail', 'value', 'finding', 'findingNote', 'quote', 'quoteNote', 'when'] as const) { const value = (item as DraftItem)[key]; if (typeof value === 'string') (next as Record<string, unknown>)[key] = value; }
       const extra = item as Record<string, unknown>;
+      if (kind === 'taskSuccess') next.assist = typeof extra.assist === 'string' || typeof extra.assist === 'number' ? String(extra.assist) : '0';
       if (typeof extra.cat === 'string' && /^[aeiou]$/.test(extra.cat)) next.cat = extra.cat as NonNullable<typeof next.cat>;
       if (typeof extra.blockType === 'string' && ['person', 'list', 'text', 'quote', 'day', 'meter', 'photo', 'facts', 'chips'].includes(extra.blockType)) next.blockType = extra.blockType as NonNullable<typeof next.blockType>;
       const frameId = (item as DraftItem).frameId;
