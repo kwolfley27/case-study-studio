@@ -139,6 +139,15 @@ export default function CaseStudyBuilder() {
       await saveStudy(fresh); setStudy(current => current.id === STEINWAY_ID ? fresh : current); return true;
     }).then(added => { try { ["v2", "v3", "v4", "v5"].forEach(v => localStorage.setItem(`csb-starter-steinway-${v}`, "1")); } catch { /* ignore */ } setMessage({ text: added ? "New project added: Steinway PDP redesign. Find it on Home." : "Steinway updated: grid and type are now live, with no screenshots." }); }).catch(() => undefined);
   }, []);
+  // Whatever copy of the Steinway project is open: if it is still the first, screenshot-based version, swap in the Figma-frame version.
+  useEffect(() => {
+    if (!study.id.startsWith("starter-steinway") || !study.sections.some(s => /^stw-[a-z]/.test(s.id))) return;
+    void import("./starters/steinway").then(({ buildSteinway, STEINWAY_ID }) => {
+      const fresh = migrateStudy(buildSteinway());
+      setStudy(current => current.id !== STEINWAY_ID || !current.sections.some(s => /^stw-[a-z]/.test(s.id)) ? current : { ...fresh, slug: current.slug || fresh.slug, publishedAt: current.publishedAt, sections: [...fresh.sections, ...current.sections.filter(s => !s.id.startsWith("stw-"))] });
+      setSelectedId(null);
+    }).catch(() => undefined);
+  }, [study.id, study.sections]);
   // Keep every study in the Home library too (debounced; IndexedDB has room for images).
   useEffect(() => { const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
   // The quick local copy can be too big once Figma frames are pulled in; then only its id is kept and the full study lives in IndexedDB.
