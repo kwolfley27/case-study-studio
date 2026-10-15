@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { TextStyle } from './EditableText';
+import { ColorDots } from './ColorDots';
 
 /*
   Floating toolbar for the text you're editing. Only design tokens are offered:
@@ -13,7 +14,7 @@ const tones: Array<[TextStyle['tone'] | undefined, string, string]> = [[undefine
 const sizes: Array<[TextStyle['size'] | undefined, string]> = [['s', 'S'], [undefined, 'M'], ['l', 'L'], ['xl', 'XL']];
 const weights: Array<[TextStyle['weight'] | undefined, string]> = [['light', 'Light'], [undefined, 'Auto'], ['bold', 'Bold']];
 
-export function TextStyleBar({ enabled, styleOf, onStyle, colors }: { colors?: { ink: string; muted: string; accent: string; accent2: string }; enabled: boolean; styleOf: (sectionId: string, field: string) => TextStyle | undefined; onStyle: (sectionId: string, field: string, patch: TextStyle) => void }) {
+export function TextStyleBar({ accent, accent2, enabled, styleOf, onStyle, colors }: { accent?: string; accent2?: string; colors?: { ink: string; muted: string; accent: string; accent2: string }; enabled: boolean; styleOf: (sectionId: string, field: string) => TextStyle | undefined; onStyle: (sectionId: string, field: string, patch: TextStyle) => void }) {
   const [target, setTarget] = useState<Target | null>(null);
 
   useEffect(() => {
@@ -47,7 +48,13 @@ export function TextStyleBar({ enabled, styleOf, onStyle, colors }: { colors?: {
   const left = Math.max(8, Math.min(window.innerWidth - 420, target.rect.left));
 
   return <div className="csb-textbar" role="toolbar" aria-label="Text style" style={{ top, left }} onMouseDown={keep}>
-    <div className="csb-textbar-group" aria-label="Colour">{tones.map(([tone, label]) => <button key={label} type="button" title={label} aria-label={`Colour: ${label}`} aria-pressed={style.tone === tone} className="csb-textbar-swatch" onClick={() => set({ tone })}><i style={{ background: tone ? swatch[tone] : undefined }} className={tone ? '' : 'is-default'} /></button>)}</div>
+    <div className="csb-textbar-group" aria-label="Colour"><ColorDots compact label="Text colour" value={style.tone ?? ''} onChange={v => set({ tone: (v || undefined) as TextStyle['tone'] })} options={[
+      { value: '', label: 'Default', color: 'linear-gradient(135deg,#f5f5f7 50%,#86868b 50%)' },
+      { value: 'ink', label: 'Black', color: swatch.ink },
+      { value: 'muted', label: 'Grey', color: swatch.muted },
+      { value: 'accent', label: 'Accent', color: accent || swatch.accent },
+      ...(accent2 ? [{ value: 'accent2', label: 'Accent 2', color: accent2 }] : []),
+    ]} /></div>
     <span className="csb-textbar-sep" />
     <div className="csb-textbar-group" aria-label="Size">{sizes.map(([size, label]) => <button key={label} type="button" aria-label={`Size ${label}`} aria-pressed={style.size === size} onClick={() => set({ size })}>{label}</button>)}</div>
     <span className="csb-textbar-sep" />

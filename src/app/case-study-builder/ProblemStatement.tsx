@@ -43,7 +43,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
       {mark(2, why?.detail || '')}.
     </>;
   // With a "How might we" question the statement sits on a card that turns over as you scroll.
-  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
+  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement bubbleBg={section.options?.bubble ? String(section.options.bubble) : undefined} bubbleInk={section.options?.bubbleInk ? String(section.options.bubbleInk) : undefined} sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
       {mark(0, who?.detail || '')}{' '}
@@ -59,7 +59,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
 /* The flip: a tall scroll scene with a sticky card. Front = the problem statement,
    back = a speech bubble asking "How might we…?". Rotation follows the scroll, so it
    turns back if you scroll up. Reduced motion shows the two faces one after the other. */
-function FlipStatement({ sentence, hmwTitle, hmwDetail, success }: { sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
+function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, success }: { bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
   const reduce = useReducedMotion();
   const scene = useRef<HTMLDivElement>(null);
   const stick = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ function FlipStatement({ sentence, hmwTitle, hmwDetail, success }: { sentence: R
   const bubbleScale = useTransform(bubble, [0, 1], [.92, 1]);
   const hint = useTransform(p, [0, .12, .2], [1, 1, 0]);
   const back = <div className="csb-psf-hmw">
-    <motion.div className="csb-psf-bubble" style={reduce ? undefined : { opacity: bubble, y: bubbleY, scale: bubbleScale }}>
+    <motion.div className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || "#fdfcfc" } : {}), ...(reduce ? {} : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
       <span className="csb-psf-ask"><EditableText field="items.3.title" value={/\?$/.test(hmwTitle.trim()) ? hmwTitle : hmwTitle.replace(/[.…]*$/, '…')} /></span>
       <p><EditableText field="items.3.detail" value={hmwDetail} /></p>
     </motion.div>

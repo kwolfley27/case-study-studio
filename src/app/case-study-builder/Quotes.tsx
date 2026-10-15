@@ -49,7 +49,8 @@ function QuoteChat({ section }: { section: CaseStudySection }) {
   const rows = items.map((it, i) => ({ it, i, me: it.value === 'q', first: !items[i - 1] || items[i - 1].title !== it.title || (items[i - 1].value === 'q') !== (it.value === 'q') }));
   // One row per message; the row that is "typing" shows dots in the same spot the message will fill.
   const count = Math.min(n, shown + (typing ? 1 : 0));
-  return <div className="csb-qchat" ref={ref} role="list">
+  const meBg = section.options?.meBubble ? String(section.options.meBubble) : undefined;
+  return <div className="csb-qchat" ref={ref} role="list" style={meBg ? { ['--qme' as string]: meBg, ['--qme-ink' as string]: String(section.options?.meBubbleInk || '#fdfcfc') } : undefined}>
     {rows.slice(0, count).map(({ it, i, me, first }) => { const dots = i >= shown;
       return <motion.div key={i} className={`csb-qchat-row ${me ? 'is-me' : ''} ${first ? 'is-first' : ''}`} role="listitem"
         initial={instant ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .3, ease }}>

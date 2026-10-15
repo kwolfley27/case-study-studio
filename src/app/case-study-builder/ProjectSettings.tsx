@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { AppWindow, Ban, ImagePlus, Laptop, Monitor, Smartphone } from 'lucide-react';
 import type { BuilderStudy } from './model';
+import { ColorDots, type ColorOption } from './ColorDots';
 
 /* The page-level inspector (nothing selected): visual choices instead of long dropdowns. */
 type Hero = NonNullable<BuilderStudy['hero']>;
@@ -14,16 +15,10 @@ export const GRAD_KINDS: Array<[string, string, string]> = [
   ['type', 'Display type', 'The big “Aa” in the type system'],
 ];
 
+const SWATCH_NAMES: Record<string, string> = { '#c8553d': 'Terracotta', '#375c45': 'Forest', '#3d6b8c': 'Slate blue', '#0447ff': 'Blue', '#ff4704': 'Orange', '#6b5b95': 'Violet', '#000000': 'Black' };
 export function Swatches({ value, onChange, allowNone, label }: { value?: string; onChange: (v?: string) => void; allowNone?: boolean; label: string }) {
-  const custom = useRef<HTMLInputElement>(null);
-  const v = (value || '').toLowerCase();
-  const isPreset = SWATCHES.includes(v);
-  return <div className="csb-ps-swatches" role="radiogroup" aria-label={label}>
-    {allowNone && <button type="button" role="radio" aria-checked={!value} className="csb-ps-swatch is-none" onClick={() => onChange(undefined)} title="None"><i /></button>}
-    {SWATCHES.map(c => <button key={c} type="button" role="radio" aria-checked={v === c} className="csb-ps-swatch" style={{ ['--sw' as string]: c }} onClick={() => onChange(c)} title={c}><i /></button>)}
-    <button type="button" role="radio" aria-checked={!!value && !isPreset} className="csb-ps-swatch is-custom" style={!!value && !isPreset ? { ['--sw' as string]: value } : undefined} onClick={() => custom.current?.click()} title="Custom colour"><i /></button>
-    <input ref={custom} type="color" className="csb-ps-color" value={/^#[\da-f]{6}$/i.test(value || '') ? value : '#888888'} onChange={e => onChange(e.target.value)} tabIndex={-1} aria-hidden="true" />
-  </div>;
+  const options: ColorOption[] = [...(allowNone ? [{ value: '', label: 'None', color: '#fff', none: true }] : []), ...SWATCHES.map(c => ({ value: c, label: SWATCH_NAMES[c] ?? c, color: c }))];
+  return <ColorDots label={label} options={options} value={(value || '').toLowerCase()} onChange={v => onChange(v || undefined)} custom />;
 }
 
 function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: Array<{ v: T; l: string; icon?: React.ReactNode; hint?: string }>; onChange: (v: T) => void; label: string }) {
