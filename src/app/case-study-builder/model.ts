@@ -196,7 +196,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
     findings: { layout: { count: 4 } },
-    timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Understand the people\nResearch the space" }, { title: "Define", detail: "Synthesize findings\nFrame the problem" }, { title: "Develop", detail: "Explore ideas\nPrototype" }, { title: "Deliver", detail: "Test\nRefine" }] },
+    timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
   } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype" | "phases" | "timeUnit">>>>)[kind],

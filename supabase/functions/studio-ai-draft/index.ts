@@ -244,7 +244,7 @@ async function askClaude({ anthropicKey, notes, figma, catalog, current, guidanc
               variant: { type: 'string', enum: ['light', 'tinted', 'dark'] },
               layoutCount: { type: 'integer' }, columns: { type: 'integer' }, criteria: { type: 'string' },
               timeUnit: { type: 'string', description: 'timeline only: Week, Day, Sprint or Month.' },
-              phases: { type: 'array', description: 'timeline only: one entry per phase, in order.', items: { type: 'object', properties: { title: { type: 'string' }, detail: { type: 'string', description: '2–4 short notes, one per line.' } } } },
+              phases: { type: 'array', description: 'timeline only: one entry per phase, in order.', items: { type: 'object', properties: { title: { type: 'string' }, detail: { type: 'string', description: 'A short note, 3–5 words.' } } } },
               items: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { title: { type: 'string' }, detail: { type: 'string' }, value: { type: 'string' }, frameId: { type: 'string' }, finding: { type: 'string' }, findingNote: { type: 'string' }, quote: { type: 'string' }, quoteNote: { type: 'string' }, when: { type: 'string', description: 'timeline only: unit number or range, e.g. "2" or "1-3".' } } } },
             },
           },
