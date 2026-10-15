@@ -2844,3 +2844,25 @@ html.csb-holding{overflow:hidden}
 .csb-gb-thumb button{position:absolute;top:3px;right:3px;display:grid;place-items:center;width:22px;height:22px;border:0;border-radius:50%;background:rgba(253,252,252,.92);color:#000;opacity:0;transition:opacity .15s;cursor:pointer}
 .csb-gb-thumb:hover button,.csb-gb-thumb button:focus-visible{opacity:1}
 .csb-gb-lb figure :is(img,video){width:min(860px,86vw);height:auto;object-fit:contain}
+/* Focus row (screenTrio) */
+.csb-trio{position:relative;max-width:1100px;margin:0 auto;padding:clamp(48px,7vw,88px) 0 28px;border-radius:28px;background:#ebe8e4;overflow:hidden}
+.csb-trio.is-white{background:#f5f3f1}
+.csb-trio.is-dark{background:#161411;color:#fdfcfc}
+.csb-trio-row{display:grid;place-items:center}
+.csb-trio-card{grid-area:1/1;position:relative;width:clamp(150px,21%,240px);border-radius:clamp(18px,2.2vw,30px);overflow:hidden;background:#fdfcfc;box-shadow:0 0 0 1px rgba(0,0,0,.04),0 30px 50px -30px rgba(0,0,0,.28);cursor:pointer;will-change:transform}
+.csb-trio.is-tablet .csb-trio-card{width:clamp(220px,36%,420px);border-radius:20px}
+.csb-trio.is-web .csb-trio-card{width:clamp(240px,40%,460px);border-radius:14px}
+.csb-trio-card :is(img,video){display:block;width:100%;height:100%;object-fit:cover;object-position:top;pointer-events:none}
+[data-image-slot].csb-trio-card{cursor:pointer}
+.csb-trio-card:focus-visible{outline:2px solid #000;outline-offset:4px}
+.csb-trio-empty{display:grid;place-items:center;height:100%;padding:12px;text-align:center;font-size:12.5px;color:#a59f97}
+[data-devices=framed] .csb-trio.is-phone .csb-trio-card{padding:7px;background:#1d1d1f;box-shadow:inset 0 0 0 1.5px #3a3a3c,0 30px 50px -30px rgba(0,0,0,.35)}
+[data-devices=framed] .csb-trio.is-phone .csb-trio-card :is(img,video,.csb-trio-empty){border-radius:clamp(13px,1.7vw,24px);background:#fdfcfc}
+.csb-trio-cap{min-height:62px;margin-top:28px;padding:0 24px;text-align:center}
+.csb-trio-cap strong{display:block;font-size:17px;font-weight:500;color:inherit}
+.csb-trio-cap span{display:block;margin-top:4px;font-size:15px;color:#777169}
+.csb-trio.is-dark .csb-trio-cap span{color:#a59f97}
+.csb-trio-dots{display:flex;justify-content:center;gap:7px;margin-top:4px}
+.csb-trio-dots button{width:7px;height:7px;padding:0;border:0;border-radius:9999px;background:#00000022;cursor:pointer;transition:width .3s,background .3s}
+.csb-trio-dots button[aria-selected=true]{width:20px;background:#000}
+.csb-trio.is-dark .csb-trio-dots button{background:#ffffff33}.csb-trio.is-dark .csb-trio-dots button[aria-selected=true]{background:#fdfcfc}

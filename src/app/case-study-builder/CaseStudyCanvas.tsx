@@ -8,6 +8,7 @@ import { useSolidElements } from "./GradientElements";
 import { ScreenGroups } from "./ScreenGroups";
 import { IsoShowcase } from "./IsoShowcase";
 import { GifBoard } from "./GifBoard";
+import { ScreenTrio } from "./ScreenTrio";
 import { FloatingDevices } from "./FloatingDevices";
 import { InterviewQuestions } from "./InterviewQuestions";
 import { StudyMeta } from "./StudyMeta";
@@ -174,6 +175,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "iterations": return <Iterations section={section} />;
     case "interviewQs": return <InterviewQuestions section={section} editorMode={editorMode} />;
     case "floatDevices": return <FloatingDevices section={section} editorMode={editorMode} />;
+    case "screenTrio": return <ScreenTrio section={section} editorMode={editorMode} />;
     case "gifBoard": return <GifBoard section={section} editorMode={editorMode} />;
     case "isoShowcase": return <IsoShowcase section={section} editorMode={editorMode} />;
     case "screenGroups": return <ScreenGroups section={section} editorMode={editorMode} />;
