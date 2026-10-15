@@ -1,6 +1,7 @@
 import { PanelResizer, usePanelWidths } from "./PanelResizer";
 import { ColorDots, bubbleOptions, inkOn } from "./ColorDots";
 import { SectionBasics } from "./SectionBasics";
+import { GradientPicker } from "./GradientElements";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, FlaskConical, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
@@ -95,6 +96,7 @@ export default function CaseStudyBuilder() {
   const readPanel = (key: string) => { try { return localStorage.getItem(key) !== "closed"; } catch { return true; } };
   const [leftOpen, setLeftOpen] = useState(() => readPanel("csb-left"));
   const panelW = usePanelWidths();
+  const [gradPick, setGradPick] = useState(false);
   const [rightOpen, setRightOpen] = useState(() => readPanel("csb-right"));
   const [showBrand, setShowBrand] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
@@ -378,11 +380,12 @@ export default function CaseStudyBuilder() {
         <div className="csb-ai-brief"><p className="csb-panel-kicker">AI assistance brief</p><p>{templates.find(t=>t.id===selected.templateId||(!selected.templateId&&t.kind===selected.kind))?.ai}</p><button className="csb-quiet-button" onClick={async()=>{const t=templates.find(t=>t.id===selected.templateId||(!selected.templateId&&t.kind===selected.kind));try{await navigator.clipboard.writeText(`${t?.ai}\n\nProject: ${study.title}\nProject sources: ${JSON.stringify(study.sources||{})}\nFigma frame mapping: ${JSON.stringify(selected.figmaSource||{})}\nCurrent content: ${JSON.stringify(selected,null,2)}\n\nSource material: [paste your research notes here]`);setMessage({text:"AI brief copied. Paste it with your source notes into your AI tool."});}catch{setMessage({text:"Clipboard unavailable. Select and copy the brief above.",error:true});}}}>Copy AI brief</button><small>Uses your notes as a starting point. Generation is not connected yet.</small></div>
         <div className="csb-inspector-divider" /><div className="csb-inspector-actions"><button className="csb-quiet-button" onClick={() => { setStudy(previous => ({ ...previous, sections: previous.sections.filter(section => section.id !== selected.id) })); setSelectedId(null); }}><Trash2 size={13} /> Delete section</button><button className="csb-quiet-button" onClick={() => { const copy = { ...structuredClone(selected), id: crypto.randomUUID() }; setStudy(previous => { const at = previous.sections.findIndex(section => section.id === selected.id); const sections = [...previous.sections]; sections.splice(at + 1, 0, copy); return { ...previous, sections }; }); setSelectedId(copy.id); }}><Copy size={13} /> Duplicate section</button></div>
       </div> : <>
-        <ProjectSettings study={study} update={updateStudy} pickBgImage={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.onchange = async () => { const file = input.files?.[0]; if (!file) return; const url = URL.createObjectURL(file); try { const { downloadIntoDraft } = await import("./ImageSlots"); updateStudy({ hero: { style: "immersive", frame: "laptop", ...study.hero!, bg: "image", bgImage: await downloadIntoDraft(url, 700_000, 2200) } }); } finally { URL.revokeObjectURL(url); } }; input.click(); }} />
+        <ProjectSettings onPickGradient={() => { setRightOpen(false); setGradPick(true); }} study={study} update={updateStudy} pickBgImage={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.onchange = async () => { const file = input.files?.[0]; if (!file) return; const url = URL.createObjectURL(file); try { const { downloadIntoDraft } = await import("./ImageSlots"); updateStudy({ hero: { style: "immersive", frame: "laptop", ...study.hero!, bg: "image", bgImage: await downloadIntoDraft(url, 700_000, 2200) } }); } finally { URL.revokeObjectURL(url); } }; input.click(); }} />
       </>}</div></aside>
     </div>
     {showPublish && <PublishDialog study={study} onClose={() => setShowPublish(false)} onPublished={at => updateStudy({ publishedAt: at })} />}
     {showBrand && view !== "preview" && <BrandPanel study={study} onChange={updateStudy} onClose={() => setShowBrand(false)} notify={(text, error) => setMessage({ text, error })} />}
+    <GradientPicker on={gradPick && view !== "preview"} off={study.gradOffEls ?? []} onChange={gradOffEls => updateStudy({ gradOffEls })} onDone={() => { setGradPick(false); setRightOpen(true); }} />
     <TextStyleBar accent={study.accent} accent2={study.accent2} enabled={view !== "preview"} styleOf={(sectionId, field) => study.sections.find(section => section.id === sectionId)?.textStyles?.[field]} onStyle={(sectionId, field, patch) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== sectionId) return section; const merged = { ...(section.textStyles?.[field] ?? {}), ...patch }; const clean = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined)); const textStyles = { ...(section.textStyles ?? {}) }; if (Object.keys(clean).length) textStyles[field] = clean; else delete textStyles[field]; return { ...section, textStyles }; }) }))} />
     <ImageSlotLayer enabled={view !== "preview"} onFile={handleSlotFile} onUrl={handleSlotUrl} onRemove={slot => setSlotImage(slot, "")} notify={(text, error) => setMessage({ text, error })} />
     <ComponentLibrary open={showAdd} onOpenChange={setShowAdd} onAdd={addSection} study={study}/>

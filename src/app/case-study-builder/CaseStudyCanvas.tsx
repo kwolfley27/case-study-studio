@@ -3,6 +3,7 @@ import { TaskSuccess } from "./TaskSuccess";
 import { Roadmap } from "./Roadmap";
 import { FlowCompare } from "./FlowCompare";
 import { FlowDiff, UserFlow } from "./UserFlow";
+import { useSolidElements } from "./GradientElements";
 import { JobsToBeDone } from "./JobsToBeDone";
 import { ScrollSite } from "./ScrollSite";
 import { BarChart } from "./BarChart";
@@ -211,7 +212,9 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
   const showNav = !bare && study.showNav !== false;
   useEffect(() => { if (study.brand?.display) loadFont(study.brand.display); if (study.brand?.text) loadFont(study.brand.text); }, [study.brand?.display, study.brand?.text]);
   const coverFirst = study.sections[0]?.kind === "coverHero";
-  return <MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} data-grad={study.accentGradient && study.accent2 ? "" : undefined} data-nograd={study.accentGradient && study.gradientOff?.length ? study.gradientOff.join(" ") : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent, ...(study.accentGradient && study.accent2 ? { "--csb-accent-fill": `linear-gradient(120deg, ${study.accent}, ${study.accent2})`, "--csb-accent-grad-v": `linear-gradient(to top, ${study.accent}, ${study.accent2})` } : {}) } as React.CSSProperties}>
+  const articleRef = useRef<HTMLElement>(null);
+  useSolidElements(articleRef, study.gradOffEls, !!(study.accentGradient && study.accent2));
+  return <MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article ref={articleRef} className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} data-grad={study.accentGradient && study.accent2 ? "" : undefined} data-nograd={study.accentGradient && study.gradientOff?.length ? study.gradientOff.join(" ") : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent, ...(study.accentGradient && study.accent2 ? { "--csb-accent-fill": `linear-gradient(120deg, ${study.accent}, ${study.accent2})`, "--csb-accent-grad-v": `linear-gradient(to top, ${study.accent}, ${study.accent2})` } : {}) } as React.CSSProperties}>
     {study.accentGradient && study.accent2 && <svg className="csb-grad-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><linearGradient id="csb-accent-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style={{ stopColor: "var(--csb-accent)" }} /><stop offset="1" style={{ stopColor: "var(--csb-accent-2)" }} /></linearGradient></defs></svg>}
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
     {!coverFirst && !bare && study.hero?.style === "immersive" && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><ImmersiveHero study={study} editorMode={editorMode} /></EditingContext.Provider>}

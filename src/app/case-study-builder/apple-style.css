@@ -2498,3 +2498,14 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
   .csb-ss.is-desktop .csb-ss-lines{display:none}
   .csb-ss.is-desktop .csb-ss-note-pos{transform:none!important}
 }
+
+/* ── Single elements kept solid (data-solid), and the picker outlines ── */
+.csb-canvas [data-solid]{--csb-accent-fill:var(--csb-accent)!important;--csb-accent-grad-v:var(--csb-accent)!important;--bar-c:var(--csb-accent)!important}
+.csb-canvas :is(path,circle)[data-solid]{stroke:var(--csb-accent)!important}
+.csb-canvas .csb-radar-fill[data-solid]{fill:var(--csb-accent)!important}
+.csb-canvas :is(.csb-type-glyph,.csb-type-bar-top span)[data-solid]{background:none!important;color:inherit!important}
+.csb-canvas .csb-ps-mark.is-marker[data-solid]{background-image:linear-gradient(color-mix(in srgb,var(--csb-accent) 32%,transparent),color-mix(in srgb,var(--csb-accent) 32%,transparent))!important}
+.csb-canvas .csb-ps-mark:not(.is-marker)[data-solid]{background-image:linear-gradient(var(--csb-accent),var(--csb-accent))!important}
+.csb-canvas.is-gradpick :is(.csb-bar[style*="accent-grad"] .csb-bar-col i,.csb-survey-bar-fill,.csb-apple-pictogram i.is-filled,.csb-apple-survey-track span,.csb-apple-persona-day i,.csb-persona-meter i,.csb-metric-bar,.csb-ab-bar.is-b,.csb-sv-track i,.csb-sv-col i.is-top,.csb-proto-play,.csb-annot-pin,.csb-ss-marker,.csb-detail li:first-child i,.csb-detail-solo i,.csb-type-glyph,.csb-type-bar-top span,.csb-ps-mark.is-acc,.csb-wt-sweep b,.csb-dev-sample em,.csb-flow-line){outline:2px dashed #0071e3;outline-offset:3px;cursor:pointer}
+.csb-canvas.is-gradpick :is(.csb-tsr-arc,.csb-survey-arc-fill,.csb-radar-fill,.csb-journey-line){cursor:pointer;filter:drop-shadow(0 0 2px #0071e3)}
+.csb-canvas.is-gradpick [data-solid]{outline-style:solid!important;outline-color:#1d1d1f!important}

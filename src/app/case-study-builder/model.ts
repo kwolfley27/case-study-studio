@@ -109,6 +109,8 @@ export interface BuilderStudy {
   accentGradient?: boolean;
   /** Which kinds of things get the gradient (when accentGradient). Missing = all. */
   gradientOff?: string[];
+  /** Single elements kept solid ("sectionId|n"), see GradientElements. */
+  gradOffEls?: string[];
   /** Previews of other case studies at the end of the page. */
   moreStudies?: import("./EndMore").MoreStudy[];
   /** Closing line at the end of the page. */

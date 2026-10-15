@@ -103,28 +103,31 @@ export function TypeSpecimen({ section }: { section: CaseStudySection }) {
 export function TypeSpecimenControls({ section, onChange }: { section: CaseStudySection; onChange: (p: Partial<CaseStudySection>) => void }) {
   const items = section.items; const o = section.options ?? {};
   const setF = (i: number, patch: Partial<FontSpec>) => onChange({ items: items.map((it, k) => k === i ? { ...it, font: { ...DEFAULT, ...it.font, ...patch } } : it) });
+  const setItem = (i: number, patch: Partial<CaseStudySection['items'][number]>) => onChange({ items: items.map((it, k) => k === i ? { ...it, ...patch } : it) });
   const opt = (k: string, v: boolean) => onChange({ options: { ...o, [k]: v } });
-  return <div className="csb-connection-section csb-fc-ctl">
-    <p className="csb-panel-kicker">Show</p>
-    <label className="csb-check-field"><input type="checkbox" checked={o.showFaces !== false} onChange={e => opt('showFaces', e.target.checked)} /> Typefaces (Aa)</label>
-    <label className="csb-check-field"><input type="checkbox" checked={o.showScale === true} onChange={e => opt('showScale', e.target.checked)} /> Size scale</label>
-    <label className="csb-check-field"><input type="checkbox" checked={o.showRows !== false} onChange={e => opt('showRows', e.target.checked)} /> Styles in use</label>
-    <p className="csb-panel-kicker">Styles</p>
-    <p className="csb-field-note">Click the samples and labels on the page to change the words. Any Google Font name works.</p>
-    {items.map((it, i) => { const f = it.font ?? DEFAULT; return <div key={i} className="csb-ss-ctl">
-      <strong style={{ fontSize: 12.5 }}>{it.title}</strong>
-      <div className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 52px 52px auto' }}>
-        <input value={f.family} aria-label="Font" onChange={e => setF(i, { family: e.target.value })} />
-        <input type="number" value={f.size} aria-label="Size (pt)" title="Size (pt)" onChange={e => setF(i, { size: Number(e.target.value) || 12 })} />
-        <input type="number" value={f.tracking ?? 0} aria-label="Tracking %" title="Tracking %" onChange={e => setF(i, { tracking: Number(e.target.value) })} />
-        <button type="button" className="csb-icon-button" aria-label="Remove style" onClick={() => onChange({ items: items.filter((_, k) => k !== i) })}><Trash2 size={13} /></button>
+  const show: Array<[string, string, boolean]> = [['showFaces', 'Typefaces', o.showFaces !== false], ['showScale', 'Size scale', o.showScale === true], ['showRows', 'Styles in use', o.showRows !== false]];
+  return <div className="csb-tsc">
+    <div className="csb-sb-row">
+      <span className="csb-sb-label">Show</span>
+      <div className="csb-sb-chips" role="group" aria-label="Parts to show">{show.map(([k, l, on]) => <button key={k} type="button" aria-pressed={on} onClick={() => opt(k, !on)}>{l}</button>)}</div>
+    </div>
+    <div className="csb-tsc-head"><span className="csb-sb-label">Styles</span><small>Any Google Font name works. Click a sample on the page to change its words.</small></div>
+    {items.map((it, i) => { const f = it.font ?? DEFAULT; const id = `${section.id}-ts-${i}`; return <div key={i} className="csb-tsc-card">
+      <div className="csb-tsc-top">
+        <input className="csb-tsc-name" value={it.title} aria-label="Style name" onChange={e => setItem(i, { title: e.target.value })} />
+        <button type="button" className="csb-tsc-del" aria-label={`Remove ${it.title}`} title="Remove style" onClick={() => onChange({ items: items.filter((_, k) => k !== i) })}><Trash2 size={13} /></button>
       </div>
-      <div className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr auto auto' }}>
-        <select value={f.weight ?? 400} aria-label="Weight" onChange={e => setF(i, { weight: Number(e.target.value) })}>{[300, 400, 500, 600, 700].map(w => <option key={w} value={w}>{WEIGHT[w]}</option>)}</select>
-        <label className="csb-check-field"><input type="checkbox" checked={!!f.italic} onChange={e => setF(i, { italic: e.target.checked })} /> Italic</label>
-        <label className="csb-check-field"><input type="checkbox" checked={!!f.upper} onChange={e => setF(i, { upper: e.target.checked })} /> Caps</label>
+      <label className="csb-tsc-field is-font"><span>Font</span><input id={`${id}-f`} value={f.family} style={{ fontFamily: stackOf(f.family) }} onChange={e => setF(i, { family: e.target.value })} /></label>
+      <div className="csb-tsc-grid">
+        <label className="csb-tsc-field"><span>Size</span><span className="csb-tsc-unit"><input type="number" min={6} max={200} value={f.size} onChange={e => setF(i, { size: Number(e.target.value) || 12 })} /><em>pt</em></span></label>
+        <label className="csb-tsc-field"><span>Letter spacing</span><span className="csb-tsc-unit"><input type="number" step={1} value={f.tracking ?? 0} onChange={e => setF(i, { tracking: Number(e.target.value) })} /><em>%</em></span></label>
+        <label className="csb-tsc-field"><span>Weight</span><select value={f.weight ?? 400} onChange={e => setF(i, { weight: Number(e.target.value) })}>{[300, 400, 500, 600, 700].map(w => <option key={w} value={w}>{WEIGHT[w]}</option>)}</select></label>
+      </div>
+      <div className="csb-sb-chips" role="group" aria-label="Style">
+        <button type="button" aria-pressed={!!f.italic} onClick={() => setF(i, { italic: !f.italic })}><i style={{ fontStyle: 'italic' }}>Italic</i></button>
+        <button type="button" aria-pressed={!!f.upper} onClick={() => setF(i, { upper: !f.upper })}>All caps</button>
       </div>
     </div>; })}
-    <button type="button" className="csb-quiet-button" onClick={() => onChange({ items: [...items, { title: 'New style', detail: 'Font · size', value: 'Sample text', font: { ...DEFAULT } }] })}><Plus size={13} /> Add style</button>
+    <button type="button" className="csb-quiet-button" onClick={() => onChange({ items: [...items, { title: 'New style', detail: 'Font · size', value: 'Sample text', font: { ...DEFAULT } }] })}><Plus size={13} /> Add a style</button>
   </div>;
 }

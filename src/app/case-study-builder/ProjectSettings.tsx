@@ -27,7 +27,7 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
   </div>;
 }
 
-export function ProjectSettings({ study, update, pickBgImage }: { study: BuilderStudy; update: (p: Partial<BuilderStudy>) => void; pickBgImage: () => void }) {
+export function ProjectSettings({ study, update, pickBgImage, onPickGradient }: { study: BuilderStudy; update: (p: Partial<BuilderStudy>) => void; pickBgImage: () => void; onPickGradient?: () => void }) {
   const hero: Hero = { style: 'standard', bg: 'accent', frame: study.hero?.style === 'immersive' ? 'laptop' : 'none', ...study.hero };
   const setHero = (p: Partial<Hero>) => update({ hero: { ...hero, ...p } });
   return <div className="csb-ps" style={{ ['--ps-accent' as string]: study.accent }}>
@@ -82,7 +82,8 @@ export function ProjectSettings({ study, update, pickBgImage }: { study: Builder
       {study.accentGradient && <div className="csb-ps-gradon" role="group" aria-label="Use the gradient on">
         <p className="csb-ps-label">Use the gradient on</p>
         {GRAD_KINDS.map(([k, l, hint]) => { const on = !(study.gradientOff ?? []).includes(k); return <label key={k} className="csb-ps-check" title={hint}><input type="checkbox" checked={on} onChange={e => update({ gradientOff: e.target.checked ? (study.gradientOff ?? []).filter(x => x !== k) : [...(study.gradientOff ?? []), k] })} /><span>{l}<small>{hint}</small></span></label>; })}
-        <p className="csb-ps-hint">Anything unticked uses the solid accent. You can also turn the gradient on or off for one section in its settings.</p>
+        <button type="button" className="csb-ps-pick" onClick={onPickGradient}>Choose single elements on the page…</button>
+        <p className="csb-ps-hint">Anything unticked uses the solid accent. To keep one bar, ring or dot solid, choose it on the page.{(study.gradOffEls?.length ?? 0) > 0 ? ` ${study.gradOffEls!.length} element${study.gradOffEls!.length === 1 ? ' is' : 's are'} solid now.` : ''}</p>
       </div>}
       <p className="csb-ps-label">{study.accentGradient ? 'Gradient to' : <>Second accent <small>optional, for text you style</small></>}</p>
       <Swatches label={study.accentGradient ? 'Gradient end colour' : 'Second accent'} allowNone={!study.accentGradient} value={study.accent2} onChange={c => update({ accent2: c })} />
