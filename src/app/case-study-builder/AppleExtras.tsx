@@ -6,8 +6,24 @@ import type { CaseStudySection } from './model';
 
 const lines = (value: string) => value.split(/\n+/).map(line => line.trim()).filter(Boolean);
 
-type PersonaBlockType = 'list' | 'text' | 'quote' | 'day' | 'meter';
-export const personaBlockType = (item: CaseStudySection['items'][number] | undefined, index: number): PersonaBlockType => item?.blockType ?? (index === 3 ? 'day' : 'list');
+type PersonaBlockType = 'person' | 'list' | 'text' | 'quote' | 'day' | 'meter';
+export const personaBlockType = (item: CaseStudySection['items'][number] | undefined, index: number): PersonaBlockType => index === 0 ? 'person' : item?.blockType ?? (index === 3 ? 'day' : 'list');
+/** A persona section can hold several personas: each starts at a 'person' item. */
+export function splitPersonas(section: CaseStudySection) {
+  const groups: Array<{ personIndex: number; blocks: Array<{ item: CaseStudySection['items'][number]; index: number; type: PersonaBlockType }> }> = [];
+  section.items.forEach((item, index) => {
+    const type = personaBlockType(item, index);
+    if (type === 'person' || !groups.length) groups.push({ personIndex: index, blocks: [] });
+    else groups[groups.length - 1].blocks.push({ item, index, type });
+  });
+  return groups;
+}
+export const newPersona = (n: number): CaseStudySection['items'] => [
+  { blockType: 'person', title: `Persona ${n}`, detail: 'Role, context, and a concise description.', value: 'Trait, Trait, Trait', image: '' },
+  { blockType: 'list', title: 'Goals', detail: 'Goal one\nGoal two' },
+  { blockType: 'list', title: 'Pain points', detail: 'Pain one\nPain two' },
+];
+const initialsOf = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase() || '•';
 export const personaBlockPresets: Array<{ label: string; item: CaseStudySection['items'][number] }> = [
   { label: 'Goals', item: { blockType: 'list', title: 'Goals', detail: 'Goal one\nGoal two\nGoal three' } },
   { label: 'Pain points', item: { blockType: 'list', title: 'Pain points', detail: 'Pain one\nPain two\nPain three' } },
@@ -32,29 +48,44 @@ function LineList({ index, detail, as = 'p' }: { index: number; detail: string; 
   return <>{items.map((line, i) => <p key={i}><EditableText field={`items.${index}.detail.${i}`} value={line} /></p>)}{edit && <button type="button" className="csb-persona-add" onClick={add}>+ Add point</button>}</>;
 }
 
-export function Persona({ section }: { section: CaseStudySection }) {
-  const person = section.items[0];
-  const blocks = section.items.slice(1).map((item, i) => ({ item, index: i + 1, type: personaBlockType(item, i + 1) }));
+function PersonaCard({ section, group, compact }: { section: CaseStudySection; group: ReturnType<typeof splitPersonas>[number]; compact?: boolean }) {
+  const person = section.items[group.personIndex];
+  const p = group.personIndex;
   const showPortrait = section.options?.portrait !== false;
-  const side = blocks.filter(block => block.type !== 'day');
-  const days = blocks.filter(block => block.type === 'day');
-  return <div className={`csb-apple-persona ${showPortrait ? '' : 'is-no-portrait'}`}>
-    <div className="csb-apple-persona-profile">
-      {showPortrait && <div className="csb-apple-persona-portrait" data-image-slot={`${section.id}:0`}>{person?.image ? <img src={person.image} alt={`${person.title} portrait`} /> : <div><strong>Portrait</strong><span>880 × 1120 · designed media</span></div>}</div>}
-      <div className="csb-apple-persona-copy">
-        <h3><EditableText field="items.0.title" value={person?.title || 'The person'} /></h3>
-        <p><EditableText field="items.0.detail" value={person?.detail || ''} /></p>
-        <span className="csb-apple-persona-traits"><EditableText field="items.0.value" value={person?.value || ''} /></span>
-        {side.length > 0 && <div className="csb-apple-persona-lists">{side.map(({ item, index, type }) => <div key={index} className={`csb-persona-block is-${type}`}>
-          <h4><EditableText field={`items.${index}.title`} value={item.title} /></h4>
-          {type === 'list' && <LineList index={index} detail={item.detail} />}
-          {type === 'text' && <p className="csb-persona-text"><EditableText field={`items.${index}.detail`} value={item.detail} /></p>}
-          {type === 'quote' && <blockquote>“<EditableText field={`items.${index}.detail`} value={item.detail} />”</blockquote>}
-          {type === 'meter' && <div className="csb-persona-meter"><span><motion.i initial={{ width: 0 }} whileInView={{ width: `${Math.min(100, Math.max(0, Number(item.value) || 0))}%` }} viewport={{ once: true }} transition={{ duration: .9, ease: [0.22, 1, 0.36, 1] }} /></span><small><EditableText field={`items.${index}.detail`} value={item.detail} /></small></div>}
-        </div>)}</div>}
+  const side = group.blocks.filter(block => block.type !== 'day');
+  const days = group.blocks.filter(block => block.type === 'day');
+  const traits = (person?.value || '').split(/[,·]/).map(t => t.trim()).filter(Boolean);
+  const { edit } = useContext(EditingContext);
+  return <div className={`csb-pp ${compact ? 'is-compact' : ''}`}>
+    <div className="csb-pp-head">
+      {showPortrait && <div className="csb-pp-avatar" data-image-slot={`${section.id}:${p}`}>{person?.image ? <img src={person.image} alt={`${person.title} portrait`} /> : <span>{initialsOf(person?.title || '')}</span>}</div>}
+      <div className="csb-pp-id">
+        <h3><EditableText field={`items.${p}.title`} value={person?.title || 'The person'} /></h3>
+        <p><EditableText field={`items.${p}.detail`} value={person?.detail || ''} /></p>
+        {edit ? <p className="csb-pp-traits-edit"><small>Traits</small> <EditableText field={`items.${p}.value`} value={person?.value || ''} /></p>
+          : traits.length > 0 && <ul className="csb-pp-traits">{traits.map(t => <li key={t}>{t}</li>)}</ul>}
       </div>
     </div>
+    {side.length > 0 && <div className="csb-apple-persona-lists">{side.map(({ item, index, type }) => <div key={index} className={`csb-persona-block is-${type}`}>
+      <h4><EditableText field={`items.${index}.title`} value={item.title} /></h4>
+      {type === 'list' && <LineList index={index} detail={item.detail} />}
+      {type === 'text' && <p className="csb-persona-text"><EditableText field={`items.${index}.detail`} value={item.detail} /></p>}
+      {type === 'quote' && <blockquote>“<EditableText field={`items.${index}.detail`} value={item.detail} />”</blockquote>}
+      {type === 'meter' && <div className="csb-persona-meter"><span><motion.i initial={{ width: 0 }} whileInView={{ width: `${Math.min(100, Math.max(0, Number(item.value) || 0))}%` }} viewport={{ once: true }} transition={{ duration: .9, ease: [0.22, 1, 0.36, 1] }} /></span><small><EditableText field={`items.${index}.detail`} value={item.detail} /></small></div>}
+    </div>)}</div>}
     {days.map(({ item, index }) => <div key={index} className="csb-apple-persona-day"><h4><EditableText field={`items.${index}.title`} value={item.title} /></h4><LineList index={index} detail={item.detail} as="day" /></div>)}
+  </div>;
+}
+
+export function Persona({ section }: { section: CaseStudySection }) {
+  const groups = splitPersonas(section);
+  const [active, setActive] = useState(0);
+  const side = section.options?.personaLayout === 'side' && groups.length > 1;
+  const current = Math.min(active, groups.length - 1);
+  if (side) return <div className="csb-pp-side" style={{ '--pp-cols': Math.min(3, groups.length) } as React.CSSProperties}>{groups.map(group => <PersonaCard key={group.personIndex} section={section} group={group} compact />)}</div>;
+  return <div className="csb-pp-wrap">
+    {groups.length > 1 && <div className="csb-pp-tabs" role="tablist" aria-label="Personas">{groups.map((group, i) => { const person = section.items[group.personIndex]; return <button key={group.personIndex} type="button" role="tab" aria-selected={i === current} onClick={e => { e.stopPropagation(); setActive(i); }}><span className="csb-pp-tab-avatar">{person?.image ? <img src={person.image} alt="" /> : initialsOf(person?.title || '')}</span>{person?.title || `Persona ${i + 1}`}</button>; })}</div>}
+    <motion.div key={current} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}><PersonaCard section={section} group={groups[current]} /></motion.div>
   </div>;
 }
 

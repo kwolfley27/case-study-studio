@@ -16,6 +16,7 @@ import { ProjectDetails } from "./ProjectDetails";
 import { ImmersiveHero } from "./ImmersiveHero";
 import { DeviceFrame, HeroFramePicker } from "./DeviceFrame";
 import { ProblemStatement } from "./ProblemStatement";
+import { EmpathyMap } from "./EmpathyMap";
 import { introHidden, navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
 
@@ -115,6 +116,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "issueFlow": return <IssueFlow section={section} />;
     case "annotated": return <AnnotatedScreen section={section} />;
     case "problem": return <ProblemStatement section={section} />;
+    case "empathy": return <EmpathyMap section={section} />;
     case "rows": return <ResearchVisual section={{ ...section, kind: "problem" }} />;
     case "methods": case "columns": case "competitors": case "gap": return <ResearchVisual section={section} />;
     case "wireframes": return <WireframeShowcase section={section} />;

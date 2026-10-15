@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { ArrowDown, ArrowUp, Copy, X } from "lucide-react";
 import { introHidden, type CaseStudySection, type SectionKind } from "./model";
-import { personaBlockPresets, personaBlockType } from "./AppleExtras";
+import { newPersona, personaBlockPresets, splitPersonas } from "./AppleExtras";
 import { detailPresets, isTeam } from "./ProjectDetails";
 
 /*
@@ -67,28 +68,43 @@ export function ItemsManager({ section, onChange }: { section: CaseStudySection;
 }
 
 export function PersonaControls({ section, onChange }: { section: CaseStudySection; onChange: Change }) {
+  const [current, setCurrent] = useState(0);
   if (section.kind !== "persona") return null;
-  const [person, ...rest] = section.items;
-  const blocks = rest.map((item, i) => ({ ...item, blockType: personaBlockType(item, i + 1) }));
-  const save = (next: Item[]) => onChange({ items: [person, ...next] });
+  const groups = splitPersonas(section);
+  const at = Math.min(current, groups.length - 1);
+  const group = groups[at];
+  const blocks = group.blocks.map(b => ({ ...b.item, blockType: b.type === "person" ? "list" as const : b.type }));
+  // rebuild the items with this persona's blocks replaced
+  const saveBlocks = (next: Item[]) => {
+    const items: Item[] = [];
+    groups.forEach((g, i) => { items.push({ ...section.items[g.personIndex], ...(g.personIndex > 0 ? { blockType: "person" as const } : {}) }); (i === at ? next : g.blocks.map(b => ({ ...b.item, blockType: b.type === "person" ? "list" as const : b.type }))).forEach(it => items.push(it)); });
+    onChange({ items });
+  };
+  const allGroups = () => groups.map(g => [{ ...section.items[g.personIndex], blockType: "person" as const }, ...g.blocks.map(b => ({ ...b.item, blockType: b.type === "person" ? "list" as const : b.type }))]);
   const types: Array<[NonNullable<Item["blockType"]>, string]> = [["list", "List"], ["text", "Paragraph"], ["quote", "Quote"], ["meter", "Scale"], ["day", "Timeline"]];
   return <div className="csb-items">
-    <p className="csb-panel-kicker">Persona</p>
-    <label className="csb-check-field"><input type="checkbox" checked={section.options?.portrait !== false} onChange={e => onChange({ options: { ...section.options, portrait: e.target.checked } })} /> Show portrait</label>
-    <p className="csb-field-note">Blocks appear in this order. Rename them and edit each point on the page.</p>
+    <p className="csb-panel-kicker">Personas · {groups.length}</p>
+    <div className="csb-pp-switch" role="tablist" aria-label="Edit persona">{groups.map((g, i) => <button key={g.personIndex} type="button" role="tab" aria-selected={i === at} onClick={() => setCurrent(i)}>{short(section.items[g.personIndex]?.title, `Persona ${i + 1}`)}</button>)}</div>
+    <div className="csb-wt-actions">
+      {groups.length < 4 && <button type="button" className="csb-quiet-button" onClick={() => { onChange({ items: [...allGroups().flat(), ...newPersona(groups.length + 1)] }); setCurrent(groups.length); }}>+ Add persona</button>}
+      <button type="button" className="csb-quiet-button" disabled={groups.length >= 4} onClick={() => { const g = allGroups(); const copy = g[at].map(it => ({ ...it, title: it.blockType === "person" ? `${it.title} (copy)` : it.title, image: it.blockType === "person" ? "" : it.image })); onChange({ items: [...g.slice(0, at + 1), copy, ...g.slice(at + 1)].flat() }); setCurrent(at + 1); }}>Duplicate</button>
+      {groups.length > 1 && <button type="button" className="csb-quiet-button" onClick={() => { onChange({ items: allGroups().filter((_, i) => i !== at).flat() }); setCurrent(Math.max(0, at - 1)); }}>Remove</button>}
+    </div>
+    {groups.length > 1 && <div className="csb-field"><span className="csb-field-label">Show personas as</span><div className="csb-segment" role="group" aria-label="Persona layout">{([["tabs", "Tabs"], ["side", "Side by side"]] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(section.options?.personaLayout ?? "tabs") === v} onClick={() => onChange({ options: { ...section.options, personaLayout: v } })}>{l}</button>)}</div></div>}
+    <label className="csb-check-field"><input type="checkbox" checked={section.options?.portrait !== false} onChange={e => onChange({ options: { ...section.options, portrait: e.target.checked } })} /> Show photos</label>
+    <p className="csb-field-note">Blocks for {short(section.items[group.personIndex]?.title, "this persona")}. Rename them and edit each point on the page.</p>
     <ol>{blocks.map((block, i) => <li key={i} className="has-type">
       <span title={block.title}>{short(block.title, "Block")}</span>
-      <select aria-label={`${block.title} style`} value={block.blockType} onChange={e => save(blocks.map((b, k) => k === i ? { ...b, blockType: e.target.value as Item["blockType"], value: e.target.value === "meter" ? b.value || "60" : b.value } : b))}>{types.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-      <button type="button" aria-label={`Move ${block.title} up`} disabled={i === 0} onClick={() => save(move(blocks, i, i - 1))}><ArrowUp size={13} /></button>
-      <button type="button" aria-label={`Move ${block.title} down`} disabled={i === blocks.length - 1} onClick={() => save(move(blocks, i, i + 1))}><ArrowDown size={13} /></button>
-      <button type="button" aria-label={`Remove ${block.title}`} onClick={() => save(blocks.filter((_, k) => k !== i))}><X size={13} /></button>
-      {block.blockType === "meter" && <input className="csb-items-range" type="range" min={0} max={100} value={Number(block.value) || 0} aria-label={`${block.title} level`} onChange={e => save(blocks.map((b, k) => k === i ? { ...b, value: e.target.value } : b))} />}
+      <select aria-label={`${block.title} style`} value={block.blockType} onChange={e => saveBlocks(blocks.map((b, k) => k === i ? { ...b, blockType: e.target.value as Item["blockType"], value: e.target.value === "meter" ? b.value || "60" : b.value } : b))}>{types.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <button type="button" aria-label={`Move ${block.title} up`} disabled={i === 0} onClick={() => saveBlocks(move(blocks, i, i - 1))}><ArrowUp size={13} /></button>
+      <button type="button" aria-label={`Move ${block.title} down`} disabled={i === blocks.length - 1} onClick={() => saveBlocks(move(blocks, i, i + 1))}><ArrowDown size={13} /></button>
+      <button type="button" aria-label={`Remove ${block.title}`} onClick={() => saveBlocks(blocks.filter((_, k) => k !== i))}><X size={13} /></button>
+      {block.blockType === "meter" && <input className="csb-items-range" type="range" min={0} max={100} value={Number(block.value) || 0} aria-label={`${block.title} level`} onChange={e => saveBlocks(blocks.map((b, k) => k === i ? { ...b, value: e.target.value } : b))} />}
     </li>)}</ol>
-    <select className="csb-items-add" value="" aria-label="Add a persona block" onChange={e => { const preset = personaBlockPresets[Number(e.target.value)]; if (preset) save([...blocks, { ...preset.item }]); }}>
+    <select className="csb-items-add" value="" aria-label="Add a persona block" onChange={e => { const preset = personaBlockPresets[Number(e.target.value)]; if (preset) saveBlocks([...blocks, { ...preset.item }]); }}>
       <option value="" disabled>+ Add a block…</option>
       {personaBlockPresets.map((preset, i) => <option key={preset.label} value={i}>{preset.label}</option>)}
     </select>
-    <p className="csb-field-note">Need a second persona? Use Duplicate section below.</p>
   </div>;
 }
 

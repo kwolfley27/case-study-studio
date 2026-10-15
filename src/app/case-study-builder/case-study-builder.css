@@ -483,3 +483,42 @@
 .csb-detail-toggle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .csb-detail-solo-toggle{grid-column:1/-1;margin:2px 0 2px 22px;font-size:11.5px}
 .csb-section-label small em{font-style:normal;opacity:.6}
+.csb-pp-switch{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.csb-pp-switch button{padding:6px 10px;border:1px solid #e5e5e7;border-radius:999px;background:#fff;font-size:12px;cursor:pointer}
+.csb-pp-switch button[aria-selected=true]{background:#1d1d1f;color:#fff;border-color:#1d1d1f}
+
+/* ---------- Home: gallery of case studies ---------- */
+.csb-wordmark-home { border: 0; background: none; padding: 4px 8px 4px 4px; margin-left: -4px; border-radius: 10px; color: inherit; transition: background .15s; }
+.csb-wordmark-home:hover { background: #eef2ef; }
+.csb-home { padding-bottom: 80px; }
+.csb-home-head { height: 68px; padding: 0 26px; display: flex; align-items: center; border-bottom: 1px solid var(--csb-line); background: rgba(255,255,255,.92); position: sticky; top: 0; z-index: 5; backdrop-filter: blur(18px); }
+.csb-home-section { max-width: 1180px; margin: 0 auto; padding: 48px 26px 0; }
+.csb-home-title { margin-bottom: 22px; }
+.csb-home-title h1 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -.035em; font-weight: 600; margin: 0 0 6px; }
+.csb-home-title h2 { font-size: 20px; letter-spacing: -.02em; font-weight: 600; margin: 0 0 4px; }
+.csb-home-title p { margin: 0; color: var(--csb-muted); font-size: 14px; }
+.csb-home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.csb-home-new { border: 1.5px dashed #c8d1cc; border-radius: 14px; background: transparent; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--csb-ink); transition: border-color .15s, background .15s; }
+.csb-home-new:hover { border-color: var(--csb-accent); background: #fff; }
+.csb-home-new strong { font-size: 15px; font-weight: 600; margin-top: 6px; }
+.csb-home-new small { color: var(--csb-muted); font-size: 12px; }
+.csb-home-card { background: #fff; border: 1px solid var(--csb-line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .2s, transform .2s; }
+.csb-home-card:hover { box-shadow: 0 14px 34px -18px rgba(20,30,25,.35); transform: translateY(-2px); }
+.csb-home-card.is-current { border-color: var(--csb-accent); }
+.csb-home-cover { position: relative; aspect-ratio: 16 / 10; border: 0; padding: 0; display: grid; place-items: center; overflow: hidden; background: var(--card-accent); color: #fff; }
+.csb-home-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,255,255,.18), transparent 55%); pointer-events: none; }
+.csb-home-cover img { width: 100%; height: 100%; object-fit: cover; }
+.csb-home-cover-title { padding: 0 22px; font-size: 22px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; text-align: center; text-wrap: balance; }
+.csb-home-cover em { position: absolute; top: 10px; left: 10px; z-index: 1; font-style: normal; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.92); color: var(--csb-ink); }
+.csb-home-meta { padding: 12px 12px 12px 14px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 10px; }
+.csb-home-meta > div:first-child { min-width: 0; display: grid; gap: 2px; }
+.csb-home-meta strong { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csb-home-meta small { font-size: 12px; color: var(--csb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csb-home-badges { grid-column: 1; display: flex; gap: 6px; }
+.csb-home-badges:empty { display: none; }
+.csb-home-badges span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 7px; border-radius: 99px; background: #eef2ef; color: #3c4742; }
+.csb-home-actions { grid-column: 2; grid-row: 1; display: flex; gap: 2px; }
+.csb-home-actions button { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--csb-muted); display: grid; place-items: center; }
+.csb-home-actions button:hover { background: #eef2ef; color: var(--csb-ink); }
+.csb-home-loading { color: var(--csb-muted); font-size: 13px; align-self: center; }
+@media (max-width: 640px) { .csb-home-head, .csb-home-section { padding-left: 16px; padding-right: 16px; } }
