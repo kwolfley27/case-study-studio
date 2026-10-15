@@ -88,3 +88,40 @@ export function PersonaControls({ section, onChange }: { section: CaseStudySecti
     <p className="csb-field-note">Need a second persona? Use Duplicate section below.</p>
   </div>;
 }
+
+const recBackgrounds: Array<[NonNullable<CaseStudySection["recording"]>["background"], string]> = [["accent", "Brand"], ["sunset", "Sunset"], ["ocean", "Ocean"], ["aurora", "Aurora"], ["paper", "Paper"], ["night", "Night"], ["image", "Image"], ["none", "None"]];
+const fmtTime = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
+
+export function RecordingControls({ section, onChange }: { section: CaseStudySection; onChange: Change }) {
+  if (section.kind !== "screenRecording") return null;
+  const rec = { src: "", background: "accent" as const, frame: "browser" as const, padding: 64, radius: 14, cursor: "arrow" as const, zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1, ...(section.recording ?? {}) };
+  const set = (patch: Partial<typeof rec>) => onChange({ recording: { ...rec, ...patch } });
+  const clicks = [...rec.clicks].sort((a, b) => a.t - b.t);
+  const segment = <T extends string | number>(label: string, value: T, options: Array<[T, string]>, onPick: (v: T) => void) => <div className="csb-field"><span className="csb-field-label">{label}</span><div className="csb-segment" role="group" aria-label={label}>{options.map(([v, l]) => <button key={String(v)} type="button" aria-pressed={value === v} onClick={() => onPick(v)}>{l}</button>)}</div></div>;
+  return <div className="csb-items csb-rec-controls">
+    <p className="csb-panel-kicker">Look</p>
+    <div className="csb-rec-bgs" role="group" aria-label="Background" style={{ "--csb-accent": (() => { const page = document.querySelector(".csb-preview-viewport .csb-canvas"); return page ? getComputedStyle(page).getPropertyValue("--csb-accent").trim() : undefined; })(), "--t-surface": (() => { const page = document.querySelector(".csb-preview-viewport .csb-canvas"); return page ? getComputedStyle(page).getPropertyValue("--t-surface").trim() || undefined : undefined; })() } as React.CSSProperties}>{recBackgrounds.map(([bg, label]) => <button key={bg} type="button" aria-pressed={rec.background === bg} title={label} onClick={() => { if (bg === "image" && !rec.bgImage) { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.onchange = async () => { const file = input.files?.[0]; if (!file) return; const { downloadIntoDraft } = await import("./ImageSlots"); const url = URL.createObjectURL(file); try { set({ background: "image", bgImage: await downloadIntoDraft(url, 600_000, 1800) }); } finally { URL.revokeObjectURL(url); } }; input.click(); } else set({ background: bg }); }}><i className={`csb-rec-bg-${bg}`} style={bg === "image" && rec.bgImage ? { backgroundImage: `url(${rec.bgImage})` } : undefined} /><small>{label}</small></button>)}</div>
+    {rec.background === "image" && rec.bgImage && <button type="button" className="csb-quiet-button" onClick={() => set({ bgImage: undefined, background: "accent" })}>Remove background image</button>}
+    <div className="csb-field"><label htmlFor="csb-rec-frame">Frame</label><select id="csb-rec-frame" value={rec.frame} onChange={e => set({ frame: e.target.value as typeof rec.frame })}><option value="browser">Browser window</option><option value="mac">App window</option><option value="laptop">Laptop</option><option value="phone">Phone</option><option value="none">No frame</option></select></div>
+    <div className="csb-layout-control"><div className="csb-layout-label"><span>Padding</span><output>{rec.padding}px</output></div><input type="range" min={0} max={120} step={4} value={rec.padding} onChange={e => set({ padding: Number(e.target.value) })} aria-label="Padding" /></div>
+    <div className="csb-layout-control"><div className="csb-layout-label"><span>Corner radius</span><output>{rec.radius}px</output></div><input type="range" min={0} max={32} value={rec.radius} onChange={e => set({ radius: Number(e.target.value) })} aria-label="Corner radius" /></div>
+
+    <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Motion</p>
+    {segment("Cursor", rec.cursor, [["arrow", "Arrow"], ["dot", "Dot"], ["none", "None"]], v => set({ cursor: v }))}
+    <div className="csb-layout-control"><div className="csb-layout-label"><span>Zoom on clicks</span><output>{rec.zoom.toFixed(1)}×</output></div><input type="range" min={1} max={3} step={.1} value={rec.zoom} onChange={e => set({ zoom: Number(e.target.value) })} aria-label="Zoom on clicks" /></div>
+    {segment("Speed", rec.speed ?? 1, [[0.5, "0.5×"], [0.75, "0.75×"], [1, "1×"], [1.5, "1.5×"], [2, "2×"]], v => set({ speed: v }))}
+    <label className="csb-check-field"><input type="checkbox" checked={rec.loop !== false} onChange={e => set({ loop: e.target.checked })} /> Loop</label>
+    <label className="csb-check-field"><input type="checkbox" checked={!!rec.controls} onChange={e => set({ controls: e.target.checked })} /> Show player controls</label>
+    {rec.crop && <p className="csb-field-note">Cropped to a detail ({Math.round(rec.crop.w)}% × {Math.round(rec.crop.h)}% of the screen). <button type="button" className="csb-link-button" onClick={() => set({ crop: undefined })}>Show full screen</button></p>}
+
+    <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Click moments · {clicks.length}</p>
+    {!clicks.length ? <p className="csb-field-note">{rec.src ? "Play or scrub the video on the page, then click where you clicked. Each moment zooms in and the cursor glides there." : "Add a video first. Then click the video to mark moments."}</p>
+      : <ol>{clicks.map((c, i) => <li key={i} className="csb-rec-click">
+        <span>{i + 1}</span>
+        <input type="number" min={0} step={.1} value={c.t} aria-label={`Click ${i + 1} time in seconds`} onChange={e => set({ clicks: clicks.map((k, j) => j === i ? { ...k, t: Math.max(0, Number(e.target.value) || 0) } : k) })} />
+        <select aria-label={`Click ${i + 1} zoom`} value={c.zoom ?? ""} onChange={e => set({ clicks: clicks.map((k, j) => j === i ? { ...k, zoom: e.target.value ? Number(e.target.value) : undefined } : k) })}><option value="">Zoom: default</option><option value="1">No zoom</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="2.5">2.5×</option><option value="3">3×</option></select>
+        <button type="button" aria-label={`Remove click ${i + 1} at ${fmtTime(c.t)}`} onClick={() => set({ clicks: clicks.filter((_, j) => j !== i) })}><X size={13} /></button>
+      </li>)}</ol>}
+    {clicks.length > 0 && <button type="button" className="csb-quiet-button" onClick={() => set({ clicks: [] })}>Clear all moments</button>}
+  </div>;
+}

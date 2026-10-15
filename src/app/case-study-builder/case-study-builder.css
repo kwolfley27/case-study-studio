@@ -468,3 +468,13 @@
 .csb-library-v2 .csb-template-copy{padding:14px 16px 16px}
 .csb-library-v2 .csb-template-copy p{margin:4px 0 0;font-size:12.5px;line-height:1.4;color:#86868b;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .csb-library-v2 .csb-library-search button{border:0;background:#ececef;color:#1d1d1f;border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer}
+/* Screen recording controls */
+.csb-rec-bgs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 14px}
+.csb-rec-bgs button{display:grid;gap:4px;justify-items:center;padding:4px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer}
+.csb-rec-bgs button[aria-pressed=true]{border-color:#1d1d1f}
+.csb-rec-bgs i{display:block;width:100%;aspect-ratio:1.4;border-radius:7px;background-size:cover;box-shadow:inset 0 0 0 1px #0000001a}
+.csb-rec-bgs small{font-size:10.5px;color:#6e6e73}
+.csb-items li.csb-rec-click{grid-template-columns:18px 64px minmax(0,1fr) 24px;gap:6px}
+.csb-rec-click>span{font-size:11px;color:#86868b;text-align:center}
+.csb-rec-click input,.csb-rec-click select{min-width:0;padding:5px;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;background:#fff}
+.csb-link-button{border:0;background:none;padding:0;color:#0071e3;cursor:pointer;font:inherit;text-decoration:underline}

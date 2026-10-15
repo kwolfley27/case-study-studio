@@ -11,6 +11,7 @@ import { CoverHero } from "./CoverHero";
 import { PrototypeEmbed } from "./PrototypeEmbed";
 import { Findings, Interviews, ScreenCarousel } from "./StoryBlocks";
 import { WorkTimeline } from "./WorkTimeline";
+import { ScreenRecording } from "./ScreenRecording";
 import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
 
@@ -99,6 +100,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
   switch (section.kind) {
     case "findings": return <Findings section={section} />;
     case "timeline": return <WorkTimeline section={section} />;
+    case "screenRecording": return <ScreenRecording section={section} editorMode={editorMode} />;
     case "interviews": return <Interviews section={section} />;
     case "carousel": return <ScreenCarousel section={section} />;
     case "prototype": return <PrototypeEmbed section={section} editorMode={editorMode} onSetLink={onSetPrototype} />;

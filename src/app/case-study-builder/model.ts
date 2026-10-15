@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "timeline" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -26,6 +26,8 @@ export interface CaseStudySection {
   items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "list" | "text" | "quote" | "day" | "meter" }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
+  /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
+  recording?: { src: string; background: "accent" | "sunset" | "ocean" | "aurora" | "paper" | "night" | "image" | "none"; bgImage?: string; frame: "none" | "browser" | "mac" | "laptop" | "phone"; padding: number; radius: number; cursor: "arrow" | "dot" | "none"; zoom: number; clicks: Array<{ t: number; x: number; y: number; zoom?: number; hold?: number }>; loop?: boolean; controls?: boolean; speed?: number; crop?: { x: number; y: number; w: number; h: number } };
   /** Token text styles per field, e.g. { title: { tone: "accent", size: "l" } }. */
   textStyles?: Record<string, { tone?: "ink" | "muted" | "accent" | "accent2"; size?: "s" | "l" | "xl"; weight?: "light" | "regular" | "bold" }>;
   /** Work timeline phases (bars under the weeks). detail = one note per line. */
@@ -82,6 +84,7 @@ export interface BuilderStudy {
 
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
+  screenRecording: "Screen recording",
   timeline: "Work timeline",
   prototype: "Interactive prototype",
   findings: "Numbered findings",
@@ -104,6 +107,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  screenRecording: "A prototype video on a styled background that zooms into each click.",
   timeline: "Week-by-week activities grouped into phases, built from your process log.",
   coverHero: "A big title that holds still while your hero image scrolls up and over it.",
   prototype: "Embed a clickable Figma prototype in a phone or laptop frame.",
@@ -127,7 +131,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  coverHero: "Overview", timeline: "Timeline", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  coverHero: "Overview", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -141,6 +145,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   title: {
     coverHero: "Making access feel obvious, not accidental.",
     timeline: "How the work unfolded",
+    screenRecording: "See it in motion",
     prototype: "Try it yourself",
     findings: "What kept coming up",
     interviews: "Interview highlights",
@@ -164,6 +169,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    screenRecording: [{ title: "yourproduct.com", detail: "Add a caption, like: booking a class now takes two taps." }],
     timeline: ([["Stakeholder questions", "Discover", "1"], ["Competitive research", "Discover", "1"], ["User interviews", "Discover", "1-2"], ["Empathy map & persona", "Define", "2"], ["Problem statement", "Define", "2"], ["Card sorting", "Develop", "3"], ["Sketches & wireframes", "Develop", "3"], ["Prototype", "Develop", "3-4"], ["Usability testing", "Deliver", "4"], ["Improvements", "Deliver", "4"]] as const).map(([title, value, when]) => ({ title, value, when, detail: "" })),
     prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],
     findings: ["The first finding", "The second finding", "The third finding", "The fourth finding"].map(title => ({ title, detail: "One or two sentences of evidence: what you saw, how often, and why it matters." })),
@@ -208,10 +214,11 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
     findings: { layout: { count: 4 } },
+    screenRecording: { recording: { src: "", background: "accent" as const, frame: "browser" as const, padding: 64, radius: 14, cursor: "arrow" as const, zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 } },
     timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
-  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype" | "phases" | "timeUnit">>>>)[kind],
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
