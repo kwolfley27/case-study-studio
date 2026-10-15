@@ -39,9 +39,8 @@ function Device({ img, alt, tablet, p, k, slot, reduce }: { img?: string; alt: s
   const x = m(r.x, s.x), y = m(r.y, s.y), z = m(r.z, s.z), rx = m(r.rx, s.rx), ry = m(r.ry, s.ry), rz = m(r.rz, s.rz);
   const left = useTransform(x, v => `${v}%`), top = useTransform(y, v => `${v}%`);
   const style = reduce ? { left: `${r.x}%`, top: `${r.y}%`, z: r.z, rotateX: r.rx, rotateY: r.ry, rotateZ: r.rz } : { left, top, z, rotateX: rx, rotateY: ry, rotateZ: rz };
-  return <motion.div className={`csb-fd-dev ${tablet ? 'is-tablet' : 'is-phone'}`} style={style}>
+  return <motion.div className={`csb-fd-dev ${tablet ? 'is-tablet' : 'is-phone'}`} style={{ ...style, zIndex: 1000 + r.z }}>
     <div className="csb-fd-float" style={{ animationDelay: `${k * -1.3}s` }}>
-      <i className="csb-fd-cast" aria-hidden="true" />
       <i className="csb-fd-layer" style={{ transform: 'translateZ(-9px)' }} /><i className="csb-fd-layer" style={{ transform: 'translateZ(-6px)' }} /><i className="csb-fd-layer" style={{ transform: 'translateZ(-3px)' }} />
       <div className="csb-fd-face">
         <div className="csb-fd-screen" data-image-slot={slot}>{img ? <Media src={img} alt={alt} draggable={false} /> : <span>{slot ? 'Click to add a screen' : ''}</span>}{!tablet && <b className="csb-fd-island" />}</div>
@@ -51,13 +50,27 @@ function Device({ img, alt, tablet, p, k, slot, reduce }: { img?: string; alt: s
   </motion.div>;
 }
 
+/* A soft shadow on the "floor" under each device: it stays in screen space (no 3D), follows the
+   device's position and spin, and spreads and fades the higher the device floats. */
+function FloorShadow({ p, k, tablet, pencil, reduce }: { p: MotionValue<number>; k: number; tablet?: boolean; pencil?: boolean; reduce: boolean }) {
+  const r = pencil ? PENCIL : REST[k % REST.length], s = pencil ? PENCIL_SPREAD : SPREAD[k % SPREAD.length];
+  const m = (a: number, b: number) => useTransform(p, [0, .55, 1], [a + b, a, a - b * .35]);
+  const x = m(r.x, s.x), y = m(r.y, s.y), z = m(r.z, s.z), rz = m(r.rz, s.rz);
+  const left = useTransform(x, v => `${v}%`), top = useTransform(y, v => `${v}%`);
+  const drop = useTransform(z, v => 70 + (v + 100) * .3);
+  const fade = useTransform(z, v => Math.max(.35, Math.min(.85, .8 - v / 600)));
+  const spread = useTransform(z, v => 1 + Math.max(0, v) / 900);
+  const style = reduce ? { left: `${r.x}%`, top: `${r.y}%`, y: 70 + (r.z + 100) * .3, rotate: r.rz, opacity: Math.max(.35, Math.min(.85, .8 - r.z / 600)) } : { left, top, y: drop, rotate: rz, opacity: fade, scale: spread };
+  return <motion.i className={`csb-fd-floor ${pencil ? 'is-pencil' : tablet ? 'is-tablet' : 'is-phone'}`} style={style} aria-hidden="true" />;
+}
+
 function Pencil({ p, reduce }: { p: MotionValue<number>; reduce: boolean }) {
   const r = PENCIL, s = PENCIL_SPREAD;
   const m = (a: number, b: number) => useTransform(p, [0, .55, 1], [a + b, a, a - b * .35]);
   const x = m(r.x, s.x), y = m(r.y, s.y), z = m(r.z, s.z), rx = m(r.rx, s.rx), ry = m(r.ry, s.ry), rz = m(r.rz, s.rz);
   const left = useTransform(x, v => `${v}%`), top = useTransform(y, v => `${v}%`);
   const style = reduce ? { left: `${r.x}%`, top: `${r.y}%`, z: r.z, rotateX: r.rx, rotateY: r.ry, rotateZ: r.rz } : { left, top, z, rotateX: rx, rotateY: ry, rotateZ: rz };
-  return <motion.div className="csb-fd-pencil" style={style} aria-hidden="true"><div className="csb-fd-float" style={{ animationDelay: '-2.4s' }}><i className="csb-fd-cast" /><span className="csb-fd-pencil-body"><b /></span></div></motion.div>;
+  return <motion.div className="csb-fd-pencil" style={{ ...style, zIndex: 1000 + r.z }} aria-hidden="true"><div className="csb-fd-float" style={{ animationDelay: '-2.4s' }}><span className="csb-fd-pencil-body"><b /></span></div></motion.div>;
 }
 
 export function FloatingDevices({ section, editorMode }: { section: CaseStudySection; editorMode?: boolean }) {
@@ -68,6 +81,10 @@ export function FloatingDevices({ section, editorMode }: { section: CaseStudySec
   const items = section.items.slice(0, 5);
   const bg = String(section.options?.bg ?? 'tint'); const custom = bg.startsWith('#') ? bg : '';
   return <div ref={ref} className={`csb-fd is-${custom ? 'custom' : bg}`} style={custom ? { background: `radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, ${custom} 70%, #fff), ${custom})` } : undefined}>
+    <div className="csb-fd-floors" aria-hidden="true">
+      {section.options?.pencil === true && <FloorShadow p={p} k={0} pencil reduce={reduce} />}
+      {items.map((it, k) => <FloorShadow key={k} k={k} p={p} reduce={reduce} tablet={it.value ? it.value === 'tablet' : k === 0 && items.length > 1} />)}
+    </div>
     <div className="csb-fd-stage">
       {section.options?.pencil === true && <Pencil p={p} reduce={reduce} />}
       {items.map((it, k) => <Device key={k} k={k} p={p} reduce={reduce} img={it.image} alt={it.title || 'Screen'} tablet={it.value ? it.value === 'tablet' : k === 0 && items.length > 1} slot={editorMode ? `${section.id}:${k}` : undefined} />)}

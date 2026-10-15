@@ -2650,3 +2650,13 @@ html.csb-presenting .csb-fd{height:calc(80vh / var(--present-zoom,1))}
 @container (max-width:720px){.csb-iq.has-art{grid-template-columns:1fr}}
 .csb-iso.is-round .csb-iso-card{border-radius:clamp(14px,2cqw,26px)}
 .csb-iso.is-custom .csb-iso-card{box-shadow:0 1px 0 rgba(0,0,0,.02),18px 22px 40px -10px rgba(0,0,0,.28),40px 50px 90px -30px rgba(0,0,0,.24)}
+/* Floating devices v3: each device drawn on its own layer (no 3D intersections), floor shadows */
+.csb-fd-stage{transform-style:flat!important}
+.csb-fd-cast{display:none!important}
+.csb-fd-floors{position:absolute;inset:0;pointer-events:none}
+.csb-fd-floor{position:absolute;translate:-50% -50%;--w:clamp(130px,15.5cqw,230px);border-radius:50%;background:radial-gradient(closest-side,rgba(40,30,20,.26),rgba(40,30,20,.12) 50%,rgba(40,30,20,0));transform-origin:center}
+.csb-fd-floor.is-phone{width:calc(var(--w) * 1.05);height:calc(var(--w) * 1.25)}
+.csb-fd-floor.is-tablet{width:calc(var(--w) * 2.5);height:calc(var(--w) * 1.25)}
+.csb-fd-floor.is-pencil{width:clamp(240px,34cqw,480px);height:clamp(28px,3.6cqw,48px)}
+.csb-fd.is-dark .csb-fd-floor{background:radial-gradient(closest-side,rgba(0,0,0,.6),rgba(0,0,0,.25) 50%,transparent)}
+.csb-fd-floor{background:radial-gradient(closest-side,rgba(40,30,20,.34),rgba(40,30,20,.14) 55%,rgba(40,30,20,0))}
