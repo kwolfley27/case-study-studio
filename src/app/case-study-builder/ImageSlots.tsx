@@ -177,12 +177,12 @@ export function ImageSlotLayer({ enabled, onFile, onUrl, onRemove, notify }: {
   }, [enabled, menu, onFile, onUrl]);
 
   return <>
-    <input ref={fileRef} type="file" accept="image/*,.gif" hidden onChange={event => { const file = event.target.files?.[0]; if (file && fileSlot.current) onFile(fileSlot.current, file); event.target.value = ''; }} />
+    <input ref={fileRef} type="file" accept="image/*,.gif,video/mp4,video/webm,video/quicktime" hidden onChange={event => { const file = event.target.files?.[0]; if (file && fileSlot.current) onFile(fileSlot.current, file); event.target.value = ''; }} />
     {menu && <>
       <div className="csb-slot-scrim" onMouseDown={() => setMenu(null)} onContextMenu={event => { event.preventDefault(); setMenu(null); }} />
       <div className="csb-slot-menu" role="menu" style={{ left: menu.x, top: menu.y }} onClick={event => event.stopPropagation()}>
         {menu.mode === 'menu' ? <>
-          <button role="menuitem" onClick={() => { fileSlot.current = menu.slot; setMenu(null); fileRef.current?.click(); }}><ImagePlus size={15} /><span><strong>{menu.hasImage ? 'Replace from your files' : 'Upload from your files'}</strong><small>PNG, JPG or GIF</small></span></button>
+          <button role="menuitem" onClick={() => { fileSlot.current = menu.slot; setMenu(null); fileRef.current?.click(); }}><ImagePlus size={15} /><span><strong>{menu.hasImage ? 'Replace from your files' : 'Upload from your files'}</strong><small>PNG, JPG, GIF, or a video (MP4, MOV)</small></span></button>
           <button role="menuitem" onClick={async () => { let clip = ''; try { clip = await navigator.clipboard.readText(); } catch { /* permission denied */ } setLink(isFigmaFrameLink(clip) || isImageLink(clip) ? clip : ''); setMenu({ ...menu, mode: 'link' }); }}><Link2 size={15} /><span><strong>Paste a Figma frame or image link</strong><small>Figma: right-click a frame → Copy link to selection</small></span></button>
           <button role="menuitem" onClick={async () => { const slot = menu.slot; try { const items = await navigator.clipboard.read(); for (const item of items) { const type = item.types.find(t => t.startsWith('image/')); if (type) { const blob = await item.getType(type); setMenu(null); onFile(slot, new File([blob], 'figma-frame.png', { type })); return; } } notify('No copied image found. In Figma select the frame and press ⌘⇧C (Copy as PNG), then try again.', true); } catch { notify('Your browser blocked reading the clipboard. Hover the spot and press ⌘V instead.', true); } }}><ClipboardPaste size={15} /><span><strong>Paste a copied frame</strong><small>In Figma: select the frame, ⌘⇧C (Copy as PNG)</small></span></button>
           {menu.hasImage && <button role="menuitem" className="is-danger" onClick={() => { onRemove(menu.slot); setMenu(null); }}><Trash2 size={15} /><span><strong>Remove image</strong></span></button>}

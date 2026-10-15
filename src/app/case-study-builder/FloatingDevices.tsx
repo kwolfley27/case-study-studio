@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Media } from './Media';
 import { motion, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
@@ -42,7 +43,7 @@ function Device({ img, alt, tablet, p, k, slot, reduce }: { img?: string; alt: s
       <i className="csb-fd-cast" aria-hidden="true" />
       <i className="csb-fd-layer" style={{ transform: 'translateZ(-9px)' }} /><i className="csb-fd-layer" style={{ transform: 'translateZ(-6px)' }} /><i className="csb-fd-layer" style={{ transform: 'translateZ(-3px)' }} />
       <div className="csb-fd-face">
-        <div className="csb-fd-screen" data-image-slot={slot}>{img ? <img src={img} alt={alt} draggable={false} /> : <span>{slot ? 'Click to add a screen' : ''}</span>}{!tablet && <b className="csb-fd-island" />}</div>
+        <div className="csb-fd-screen" data-image-slot={slot}>{img ? <Media src={img} alt={alt} draggable={false} /> : <span>{slot ? 'Click to add a screen' : ''}</span>}{!tablet && <b className="csb-fd-island" />}</div>
         <i className="csb-fd-glare" aria-hidden="true" />
       </div>
     </div>

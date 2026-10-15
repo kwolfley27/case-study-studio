@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Media } from './Media';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize2, Plus, Trash2, X } from 'lucide-react';
@@ -49,7 +50,7 @@ export function ScreenGroups({ section, editorMode }: { section: CaseStudySectio
             <div className="csb-sg-grid">
               {g.items.map(({ it, i }, k) => <figure key={i} className="csb-sg-card">
                 <div className="csb-sg-shot" data-image-slot={editorMode ? `${section.id}:${i}` : undefined} onClick={editorMode ? undefined : () => setBox({ g: gi, k })}>
-                  {it.image ? <img src={it.image} alt={it.title} loading="lazy" draggable={false} /> : <span className="csb-sg-empty">{editorMode ? 'Click to add a screen' : ''}</span>}
+                  {it.image ? <Media src={it.image} alt={it.title} loading="lazy" draggable={false} /> : <span className="csb-sg-empty">{editorMode ? 'Click to add a screen' : ''}</span>}
                   {it.tag && <b className="csb-sg-tag">{it.tag}</b>}
                   {it.image && <button type="button" className="csb-sg-expand" aria-label={`View ${it.title} full size`} data-no-slot onClick={e => { e.stopPropagation(); setBox({ g: gi, k }); }}><Maximize2 size={14} strokeWidth={1.8} /></button>}
                 </div>
@@ -81,7 +82,7 @@ function Lightbox({ group, at, onMove, onClose }: { group: Group; at: number; on
         </div>
         {it.detail && <p>{it.detail}</p>}
       </header>
-      <div className="csb-sg-lb-img">{it.image ? <img key={it.image} src={it.image} alt={it.title} /> : <span className="csb-sg-empty">No image yet</span>}</div>
+      <div className="csb-sg-lb-img">{it.image ? <Media key={it.image} src={it.image} alt={it.title} /> : <span className="csb-sg-empty">No image yet</span>}</div>
     </motion.div>
   </motion.div>, document.body);
 }

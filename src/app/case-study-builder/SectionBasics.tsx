@@ -45,6 +45,13 @@ export function SectionBasics({ study, section, onChange, onChangeOther }: { stu
       </div>
     </div>}
 
+    <div className="csb-sb-row">
+      <span className="csb-sb-label">Device mockups</span>
+      <div className="csb-sb-chips" role="radiogroup" aria-label="Device mockups">
+        {([['', 'Page setting'], ['framed', 'With hardware'], ['frameless', 'Frameless']] as const).map(([v, l]) => { const on = String(o.devices ?? '') === v; return <button key={l} type="button" role="radio" aria-checked={on} aria-pressed={on} onClick={() => set({ devices: v || undefined })}>{l}</button>; })}
+      </div>
+    </div>
+
     <Switch label="Side menu" hint={`Listed as “${navLabelFor(section)}”`} on={!section.hideFromNav} onChange={v => onChange({ hideFromNav: !v })} />
 
     {study.accentGradient && study.accent2 && <div className="csb-sb-row">

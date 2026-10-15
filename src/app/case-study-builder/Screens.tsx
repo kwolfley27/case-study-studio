@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
+import { Media } from './Media';
 import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'motion/react';
 import { ArrowDown, ArrowUp, Eye, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
@@ -57,7 +58,7 @@ export function Screen({ section, index, spot, side = 'right', drawing, onDrawn,
   return <div className={`csb-sc-device ${browser ? 'is-browser' : 'is-phone'} ${s ? 'is-spot' : ''}`} style={{ '--sc-ar': ratio } as React.CSSProperties}>
     {browser && <div className="csb-sc-bar" aria-hidden="true"><i /><i /><i /></div>}
     <div className="csb-sc-screen" {...(slot ? { 'data-image-slot': `${section.id}:${index}` } : {})}>
-      {item?.image ? <img src={item.image} alt={item.title || `Screen ${index + 1}`} draggable={false} /> : <SampleScreen phone={!browser} />}
+      {item?.image ? <Media src={item.image} alt={item.title || `Screen ${index + 1}`} draggable={false} /> : <SampleScreen phone={!browser} />}
       <AnimatePresence>{s && <motion.svg key={`${index}-${spot}`} className="csb-sc-dim" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .5, ease: [0.22, 1, 0.36, 1] }}>
         <defs><mask id={`sc-m-${section.id}-${index}`}><rect width="100" height="100" fill="#fff" /><rect x={s.x * 100} y={s.y * 100} width={s.w * 100} height={s.h * 100} rx="1.6" ry={1.6 * ratio} fill="#000" /></mask></defs>
         <rect width="100" height="100" fill="#000" fillOpacity=".74" mask={`url(#sc-m-${section.id}-${index})`} />
@@ -230,7 +231,7 @@ export function ScreenFilmstrip({ section }: { section: CaseStudySection }) {
       {(item?.spots?.length ?? 0) > 0 && <div className="csb-sc-spots" role="group" aria-label="Highlights">{item.spots!.map((_, k) => <button key={k} type="button" aria-pressed={spot === k} onClick={e => { e.stopPropagation(); setSpot(spot === k ? -1 : k); }}>Highlight {k + 1}</button>)}</div>}
       <SpotTools section={section} index={i} drawing={drawing} setDrawing={setDrawing} />
     </div>
-    <div className="csb-sc-thumbs" role="group" aria-label="Screens">{items.map((it, k) => <button key={k} type="button" aria-pressed={k === i} aria-label={it.title || `Screen ${k + 1}`} onClick={e => { e.stopPropagation(); go(k); }}>{it.image ? <img src={it.image} alt="" /> : <span />}</button>)}</div>
+    <div className="csb-sc-thumbs" role="group" aria-label="Screens">{items.map((it, k) => <button key={k} type="button" aria-pressed={k === i} aria-label={it.title || `Screen ${k + 1}`} onClick={e => { e.stopPropagation(); go(k); }}>{it.image ? <Media src={it.image} alt="" /> : <span />}</button>)}</div>
   </div>;
 }
 
@@ -248,7 +249,7 @@ export function ScreensControls({ section, onChange }: { section: CaseStudySecti
     </div></div>
     <p className="csb-panel-kicker">Screens · {items.length}</p>
     <ol>{items.map((it, i) => <li key={i} className="csb-sc-ctl-row">
-      <span className={`csb-sc-ctl-thumb ${browser ? 'is-wide' : ''}`}>{it.image ? <img src={it.image} alt="" /> : null}</span>
+      <span className={`csb-sc-ctl-thumb ${browser ? 'is-wide' : ''}`}>{it.image ? <Media src={it.image} alt="" /> : null}</span>
       <span className="csb-sc-ctl-name"><button type="button" className="csb-sc-ctl-show" title="Show this screen on the page" onClick={() => focusSpot({ sectionId: section.id, screen: i, spot: -1 })}><strong>{it.title || `Screen ${i + 1}`}</strong></button><small>{(it.spots?.length ?? 0) ? `${it.spots!.length} spotlight${it.spots!.length > 1 ? 's' : ''}` : it.image ? 'No spotlights' : 'No image yet'}</small></span>
       <button type="button" aria-label={`Move ${it.title || 'screen'} up`} title="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
       <button type="button" aria-label={`Move ${it.title || 'screen'} down`} title="Move down" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>

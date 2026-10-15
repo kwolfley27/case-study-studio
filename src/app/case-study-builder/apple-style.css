@@ -2620,3 +2620,16 @@ html.csb-presenting .csb-fd{height:calc(80vh / var(--present-zoom,1))}
 .csb-fd-cast{inset:-6%;filter:none!important;border-radius:50%;background:radial-gradient(closest-side,rgba(28,22,16,.30),rgba(28,22,16,.12) 55%,transparent)!important;transform:translate3d(8%,12%,-120px)}
 .csb-fd.is-dark .csb-fd-cast{background:radial-gradient(closest-side,rgba(0,0,0,.65),rgba(0,0,0,.25) 55%,transparent)!important}
 .csb-fd-pencil .csb-fd-cast{inset:-120% -4%;transform:translate3d(3%,120%,-80px);background:radial-gradient(closest-side,rgba(28,22,16,.22),transparent)!important}
+
+/* ── Frameless device mockups: the bare rounded screen with a slight shadow ── */
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-hx-phone,.csb-ss-phone,.csb-gallery-phone,.csb-apple-annotated-phone,.csb-phone-shell){padding:0!important;background:transparent!important;border:0!important;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.04),0 2px 4px rgba(0,0,0,.04),0 24px 48px -18px rgba(40,32,24,.28)!important}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-hx-phone,.csb-ss-phone,.csb-gallery-phone,.csb-apple-annotated-phone,.csb-phone-shell)>:not([class*=island]):not([class*=notch]):not([class*=home]){border-radius:inherit!important}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-hx-lid,.csb-ss-lid,.csb-hx-monitor){padding:0!important;background:transparent!important;border:0!important;border-radius:14px!important;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 2px 4px rgba(0,0,0,.04),0 30px 60px -24px rgba(40,32,24,.3)!important}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-hx-lid,.csb-ss-lid,.csb-hx-monitor)>*{border-radius:inherit!important}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-hx-base,.csb-ss-base,.csb-hx-notch,.csb-ss-notch,.csb-hx-chin,.csb-hx-stand,.csb-hx-foot){display:none!important}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) .csb-fd-layer{display:none}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) .csb-fd-face{padding:0;background:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05)}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) .csb-fd-screen{border-radius:inherit}
+/* videos fill their frame like images */
+.csb-media-video{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.csb-sg-lb-img .csb-media-video{height:auto;max-height:80vh;object-fit:contain;background:#000}

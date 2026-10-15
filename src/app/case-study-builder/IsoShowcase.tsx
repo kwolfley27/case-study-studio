@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Media } from './Media';
 import { motion, useTransform } from 'motion/react';
 import { useReducedMotion, useScrollProgress } from './MotionKit';
 import type { CaseStudySection } from './model';
@@ -35,7 +36,7 @@ export function IsoShowcase({ section, editorMode }: { section: CaseStudySection
     <div className="csb-iso-plane" style={{ transform: `translate(-50%, -50%) ${angle}` }}>
       {cols.map((col, c) => <motion.div key={c} className="csb-iso-col" style={reduce ? { marginTop: c % 2 ? '18%' : 0 } : { y: drift[c], marginTop: c % 2 ? '18%' : 0 }}>
         {col.map(({ it, i, copy }, k) => <div key={k} className="csb-iso-card" data-image-slot={editorMode && !copy ? `${section.id}:${i}` : undefined}>
-          {it.image ? <img src={it.image} alt={copy ? '' : it.title || 'Screen'} loading="lazy" draggable={false} /> : <span>{editorMode && !copy ? 'Click to add a screen' : ''}</span>}
+          {it.image ? <Media src={it.image} alt={copy ? '' : it.title || 'Screen'} loading="lazy" draggable={false} /> : <span>{editorMode && !copy ? 'Click to add a screen' : ''}</span>}
         </div>)}
       </motion.div>)}
     </div>

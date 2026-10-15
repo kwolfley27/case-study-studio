@@ -265,7 +265,16 @@ export default function CaseStudyBuilder() {
 
   const uploadAsset = async (file: File | undefined, key: string, onSuccess: (url: string) => void) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) { setMessage({ text: "Choose an image file.", error: true }); return; }
+    if (file.type.startsWith("video/")) {
+      // Videos (a sketch timelapse, a screen recording) are kept as they are, so they play smoothly.
+      if (file.size > 40_000_000) { setMessage({ text: "That video is over 40 MB. Trim it or export it smaller (720p MP4 works well), then try again.", error: true }); return; }
+      setUploadingKey(key); setMessage(null);
+      try { const url = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error("Couldn't read that video.")); r.readAsDataURL(file); }); onSuccess(url); setMessage({ text: `${file.name} added. It plays on a silent loop.` }); }
+      catch (error) { setMessage({ text: error instanceof Error ? error.message : "Video upload failed.", error: true }); }
+      finally { setUploadingKey(null); }
+      return;
+    }
+    if (!file.type.startsWith("image/")) { setMessage({ text: "Choose an image or a video file.", error: true }); return; }
     setUploadingKey(key);
     setMessage(null);
     try {

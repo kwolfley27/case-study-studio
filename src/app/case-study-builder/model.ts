@@ -111,6 +111,8 @@ export interface BuilderStudy {
   gradientOff?: string[];
   /** Single elements kept solid ("sectionId|n"), see GradientElements. */
   gradOffEls?: string[];
+  /** Phones, laptops and tablets drawn with their hardware, or as bare rounded screens with a soft shadow. */
+  deviceStyle?: 'framed' | 'frameless';
   /** Previews of other case studies at the end of the page. */
   moreStudies?: import("./EndMore").MoreStudy[];
   /** Closing line at the end of the page. */

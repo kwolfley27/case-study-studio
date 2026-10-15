@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
+import { Media } from './Media';
 import { motion } from 'motion/react';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
@@ -87,7 +88,7 @@ export function ShowcaseControls({ section, onChange }: { section: CaseStudySect
     <div className="csb-inspector-divider" />
     <p className="csb-panel-kicker">Cards · {items.length}</p>
     <ol>{items.map((it, i) => <li key={i} className="csb-sc-ctl-row">
-      <span className="csb-sc-ctl-thumb is-wide">{it.image ? <img src={it.image} alt="" /> : null}</span>
+      <span className="csb-sc-ctl-thumb is-wide">{it.image ? <Media src={it.image} alt="" /> : null}</span>
       <span className="csb-sc-ctl-name"><strong>{it.title || `Card ${i + 1}`}</strong><span className="csb-show-size" role="group" aria-label="Card width">{(['standard', 'wide'] as const).map(sz => <button key={sz} type="button" aria-pressed={(it.tileSize ?? 'standard') === sz} onClick={() => setItems(items.map((x, n) => n === i ? { ...x, tileSize: sz } : x))}>{sz === 'wide' ? 'Full' : 'Half'}</button>)}</span></span>
       <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
       <button type="button" aria-label="Move down" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>

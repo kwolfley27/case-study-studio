@@ -1,4 +1,5 @@
 import { useContext, useLayoutEffect, useRef, useState } from 'react';
+import { Media } from './Media';
 import { motion, useMotionValue, useMotionValueEvent, useSpring, useTransform } from 'motion/react';
 import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
 import { EditableText, EditingContext } from './EditableText';
@@ -337,7 +338,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
     <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
       {edit && screen?.figmaUrl && <button type="button" className="csb-annot-pull" data-no-slot onClick={async e => { e.stopPropagation(); const b = e.currentTarget; b.disabled = true; b.textContent = 'Pulling from Figma…'; try { const { pullFigmaFrame } = await import('./ImageSlots'); edit('items.0.image', await pullFigmaFrame(screen.figmaUrl!)); b.textContent = 'Pulled from Figma'; } catch (err) { b.disabled = false; b.textContent = err instanceof Error ? err.message : 'Could not pull'; } }}>{screen.image?.startsWith('data:') ? 'Refresh from Figma' : 'Pull frame from Figma'}</button>}
       {desktop ? <span className="csb-apple-annotated-chrome" aria-hidden="true"><i /><i /><i /></span> : <span className="csb-apple-annotated-island" />}
-      {screen?.image ? <img src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>{desktop ? 'Desktop page' : 'Designed screen'}</strong><span>{desktop ? 'Paste a Figma frame link or drop a full-page screenshot' : '700 × 1440 · designed media'}</span></div>}
+      {screen?.image ? <Media src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>{desktop ? 'Desktop page' : 'Designed screen'}</strong><span>{desktop ? 'Paste a Figma frame link or drop a full-page screenshot' : '700 × 1440 · designed media'}</span></div>}
       {points.map(([x, y], k) => <span key={k} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
         role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
         onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}><b>{k + 1}</b></span>)}

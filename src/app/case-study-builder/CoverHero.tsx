@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Media } from './Media';
 import { FileUp } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'motion/react';
 import { useReducedMotion } from './MotionKit';
@@ -66,7 +67,7 @@ export function CoverHeroView({ label, title, body, image, caption, alt, fields,
     {frame !== 'none' ? <motion.div className={`csb-cover-device is-${frame}`} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}><DeviceFrame frame={frame} image={image} alt={alt} slot={slot} hint={editorMode ? 'Click to add your screen' : undefined} /></motion.div> :
     <motion.figure data-image-slot={slot} className={`csb-cover-media ${dragging ? 'is-dragging' : ''}`} {...drop} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}>
       {image
-        ? <img src={image} alt={alt} />
+        ? <Media src={image} alt={alt} />
         : editorMode
           ? <div className="csb-cover-empty"><FileUp size={26} strokeWidth={1.4} /><strong>Add your hero image or GIF</strong><span>click for files or a Figma link · it scrolls up over the title</span></div>
           : <div className="csb-cover-empty" aria-hidden="true" />}

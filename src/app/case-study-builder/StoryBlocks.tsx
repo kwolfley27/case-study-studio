@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Media } from './Media';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useReducedMotion } from './MotionKit';
@@ -63,7 +64,7 @@ export function ScreenCarousel({ section }: { section: CaseStudySection }) {
     </div>
     <div className="csb-carousel-track" ref={track} tabIndex={0} aria-label={`${section.title} — scroll horizontally`}>
       {visibleItems(section).map((item, index) => <motion.figure key={index} className="csb-carousel-card" initial={reduce ? false : { opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .7, delay: index * .08, ease }}>
-        <div className="csb-carousel-image" data-image-slot={`${section.id}:${index}`}>{item.image ? <img src={item.image} alt={item.title} loading="lazy" /> : <div className="csb-carousel-empty"><strong>Screen {String(index + 1).padStart(2, '0')}</strong><span>Click to add an image or Figma frame</span></div>}</div>
+        <div className="csb-carousel-image" data-image-slot={`${section.id}:${index}`}>{item.image ? <Media src={item.image} alt={item.title} loading="lazy" /> : <div className="csb-carousel-empty"><strong>Screen {String(index + 1).padStart(2, '0')}</strong><span>Click to add an image or Figma frame</span></div>}</div>
         <figcaption><div><strong><EditableText field={`items.${index}.title`} value={item.title} /></strong><span><EditableText field={`items.${index}.detail`} value={item.detail} /></span></div><ChevronRight size={18} aria-hidden="true" /></figcaption>
       </motion.figure>)}
     </div>
