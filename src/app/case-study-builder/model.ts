@@ -94,6 +94,8 @@ export interface BuilderStudy {
   heroImage?: string;
   /** Figma frame the hero image is pulled from. */
   heroFigmaUrl?: string;
+  /** When this case study was last published (public page at #/p/<slug>). */
+  publishedAt?: string;
   sourcePageId?: string;
   lastSyncedAt?: string;
   sources?: { notionUrl?: string; figmaUrl?: string };

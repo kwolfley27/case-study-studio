@@ -1880,3 +1880,20 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-hx-screen img{object-position:top}
 .csb-ss-stage{grid-template-columns:minmax(0,1fr) minmax(200px,260px)}
 .csb-ss-devices{align-items:center;height:auto;min-height:0;padding-bottom:4%}
+/* Publish dialog */
+.csb-pub-scrim{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:#0000002e;backdrop-filter:blur(6px)}
+.csb-pub{position:relative;display:grid;gap:12px;width:min(460px,100%);padding:28px;border-radius:24px;background:#fdfcfc;color:#000;box-shadow:rgba(0,0,0,.4) 0 0 1px,rgba(0,0,0,.08) 0 20px 50px;font-family:"Inter",ui-sans-serif,system-ui,sans-serif}
+.csb-pub h2{margin:0;font-weight:300;font-size:28px;letter-spacing:-.02em}
+.csb-pub p{margin:0;font-size:14px;line-height:1.5;color:#777169}
+.csb-pub-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#f5f3f1}
+.csb-pub-x{position:absolute;top:14px;right:14px;width:30px;height:30px;border:0;border-radius:50%;background:#f5f3f1;display:grid;place-items:center;cursor:pointer}
+.csb-pub-warn{padding:10px 12px;border-radius:12px;background:#fff4ec;color:#8a3b12!important}
+.csb-pub-link{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:6px 6px 6px 12px;border-radius:12px;background:#f5f3f1;font-size:12.5px}
+.csb-pub-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#44403b}
+.csb-pub-link button,.csb-pub-link a{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border:1px solid #e5e5e5;border-radius:9999px;background:#fdfcfc;color:#000;font:500 12.5px/1 inherit;text-decoration:none;cursor:pointer}
+.csb-pub-link [disabled],.csb-pub-link a[aria-disabled=true]{opacity:.4;pointer-events:none}
+.csb-pub input{height:40px;padding:0 12px;border:0;border-radius:10px;background:#f5f3f1;font:inherit;font-size:14px}
+.csb-pub-go{height:44px;border:0;border-radius:9999px;background:#000;color:#fdfcfc;font:500 15px/1 inherit;cursor:pointer}
+.csb-pub-go:disabled{opacity:.4;cursor:default}
+.csb-pub-error{color:#b42318!important}
+.csb-pub small{font-size:12px;color:#a59f97}

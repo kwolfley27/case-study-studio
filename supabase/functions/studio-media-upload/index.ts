@@ -30,14 +30,24 @@ Deno.serve(async (request) => {
   const passcode = Deno.env.get('STUDIO_PASSCODE') || '';
   if (!passcode || request.headers.get('x-studio-passcode') !== passcode) return reply({ error: 'passcode', message: 'Enter your Studio passcode to upload.' }, 401);
 
-  let body: { name?: string; type?: string; size?: number; study?: string };
+  let body: { name?: string; type?: string; size?: number; study?: string; publish?: string };
   try { body = await request.json(); } catch { return reply({ error: 'Send JSON.' }, 400); }
   const type = String(body.type || '');
-  if (!TYPES.test(type)) return reply({ error: 'Upload a video (mp4, webm, mov) or an image.' }, 400);
-
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   // Create the public bucket the first time (ignored if it exists).
   await supabase.storage.createBucket(BUCKET, { public: true }).catch(() => undefined);
+
+  // Publishing a case study: its JSON goes to published/<slug>.json (replaced on each publish).
+  if (body.publish) {
+    const slug = String(body.publish).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+    if (!slug) return reply({ error: 'Give the case study a page address first.' }, 400);
+    const path = `published/${slug}.json`;
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path, { upsert: true });
+    if (error || !data) return reply({ error: `Storage: ${error?.message || 'could not create an upload link.'}` }, 500);
+    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return reply({ uploadUrl: data.signedUrl, token: data.token, path, publicUrl: pub.publicUrl });
+  }
+  if (!TYPES.test(type)) return reply({ error: 'Upload a video (mp4, webm, mov) or an image.' }, 400);
 
   const ext = ({ 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' } as Record<string, string>)[type];
   const folder = String(body.study || 'studio').toLowerCase().replace(/[^a-z0-9-]+/g, '-').slice(0, 60) || 'studio';
