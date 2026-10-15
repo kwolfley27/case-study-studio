@@ -2689,3 +2689,7 @@ html.csb-presenting .csb-fd-pencil{width:min(clamp(240px,34cqw,480px),calc(30vh 
 .csb-ss-phone.is-thrown{animation:csb-hold-throw 2.1s cubic-bezier(.5,0,.2,1) both}
 @keyframes csb-hold-throw{0%{transform:none;opacity:1}30%{transform:translate(40px,-60px) rotate(-8deg) scale(1.04)}55%{transform:translate(520px,-380px) rotate(24deg) scale(.6);opacity:0}70%{transform:translate(0,40px) scale(.96);opacity:0}100%{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.csb-ss-phone.is-thrown{animation:none}}
+/* Define: much shorter scroll for the statement → question change */
+.csb-psf-run{height:26vh}
+.csb-psf-stick{top:24vh}
+.csb-story-section.csb-kind-problem:has(.csb-psf){padding-bottom:clamp(40px,6cqw,80px)}

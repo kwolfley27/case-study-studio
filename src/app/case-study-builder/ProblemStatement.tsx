@@ -70,21 +70,21 @@ function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, suc
     const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
     let frame = 0;
     const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
-      const pin = box.top + box.height * .3; const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
+      const pin = box.top + box.height * .24; const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
       p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
     const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
     measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
     return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
   }, [p]);
   // The statement settles back and softens; then the question arrives like a message.
-  const frontOpacity = useTransform(p, [.22, .46], [1, 0]);
-  const frontY = useTransform(p, [.22, .46], [0, -28]);
-  const frontScale = useTransform(p, [.22, .46], [1, .96]);
-  const frontBlur = useTransform(p, [.22, .46], ['blur(0px)', 'blur(8px)']);
-  const bubble = useTransform(p, [.42, .62], [0, 1]);
-  const bubbleY = useTransform(p, [.42, .62], [36, 0]);
+  const frontOpacity = useTransform(p, [.08, .4], [1, 0]);
+  const frontY = useTransform(p, [.08, .4], [0, -28]);
+  const frontScale = useTransform(p, [.08, .4], [1, .96]);
+  const frontBlur = useTransform(p, [.08, .4], ['blur(0px)', 'blur(8px)']);
+  const bubble = useTransform(p, [.32, .62], [0, 1]);
+  const bubbleY = useTransform(p, [.32, .62], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
-  const hint = useTransform(p, [0, .12, .2], [1, 1, 0]);
+  const hint = useTransform(p, [0, .04, .1], [1, 1, 0]);
   const back = <div className="csb-psf-hmw">
     <motion.div className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || "#fdfcfc" } : {}), ...(reduce ? {} : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
       <span className="csb-psf-ask"><EditableText field="items.3.title" value={/\?$/.test(hmwTitle.trim()) ? hmwTitle : hmwTitle.replace(/[.…]*$/, '…')} /></span>
