@@ -9,6 +9,7 @@ import { AnnotatedScreen, IssueFlow, Journey, Persona } from "./AppleExtras";
 import { CoverHero } from "./CoverHero";
 import { PrototypeEmbed } from "./PrototypeEmbed";
 import { Findings, Interviews, ScreenCarousel } from "./StoryBlocks";
+import { WorkTimeline } from "./WorkTimeline";
 import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 
 function Enter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -90,6 +91,7 @@ function FullWidthMedia({ section, editorMode, onUploadMedia }: { section: CaseS
 function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: { section: CaseStudySection; editorMode: boolean; onUploadMedia?: (sectionId: string, index: number, file: File) => void; onSetPrototype?: (sectionId: string, link: string) => void }) {
   switch (section.kind) {
     case "findings": return <Findings section={section} />;
+    case "timeline": return <WorkTimeline section={section} />;
     case "interviews": return <Interviews section={section} />;
     case "carousel": return <ScreenCarousel section={section} />;
     case "prototype": return <PrototypeEmbed section={section} editorMode={editorMode} onSetLink={onSetPrototype} />;

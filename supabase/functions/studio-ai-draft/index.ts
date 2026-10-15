@@ -90,7 +90,8 @@ function propertyText(value: any): string {
     case 'select': return value.select?.name ?? '';
     case 'multi_select': return (value.multi_select ?? []).map((item: any) => item.name).join(', ');
     case 'status': return value.status?.name ?? '';
-    case 'date': return value.date?.start ?? '';
+    case 'date': return value.date?.start ? value.date.start + (value.date.end ? ` → ${value.date.end}` : '') : '';
+    case 'formula': return value.formula ? String(value.formula[value.formula.type] ?? '') : '';
     case 'url': return value.url ?? '';
     case 'checkbox': return value.checkbox ? 'yes' : 'no';
     default: return '';
@@ -193,7 +194,7 @@ const SYSTEM = `You are the writing and layout partner inside Case Study Studio,
 
 Your job: turn the designer's research notes (from Notion) and design frames (from Figma) into a complete case study by choosing components from the provided catalog and filling them in. Return it with the build_case_study tool.
 
-Story: follow a clear arc — context → problem → research (Discover) → definition (Define) → design (Develop) → solution and outcome (Deliver) → reflection. Usually 7–12 sections. Choose the component whose shape fits the evidence (a ratio or count → metrics; participants with quotes → interviews or quotes; a list of problems → findings; competitor notes → competitors; an emotional journey → journey; screens → carousel, wireframes, gallery or annotated).
+Story: follow a clear arc — context → problem → research (Discover) → definition (Define) → design (Develop) → solution and outcome (Deliver) → reflection. Usually 7–12 sections. Choose the component whose shape fits the evidence (a ratio or count → metrics; participants with quotes → interviews or quotes; a list of problems → findings; competitor notes → competitors; an emotional journey → journey; a dated process log or list of activities by week/phase → timeline; screens → carousel, wireframes, gallery or annotated).
 
 Honesty rules — these matter more than polish:
 - Use only facts, numbers and quotes that appear in the notes. Never invent statistics, participants, quotes, outcomes or impact.
@@ -242,7 +243,9 @@ async function askClaude({ anthropicKey, notes, figma, catalog, current, guidanc
               kind: { type: 'string' }, navLabel: { type: 'string' }, eyebrow: { type: 'string' }, title: { type: 'string' }, body: { type: 'string' },
               variant: { type: 'string', enum: ['light', 'tinted', 'dark'] },
               layoutCount: { type: 'integer' }, columns: { type: 'integer' }, criteria: { type: 'string' },
-              items: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { title: { type: 'string' }, detail: { type: 'string' }, value: { type: 'string' }, frameId: { type: 'string' }, finding: { type: 'string' }, findingNote: { type: 'string' }, quote: { type: 'string' }, quoteNote: { type: 'string' } } } },
+              timeUnit: { type: 'string', description: 'timeline only: Week, Day, Sprint or Month.' },
+              phases: { type: 'array', description: 'timeline only: one entry per phase, in order.', items: { type: 'object', properties: { title: { type: 'string' }, detail: { type: 'string', description: '2–4 short notes, one per line.' } } } },
+              items: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { title: { type: 'string' }, detail: { type: 'string' }, value: { type: 'string' }, frameId: { type: 'string' }, finding: { type: 'string' }, findingNote: { type: 'string' }, quote: { type: 'string' }, quoteNote: { type: 'string' }, when: { type: 'string', description: 'timeline only: unit number or range, e.g. "2" or "1-3".' } } } },
             },
           },
         },

@@ -17,8 +17,8 @@ const PASSCODE_KEY = 'csb-ai-passcode';
 const BACKUP_KEY = 'csb-before-ai';
 const STAGES = ['Reading your Notion notes…', 'Looking at your Figma frames…', 'Choosing components for the story…', 'Writing sections…', 'Placing your screens…'];
 
-type DraftItem = { title?: string; detail?: string; value?: string; frameId?: string; finding?: string; findingNote?: string; quote?: string; quoteNote?: string };
-type DraftSection = { kind: string; navLabel?: string; eyebrow?: string; title: string; body?: string; variant?: string; layoutCount?: number; columns?: number; criteria?: string; items?: DraftItem[] };
+type DraftItem = { title?: string; detail?: string; value?: string; frameId?: string; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string };
+type DraftSection = { kind: string; navLabel?: string; eyebrow?: string; title: string; body?: string; variant?: string; layoutCount?: number; columns?: number; criteria?: string; timeUnit?: string; phases?: Array<{ title?: string; detail?: string }>; items?: DraftItem[] };
 type Draft = { title: string; summary: string; client?: string; role?: string; timeframe?: string; heroFrameId?: string; sections: DraftSection[]; gaps?: string[] };
 
 const read = (key: string) => { try { return localStorage.getItem(key) || ''; } catch { return ''; } };
@@ -45,7 +45,7 @@ export function applyDraft(study: BuilderStudy, draft: Draft, images: Record<str
     const items = (aiItems.length ? aiItems : base.items).map((item, index) => {
       const shape = base.items[index] ?? base.items[base.items.length - 1] ?? { title: '', detail: '' };
       const next: CaseStudySection['items'][number] = { ...shape };
-      for (const key of ['title', 'detail', 'value', 'finding', 'findingNote', 'quote', 'quoteNote'] as const) { const value = (item as DraftItem)[key]; if (typeof value === 'string') (next as Record<string, unknown>)[key] = value; }
+      for (const key of ['title', 'detail', 'value', 'finding', 'findingNote', 'quote', 'quoteNote', 'when'] as const) { const value = (item as DraftItem)[key]; if (typeof value === 'string') (next as Record<string, unknown>)[key] = value; }
       const frameId = (item as DraftItem).frameId;
       if (frameId && images[frameId]) { next.image = images[frameId]; next.frameId = frameId; }
       return next;
@@ -63,6 +63,7 @@ export function applyDraft(study: BuilderStudy, draft: Draft, images: Record<str
     if (base.layout || part.layoutCount) section.layout = { ...base.layout, count: Math.max(1, Math.min(items.length, part.layoutCount || items.length, 8)) };
     if (kind === 'columns') { section.columns = ([2, 3, 4].includes(part.columns ?? 0) ? part.columns : Math.min(4, Math.max(2, items.length))) as 2 | 3 | 4; section.items = items.slice(0, section.columns); }
     if (kind === 'competitors') section.criteria = part.criteria || template && 'Usability, Accessibility, Personalization, Integration, Guidance, Value';
+    if (kind === 'timeline') { section.timeUnit = part.timeUnit || 'Week'; const phases = (part.phases ?? []).filter(phase => phase?.title).map(phase => ({ title: String(phase.title), detail: String(phase.detail ?? '') })); section.phases = phases.length ? phases : [...new Set(items.map(item => item.value).filter(Boolean))].map(title => ({ title: String(title), detail: '' })); delete section.layout; }
     if (kind === 'interviews' || kind === 'findings' || kind === 'carousel') section.layout = { count: Math.min(items.length, 8) };
     sections.push(section);
   }

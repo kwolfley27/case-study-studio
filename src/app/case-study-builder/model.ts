@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "timeline" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -23,7 +23,11 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string }>;
+  /** Work timeline phases (bars under the weeks). detail = one note per line. */
+  phases?: Array<{ title: string; detail: string }>;
+  /** Work timeline column label, e.g. Week, Day, Sprint. */
+  timeUnit?: string;
   /** Short label for the case study side menu. Falls back to navDefaults[kind]. */
   navLabel?: string;
   /** Hide this section from the side menu. */
@@ -66,6 +70,7 @@ export interface BuilderStudy {
 
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
+  timeline: "Work timeline",
   prototype: "Interactive prototype",
   findings: "Numbered findings",
   interviews: "Interview highlights",
@@ -87,6 +92,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  timeline: "Week-by-week activities grouped into phases, built from your process log.",
   coverHero: "A big title that holds still while your hero image scrolls up and over it.",
   prototype: "Embed a clickable Figma prototype in a phone or laptop frame.",
   findings: "A numbered list of problems or findings, one idea per row.",
@@ -109,7 +115,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  coverHero: "Overview", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  coverHero: "Overview", timeline: "Timeline", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -122,6 +128,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   eyebrow: componentNames[kind],
   title: {
     coverHero: "Making access feel obvious, not accidental.",
+    timeline: "How the work unfolded",
     prototype: "Try it yourself",
     findings: "What kept coming up",
     interviews: "Interview highlights",
@@ -145,6 +152,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    timeline: ([["Stakeholder questions", "UX design", "1"], ["Market & competitive research", "UX design", "1"], ["User interviews", "UX design", "1"], ["Empathy map & persona", "UX design", "2"], ["Problem statement", "UX design", "2"], ["Card sorting", "UX design", "2"], ["Information architecture & user flow", "UX design", "2"], ["Design system", "UI design", "3"], ["Sketches & wireframes", "UI design", "3"], ["Prototype", "UI design", "3"], ["Usability testing", "Test", "4"], ["Survey insights", "Test", "4"], ["Improvements", "Test", "4"]] as const).map(([title, value, when]) => ({ title, value, when, detail: "" })),
     prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],
     findings: ["The first finding", "The second finding", "The third finding", "The fourth finding"].map(title => ({ title, detail: "One or two sentences of evidence: what you saw, how often, and why it matters." })),
     interviews: [["Participant one", "Role or context"], ["Participant two", "Role or context"], ["Participant three", "Role or context"]].map(([title, value]) => ({ title, value, detail: "A one-sentence summary of this conversation and what it revealed.", finding: "The most important thing you learned from this person.", findingNote: "Why it matters for the design.", quote: "A short verbatim quote from the interview.", quoteNote: "What this quote shows." })),
@@ -188,9 +196,10 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
     findings: { layout: { count: 4 } },
+    timeline: { timeUnit: "Week", phases: [{ title: "UX design", detail: "Empathize\nDefine\nIdeate" }, { title: "UI design", detail: "Wireframes\nUI design\nPrototype" }, { title: "Test", detail: "Check usability\nSurvey insights\nImprovement" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
-  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype">>>>)[kind],
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "layout" | "prototype" | "phases" | "timeUnit">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
