@@ -456,3 +456,15 @@
 .csb-motion-switch{display:flex;padding:2px;border-radius:999px;background:#ffffff1f}
 .csb-motion-switch button{padding:5px 10px!important;border-radius:999px!important;background:none!important;color:inherit!important;font-size:12px}
 .csb-motion-switch button[aria-pressed=true]{background:#fff!important;color:#1d1d1f!important}
+/* Component picker v2: search + phase pills, grouped results */
+.csb-library-v2{gap:14px!important;padding:24px 24px 0!important}
+.csb-library-v2 .csb-library-search{margin-right:44px}
+.csb-library-v2 .csb-library-filters{flex-wrap:wrap}
+.csb-library-body{flex:1;min-height:0;overflow:auto;margin:0 -24px;padding:4px 24px 24px}
+.csb-library-group+.csb-library-group{margin-top:26px}
+.csb-library-group h3{margin:0 0 12px;font-size:13px;font-weight:600;letter-spacing:.01em;color:#6e6e73}
+.csb-library-v2 .csb-library-results{overflow:visible;flex:none}
+.csb-library-v2 .csb-template{min-height:0}
+.csb-library-v2 .csb-template-copy{padding:14px 16px 16px}
+.csb-library-v2 .csb-template-copy p{margin:4px 0 0;font-size:12.5px;line-height:1.4;color:#86868b;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.csb-library-v2 .csb-library-search button{border:0;background:#ececef;color:#1d1d1f;border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer}

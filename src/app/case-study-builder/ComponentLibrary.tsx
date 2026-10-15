@@ -28,8 +28,32 @@ function TemplatePreview({ template, study }: { template: ComponentTemplate; stu
   </div>;
 }
 
+const label = (p: Phase) => p === 'Flexible layouts' ? 'Layouts' : p;
+const order = phases.filter(p => p !== 'All');
+
 export function ComponentLibrary({open,onOpenChange,onAdd,study}:{open:boolean;onOpenChange:(open:boolean)=>void;onAdd:(template:ComponentTemplate)=>void;study?:BuilderStudy}) {
- const [query,setQuery]=useState(''); const [phase,setPhase]=useState<Phase>('All'); const [sort,setSort]=useState('process');
- const results=useMemo(()=>templates.filter(t=>(phase==='All'||t.phase===phase)&&`${t.name} ${t.tags} ${t.description} ${t.phase}`.toLowerCase().includes(query.toLowerCase().trim())).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):phases.indexOf(a.phase)-phases.indexOf(b.phase)),[query,phase,sort]);
- return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="csb-library"><div className="csb-library-heading"><span className="csb-panel-kicker">YOUR STORY, PIECE BY PIECE</span><DialogTitle>Find the right component</DialogTitle><DialogDescription>Start with a design phase, or choose a flexible layout that fits anywhere.</DialogDescription></div><div className="csb-library-search"><Search size={18}/><input aria-label="Search components" placeholder="Try research, problem statement, or columns…" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button onClick={()=>setQuery('')}>Clear</button>}</div><div className="csb-library-filters">{phases.map(p=><button key={p} aria-pressed={phase===p} onClick={()=>setPhase(p)}>{p}</button>)}</div><div className="csb-library-sort"><span aria-live="polite">{results.length} components</span><label>Sort <select aria-label="Sort components" value={sort} onChange={e=>setSort(e.target.value)}><option value="process">Design process</option><option value="name">Name A–Z</option></select></label></div><div className="csb-library-results">{results.map(t=><button className="csb-template" key={t.id} onClick={()=>onAdd(t)} aria-label={`Add ${t.name}`}><TemplatePreview template={t} study={study}/><div className="csb-template-copy"><small>{t.phase}</small><strong>{t.name}<Plus size={15}/></strong><p>{t.description}</p></div></button>)}{!results.length&&<div className="csb-library-empty"><h3>No matching components</h3><p>Try a different word or browse all phases.</p><button onClick={()=>{setQuery('');setPhase('All')}}>Clear filters</button></div>}</div><div className="csb-library-footer">Click to add · All text is editable on the canvas · Layouts adapt to mobile</div></DialogContent></Dialog>;
+  const [query, setQuery] = useState('');
+  const [phase, setPhase] = useState<Phase>('All');
+  const q = query.toLowerCase().trim();
+  const results = useMemo(() => templates
+    .filter(t => (phase === 'All' || t.phase === phase) && `${t.name} ${t.tags} ${t.description} ${t.phase}`.toLowerCase().includes(q))
+    .sort((a, b) => order.indexOf(a.phase) - order.indexOf(b.phase)), [q, phase]);
+  // In "All" with no search, group the cards under their phase.
+  const groups = phase === 'All' && !q ? order.map(p => ({ phase: p, items: results.filter(t => t.phase === p) })).filter(g => g.items.length) : [{ phase: null as Phase | null, items: results }];
+  const card = (t: ComponentTemplate) => <button className="csb-template" key={t.id} onClick={() => onAdd(t)} aria-label={`Add ${t.name}`}>
+    <TemplatePreview template={t} study={study} />
+    <div className="csb-template-copy"><strong>{t.name}<Plus size={15} /></strong><p>{t.description}</p></div>
+  </button>;
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="csb-library csb-library-v2">
+    <DialogTitle className="sr-only">Add a section</DialogTitle><DialogDescription className="sr-only">Search or filter by design phase, then choose a component.</DialogDescription>
+    <div className="csb-library-search"><Search size={18} /><input autoFocus aria-label="Search components" placeholder="Search components" value={query} onChange={e => setQuery(e.target.value)} />{query && <button onClick={() => setQuery('')}>Clear</button>}</div>
+    <div className="csb-library-filters">{phases.map(p => <button key={p} aria-pressed={phase === p} onClick={() => setPhase(p)}>{label(p)}</button>)}</div>
+    <div className="csb-library-body">
+      {groups.map(g => <section key={g.phase ?? 'results'} className="csb-library-group">
+        {g.phase && <h3>{label(g.phase)}</h3>}
+        <div className="csb-library-results">{g.items.map(card)}</div>
+      </section>)}
+      {!results.length && <div className="csb-library-empty"><h3>Nothing matches “{query}”</h3><button onClick={() => { setQuery(''); setPhase('All'); }}>Show all</button></div>}
+    </div>
+  </DialogContent></Dialog>;
 }
