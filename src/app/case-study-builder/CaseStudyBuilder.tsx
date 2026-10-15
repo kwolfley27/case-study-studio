@@ -113,10 +113,15 @@ export default function CaseStudyBuilder() {
 
   // One-time starter projects added to the Home library (kept out of the way if deleted later).
   useEffect(() => {
-    try { if (localStorage.getItem("csb-starter-steinway-v4")) return; } catch { return; }
+    try { if (localStorage.getItem("csb-starter-steinway-v5")) return; } catch { return; }
     void import("./starters/steinway").then(async ({ buildSteinway, STEINWAY_ID }) => {
       const fresh = migrateStudy(buildSteinway());
       const existing = await getStudy(STEINWAY_ID).catch(() => undefined);
+      // The very first version (section ids like "stw-system") was built from portfolio screenshots: rebuild it from the Figma frames, keeping any sections she added herself.
+      if (existing && isBuilderStudy(existing) && existing.sections.some(s => /^stw-[a-z]/.test(s.id))) {
+        const next = { ...fresh, slug: existing.slug || fresh.slug, publishedAt: existing.publishedAt, sections: [...fresh.sections, ...existing.sections.filter(s => !s.id.startsWith("stw-"))] };
+        await saveStudy(next); setStudy(current => current.id === STEINWAY_ID ? next : current); return false;
+      }
       if (existing && isBuilderStudy(existing)) {
         // Update in place, keeping her edits and any frames already pulled: grid pictures and the type picture go; live type and a grid overlay come in.
         const typeSpec = fresh.sections.find(s => s.kind === "typeSpec");
@@ -132,7 +137,7 @@ export default function CaseStudyBuilder() {
         await saveStudy(next); setStudy(current => current.id === STEINWAY_ID ? next : current); return false;
       }
       await saveStudy(fresh); setStudy(current => current.id === STEINWAY_ID ? fresh : current); return true;
-    }).then(added => { try { ["v2", "v3", "v4"].forEach(v => localStorage.setItem(`csb-starter-steinway-${v}`, "1")); } catch { /* ignore */ } setMessage({ text: added ? "New project added: Steinway PDP redesign. Find it on Home." : "Steinway updated: live type specimen and a layout grid over the wireframes." }); }).catch(() => undefined);
+    }).then(added => { try { ["v2", "v3", "v4", "v5"].forEach(v => localStorage.setItem(`csb-starter-steinway-${v}`, "1")); } catch { /* ignore */ } setMessage({ text: added ? "New project added: Steinway PDP redesign. Find it on Home." : "Steinway updated: grid and type are now live, with no screenshots." }); }).catch(() => undefined);
   }, []);
   // Keep every study in the Home library too (debounced; IndexedDB has room for images).
   useEffect(() => { const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
