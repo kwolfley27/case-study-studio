@@ -195,7 +195,7 @@ function JourneyScrub({ section }: { section: CaseStudySection }) {
     <svg viewBox="0 0 1040 260" preserveAspectRatio="none" role="img" aria-label={`Emotion journey across ${items.map(item => item.title).join(', ')}`}>
       <motion.path d={`${path} L ${80 + (n - 1) * 220} 255 L 80 255 Z`} fill="var(--csb-accent)" style={{ opacity: area }} />
       <path d={path} fill="none" stroke="var(--csb-accent)" strokeOpacity=".14" strokeWidth="3" strokeDasharray="2 8" strokeLinecap="round" />
-      <motion.path ref={line} d={path} fill="none" stroke="var(--csb-accent)" strokeWidth="3.5" strokeLinecap="round" style={{ pathLength: progress }} />
+      <motion.path ref={line} className="csb-journey-line" d={path} fill="none" stroke="var(--csb-accent)" strokeWidth="3.5" strokeLinecap="round" style={{ pathLength: progress }} />
       {values.map((value, index) => <motion.circle key={index} cx={80 + index * 220} cy={cy(value)} r={index === lowest ? 8 : 6} fill={index === lowest ? 'var(--csb-accent)' : 'white'} stroke="var(--csb-accent)" strokeWidth="3" style={{ transformBox: 'fill-box', transformOrigin: 'center' }} initial={false} animate={{ scale: reached >= index ? 1 : 0.0001 }} transition={{ type: 'spring', stiffness: 460, damping: 14 }} />)}
       {reached >= lowest && <motion.circle cx={80 + lowest * 220} cy={cy(values[lowest])} r={8} fill="none" stroke="var(--csb-accent)" strokeWidth="2" style={{ transformBox: 'fill-box', transformOrigin: 'center' }} initial={{ scale: 1, opacity: .6 }} animate={{ scale: 3.4, opacity: 0 }} transition={{ duration: 1.3, repeat: 2, ease: 'easeOut' }} />}
       <motion.circle cx={dotX} cy={dotY} r={11} fill="var(--csb-accent)" style={{ opacity: dotOpacity, filter: 'drop-shadow(0 0 10px var(--csb-accent))' }} />

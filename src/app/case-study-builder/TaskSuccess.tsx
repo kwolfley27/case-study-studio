@@ -17,7 +17,7 @@ const pct = (v?: string) => Math.max(0, Math.min(100, Number(String(v ?? '').rep
 export function TaskSuccess({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion(); const expressive = useExpressive();
   const n = section.items.length;
-  return <div className={`csb-tsr ${n === 2 ? 'is-two' : n === 1 ? 'is-one' : ''}`}>
+  return <div className={`csb-tsr ${n === 2 ? 'is-two' : n === 1 ? 'is-one' : ''} ${section.options?.color === 'accent' ? 'is-accent' : ''} ${section.options?.weight === 'bold' ? 'is-bold' : ''}`}>
     {section.items.map((item, i) => {
       const ok = pct(item.value), help = Math.min(100 - ok, pct(item.assist));
       const delay = (i % 3) * .14;
@@ -50,6 +50,11 @@ export function TaskSuccessControls({ section, onChange, onOpenResearch }: { sec
   const items = section.items;
   const setItem = (i: number, patch: Partial<CaseStudySection['items'][number]>) => onChange({ items: items.map((it, k) => k === i ? { ...it, ...patch } : it) });
   return <div className="csb-connection-section">
+    <p className="csb-panel-kicker">Rings</p>
+    <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+      <div className="csb-segment" role="group" aria-label="Ring colour">{([['', 'Ink'], ['accent', 'Project colour']] as const).map(([v, l]) => <button key={l} type="button" aria-pressed={(section.options?.color ?? '') === v} onClick={() => onChange({ options: { ...(section.options ?? {}), color: v } })}>{l}</button>)}</div>
+      <div className="csb-segment" role="group" aria-label="Ring weight">{([['', 'Thin'], ['bold', 'Bold']] as const).map(([v, l]) => <button key={l} type="button" aria-pressed={(section.options?.weight ?? '') === v} onClick={() => onChange({ options: { ...(section.options ?? {}), weight: v } })}>{l}</button>)}</div>
+    </div>
     <p className="csb-panel-kicker">Flows</p>
     <div className="csb-tsr-rows">
       {items.map((it, i) => <div key={i} className="csb-tsr-row">

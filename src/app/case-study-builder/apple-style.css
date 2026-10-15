@@ -2006,3 +2006,13 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-more-tools{display:grid;gap:6px}
 .csb-more-tools select,.csb-more-tools input{width:100%;height:30px;padding:0 8px;border:1px solid color-mix(in srgb,currentColor 22%,transparent);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:12px}
 .csb-more-tools option{color:#000}
+
+/* Rings and lines in the project colour; with a gradient accent they take the gradient */
+.csb-grad-defs{position:absolute;width:0;height:0;overflow:hidden}
+.csb-tsr.is-accent .csb-tsr-arc{stroke:var(--csb-accent)}
+.csb-tsr.is-accent .csb-tsr-help{stroke:color-mix(in srgb,var(--csb-accent-2,var(--csb-accent)) 35%,transparent)}
+.csb-tsr.is-bold .csb-tsr-ring circle{stroke-width:7}
+.csb-canvas[data-grad] .csb-tsr.is-accent .csb-tsr-arc,.csb-canvas[data-grad] .csb-survey-arc-fill,.csb-canvas[data-grad] .csb-journey-line{stroke:url(#csb-accent-grad)}
+.csb-canvas[data-grad] .csb-radar-fill{fill:url(#csb-accent-grad)}
+:is(.csb-tsr.is-accent .csb-tsr-key,.csb-tsr.is-accent ~ .csb-tsr-key) .is-ok{background:var(--csb-accent-fill,var(--csb-accent))}
+:is(.csb-tsr.is-accent .csb-tsr-key,.csb-tsr.is-accent ~ .csb-tsr-key) .is-help{background:color-mix(in srgb,var(--csb-accent-2,var(--csb-accent)) 35%,transparent)}
