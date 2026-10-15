@@ -117,7 +117,7 @@ export function buildSteinway(): BuilderStudy {
     heroFigmaUrl: F('84:22'),
     showNav: true,
     sources: { figmaUrl: F('0:1') },
-    sections: combineStages(oldMobileAsPhone(sections)),
+    sections: oldNewMobile(combineStages(oldMobileAsPhone(sections))),
   } as BuilderStudy;
 }
 
@@ -158,4 +158,24 @@ export function oldMobileAsPhone(sections: CaseStudySection[]): CaseStudySection
       ...notes.map((n, k) => ({ title: n.title, detail: n.detail, point: String(OLD_MOBILE_SPOTS[k] ?? 50), value: 'mobile' }))],
   };
   return sections.filter((_, i) => i !== ni).map((s, i) => i === mi ? phone : s);
+}
+
+/* Old mobile ↔ new mobile in one phone: the old site's screens (with her complaints) and,
+   one click away, the final mobile design (with her notes on how it answers them). */
+export function oldNewMobile(sections: CaseStudySection[]): CaseStudySection[] {
+  const oi = sections.findIndex(s => s.kind === 'scrollSite' && s.navLabel === 'Old mobile' && !s.options?.compare);
+  const fin = sections.find(s => s.kind === 'scrollSite' && s.options?.compare && s.navLabel === 'Wireframe to final');
+  if (oi < 0 || !fin) return sections;
+  const o = sections[oi];
+  const finalMobile = fin.items[3] ?? { title: 'Final PDP: Mobile', detail: '' };
+  const newNotes = fin.items.slice(4).filter(n => n.value === 'mobile' && n.when !== 'a').map(n => ({ ...n, when: 'b' }));
+  const next: CaseStudySection = {
+    ...o,
+    navLabel: 'Old vs new mobile',
+    title: 'Mobile: old and new',
+    options: { ...(o.options ?? {}), show: 'mobile', compare: true, stageA: 'Old site', stageB: 'New design', stackMob: true },
+    items: [o.items[0] ?? { title: 'Desktop', detail: '' }, o.items[1] ?? { title: 'Old mobile site', detail: '' }, { title: 'Desktop', detail: '' }, { ...finalMobile, title: 'New mobile design' },
+      ...o.items.slice(2).map(n => ({ ...n, when: 'a' })), ...newNotes],
+  };
+  return sections.map((s, i) => i === oi ? next : s);
 }

@@ -2039,3 +2039,13 @@ button.csb-fx-cell:hover .csb-fx-mark{transform:scale(1.25)}
 .csb-ss-note.is-long h3{font-size:clamp(20px,1.8vw,25px);line-height:1.25}
 /* Phone only: the phone column has a real width (the devices box is a size container, so "auto" would collapse it) */
 .csb-ss.is-mobile .csb-ss-stage{grid-template-columns:minmax(260px,420px) minmax(220px,340px)!important;justify-content:center;gap:clamp(32px,6vw,80px)!important}
+
+/* Scrolling site: the highlighted spot and the line to its note */
+.csb-ss-stage{position:relative}
+.csb-ss-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:1}
+.csb-ss-lines path{fill:none;stroke:var(--csb-accent,#1d1d1f);stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+.csb-ss-mac{z-index:0}
+.csb-ss.is-both .csb-ss-phone{z-index:2}
+.csb-ss-notes{position:relative;z-index:2}
+.csb-ss-band{position:absolute;left:3%;right:3%;z-index:1;height:72px;margin-top:-36px;border-radius:10px;border:1.5px solid var(--csb-accent,#1d1d1f);background:color-mix(in srgb,var(--csb-accent,#1d1d1f) 7%,transparent);pointer-events:none;transform-origin:center}
+.csb-ss-phone .csb-ss-band{height:56px;margin-top:-28px;border-radius:8px}
