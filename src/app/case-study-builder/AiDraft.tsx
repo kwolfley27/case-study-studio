@@ -12,8 +12,8 @@ import { downloadIntoDraft } from './ImageSlots';
   version is kept so it can be undone.
 */
 
-const ENDPOINT = import.meta.env.VITE_STUDIO_AI_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-ai-draft` : '');
-const PASSCODE_KEY = 'csb-ai-passcode';
+export const ENDPOINT = import.meta.env.VITE_STUDIO_AI_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-ai-draft` : '');
+export const PASSCODE_KEY = 'csb-ai-passcode';
 const BACKUP_KEY = 'csb-before-ai';
 const STAGES = ['Reading your Notion notes…', 'Looking at your Figma frames…', 'Choosing components for the story…', 'Writing sections…', 'Placing your screens…'];
 

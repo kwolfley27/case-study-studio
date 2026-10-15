@@ -1,4 +1,4 @@
-export type SectionKind = "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -50,6 +50,8 @@ export interface CaseStudySection {
   surveySource?: SurveySource;
   /** A/B test: change boxes, metrics and outcome. */
   abtest?: import("./ABTest").ABTestData;
+  /** Affinity diagram: green areas > pink issues > blue clusters > yellow notes. */
+  affinity?: import("./AffinityDiagram").AffinityData;
   prototype?: { url: string; device: "phone" | "laptop"; hideUi?: boolean; /* the prototype frame size, so the device screen matches it */ size?: { w: number; h: number } };
   fit?: "contain" | "cover";
   criteria?: string;
@@ -92,6 +94,7 @@ export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
   abtest: "A/B test",
   aeiou: "AEIOU observations",
+  affinity: "Affinity diagram",
   details: "Project details",
   empathy: "Empathy map",
   rows: "Labeled rows",
@@ -118,6 +121,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  affinity: "Observations that scatter from a pile into clusters as you scroll, under issues and areas of concern.",
   aeiou: "Code observation photos and notes as Activities, Environments, Interactions, Objects and Users; hover a letter to see just those.",
   abtest: "Two versions in one frame, the changes between them, and what happened.",
   empathy: "The user in the centre with what they say, think, do and feel around them.",
@@ -146,7 +150,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -166,6 +170,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     empathy: "Inside their head",
     abtest: "What changed, and what it did",
     aeiou: "What we observed",
+    affinity: "What the notes added up to",
     rows: "The essentials",
     screenRecording: "See it in motion",
     prototype: "Try it yourself",
@@ -191,6 +196,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    affinity: [],
     aeiou: [
       { title: "Activities", value: "Goal-directed actions. What pathways do people take to get things done?", detail: "People plan around the class, not the studio: booking happens in stolen minutes between other tasks." },
       { title: "Environments", value: "The whole arena: atmosphere, function, individual and shared spaces.", detail: "The lobby doubles as a waiting room and a checkout, so the 6 pm rush feels chaotic." },
@@ -266,13 +272,14 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     metrics: { layout: { count: 3, columns: 3 as const } },
     wireframes: { layout: { count: 4, scale: 100 } },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
+    affinity: { affinity: { groups: [{ title: "Organizing my information", issues: [{ title: "Show me what I have to do", aspects: [{ title: "I want it printed in front of me", notes: ["Transfers meetings from email to a wall calendar", "Likes getting tasks by email rather than a call, so she can print them"] }, { title: "Daily to-do lists help me track progress", notes: ["Crosses items off a paper list through the day", "Rewrites tomorrow’s list every evening before leaving"] }] }, { title: "Keep me focused", aspects: [{ title: "Don’t interrupt me with non-critical stuff", notes: ["Mutes chat during deep work", "Lets calls go to voicemail before noon", "“If it’s urgent they’ll walk over.”"] }, { title: "Let me batch the small things", notes: ["Answers email twice a day", "Keeps a sticky of quick tasks for after lunch"] }] }] }], unsorted: [] } },
     abtest: { abtest: { mode: "wipe" as const, showMarkers: true, result: "b" as const, method: "Split test · 2 weeks · 4,212 sessions · 95% confidence", markers: [], metrics: [{ label: "Booking completion", kind: "rate" as const, a: "31", b: "44", better: "higher" as const }, { label: "Time to book", kind: "number" as const, a: "42", b: "18", unit: "s", better: "lower" as const }] } },
     findings: { layout: { count: 4 } },
     screenRecording: { recording: { src: "", background: "accent" as const, frame: "browser" as const, padding: 64, radius: 14, cursor: "halo" as const, zoom: 1.8, clicks: [], loop: true, controls: false, speed: 1 } },
     timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
-  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "affinity" | "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {

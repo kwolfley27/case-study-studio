@@ -36,7 +36,7 @@ export function ComponentLibrary({open,onOpenChange,onAdd,study}:{open:boolean;o
   const [phase, setPhase] = useState<Phase>('All');
   const q = query.toLowerCase().trim();
   const results = useMemo(() => templates
-    .filter(t => (phase === 'All' || t.phase === phase) && `${t.name} ${t.tags} ${t.description} ${t.phase}`.toLowerCase().includes(q))
+    .filter(t => (phase === 'All' || t.phase === phase || t.alsoIn?.includes(phase)) && `${t.name} ${t.tags} ${t.description} ${t.phase}`.toLowerCase().includes(q))
     .sort((a, b) => order.indexOf(a.phase) - order.indexOf(b.phase)), [q, phase]);
   // In "All" with no search, group the cards under their phase.
   const groups = phase === 'All' && !q ? order.map(p => ({ phase: p, items: results.filter(t => t.phase === p) })).filter(g => g.items.length) : [{ phase: null as Phase | null, items: results }];

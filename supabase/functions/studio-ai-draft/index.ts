@@ -39,6 +39,12 @@ Deno.serve(async (request) => {
 
   try {
     const body = await request.json();
+    // Affinity diagram: sort research notes into a bottom-up hierarchy.
+    if (body.task === 'affinity') {
+      const notes = (Array.isArray(body.notes) ? body.notes : []).map((n: unknown) => String(n).slice(0, 400)).filter(Boolean).slice(0, 300);
+      if (notes.length < 3) return reply({ error: 'Add at least three notes to sort.' }, 400);
+      return reply(await sortAffinity(anthropicKey, notes, String(body.guidance || '').slice(0, 1000)));
+    }
     const notionUrl: string = body.notionUrl || '';
     const figmaUrl: string = body.figmaUrl || '';
     const catalog: unknown = body.catalog;
@@ -272,4 +278,43 @@ async function askClaude({ anthropicKey, notes, figma, catalog, current, guidanc
     messages.push({ role: 'assistant', content: data.content?.length ? data.content : [{ type: 'text', text: '(no answer)' }] }, { role: 'user', content: 'Now call the build_case_study tool with the complete case study.' });
   }
   throw new Error('Claude did not return a case study. Try again.');
+}
+
+/* Affinity diagram sorting. Bottom-up: cluster the observations first, name each
+   cluster in the user's voice (blue), group clusters into issues (pink), and
+   issues into areas of concern (green). Never rewrite or invent observations. */
+async function sortAffinity(anthropicKey: string, notes: string[], guidance: string) {
+  const tool = {
+    name: 'affinity_diagram',
+    description: 'Return the affinity diagram.',
+    input_schema: { type: 'object', required: ['groups'], properties: {
+      groups: { type: 'array', items: { type: 'object', required: ['title', 'issues'], properties: {
+        title: { type: 'string', description: 'Green note: an overarching area of concern within the work practice, 2–5 words.' },
+        issues: { type: 'array', items: { type: 'object', required: ['title', 'aspects'], properties: {
+          title: { type: 'string', description: 'Pink note: a specific issue within the area of concern, in the user\'s voice, 3–7 words.' },
+          aspects: { type: 'array', items: { type: 'object', required: ['title', 'notes'], properties: {
+            title: { type: 'string', description: 'Blue note: what this cluster of observations reveals, first person ("I want…", "Don\'t…"), 3–9 words.' },
+            notes: { type: 'array', items: { type: 'string' }, description: 'The yellow notes in this cluster, copied exactly from the input.' },
+          } } },
+        } } },
+      } } },
+      unsorted: { type: 'array', items: { type: 'string' }, description: 'Notes that do not fit any cluster, copied exactly.' },
+    } },
+  };
+  const system = `You are a UX researcher building an affinity diagram from contextual inquiry or usability notes. Work bottom-up: do not use predefined categories. First cluster the yellow notes by similarity of meaning, then name each cluster as a blue note in the user's voice, then group blue notes under pink issue notes, then pink notes under green areas of concern. Every input note must appear exactly once, copied word for word, either in a cluster or in unsorted. Clusters should have 2–6 notes. Keep labels short and plain. Always respond by calling the affinity_diagram tool.`;
+  const messages: any[] = [{ role: 'user', content: `NOTES (one per line):\n${notes.map(n => `- ${n}`).join('\n')}${guidance ? `\n\nGUIDANCE: ${guidance}` : ''}` }];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 8000, system, tools: [tool], tool_choice: { type: 'auto' }, messages }),
+      signal: AbortSignal.timeout(120000),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
+    const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
+    if (use) return use.input;
+    messages.push({ role: 'assistant', content: data.content?.length ? data.content : [{ type: 'text', text: '(no answer)' }] }, { role: 'user', content: 'Now call the affinity_diagram tool.' });
+  }
+  throw new Error('Claude did not return a diagram. Try again.');
 }
