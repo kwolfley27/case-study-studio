@@ -238,8 +238,10 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   // then draw a straight hairline from the label to the dot.
   useLayoutEffect(() => {
     const measure = () => {
-      const box = wrap.current?.getBoundingClientRect(); const screenBox = phone.current?.getBoundingClientRect();
-      if (!box || !screenBox) return;
+      const box = wrap.current?.getBoundingClientRect(); const outer = phone.current?.getBoundingClientRect();
+      if (!box || !outer || !phone.current) return;
+      const ph = phone.current;
+      const screenBox = { left: outer.left + ph.clientLeft, top: outer.top + ph.clientTop, width: ph.clientWidth, height: ph.clientHeight, right: outer.left + ph.clientLeft + ph.clientWidth };
       const stacked = getComputedStyle(wrap.current!).getPropertyValue('--annot-stacked').trim() === '1';
       if (stacked) { setTops([]); setPaths([]); return; }
       const next: number[] = [];
