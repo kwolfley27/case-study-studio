@@ -12,6 +12,8 @@ import { ImagePlus, Link2, Trash2, X } from 'lucide-react';
 */
 
 let figmaToken = '';
+export const getFigmaToken = () => figmaToken;
+export const setFigmaToken = (token: string) => { figmaToken = token.trim(); };
 
 const FIGMA_RE = /figma\.com\/(?:design|file|proto)\/([a-zA-Z0-9]+)[^?#]*\?[^#]*node-id=([0-9]+[-:][0-9]+)/;
 export const isFigmaFrameLink = (text: string) => FIGMA_RE.test(text.trim());

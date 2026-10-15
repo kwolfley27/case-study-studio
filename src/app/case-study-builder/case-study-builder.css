@@ -421,3 +421,34 @@
 .csb-template-live .csb-canvas{background:transparent!important}
 .csb-template-live .csb-doc-main .csb-story-section{padding:28px 32px!important;margin:0!important;border-radius:0!important}
 .csb-template-live .csb-section-intro{display:none}
+/* Brand panel */
+.csb-brand-panel{position:fixed;top:76px;right:16px;bottom:16px;z-index:60;width:340px;display:flex;flex-direction:column;border-radius:18px;background:#fbfbfd;border:1px solid #e5e5e7;box-shadow:0 24px 60px #0000002e;overflow:hidden}
+.csb-brand-head{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 10px}
+.csb-brand-head h2{margin:2px 0 0;font-size:18px;letter-spacing:-.01em}
+.csb-brand-scroll{overflow:auto;padding:0 18px 18px}
+.csb-brand-scroll section{padding:14px 0;border-top:1px solid #ececef}
+.csb-brand-saved{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.csb-brand-saved li{display:flex;gap:4px}
+.csb-brand-saved li>button:first-child{flex:1;display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid #e5e5e7;border-radius:10px;background:#fff;text-align:left;cursor:pointer}
+.csb-brand-saved li>button:first-child:hover{border-color:#86868b}
+.csb-brand-saved strong{display:block;font-size:13px}.csb-brand-saved small{font-size:11px;color:#86868b}
+.csb-brand-dots{display:flex}.csb-brand-dots i{width:16px;height:16px;border-radius:50%;margin-left:-5px;box-shadow:0 0 0 2px #fff}.csb-brand-dots i:first-child{margin-left:0;box-shadow:0 0 0 2px #fff,inset 0 0 0 1px #0002}
+.csb-brand-remove{width:32px;border:0;background:none;color:#86868b;cursor:pointer;border-radius:8px}.csb-brand-remove:hover{color:#d70015;background:#fff}
+.csb-brand-import{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.csb-brand-import button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;border:1px solid #e5e5e7;border-radius:10px;background:#fff;font-size:12px;cursor:pointer}
+.csb-brand-import button:hover:not(:disabled),.csb-brand-import button[aria-expanded=true]{border-color:#1d1d1f}
+.csb-brand-figma{display:grid;gap:6px;margin:8px 0}
+.csb-brand-figma input,.csb-brand-save input{width:100%;padding:9px 10px;border:1px solid #d2d2d7;border-radius:8px;font-size:12px;background:#fff}
+.csb-brand-figma small{font-size:11px;color:#86868b;line-height:1.4}
+.csb-brand-found{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.csb-brand-found i{width:18px;height:18px;border-radius:5px;box-shadow:inset 0 0 0 1px #0001}
+.csb-brand-colours{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.csb-brand-colour{display:flex;align-items:center;gap:8px;padding:6px;border:1px solid #e5e5e7;border-radius:10px;background:#fff;cursor:pointer}
+.csb-brand-colour input{width:30px;height:30px;border:0;padding:0;border-radius:7px;background:none;cursor:pointer;flex:none}
+.csb-brand-colour strong{display:block;font-size:12px}.csb-brand-colour small{font-size:10.5px;color:#86868b;font-family:ui-monospace,Menlo,monospace}
+.csb-field-label{font-size:12px;font-weight:600}
+.csb-segment{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:9px;background:#ececef}
+.csb-segment button{padding:7px 4px;border:0;border-radius:7px;background:none;font-size:12px;cursor:pointer;color:#1d1d1f}
+.csb-segment button[aria-pressed=true]{background:#fff;box-shadow:0 1px 3px #0000001f;font-weight:600}
+.csb-brand-save>div{display:flex;gap:6px;margin:8px 0}
+.csb-brand-save .csb-primary-button{white-space:nowrap}
+@media (max-width:640px){.csb-brand-panel{left:8px;right:8px;width:auto;top:64px}}

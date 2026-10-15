@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, Copy, ExternalLink, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Copy, ExternalLink, Palette, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { CaseStudyCanvas } from "./CaseStudyCanvas";
 import { componentDescriptions, componentNames, createSection, isBuilderStudy, lucidExample, type BuilderStudy, type CaseStudySection, type SectionKind } from "./model";
@@ -8,6 +8,7 @@ import { ComponentLibrary } from "./ComponentLibrary";
 import { LayoutControls } from "./LayoutControls";
 import { IntroToggles, ItemsManager, PersonaControls } from "./SectionContentControls";
 import { TextStyleBar } from "./TextStyleBar";
+import { BrandPanel } from "./BrandPanel";
 import { parseWhen, timelinePhases } from "./WorkTimeline";
 import { SurveySourcePicker } from "./SurveySourcePicker";
 import { templates, sectionFromTemplate, type ComponentTemplate } from "./library";
@@ -48,6 +49,7 @@ export default function CaseStudyBuilder() {
   const readPanel = (key: string) => { try { return localStorage.getItem(key) !== "closed"; } catch { return true; } };
   const [leftOpen, setLeftOpen] = useState(() => readPanel("csb-left"));
   const [rightOpen, setRightOpen] = useState(() => readPanel("csb-right"));
+  const [showBrand, setShowBrand] = useState(false);
   useEffect(() => { try { localStorage.setItem("csb-left", leftOpen ? "open" : "closed"); localStorage.setItem("csb-right", rightOpen ? "open" : "closed"); } catch { /* storage unavailable */ } }, [leftOpen, rightOpen]);
   const panelsHidden = !leftOpen && !rightOpen;
   const togglePanels = () => { const open = panelsHidden; setLeftOpen(open); setRightOpen(open); if (view === "framed") setView("canvas"); };
@@ -141,7 +143,7 @@ export default function CaseStudyBuilder() {
   };
 
   return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"}`}>
-    <header className="csb-studio-header"><div className="csb-wordmark"><span className="csb-wordmark-icon">✳</span>Case Study Studio</div><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-primary-button" onClick={enterPreview}><Eye size={14} /> Preview</button></div></header>
+    <header className="csb-studio-header"><div className="csb-wordmark"><span className="csb-wordmark-icon">✳</span>Case Study Studio</div><span className="csb-header-separator" /><span className="csb-header-project">Editing <strong>{study.title}</strong></span><div className="csb-header-actions"><button className="csb-quiet-button" aria-pressed={showBrand} onClick={() => setShowBrand(open => !open)}><Palette size={14} /> Brand</button><button className="csb-quiet-button" onClick={togglePanels} aria-pressed={panelsHidden} title="Hide or show both panels ( \\ )">{panelsHidden ? <><PanelLeft size={14} /> Show panels</> : <><PanelLeft size={14} /> Hide panels</>}</button><button className="csb-quiet-button" onClick={() => downloadStudy(study)}><FileDown size={14} /> Export</button><button className="csb-quiet-button csb-view-toggle" onClick={() => setView(view === "canvas" ? "framed" : "canvas")} aria-label={view === "canvas" ? "Switch to framed layout" : "Switch to full-screen canvas"}>{view === "canvas" ? <><Minimize2 size={14} /> Framed</> : <><Maximize2 size={14} /> Full screen</>}</button><button className="csb-primary-button" onClick={enterPreview}><Eye size={14} /> Preview</button></div></header>
     <div className="csb-studio-shell">
       <aside className="csb-panel csb-panel-left" aria-label="Sections and connections"><button className="csb-panel-hide" onClick={() => setLeftOpen(false)} aria-label="Hide left panel" title="Hide ( [ )"><PanelLeft size={15} /></button><div className="csb-panel-scroll">
         <p className="csb-panel-kicker">Story</p><h2 className="csb-panel-title">Sections</h2><p className="csb-panel-subtitle">Edit text and images right on the page. Select a section to see its settings.</p>
@@ -202,6 +204,7 @@ export default function CaseStudyBuilder() {
         {renderField("Page address", study.slug, value => updateStudy({ slug: value.toLowerCase().replace(/[^a-z0-9-]+/g, "-") }), false, "Used for the published URL and exported file name.")}
       </>}</div></aside>
     </div>
+    {showBrand && view !== "preview" && <BrandPanel study={study} onChange={updateStudy} onClose={() => setShowBrand(false)} notify={(text, error) => setMessage({ text, error })} />}
     <TextStyleBar enabled={view !== "preview"} styleOf={(sectionId, field) => study.sections.find(section => section.id === sectionId)?.textStyles?.[field]} onStyle={(sectionId, field, patch) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== sectionId) return section; const merged = { ...(section.textStyles?.[field] ?? {}), ...patch }; const clean = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined)); const textStyles = { ...(section.textStyles ?? {}) }; if (Object.keys(clean).length) textStyles[field] = clean; else delete textStyles[field]; return { ...section, textStyles }; }) }))} />
     <ImageSlotLayer enabled={view !== "preview"} onFile={handleSlotFile} onUrl={handleSlotUrl} onRemove={slot => setSlotImage(slot, "")} notify={(text, error) => setMessage({ text, error })} />
     <ComponentLibrary open={showAdd} onOpenChange={setShowAdd} onAdd={addSection} study={study}/>

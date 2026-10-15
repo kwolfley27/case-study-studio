@@ -520,13 +520,13 @@
   --t-ink:#0f0e0d;--t-graphite:#44403b;--t-body:#777169;--t-muted:#a59f97;--t-dim:#a59f97;--t-night:#161411;
   --csb-white:#fdfcfc;--csb-gray:#f5f3f1;--csb-black:#161411;--csb-text:#0f0e0d;--csb-secondary:#777169;--csb-rule:#e6e2dd;--csb-ink:#0f0e0d;--csb-muted:#777169;--csb-line:#ebe8e4;
   --ed-display:"Inter",ui-sans-serif,system-ui,sans-serif;--ed-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
-  background:#fdfcfc;color:#0f0e0d;font-family:var(--ed-display);letter-spacing:.005em;
+  background:var(--t-paper);color:var(--t-ink);font-family:var(--brand-body,var(--ed-display));letter-spacing:.005em;
   -webkit-font-smoothing:antialiased;
 }
-.csb-theme-editorial .csb-story-section,.csb-theme-editorial .csb-hero{background:#fdfcfc}
-.csb-theme-editorial .csb-story-section.csb-variant-tinted{background:#f5f3f1}
-.csb-theme-editorial .csb-story-section.csb-variant-dark{background:#161411;color:#f5f3f1}
-.csb-theme-editorial .csb-variant-dark p,.csb-theme-editorial .csb-variant-dark .csb-section-body{color:#a59f97}
+.csb-theme-editorial .csb-story-section,.csb-theme-editorial .csb-hero{background:var(--t-paper,#fdfcfc)}
+.csb-theme-editorial .csb-story-section.csb-variant-tinted{background:var(--t-surface,#f5f3f1)}
+.csb-theme-editorial .csb-story-section.csb-variant-dark{background:var(--t-night,#161411);color:var(--t-surface,#f5f3f1)}
+.csb-theme-editorial .csb-variant-dark p,.csb-theme-editorial .csb-variant-dark .csb-section-body{color:var(--t-muted,#a59f97)}
 
 /* type: light display, calm body, mono labels */
 .csb-theme-editorial :is(h1,h2){font-family:var(--ed-display);font-weight:300!important;letter-spacing:-.025em!important;color:inherit}
@@ -535,7 +535,7 @@
 .csb-theme-editorial h3{font-weight:500!important;letter-spacing:-.01em!important}
 .csb-theme-editorial .csb-section-body,.csb-theme-editorial .csb-hero p{color:var(--t-body);font-size:clamp(16px,1.9cqw,18px);line-height:1.6;letter-spacing:.01em}
 .csb-theme-editorial .csb-eyebrow{font-family:var(--ed-mono)!important;font-weight:400!important;font-size:12px!important;letter-spacing:.08em!important;text-transform:uppercase;color:var(--t-graphite)!important}
-.csb-theme-editorial .csb-variant-dark .csb-eyebrow{color:#a59f97!important}
+.csb-theme-editorial .csb-variant-dark .csb-eyebrow{color:var(--t-muted,#a59f97)!important}
 .csb-theme-editorial :is(.csb-metric-number,.csb-apple-survey-feature strong,.csb-quote blockquote,.csb-editorial-statement p,.csb-gap-conclusion p){font-weight:300!important;letter-spacing:-.025em}
 .csb-theme-editorial :is(.csb-findings-number,.csb-apple-annotation-side small,.csb-wt-num,.csb-research-card>small){font-family:var(--ed-mono);color:var(--t-muted)!important;font-weight:400}
 .csb-theme-editorial :is(.csb-research-methods,.csb-research-columns) h3{color:inherit!important}
@@ -544,28 +544,28 @@
 
 /* surfaces: flat taupe cards, 20px radii, hairlines, no glossy shadows */
 .csb-theme-editorial :is(.csb-gallery-image,.csb-carousel-image,.csb-hero-art,.csb-full-media img,.csb-apple-persona-portrait,.csb-interviews,.csb-carousel-card){border-radius:20px!important;box-shadow:none!important}
-.csb-theme-editorial :is(.csb-gallery-image,.csb-carousel-image,.csb-apple-persona-portrait,.csb-gallery-placeholder){background:#f5f3f1!important}
-.csb-theme-editorial :is(.csb-carousel-card,.csb-interviews){border:1px solid #ebe8e4!important;background:#fdfcfc!important}
-.csb-theme-editorial .csb-interviews-people{background:#f5f3f1!important}
-.csb-theme-editorial :is(.csb-findings li,.csb-apple-annotation-side>div,.csb-research-problem .csb-research-card){border-color:#ebe8e4!important}
+.csb-theme-editorial :is(.csb-gallery-image,.csb-carousel-image,.csb-apple-persona-portrait,.csb-gallery-placeholder){background:var(--t-surface,#f5f3f1)!important}
+.csb-theme-editorial :is(.csb-carousel-card,.csb-interviews){border:1px solid var(--t-line2,#ebe8e4)!important;background:var(--t-paper,#fdfcfc)!important}
+.csb-theme-editorial .csb-interviews-people{background:var(--t-surface,#f5f3f1)!important}
+.csb-theme-editorial :is(.csb-findings li,.csb-apple-annotation-side>div,.csb-research-problem .csb-research-card){border-color:var(--t-line2,#ebe8e4)!important}
 .csb-theme-editorial .csb-story-section.csb-variant-dark,.csb-theme-editorial .csb-story-section.csb-variant-tinted{border-radius:24px}
 
 /* devices: warm ink frames, whisper shadow */
-.csb-theme-editorial :is(.csb-apple-annotated-phone,.csb-phone-shell,.csb-proto-device,.csb-gallery-phone){border-color:#161411!important;box-shadow:0 0 1px #0006,0 2px 4px #0000000a,0 24px 48px -28px #0000002e!important}
+.csb-theme-editorial :is(.csb-apple-annotated-phone,.csb-phone-shell,.csb-proto-device,.csb-gallery-phone){border-color:var(--t-night,#161411)!important;box-shadow:0 0 1px #0006,0 2px 4px #0000000a,0 24px 48px -28px #0000002e!important}
 
 /* controls: black pills */
-.csb-theme-editorial :is(.csb-carousel-nav button,.csb-proto-tools button,.csb-proto-tools a){border-radius:9999px!important;border:1px solid #e5e5e5!important;background:#fdfcfc!important;color:#000!important;box-shadow:0 0 1px #0006,0 1px 1px #0000000a!important}
-.csb-theme-editorial .csb-proto-play{background:#000!important;color:#fdfcfc!important}
-.csb-theme-editorial .csb-interviews-people [aria-selected=true]{box-shadow:inset 2px 0 0 #000!important;background:#fdfcfc!important}
+.csb-theme-editorial :is(.csb-carousel-nav button,.csb-proto-tools button,.csb-proto-tools a){border-radius:9999px!important;border:1px solid #e5e5e5!important;background:var(--t-paper,#fdfcfc)!important;color:#000!important;box-shadow:0 0 1px #0006,0 1px 1px #0000000a!important}
+.csb-theme-editorial .csb-proto-play{background:#000!important;color:var(--t-paper,#fdfcfc)!important}
+.csb-theme-editorial .csb-interviews-people [aria-selected=true]{box-shadow:inset 2px 0 0 #000!important;background:var(--t-paper,#fdfcfc)!important}
 .csb-theme-editorial .csb-interviews-evidence .is-finding{border-color:var(--csb-accent)}
 
 /* side menu + timeline lanes in the warm palette */
-.csb-theme-editorial .csb-side-nav a{font-family:var(--ed-mono);color:#a59f97}
+.csb-theme-editorial .csb-side-nav a{font-family:var(--ed-mono);color:var(--t-muted,#a59f97)}
 .csb-theme-editorial .csb-side-nav a:is(.is-active,[aria-current]){color:#000}
-.csb-theme-editorial .csb-wt-lane{background:#f5f3f1}
-.csb-theme-editorial .csb-wt-label strong{color:#0f0e0d;font-weight:500}
-.csb-theme-editorial .csb-wt-heads span{font-family:var(--ed-mono);color:#a59f97}
-.csb-theme-editorial :is(.csb-cover-media,.csb-cover-media img){border-radius:24px!important;box-shadow:0 0 1px #0006,0 2px 4px #0000000a!important;background:#f5f3f1}
+.csb-theme-editorial .csb-wt-lane{background:var(--t-surface,#f5f3f1)}
+.csb-theme-editorial .csb-wt-label strong{color:var(--t-ink,#0f0e0d);font-weight:500}
+.csb-theme-editorial .csb-wt-heads span{font-family:var(--ed-mono);color:var(--t-muted,#a59f97)}
+.csb-theme-editorial :is(.csb-cover-media,.csb-cover-media img){border-radius:24px!important;box-shadow:0 0 1px #0006,0 2px 4px #0000000a!important;background:var(--t-surface,#f5f3f1)}
 
 /* ── Persona: flexible blocks ─────────────────────────────────────── */
 .csb-apple-persona.is-no-portrait .csb-apple-persona-profile{grid-template-columns:1fr}
@@ -600,3 +600,15 @@
 .csb-canvas .csb-ts[data-weight=light]{font-weight:300!important}
 .csb-canvas .csb-ts[data-weight=regular]{font-weight:400!important}
 .csb-canvas .csb-ts[data-weight=bold]{font-weight:600!important}
+
+/* ── Brand tokens (from the Brand panel) ───────────────────────────── */
+.csb-canvas[data-brand]{background:var(--t-paper,#fff);color:var(--t-ink,#1d1d1f)}
+.csb-canvas[data-brand] .csb-story-section:not(.csb-variant-dark):not(.csb-variant-tinted),.csb-canvas[data-brand] .csb-hero{background:var(--t-paper,#fff)}
+.csb-canvas[data-brand] .csb-story-section.csb-variant-tinted{background:var(--t-surface,#f5f5f7)}
+.csb-canvas[data-brand] .csb-story-section.csb-variant-dark{background:var(--t-night,#050505)}
+.csb-canvas[data-brand]{font-family:var(--brand-body,inherit)}
+.csb-canvas[data-brand] :is(h1,h2){font-family:var(--brand-display,inherit)!important;font-weight:var(--brand-weight,inherit)!important}
+.csb-canvas[data-brand] :is(.csb-metric-number,.csb-quote blockquote,.csb-editorial-statement p,.csb-gap-conclusion p,.csb-apple-persona-copy h3){font-family:var(--brand-display,inherit)}
+.csb-canvas[data-brand] :is(.csb-gallery-image,.csb-carousel-image,.csb-carousel-card,.csb-hero-art,.csb-cover-media,.csb-full-media img,.csb-apple-persona-portrait,.csb-interviews,.csb-wt-lane,.csb-research-card,.csb-survey-empty,.csb-proto-poster){border-radius:var(--brand-radius,20px)!important}
+.csb-canvas[data-brand] .csb-doc-main .csb-story-section:is(.csb-variant-dark,.csb-variant-tinted){border-radius:calc(var(--brand-radius,20px) + 6px)}
+.csb-canvas[data-brand] .csb-wt-chip{border-radius:calc(var(--brand-radius,20px) * .6)}
