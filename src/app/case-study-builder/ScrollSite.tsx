@@ -378,11 +378,12 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
       <p className="csb-field-note">With a live link, the phone opens your real prototype so people can tap through it, with a switch back to the scrolling screen. {compare ? 'People can swipe left and right on their phone to flip this page between the two stages.' : ''} Native Xcode builds can’t run in a browser: add the TestFlight link and they get a button to install it.</p>
     </div>}
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
-    <p className="csb-panel-kicker">Stages</p>
-    <label className="csb-check-field"><input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Two stages, switched with one click</label>
+    <p className="csb-panel-kicker">Versions</p>
+    <div className="csb-segment" role="group" aria-label="Versions">{([[false, 'One design'], [true, 'Two versions']] as const).map(([v, l]) => <button key={l} type="button" aria-pressed={compare === v} onClick={() => setCompare(v)}>{l}</button>)}</div>
+    <p className="csb-field-note">{compare ? 'For redesigns or stages: old and new, or wireframe and high fidelity. Visitors switch between them here, or swipe on their phone.' : 'One concept, shown on its own. Choose Two versions for a redesign (old and new) or to show stages.'}</p>
     {compare && <><div className="csb-fc-ctl-line" style={{ gridTemplateColumns: '1fr 1fr' }}>
-      <input value={String(section.options?.stageA ?? 'Wireframe')} aria-label="First stage name" onChange={e => onChange({ options: { ...(section.options ?? {}), stageA: e.target.value } })} />
-      <input value={String(section.options?.stageB ?? 'High fidelity')} aria-label="Second stage name" onChange={e => onChange({ options: { ...(section.options ?? {}), stageB: e.target.value } })} />
+      <input value={String(section.options?.stageA ?? 'Wireframe')} placeholder="e.g. Old site" aria-label="First version name" onChange={e => onChange({ options: { ...(section.options ?? {}), stageA: e.target.value } })} />
+      <input value={String(section.options?.stageB ?? 'High fidelity')} placeholder="e.g. New site" aria-label="Second version name" onChange={e => onChange({ options: { ...(section.options ?? {}), stageB: e.target.value } })} />
     </div>
     <p className="csb-field-note">Switch the stage on the page, then add each stage’s frames by clicking its screens. Your place on the page is kept when you switch.</p></>}
     <p className="csb-panel-kicker">Layout grid</p>
