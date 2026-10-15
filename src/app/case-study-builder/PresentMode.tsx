@@ -21,6 +21,9 @@ export function PresentMode({ scroller, onExit }: { scroller: () => HTMLElement 
 
   useEffect(() => {
     document.documentElement.classList.add('csb-presenting');
+    // Scale the page up to fill the screen: the content column (about 1100px) grows to ~92% of the width, capped so a section still fits the height.
+    const fit = () => { const z = Math.max(1, Math.min(window.innerWidth * .92 / 1100, window.innerHeight / 700, 2.4)); document.documentElement.style.setProperty('--present-zoom', z.toFixed(3)); const canvas = (scroller() ?? document).querySelector('.csb-canvas'); const bg = canvas ? getComputedStyle(canvas).backgroundColor : ''; if (bg && bg !== 'rgba(0, 0, 0, 0)') document.documentElement.style.setProperty('--present-bg', bg); };
+    fit(); window.addEventListener('resize', fit);
     void document.documentElement.requestFullscreen?.().catch(() => undefined);
     const list = slides(); setCount(list.length);
     const io = new IntersectionObserver(entries => {
@@ -48,6 +51,7 @@ export function PresentMode({ scroller, onExit }: { scroller: () => HTMLElement 
     window.setTimeout(() => go(0), 50);
     return () => {
       document.documentElement.classList.remove('csb-presenting');
+      window.removeEventListener('resize', fit); document.documentElement.style.removeProperty('--present-zoom'); document.documentElement.style.removeProperty('--present-bg');
       io.disconnect();
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('mousemove', wake);

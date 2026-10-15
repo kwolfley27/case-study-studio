@@ -28,6 +28,7 @@ async function hostImages(study: BuilderStudy, onStage: (s: string) => void): Pr
   const slots: Array<{ get: () => string | undefined; set: (v: string) => void }> = [];
   if (copy.heroImage) slots.push({ get: () => copy.heroImage, set: v => { copy.heroImage = v; } });
   if (copy.hero?.bgImage) slots.push({ get: () => copy.hero!.bgImage, set: v => { copy.hero!.bgImage = v; } });
+  copy.moreStudies?.forEach(m => { if (m.image) slots.push({ get: () => m.image, set: v => { m.image = v; } }); });
   copy.sections.forEach(s => {
     s.items.forEach(it => { if (it.image) slots.push({ get: () => it.image, set: v => { it.image = v; } }); });
     if (s.recording?.src) slots.push({ get: () => s.recording!.src, set: v => { s.recording!.src = v; } });

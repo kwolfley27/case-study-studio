@@ -105,6 +105,10 @@ export interface BuilderStudy {
   theme?: "editorial" | "classic";
   /** Optional second accent colour, used through text styles. */
   accent2?: string;
+  /** Use the accent as a gradient from accent to accent2. */
+  accentGradient?: boolean;
+  /** Previews of other case studies at the end of the page. */
+  moreStudies?: import("./EndMore").MoreStudy[];
   /** Caption under the hero image (Title reveal header). */
   heroCaption?: string;
   /** Motion level: expressive (default) or calm. */

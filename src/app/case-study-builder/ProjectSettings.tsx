@@ -72,8 +72,12 @@ export function ProjectSettings({ study, update, pickBgImage }: { study: Builder
       <h3>Colour</h3>
       <p className="csb-ps-label">Accent</p>
       <Swatches label="Accent colour" value={/^#[\da-f]{6}$/i.test(study.accent) ? study.accent : '#c8553d'} onChange={c => update({ accent: c ?? '#c8553d' })} />
-      <p className="csb-ps-label">Second accent <small>optional, for text you style</small></p>
-      <Swatches label="Second accent" allowNone value={study.accent2} onChange={c => update({ accent2: c })} />
+      <div className="csb-ps-seg" role="radiogroup" aria-label="Accent style" style={{ marginTop: 10 }}>
+        {([[false, 'Solid'], [true, 'Gradient']] as const).map(([v, l]) => <button key={l} type="button" role="radio" aria-checked={!!study.accentGradient === v} onClick={() => update(v ? { accentGradient: true, accent2: study.accent2 || '#6c4cff' } : { accentGradient: false })}><span>{l}</span></button>)}
+      </div>
+      {study.accentGradient && <div className="csb-ps-grad" style={{ background: `linear-gradient(120deg, ${study.accent}, ${study.accent2 || '#6c4cff'})` }} aria-hidden="true" />}
+      <p className="csb-ps-label">{study.accentGradient ? 'Gradient to' : <>Second accent <small>optional, for text you style</small></>}</p>
+      <Swatches label={study.accentGradient ? 'Gradient end colour' : 'Second accent'} allowNone={!study.accentGradient} value={study.accent2} onChange={c => update({ accent2: c })} />
     </section>
 
     <section>

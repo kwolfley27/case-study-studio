@@ -6,6 +6,7 @@ import { FlowDiff, UserFlow } from "./UserFlow";
 import { JobsToBeDone } from "./JobsToBeDone";
 import { ScrollSite } from "./ScrollSite";
 import { BarChart } from "./BarChart";
+import { EndMore } from "./EndMore";
 import { TypeSpecimen } from "./TypeSpecimen";
 import { FeatureCompare, Positioning } from "./CompetitorViews";
 import { AEIOUBoard } from "./AEIOU";
@@ -204,7 +205,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
   const showNav = !bare && study.showNav !== false;
   useEffect(() => { if (study.brand?.display) loadFont(study.brand.display); if (study.brand?.text) loadFont(study.brand.text); }, [study.brand?.display, study.brand?.text]);
   const coverFirst = study.sections[0]?.kind === "coverHero";
-  return <MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent } as React.CSSProperties}>
+  return <MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} data-grad={study.accentGradient && study.accent2 ? "" : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent, ...(study.accentGradient && study.accent2 ? { "--csb-accent-fill": `linear-gradient(120deg, ${study.accent}, ${study.accent2})`, "--csb-accent-grad-v": `linear-gradient(to top, ${study.accent}, ${study.accent2})` } : {}) } as React.CSSProperties}>
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
     {!coverFirst && !bare && study.hero?.style === "immersive" && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><ImmersiveHero study={study} editorMode={editorMode} /></EditingContext.Provider>}
     <div className="csb-doc-main">
@@ -219,7 +220,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     {study.sections.map((section, index) => (section.hidden && !editorMode) ? null : <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} data-hidden-label={section.hidden ? "Hidden from the page" : undefined} className={`csb-story-section ${section.hidden ? "is-hidden-section" : ""} csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
       {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
     </section></EditingContext.Provider>)}
-    {!bare && <footer className="csb-canvas-end"><span>Thank you for reading.</span><div className="csb-end-line" /><span>{study.client} / {study.timeframe}</span></footer>}
+    {!bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><EndMore study={study} editorMode={editorMode} /></EditingContext.Provider>}
     </div>
   </article></MotionPrefs.Provider>;
 }

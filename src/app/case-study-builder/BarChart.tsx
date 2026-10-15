@@ -24,7 +24,8 @@ export function BarChart({ section }: { section: CaseStudySection }) {
   const labelsAll = section.options?.labels === 'all';
   const unit = String(section.options?.unit ?? '');
   const n = items.length;
-  const color = section.options?.color === 'accent' ? 'var(--csb-accent, currentColor)' : String(section.options?.color || 'currentColor');
+  // The project colour follows the page: a gradient when the accent is set to gradient.
+  const color = section.options?.color === 'accent' ? 'var(--csb-accent-grad-v, var(--csb-accent, currentColor))' : String(section.options?.color || 'currentColor');
   const fill = String(section.options?.fill ?? 'ramp');
   return <figure className="csb-bar" ref={ref} style={{ ['--bar-c' as string]: color }}>
     <div className="csb-bar-plot" role="img" aria-label={`${section.title}: ${items.map(i => `${i.title} ${i.value}`).join(', ')}`}>
