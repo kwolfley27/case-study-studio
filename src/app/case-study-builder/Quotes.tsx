@@ -1,7 +1,7 @@
-import { useRef } from 'react';
-import { motion, useInView } from 'motion/react';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useInView } from 'motion/react';
 import { Plus, Trash2 } from 'lucide-react';
-import { EditableText } from './EditableText';
+import { EditableText, EditingContext } from './EditableText';
 import { useExpressive, useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
 
@@ -27,23 +27,44 @@ export function QuotesView({ section }: { section: CaseStudySection }) {
 
 function QuoteChat({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion(); const expressive = useExpressive();
-  const ref = useRef<HTMLDivElement>(null); const seen = useInView(ref, { once: true, amount: .25 }) || reduce;
-  const step = expressive ? .9 : .25;
-  return <div className="csb-qchat" ref={ref} role="list">
-    {section.items.map((it, i) => { const me = it.value === 'q'; const prev = section.items[i - 1]; const first = !prev || prev.title !== it.title || (prev.value === 'q') !== me;
-      const at = i * step;
-      return <div key={i} className={`csb-qchat-row ${me ? 'is-me' : ''} ${first ? 'is-first' : ''}`} role="listitem">
+  const { edit } = useContext(EditingContext);
+  const ref = useRef<HTMLDivElement>(null); const seen = useInView(ref, { once: true, amount: .3 });
+  const items = section.items; const n = items.length;
+  // Play like a real thread: answers show "typing…" in their own spot, then the message replaces it.
+  // While editing, with Reduce Motion or calm motion, everything shows at once.
+  const instant = !!edit || reduce || !expressive;
+  const [shown, setShown] = useState(instant ? n : 0);
+  const [typing, setTyping] = useState(false);
+  useEffect(() => { if (instant) { setShown(n); setTyping(false); } }, [instant, n]);
+  useEffect(() => {
+    if (instant || !seen || shown >= n) { setTyping(false); return; }
+    const next = items[shown]; const me = next?.value === 'q';
+    const words = (next?.detail || '').split(/\s+/).length;
+    if (me) { const t = window.setTimeout(() => setShown(s => s + 1), shown === 0 ? 150 : 650); return () => window.clearTimeout(t); }
+    setTyping(true);
+    const t = window.setTimeout(() => { setTyping(false); setShown(s => s + 1); }, (shown === 0 ? 300 : 500) + Math.min(1300, 450 + words * 45));
+    return () => window.clearTimeout(t);
+  }, [instant, seen, shown, n]);
+  const ease = [0.22, 1, 0.36, 1] as const;
+  const rows = items.map((it, i) => ({ it, i, me: it.value === 'q', first: !items[i - 1] || items[i - 1].title !== it.title || (items[i - 1].value === 'q') !== (it.value === 'q') }));
+  const visible = rows.slice(0, shown);
+  const pending = typing && shown < n ? rows[shown] : null;
+  return <div className="csb-qchat" ref={ref} role="list" style={instant ? undefined : { minHeight: Math.min(n, 6) * 52 }}>
+    <AnimatePresence initial={false}>
+      {visible.map(({ it, i, me, first }) => <motion.div key={i} layout={!instant} className={`csb-qchat-row ${me ? 'is-me' : ''} ${first ? 'is-first' : ''}`} role="listitem"
+        initial={instant ? false : { opacity: 0, y: 10, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .35, ease }} style={{ transformOrigin: me ? '100% 100%' : '0% 100%' }}>
         {!me && <span className="csb-qchat-face" aria-hidden="true" style={{ visibility: first ? 'visible' : 'hidden' }}>{initials(it.title)}</span>}
         <div className="csb-qchat-col">
-          {first && <motion.small initial={false} animate={{ opacity: seen ? 1 : 0 }} transition={{ duration: .3, delay: seen ? at : 0 }}><EditableText field={`items.${i}.title`} value={it.title} /></motion.small>}
-          <div className="csb-qchat-stack">
-            {expressive && !reduce && <motion.span className="csb-qchat-typing" aria-hidden="true" initial={false} animate={{ opacity: seen ? [0, 1, 1, 0] : 0 }} transition={{ duration: step, delay: seen ? Math.max(0, at - step * .6) : 0, times: [0, .15, .8, 1] }}><i /><i /><i /></motion.span>}
-            <motion.p className="csb-qchat-bubble" initial={false} animate={{ opacity: seen ? 1 : 0, y: seen ? 0 : 8, scale: seen ? 1 : .96 }} transition={{ duration: .4, delay: seen ? at : 0, ease: [0.22, 1, 0.36, 1] }} style={{ transformOrigin: me ? '100% 100%' : '0% 100%' }}>
-              <EditableText field={`items.${i}.detail`} value={it.detail} />
-            </motion.p>
-          </div>
+          {first && <small><EditableText field={`items.${i}.title`} value={it.title} /></small>}
+          <p className="csb-qchat-bubble"><EditableText field={`items.${i}.detail`} value={it.detail} /></p>
         </div>
-      </div>; })}
+      </motion.div>)}
+      {pending && <motion.div key={`typing-${pending.i}`} layout className={`csb-qchat-row ${pending.first ? 'is-first' : ''}`} aria-hidden="true"
+        initial={{ opacity: 0, y: 8, scale: .9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, transition: { duration: .12 } }} transition={{ duration: .25, ease }} style={{ transformOrigin: '0% 100%' }}>
+        <span className="csb-qchat-face" style={{ visibility: pending.first ? 'visible' : 'hidden' }}>{initials(pending.it.title)}</span>
+        <div className="csb-qchat-col">{pending.first && <small>{pending.it.title}</small>}<span className="csb-qchat-typing"><i /><i /><i /></span></div>
+      </motion.div>}
+    </AnimatePresence>
   </div>;
 }
 

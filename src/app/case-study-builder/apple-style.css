@@ -2404,3 +2404,6 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-psf-face.is-front{display:grid;justify-items:center}
 .csb-psf-success{padding-top:14px}
 .csb-psf{padding-bottom:0}.csb-psf-run{height:55vh}
+/* typing indicator sits in the thread as its own bubble, never on top of a message */
+.csb-qchat-typing{position:static;align-self:flex-start;display:inline-flex;align-items:center;gap:4px;height:42px;padding:0 16px;border-radius:20px;border-bottom-left-radius:6px;background:#f5f3f1}
+.csb-variant-dark .csb-qchat-typing{background:#2a2724}
