@@ -1,4 +1,4 @@
-export type SectionKind = "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -141,6 +141,7 @@ export const componentNames: Record<SectionKind, string> = {
   insights: "Insights",
   iterations: "Iterations",
   screenGroups: "Screen gallery",
+  isoShowcase: "Tilted showcase",
   typeSpec: "Type specimen",
   flowDiff: "Flow redesign",
   featureCompare: "Feature comparison",
@@ -191,6 +192,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   scrollSite: "A long page scrolling inside a MacBook and an iPhone, with callouts as each part arrives.",
   barChart: "A live column chart: type the numbers, the bars rise as you scroll.",
   insights: "Three findings side by side: a picture, a headline with emphasis, one sentence each.",
+  isoShowcase: "Your screens spread across a tilted plane with soft shadows, drifting as you scroll.",
   screenGroups: "Screens grouped by page in collapsible rows; click any screen to see it full size.",
   iterations: "One screen through its versions: step v1 → v2 → v3 in the same device, with what changed and why.",
   typeSpec: "Your type system set in the real fonts, as live text.",
@@ -224,7 +226,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", isoShowcase: "Showcase", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -258,6 +260,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     insights: "What we learned",
     iterations: "How it evolved",
     screenGroups: "Wireframes",
+    isoShowcase: "The work, at a glance",
     typeSpec: "Typographic hierarchy",
     flowDiff: "From nine steps to four",
     featureCompare: "What each option actually offers",
@@ -316,6 +319,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     userFlow: [],
     jtbd: [],
     typeSpec: [{ title: "Header", detail: "Inter · 40pt", value: "A clear, confident headline", font: { family: "Inter", size: 40, weight: 600 } }, { title: "Paragraph", detail: "Inter · 18pt", value: "Body copy that reads easily at length.", font: { family: "Inter", size: 18, leading: 27 } }],
+    isoShowcase: ["Home", "Product page", "Detail", "Checkout", "Account", "Search"].map(title => ({ title, detail: "", image: "" })),
     screenGroups: [
       { title: "First layout", detail: "A traditional table to start: everything on one screen.", group: "Home page", tag: "V1", image: "" },
       { title: "Cards with filters", detail: "Cards with photos instead of rows, plus filter chips for faster scanning.", group: "Home page", tag: "V2", image: "" },

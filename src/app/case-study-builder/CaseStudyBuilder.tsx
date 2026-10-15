@@ -3,6 +3,7 @@ import { ColorDots, bubbleOptions, inkOn } from "./ColorDots";
 import { SectionBasics } from "./SectionBasics";
 import { GradientPicker } from "./GradientElements";
 import { ScreenGroupsControls } from "./ScreenGroups";
+import { IsoShowcaseControls } from "./IsoShowcase";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { MoreHorizontal, ArrowDown, ArrowUp, ChevronDown, Copy, EyeOff, FlaskConical, ExternalLink, Palette, Presentation, Eye, FileDown, FileUp, Maximize2, Minimize2, Monitor, PanelLeft, PanelRight, Plus, RefreshCw, RotateCcw, Smartphone, Trash2, X } from "lucide-react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
@@ -359,6 +360,7 @@ export default function CaseStudyBuilder() {
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
         {selected.kind === "annotated" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Device</p><div className="csb-segment" role="group" aria-label="Device"><button type="button" aria-pressed={selected.options?.device !== "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "phone" } })}>Phone</button><button type="button" aria-pressed={selected.options?.device === "desktop"} onClick={() => updateSection({ options: { ...(selected.options ?? {}), device: "desktop" } })}>Desktop page</button></div><p className="csb-field-note">Click the screen on the page to paste a Figma frame link (Copy link to selection).</p></>}
         {selected.kind === "barChart" && <><div className="csb-inspector-divider" /><BarChartControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "isoShowcase" && <><div className="csb-inspector-divider" /><IsoShowcaseControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "screenGroups" && <><div className="csb-inspector-divider" /><ScreenGroupsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "iterations" && <><div className="csb-inspector-divider" /><IterationsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "insights" && <><div className="csb-inspector-divider" /><InsightsControls section={selected} onChange={updateSection} /></>}
