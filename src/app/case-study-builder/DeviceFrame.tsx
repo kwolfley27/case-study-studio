@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { EditingContext } from './EditableText';
 /*
   Device mockups shared by every hero: laptop, desktop monitor, browser
   window, phone, or none (the image on its own — great for transparent PNGs).
@@ -22,4 +24,14 @@ export function DeviceFrame({ frame, image, alt, slot, hint }: { frame: Frame; i
   if (frame === 'desktop') return <div className="csb-hx-desktop"><div className="csb-hx-monitor">{screen()}</div><div className="csb-hx-stand" aria-hidden="true" /><div className="csb-hx-foot" aria-hidden="true" /></div>;
   if (frame === 'phone') return <div className="csb-hx-phone"><span className="csb-hx-island" aria-hidden="true" />{screen(true)}</div>;
   return <div className="csb-hx-float" data-image-slot={slot}>{image ? <img src={image} alt={alt} /> : <div className="csb-dev-empty"><SampleScreen />{hint && <span className="csb-dev-hint">{hint}</span>}</div>}</div>;
+}
+
+/* On-canvas switch above the hero image (editor only). */
+export function HeroFramePicker({ value }: { value: Frame }) {
+  const { edit } = useContext(EditingContext);
+  if (!edit) return null;
+  return <div className="csb-frame-picker" role="group" aria-label="Hero image frame" onClick={e => e.stopPropagation()}>
+    <span>Frame</span>
+    {frameOptions.map(([frame, label]) => <button key={frame} type="button" aria-pressed={value === frame} onClick={() => edit('heroFrame', frame)}>{frame === 'none' ? 'None' : label.replace(' monitor', '').replace(' window', '')}</button>)}
+  </div>;
 }

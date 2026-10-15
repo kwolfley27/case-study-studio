@@ -913,3 +913,11 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 
 .csb-ps-rows .csb-ps-extras{margin-top:28px}
 .csb-kind-problem .csb-section-intro:has(> div:empty){display:none}
+/* On-canvas hero frame switch (editor only) */
+.csb-frame-picker{position:relative;z-index:5;display:flex;align-items:center;gap:2px;width:max-content;max-width:100%;margin:clamp(20px,3cqw,32px) auto -6px;padding:4px 4px 4px 12px;border-radius:9999px;background:#1d1d1f;color:#f5f5f7;font:500 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 8px 24px #0000002e;flex-wrap:wrap;justify-content:center}
+.csb-frame-picker>span{margin-right:6px;color:#a1a1a6}
+.csb-frame-picker button{padding:6px 10px;border:0;border-radius:9999px;background:none;color:inherit;font:inherit;cursor:pointer}
+.csb-frame-picker button:hover{background:#ffffff1f}
+.csb-frame-picker button[aria-pressed=true]{background:#fff;color:#1d1d1f}
+.csb-hx .csb-frame-picker{margin:0 auto 18px}
+.csb-cover-picker{position:relative;z-index:2}

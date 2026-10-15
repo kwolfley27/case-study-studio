@@ -3,7 +3,7 @@ import { motion, useTransform } from 'motion/react';
 import { EditableText } from './EditableText';
 import { useReducedMotion, useScrollProgress } from './MotionKit';
 import type { BuilderStudy } from './model';
-import { DeviceFrame } from './DeviceFrame';
+import { DeviceFrame, HeroFramePicker } from './DeviceFrame';
 
 /*
   Full-width header: an edge-to-edge background, the title held in place, and
@@ -28,6 +28,7 @@ export function ImmersiveHero({ study, editorMode }: { study: BuilderStudy; edit
       <p className="csb-hx-summary"><EditableText field="summary" value={study.summary} /></p>
     </motion.div>
     <motion.div ref={media} className="csb-hx-media" initial={reduce ? false : { opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .2, ease: [0.22, 1, 0.36, 1] }}>
+      <HeroFramePicker value={hero.frame} />
       <DeviceFrame frame={hero.frame} image={study.heroImage} alt={`${study.title} hero visual`} slot="hero" hint={editorMode ? (hero.frame === 'none' ? 'Click to add a transparent PNG or image' : 'Click to add your screen') : undefined} />
     </motion.div>
   </header>;

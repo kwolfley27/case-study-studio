@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { useReducedMotion } from './MotionKit';
 import { EditableText } from './EditableText';
 import type { BuilderStudy, CaseStudySection } from './model';
-import { DeviceFrame, type Frame } from './DeviceFrame';
+import { DeviceFrame, HeroFramePicker, type Frame } from './DeviceFrame';
 
 /*
   Title reveal hero — the opening from katelynwolfley.design.
@@ -16,11 +16,11 @@ import { DeviceFrame, type Frame } from './DeviceFrame';
 type ViewProps = {
   label: string; title: string; body: string; image?: string; caption?: string; alt: string;
   fields: { label: string; title: string; body: string; caption: string };
-  slot: string; frame: Frame; editorMode: boolean; onFile?: (file: File) => void;
+  slot: string; frame: Frame; editorMode: boolean; onFile?: (file: File) => void; picker?: boolean;
 };
 
 /* The title-reveal layout itself, used by the header (study fields) and by legacy sections. */
-export function CoverHeroView({ label, title, body, image, caption, alt, fields, slot, frame, editorMode, onFile }: ViewProps) {
+export function CoverHeroView({ label, title, body, image, caption, alt, fields, slot, frame, editorMode, onFile, picker }: ViewProps) {
   const reduce = useReducedMotion();
   const [dragging, setDragging] = useState(false);
   const drop = editorMode && onFile ? {
@@ -34,6 +34,7 @@ export function CoverHeroView({ label, title, body, image, caption, alt, fields,
       <motion.h1 initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08, ease: [0.22, 1, 0.36, 1] }}><EditableText field={fields.title} value={title} /></motion.h1>
       {(editorMode || body) && <motion.p className="csb-cover-summary" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .8, delay: .2 }}><EditableText field={fields.body} value={body} /></motion.p>}
     </div>
+    {picker && <div className="csb-cover-picker"><HeroFramePicker value={frame} /></div>}
     {frame !== 'none' ? <motion.div className="csb-cover-device" initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}><DeviceFrame frame={frame} image={image} alt={alt} slot={slot} hint={editorMode ? 'Click to add your screen' : undefined} /></motion.div> :
     <motion.figure data-image-slot={slot} className={`csb-cover-media ${dragging ? 'is-dragging' : ''}`} {...drop} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}>
       {image
@@ -49,7 +50,7 @@ export function CoverHeroView({ label, title, body, image, caption, alt, fields,
 
 /* Title reveal as the page header (Page settings › Header › Title reveal). */
 export function RevealHeader({ study, editorMode }: { study: BuilderStudy; editorMode: boolean }) {
-  return <header className="csb-reveal-header"><CoverHeroView label={study.client} title={study.title} body={study.summary} image={study.heroImage} caption={study.heroCaption} alt={`${study.title} hero visual`} fields={{ label: 'client', title: 'title', body: 'summary', caption: 'heroCaption' }} slot="hero" frame={(study.hero?.frame as Frame | undefined) ?? 'none'} editorMode={editorMode} /></header>;
+  return <header className="csb-reveal-header"><CoverHeroView label={study.client} title={study.title} body={study.summary} image={study.heroImage} caption={study.heroCaption} alt={`${study.title} hero visual`} fields={{ label: 'client', title: 'title', body: 'summary', caption: 'heroCaption' }} slot="hero" frame={(study.hero?.frame as Frame | undefined) ?? 'none'} editorMode={editorMode} picker /></header>;
 }
 
 /* Legacy: a Title reveal hero added as a section (still renders older case studies). */
