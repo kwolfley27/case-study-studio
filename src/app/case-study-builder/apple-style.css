@@ -701,3 +701,23 @@ i.csb-rec-bg-none{background:repeating-linear-gradient(45deg,#fff 0 5px,#eee 5px
 .csb-rec-recording button{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:0;border-radius:9999px;background:#fff;color:#1d1d1f;cursor:pointer;font:inherit}
 @keyframes csb-rec-blink{50%{opacity:.25}}
 @container (max-width:620px){.csb-rec-stage{padding:min(var(--rec-pad,64px),20px)}}
+
+/* ── Project details ───────────────────────────────────────────────── */
+.csb-details{display:grid;grid-template-columns:repeat(var(--details-cols,3),minmax(0,1fr));gap:0;margin:0;border-top:1px solid var(--t-line,#d2d2d7)}
+.csb-detail{padding:22px 24px 26px 0;border-bottom:1px solid var(--t-line,#d2d2d7);text-align:left;min-width:0}
+.csb-detail dt{margin:0 0 10px;font-family:var(--ed-mono,ui-monospace,"SF Mono",Menlo,monospace);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t-muted,#86868b)}
+.csb-detail dd{margin:0;font-size:clamp(15px,1.8cqw,17px);line-height:1.5;color:var(--t-ink,#1d1d1f)}
+.csb-details.has-team{grid-template-columns:repeat(3,minmax(0,1fr))}
+.csb-details.has-team .csb-detail.is-team{padding-left:24px;border-left:1px solid var(--t-line,#d2d2d7)}
+.csb-detail ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.csb-detail li{display:flex;align-items:center;gap:10px}
+.csb-detail li i,.csb-detail-solo i{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--csb-accent) 14%,var(--t-paper,#fff));color:var(--csb-accent);font:600 11px/1 var(--ed-mono,ui-monospace,monospace);font-style:normal}
+.csb-detail li:first-child i{background:var(--csb-accent);color:#fff}
+.csb-detail li span{display:grid;line-height:1.3}
+.csb-detail li strong{font-weight:500}
+.csb-detail li small{font-size:13px;color:var(--t-muted,#86868b)}
+.csb-detail-solo{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-weight:500}
+.csb-detail-solo i{background:var(--csb-accent)!important;color:#fff!important}
+.csb-variant-dark .csb-detail dd{color:var(--t-paper,#f5f5f7)}
+@container (max-width:700px){.csb-details,.csb-details.has-team{grid-template-columns:repeat(2,minmax(0,1fr))}.csb-details .csb-detail.is-team{grid-column:1/-1!important;grid-row:auto!important;padding-left:0;border-left:0}}
+@container (max-width:460px){.csb-details,.csb-details.has-team{grid-template-columns:1fr}}

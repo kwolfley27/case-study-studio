@@ -1,4 +1,4 @@
-export type SectionKind = "coverHero" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "coverHero" | "details" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -23,7 +23,7 @@ export interface CaseStudySection {
   title: string;
   body: string;
   variant: "light" | "dark" | "tinted";
-  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "list" | "text" | "quote" | "day" | "meter" }>;
+  items: Array<{ title: string; detail: string; value?: string; image?: string; frameId?: string; tileSize?: "standard" | "wide" | "large"; finding?: string; findingNote?: string; quote?: string; quoteNote?: string; when?: string; point?: string; blockType?: "list" | "text" | "quote" | "day" | "meter"; hidden?: boolean }>;
   /** Per-section switches, e.g. hideEyebrow, hideTitle, hideBody, portrait. */
   options?: Record<string, string | number | boolean>;
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
@@ -84,6 +84,7 @@ export interface BuilderStudy {
 
 export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
+  details: "Project details",
   screenRecording: "Screen recording",
   timeline: "Work timeline",
   prototype: "Interactive prototype",
@@ -107,6 +108,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  details: "Your role, timeline, team and tools at a glance. Show or hide any detail.",
   screenRecording: "A prototype video on a styled background that zooms into each click.",
   timeline: "Week-by-week activities grouped into phases, built from your process log.",
   coverHero: "A big title that holds still while your hero image scrolls up and over it.",
@@ -131,7 +133,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  coverHero: "Overview", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  coverHero: "Overview", details: "Overview", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -145,6 +147,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   title: {
     coverHero: "Making access feel obvious, not accidental.",
     timeline: "How the work unfolded",
+    details: "Project overview",
     screenRecording: "See it in motion",
     prototype: "Try it yourself",
     findings: "What kept coming up",
@@ -169,6 +172,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    details: [{ title: "My role", detail: "Product designer — research, UX and UI" }, { title: "Timeline", detail: "6 weeks · Summer 2026" }, { title: "Team", detail: "Me — Product designer\nAlex Kim — Product manager\nSam Lee — Engineer" }, { title: "Tools", detail: "Figma, Notion, Maze" }, { title: "Platform", detail: "iOS and web" }, { title: "Deliverables", detail: "Research report, prototype, UI kit" }],
     screenRecording: [{ title: "yourproduct.com", detail: "Add a caption, like: booking a class now takes two taps." }],
     timeline: ([["Stakeholder questions", "Discover", "1"], ["Competitive research", "Discover", "1"], ["User interviews", "Discover", "1-2"], ["Empathy map & persona", "Define", "2"], ["Problem statement", "Define", "2"], ["Card sorting", "Develop", "3"], ["Sketches & wireframes", "Develop", "3"], ["Prototype", "Develop", "3-4"], ["Usability testing", "Deliver", "4"], ["Improvements", "Deliver", "4"]] as const).map(([title, value, when]) => ({ title, value, when, detail: "" })),
     prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],

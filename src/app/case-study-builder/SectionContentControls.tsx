@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Copy, X } from "lucide-react";
 import type { CaseStudySection, SectionKind } from "./model";
 import { personaBlockPresets, personaBlockType } from "./AppleExtras";
+import { detailPresets, isTeam } from "./ProjectDetails";
 
 /*
   Right-panel controls that make every section adaptable:
@@ -123,5 +124,26 @@ export function RecordingControls({ section, onChange }: { section: CaseStudySec
         <button type="button" aria-label={`Remove click ${i + 1} at ${fmtTime(c.t)}`} onClick={() => set({ clicks: clicks.filter((_, j) => j !== i) })}><X size={13} /></button>
       </li>)}</ol>}
     {clicks.length > 0 && <button type="button" className="csb-quiet-button" onClick={() => set({ clicks: [] })}>Clear all moments</button>}
+  </div>;
+}
+
+export function DetailsControls({ section, onChange }: { section: CaseStudySection; onChange: Change }) {
+  if (section.kind !== "details") return null;
+  const items = section.items;
+  const save = (next: Item[]) => onChange({ items: next });
+  return <div className="csb-items">
+    <p className="csb-panel-kicker">Details</p>
+    <p className="csb-field-note">Uncheck anything this project doesn't need. Edit labels and values on the page.</p>
+    <ol>{items.map((item, i) => <li key={i} className="csb-detail-row">
+      <label className="csb-detail-toggle"><input type="checkbox" checked={!item.hidden} onChange={e => save(items.map((it, k) => k === i ? { ...it, hidden: !e.target.checked } : it))} /><span title={item.title}>{short(item.title, "Detail")}</span></label>
+      <button type="button" aria-label={`Move ${item.title} up`} disabled={i === 0} onClick={() => save(move(items, i, i - 1))}><ArrowUp size={13} /></button>
+      <button type="button" aria-label={`Move ${item.title} down`} disabled={i === items.length - 1} onClick={() => save(move(items, i, i + 1))}><ArrowDown size={13} /></button>
+      <button type="button" aria-label={`Remove ${item.title}`} onClick={() => save(items.filter((_, k) => k !== i))}><X size={13} /></button>
+      {isTeam(item) && !item.hidden && <label className="csb-check-field csb-detail-solo-toggle"><input type="checkbox" checked={item.value === "solo"} onChange={e => save(items.map((it, k) => k === i ? (e.target.checked ? { ...it, value: "solo", quote: it.value === "solo" ? it.quote : it.detail, detail: "I led research, design and testing end to end." } : { ...it, value: undefined, detail: it.quote || "Me — Product designer", quote: undefined }) : it))} /> Solo project (just me)</label>}
+    </li>)}</ol>
+    <select className="csb-items-add" value="" aria-label="Add a detail" onChange={e => { const preset = detailPresets[Number(e.target.value)]; if (preset) save([...items, { ...preset.item }]); }}>
+      <option value="" disabled>+ Add a detail…</option>
+      {detailPresets.map((preset, i) => <option key={preset.label} value={i}>{preset.label}</option>)}
+    </select>
   </div>;
 }

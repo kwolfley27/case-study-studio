@@ -6,7 +6,7 @@ import { componentDescriptions, componentNames, createSection, isBuilderStudy, l
 import { FigmaSourcePicker, MACROAI_URL } from "./FigmaSourcePicker";
 import { ComponentLibrary } from "./ComponentLibrary";
 import { LayoutControls } from "./LayoutControls";
-import { IntroToggles, ItemsManager, PersonaControls, RecordingControls } from "./SectionContentControls";
+import { DetailsControls, IntroToggles, ItemsManager, PersonaControls, RecordingControls } from "./SectionContentControls";
 import { TextStyleBar } from "./TextStyleBar";
 import { BrandPanel } from "./BrandPanel";
 import { parseWhen, timelinePhases } from "./WorkTimeline";
@@ -99,7 +99,9 @@ export default function CaseStudyBuilder() {
     return { ...previous, sections };
   });
   const addSection = (template: ComponentTemplate) => {
-    const section = sectionFromTemplate(template);
+    const base = sectionFromTemplate(template);
+    // Project details start from what the case study already knows.
+    const section = template.kind === "details" ? { ...base, items: base.items.map(item => item.title === "My role" && study.role ? { ...item, detail: study.role } : item.title === "Timeline" && study.timeframe ? { ...item, detail: study.timeframe } : item) } : base;
     setStudy(previous => ({ ...previous, sections: template.kind === "coverHero" ? [section, ...previous.sections] : [...previous.sections, section] }));
     pendingAddedSection.current = section.id;
     setSelectedId(section.id);
@@ -180,6 +182,7 @@ export default function CaseStudyBuilder() {
         <LayoutControls section={selected} onChange={updateSection} />
         <PersonaControls section={selected} onChange={updateSection} />
         <RecordingControls section={selected} onChange={updateSection} />
+        <DetailsControls section={selected} onChange={updateSection} />
         <ItemsManager section={selected} onChange={updateSection} />
         {selected.kind === "columns" && <div className="csb-field"><label htmlFor="column-count">Columns</label><select id="column-count" value={selected.columns || 3} onChange={e => updateSection({ columns: Number(e.target.value) as 2 | 3 | 4 })}><option value="2">2 columns</option><option value="3">3 columns</option><option value="4">4 columns</option></select></div>}
         {selected.kind === "wireframes" && <div className="csb-field"><label htmlFor="screen-fit-r">Screen fit</label><select id="screen-fit-r" value={selected.fit || "contain"} onChange={e => updateSection({ fit: e.target.value as "contain" | "cover" })}><option value="contain">Show full screen</option><option value="cover">Fill phone (crop)</option></select></div>}

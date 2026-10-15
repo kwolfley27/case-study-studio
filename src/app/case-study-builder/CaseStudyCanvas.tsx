@@ -12,6 +12,7 @@ import { PrototypeEmbed } from "./PrototypeEmbed";
 import { Findings, Interviews, ScreenCarousel } from "./StoryBlocks";
 import { WorkTimeline } from "./WorkTimeline";
 import { ScreenRecording } from "./ScreenRecording";
+import { ProjectDetails } from "./ProjectDetails";
 import { navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
 import { brandStyleVars, loadFont } from "./brand";
 
@@ -100,6 +101,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
   switch (section.kind) {
     case "findings": return <Findings section={section} />;
     case "timeline": return <WorkTimeline section={section} />;
+    case "details": return <ProjectDetails section={section} />;
     case "screenRecording": return <ScreenRecording section={section} editorMode={editorMode} />;
     case "interviews": return <Interviews section={section} />;
     case "carousel": return <ScreenCarousel section={section} />;
@@ -165,7 +167,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     {!coverFirst && !bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>
-      <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>
+      {!study.sections.some(section => section.kind === "details") && <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>}
     </header></EditingContext.Provider>}
     {study.sections.map((section, index) => <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} className={`csb-story-section csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
       {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
