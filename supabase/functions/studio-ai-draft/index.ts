@@ -212,7 +212,7 @@ Writing: the designer's voice — first person ("I") unless the notes say "we". 
 
 Images: use Figma frames by their exact frameId from the frame list. Only place a frame where its name/preview fits. Set heroFrameId to the best overview or hero frame if one exists. Never invent frame IDs.
 
-Section-level data: when a catalog entry has a sectionShape (affinity, abtest), fill that object on the section in the same shape. For persona and aeiou, keep each item's blockType and cat exactly as in itemShape.
+Section-level data: when a catalog entry has a sectionShape (affinity, abtest, roadmap), fill that object on the section in the same shape. For persona and aeiou, keep each item's blockType and cat exactly as in itemShape.
 
 Fields: each section has kind, navLabel (1–2 words for the side menu), eyebrow (short phase label), title, body, variant (light | tinted | dark — alternate for rhythm, use dark sparingly for emphasis), and items following that component's item shape in the catalog. Use layoutCount when a component shows a variable number of items.`;
 
@@ -255,6 +255,7 @@ async function askClaude({ anthropicKey, notes, figma, catalog, current, guidanc
               phases: { type: 'array', description: 'timeline only: one entry per phase, in order.', items: { type: 'object', properties: { title: { type: 'string' }, detail: { type: 'string', description: 'A short note, 3–5 words.' } } } },
               affinity: { type: 'object', description: 'affinity only: groups (green areas) > issues (pink) > aspects (blue, first person) > notes (yellow, copied word for word from the research).' },
               abtest: { type: 'object', description: 'abtest only: result (b, a or none), method line, and up to 3 metrics. Use only numbers stated in the notes.' },
+              roadmap: { type: 'object', description: 'roadmap only: start (YYYY-MM-DD, the Monday of week 0), weeks, lanes [{id,title}], cards [{lane,week (0-based),span,title,bullets}], breaks (week indexes with no sprint), milestones [{week,label,major}]. Use only dates and work in the notes.' },
               items: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { title: { type: 'string' }, detail: { type: 'string' }, value: { type: 'string' }, frameId: { type: 'string' }, finding: { type: 'string' }, findingNote: { type: 'string' }, quote: { type: 'string' }, quoteNote: { type: 'string' }, when: { type: 'string', description: 'timeline only: unit number or range, e.g. "2" or "1-3".' } } } },
             },
           },

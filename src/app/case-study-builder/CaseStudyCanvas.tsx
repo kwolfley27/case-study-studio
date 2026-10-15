@@ -1,5 +1,6 @@
 import { ABTest } from "./ABTest";
 import { TaskSuccess } from "./TaskSuccess";
+import { Roadmap } from "./Roadmap";
 import { AEIOUBoard } from "./AEIOU";
 import { AffinityDiagram } from "./AffinityDiagram";
 import { FocusCarousel, ScreenFilmstrip, ScreenStory } from "./Screens";
@@ -129,6 +130,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "screenStrip": return <ScreenFilmstrip section={section} />;
     case "affinity": return <AffinityDiagram section={section} editorMode={editorMode} />;
     case "aeiou": return <AEIOUBoard section={section} />;
+    case "roadmap": return <Roadmap section={section} editorMode={editorMode} />;
     case "taskSuccess": return <TaskSuccess section={section} />;
     case "abtest": return <ABTest section={section} editorMode={editorMode} />;
     case "rows": return <ResearchVisual section={{ ...section, kind: "problem" }} />;

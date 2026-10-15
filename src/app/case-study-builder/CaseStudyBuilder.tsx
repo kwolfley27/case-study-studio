@@ -20,6 +20,7 @@ import { AiDraftCard } from "./AiDraft";
 import { PrototypeControls } from "./PrototypeEmbed";
 import { ABTestControls } from "./ABTest";
 import { TaskSuccessControls } from "./TaskSuccess";
+import { RoadmapControls } from "./Roadmap";
 import { AEIOUControls } from "./AEIOU";
 import { AffinityControls } from "./AffinityDiagram";
 import { ScreensControls } from "./Screens";
@@ -224,6 +225,7 @@ export default function CaseStudyBuilder() {
         {["screenFocus", "screenStory", "screenStrip"].includes(selected.kind) && <><div className="csb-inspector-divider" /><ScreensControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "affinity" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Affinity diagram</p><AffinityControls section={selected} onChange={affinity => updateSection({ affinity })} /></>}
         {selected.kind === "aeiou" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Observations</p><AEIOUControls section={selected} onItems={items => updateSection({ items })} /></>}
+        {selected.kind === "roadmap" && <><div className="csb-inspector-divider" /><RoadmapControls section={selected} onChange={roadmap => updateSection({ roadmap })} /></>}
         {selected.kind === "taskSuccess" && <><div className="csb-inspector-divider" /><TaskSuccessControls section={selected} onChange={updateSection} onOpenResearch={() => setShowResearch(true)} /></>}
         {selected.kind === "abtest" && <ABTestControls section={selected} onChange={abtest => updateSection({ abtest })} />}
         {selected.kind === "prototype" && <PrototypeControls section={selected} onChange={prototype => updateSection({ prototype })} />}

@@ -1,4 +1,4 @@
-export type SectionKind = "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -54,6 +54,8 @@ export interface CaseStudySection {
   };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
+  /** Roadmap: weeks, teams, cards, breaks and milestones. */
+  roadmap?: import("./Roadmap").RoadmapData;
   /** Task success: live link to a moderated usability test in Research. */
   taskSource?: { studyId: string; studyTitle: string; taskIds: string[]; sessions: number; updatedAt: string };
   /** A/B test: change boxes, metrics and outcome. */
@@ -102,6 +104,7 @@ export const componentNames: Record<SectionKind, string> = {
   coverHero: "Title reveal hero",
   abtest: "A/B test",
   taskSuccess: "Task success",
+  roadmap: "Roadmap",
   aeiou: "AEIOU observations",
   affinity: "Affinity diagram",
   showcase: "Component showcase",
@@ -141,6 +144,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   affinity: "Observations that scatter from a pile into clusters as you scroll, under issues and areas of concern.",
   aeiou: "Code observation photos and notes as Activities, Environments, Interactions, Objects and Users; hover a letter to see just those.",
   taskSuccess: "How many people finished each flow, as rings.",
+  roadmap: "A sprint-by-sprint plan: teams, weeks, breaks and milestones.",
   abtest: "Two versions in one frame, the changes between them, and what happened.",
   empathy: "The user in the centre with what they say, think, do and feel around them.",
   details: "Your role, timeline, team and tools at a glance. Show or hide any detail.",
@@ -168,7 +172,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
-  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
+  showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
   narrative: "Context", metrics: "By the numbers", flow: "Process", quotes: "What we heard", comparison: "Before & after", gallery: "Gallery",
@@ -177,6 +181,7 @@ export const navLabelFor = (section: Pick<CaseStudySection, "kind" | "navLabel">
 /** A section label turned into a short menu name: drops numbering like "02 / " and tidies case. */
 export const labelFromEyebrow = (eyebrow: string) => { const t = eyebrow.replace(/^\s*\d+\s*[\/·.\-–—:]\s*/, '').trim(); return t && t === t.toUpperCase() ? t.charAt(0) + t.slice(1).toLowerCase() : t; };
 
+import { defaultRoadmap as defaultRoadmapData } from "./Roadmap";
 export const createSection = (kind: SectionKind): CaseStudySection => ({
   id: crypto.randomUUID(),
   kind,
@@ -188,6 +193,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     empathy: "Inside their head",
     abtest: "What changed, and what it did",
     taskSuccess: "Could people finish the key flows?",
+    roadmap: "How we planned the build",
     aeiou: "What we observed",
     affinity: "What the notes added up to",
     showcase: "Components I designed",
@@ -237,6 +243,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
       { title: "Lobby", detail: "No seating, so people lean on the merch shelf while waiting", cat: "e", blockType: "text" },
       { title: "Changing room", detail: "Phone propped on a water bottle to show the class QR code", cat: "o", blockType: "text" },
     ],
+    roadmap: [],
     taskSuccess: [{ title: "Book a class", value: "80", assist: "20", detail: "4 of 5 on their own · 1 with help" }, { title: "Join the waitlist", value: "60", assist: "0", detail: "3 of 5 on their own" }, { title: "Cancel a booking", value: "100", assist: "0", detail: "5 of 5 on their own" }],
     abtest: [{ title: "A · Original", detail: "The current checkout", image: "" }, { title: "B · New design", detail: "Times shown up front", image: "" }],
     empathy: [
@@ -308,6 +315,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     gallery: { layout: { count: 3, columns: 2 as const, pattern: "bento" as const, gap: 20, scale: 100, presentation: "images" as const } },
     metrics: { layout: { count: 3, columns: 3 as const } },
     wireframes: { layout: { count: 4, scale: 100 } },
+    roadmap: { roadmap: defaultRoadmapData() },
     prototype: { prototype: { url: "", device: "phone" as const, hideUi: true } },
     affinity: { affinity: { groups: [{ title: "Organizing my information", issues: [{ title: "Show me what I have to do", aspects: [{ title: "I want it printed in front of me", notes: ["Transfers meetings from email to a wall calendar", "Likes getting tasks by email rather than a call, so she can print them"] }, { title: "Daily to-do lists help me track progress", notes: ["Crosses items off a paper list through the day", "Rewrites tomorrow’s list every evening before leaving"] }] }, { title: "Keep me focused", aspects: [{ title: "Don’t interrupt me with non-critical stuff", notes: ["Mutes chat during deep work", "Lets calls go to voicemail before noon", "“If it’s urgent they’ll walk over.”"] }, { title: "Let me batch the small things", notes: ["Answers email twice a day", "Keeps a sticky of quick tasks for after lunch"] }] }] }], unsorted: [] } },
     abtest: { abtest: { mode: "wipe" as const, showMarkers: true, result: "b" as const, method: "Split test · 2 weeks · 4,212 sessions · 95% confidence", markers: [], metrics: [{ label: "Booking completion", kind: "rate" as const, a: "31", b: "44", better: "higher" as const }, { label: "Time to book", kind: "number" as const, a: "42", b: "18", unit: "s", better: "lower" as const }] } },
@@ -316,7 +324,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     timeline: { timeUnit: "Week", phases: [{ title: "Discover", detail: "Learn about the people" }, { title: "Define", detail: "Frame the problem" }, { title: "Develop", detail: "Explore and prototype" }, { title: "Deliver", detail: "Test and refine" }] },
     interviews: { layout: { count: 3 } },
     carousel: { layout: { count: 4 } },
-  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "affinity" | "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
+  } as Partial<Record<SectionKind, Partial<Pick<CaseStudySection, "roadmap" | "affinity" | "abtest" | "layout" | "prototype" | "phases" | "timeUnit" | "recording">>>>)[kind],
 });
 
 export const lucidExample: BuilderStudy = {
