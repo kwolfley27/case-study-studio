@@ -1311,3 +1311,13 @@ html.csb-presenting .csb-hx{min-height:100vh;scroll-snap-align:start}
 .csb-jm-point:focus-visible{outline:none}.csb-jm-point:focus-visible .csb-jm-dot{box-shadow:0 0 0 3px #fdfcfc,0 0 0 5px var(--t-ink,#000)}
 .csb-proto-screen iframe{transform-origin:50% 50%;transition:transform .15s ease}
 .csb-ae-q{font-size:13px!important;font-style:italic}
+/* Focus carousel: size the device from the space actually left in the stage, so it never crops */
+.csb-sc-track{container-type:size}
+.csb-sc-card .csb-sc-device.is-phone{--sc-w:min(420px,58cqw,calc((100cqh - 30px) * var(--sc-ar)))!important}
+.csb-sc-card .csb-sc-device.is-browser{--sc-w:min(860px,74cqw,calc((100cqh - 60px) * var(--sc-ar)))!important}
+/* Spotlight boxes in the editor: soft solid highlight, not dashes */
+.csb-sc-outline{border:0!important;border-radius:12px!important;background:color-mix(in srgb,var(--t-ink,#000) 6%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t-ink,#000) 22%,transparent)!important;transition:background .2s,box-shadow .2s}
+.csb-sc-outline:hover{background:color-mix(in srgb,var(--t-ink,#000) 10%,transparent)!important;box-shadow:inset 0 0 0 1.5px var(--t-ink,#000)!important}
+.csb-sc-outline b{top:6px!important;left:6px!important;width:18px!important;height:18px!important;font-size:10.5px!important;box-shadow:0 0 0 2px #fdfcfccc}
+.csb-sc-draw i{border:0!important;border-radius:12px!important;background:#ffffff2e!important;box-shadow:inset 0 0 0 1.5px #fff,0 0 0 9999px #00000014}
+.csb-sc-outline b{top:-9px!important;left:auto!important;right:-9px!important;line-height:1!important;padding-top:1px}
