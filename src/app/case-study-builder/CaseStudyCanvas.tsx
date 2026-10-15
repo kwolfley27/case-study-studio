@@ -7,7 +7,7 @@ import { WireframeShowcase } from "./WireframeShowcase";
 import { ResearchVisual } from "./ResearchVisuals";
 import { SurveyResults } from "./SurveyResults";
 import { AnnotatedScreen, IssueFlow, Journey, Persona } from "./AppleExtras";
-import { CoverHero } from "./CoverHero";
+import { CoverHero, RevealHeader } from "./CoverHero";
 import { PrototypeEmbed } from "./PrototypeEmbed";
 import { Findings, Interviews, ScreenCarousel } from "./StoryBlocks";
 import { WorkTimeline } from "./WorkTimeline";
@@ -173,7 +173,8 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
     {!coverFirst && !bare && study.hero?.style === "immersive" && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><ImmersiveHero study={study} editorMode={editorMode} /></EditingContext.Provider>}
     <div className="csb-doc-main">
-    {!coverFirst && !bare && !(study.hero?.style === "immersive") && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
+    {!coverFirst && !bare && study.hero?.style === "reveal" && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><RevealHeader study={study} editorMode={editorMode} /></EditingContext.Provider>}
+    {!coverFirst && !bare && !(study.hero?.style === "immersive" || study.hero?.style === "reveal") && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       {study.hero?.frame && study.hero.frame !== "none" ? <div className="csb-hero-device"><DeviceFrame frame={study.hero.frame} image={study.heroImage} alt={`${study.title} hero visual`} slot="hero" hint={editorMode ? "Click to add your screen" : undefined} /></div>
         : <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <img src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>}

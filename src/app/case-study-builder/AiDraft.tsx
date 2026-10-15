@@ -25,7 +25,7 @@ const read = (key: string) => { try { return localStorage.getItem(key) || ''; } 
 const write = (key: string, value: string | null) => { try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* storage unavailable */ } };
 
 function catalog() {
-  return (Object.keys(componentNames) as SectionKind[]).map(kind => {
+  return (Object.keys(componentNames) as SectionKind[]).filter(kind => kind !== 'coverHero').map(kind => {
     const example = createSection(kind);
     const template = templates.find(item => item.kind === kind);
     return { kind, name: componentNames[kind], purpose: componentDescriptions[kind], phase: template?.phase, defaultNavLabel: navDefaults[kind], itemShape: example.items.slice(0, 2).map(({ image, frameId, tileSize, ...rest }) => ({ ...rest, ...(image !== undefined ? { frameId: '<figma frame id or omit>' } : {}) })), aiRules: template?.ai };

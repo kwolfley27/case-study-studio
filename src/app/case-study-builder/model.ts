@@ -75,10 +75,12 @@ export interface BuilderStudy {
   theme?: "editorial" | "classic";
   /** Optional second accent colour, used through text styles. */
   accent2?: string;
+  /** Caption under the hero image (Title reveal header). */
+  heroCaption?: string;
   /** Motion level: expressive (default) or calm. */
   motion?: "calm" | "expressive";
   /** Header layout: standard, or full width with the hero image rising over the title. */
-  hero?: { style: "standard" | "immersive"; bg: "accent" | "soft" | "paper" | "night" | "image"; bgImage?: string; frame: "none" | "laptop" | "desktop" | "browser" | "phone" };
+  hero?: { style: "standard" | "immersive" | "reveal"; bg: "accent" | "soft" | "paper" | "night" | "image"; bgImage?: string; frame: "none" | "laptop" | "desktop" | "browser" | "phone" };
   /** Brand tokens: colours, fonts, headline weight, corners. */
   brand?: Partial<import("./brand").Brand>;
   sections: CaseStudySection[];
@@ -291,4 +293,21 @@ export function isBuilderStudy(value: unknown): value is BuilderStudy {
           ["bars", "arcs"].includes(question.chart) && typeof question.multiSelect === "boolean" &&
           Number.isInteger(question.answered) && Array.isArray(question.options) && question.options.every(option =>
             option && typeof option.label === "string" && Number.isInteger(option.count))))));
+}
+
+/** One opening per case study: a Title reveal hero added as the first section becomes the header. */
+export function migrateStudy(study: BuilderStudy): BuilderStudy {
+  const first = study.sections[0];
+  if (!first || first.kind !== "coverHero") return study;
+  const media = first.items[0];
+  return {
+    ...study,
+    client: first.eyebrow || study.client,
+    title: first.title || study.title,
+    summary: first.body || study.summary,
+    heroImage: media?.image || study.heroImage,
+    heroCaption: media?.detail || study.heroCaption,
+    hero: { bg: "accent", ...study.hero, style: "reveal", frame: (first.options?.frame as NonNullable<BuilderStudy["hero"]>["frame"]) ?? study.hero?.frame ?? "none" },
+    sections: study.sections.slice(1),
+  };
 }
