@@ -445,3 +445,29 @@
 .csb-doc-main .csb-carousel-track{grid-auto-columns:min(82%,540px)}
 .csb-doc-main .csb-findings,.csb-doc-main .csb-interviews,.csb-doc-main .csb-carousel{margin-top:clamp(24px,4cqw,40px)}
 .csb-doc-main :is(.csb-full-media-figure,.csb-gallery-image) img{max-height:72vh;object-fit:contain}
+
+/* ── Alignment pass: one centered axis for every section ───────────── */
+.csb-doc-main .csb-section-intro{margin-inline:auto;text-align:center}
+.csb-doc-main .csb-section-intro>div{display:flex;flex-direction:column;align-items:center}
+.csb-doc-main .csb-section-intro h2,.csb-doc-main .csb-section-intro .csb-section-body{margin-inline:auto;max-width:640px}
+.csb-doc-main .csb-full-media-section .csb-section-intro{width:auto;padding-inline:clamp(20px,4cqw,40px)}
+.csb-doc-main .csb-apple-issue-track>div{min-width:0}
+.csb-doc-main .csb-apple-issue-node{min-width:0;padding:16px}
+.csb-doc-main .csb-apple-issue-legend{justify-content:center}
+/* small multi-column cards read as one centered group */
+.csb-doc-main :is(.csb-research-methods,.csb-research-columns) .csb-research-card{text-align:center!important}
+.csb-doc-main .csb-metric{text-align:center}
+.csb-doc-main .csb-research-columns .csb-research-icon{display:flex!important;justify-content:center;margin-inline:auto!important;width:fit-content}
+.csb-doc-main .csb-radar-criteria{text-align:center}
+/* a quote or gallery card left alone on its row is centered, not stranded left */
+.csb-doc-main .csb-quote-grid>.csb-quote:not(.csb-quote-0){text-align:center}
+.csb-doc-main .csb-quote-grid>.csb-quote:not(.csb-quote-0) .csb-quote-attribution{justify-content:center}
+.csb-doc-main .csb-quote-grid>.csb-quote:last-child:nth-child(even){grid-column:1/-1;max-width:560px;justify-self:center}
+.csb-doc-main .csb-gallery-adjustable{--cols:var(--csb-gallery-columns);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.csb-doc-main .csb-gallery-adjustable .csb-gallery-card{--span:1;flex:0 0 calc((100% - (var(--cols) - 1) * var(--csb-gallery-gap)) / var(--cols) * var(--span) + (var(--span) - 1) * var(--csb-gallery-gap))}
+.csb-doc-main .csb-gallery-adjustable :is(.csb-tile-wide,.csb-tile-large){--span:min(2,var(--cols))}
+@container (max-width:700px){.csb-doc-main .csb-gallery-adjustable{--cols:min(2,var(--csb-gallery-columns))}}
+@container (max-width:460px){.csb-doc-main .csb-gallery-adjustable{--cols:1}}
+/* the editorial statement sits on the center line */
+.csb-doc-main .csb-editorial-statement{margin-inline:auto;text-align:center;max-width:760px}
+.csb-doc-main .csb-editorial-statement p{font-size:clamp(26px,3.4cqw,38px)}
