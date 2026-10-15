@@ -76,11 +76,14 @@ function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, suc
     measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
     return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
   }, [p]);
-  const rotate = useTransform(p, [.2, .6], [0, 180]);
-  const lift = useTransform(p, [.2, .4, .6], [1, .95, 1]);
-  const bubble = useTransform(p, [.55, .72], [0, 1]);
-  const bubbleY = useTransform(p, [.55, .72], [14, 0]);
-  const bubbleScale = useTransform(bubble, [0, 1], [.92, 1]);
+  // The statement settles back and softens; then the question arrives like a message.
+  const frontOpacity = useTransform(p, [.22, .46], [1, 0]);
+  const frontY = useTransform(p, [.22, .46], [0, -28]);
+  const frontScale = useTransform(p, [.22, .46], [1, .96]);
+  const frontBlur = useTransform(p, [.22, .46], ['blur(0px)', 'blur(8px)']);
+  const bubble = useTransform(p, [.42, .62], [0, 1]);
+  const bubbleY = useTransform(p, [.42, .62], [36, 0]);
+  const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
   const hint = useTransform(p, [0, .12, .2], [1, 1, 0]);
   const back = <div className="csb-psf-hmw">
     <motion.div className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || "#fdfcfc" } : {}), ...(reduce ? {} : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
@@ -92,8 +95,8 @@ function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, suc
   if (reduce) return <div className="csb-psf is-static"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p></div><div className="csb-psf-face is-back">{back}</div>{successRow}</div>;
   return <div className="csb-psf" ref={scene}>
     <div className="csb-psf-stick" ref={stick}>
-      <motion.div className="csb-psf-card" style={{ rotateY: rotate, scale: lift }}>
-        <div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p><motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Scroll to turn</motion.span></div>
+      <motion.div className="csb-psf-card is-fade">
+        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p><motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Keep scrolling</motion.span></motion.div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}

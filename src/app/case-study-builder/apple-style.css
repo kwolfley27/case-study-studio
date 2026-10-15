@@ -2557,3 +2557,8 @@ html.csb-presenting .csb-doc-main .csb-phase-step>.csb-story-section{min-height:
 .csb-sg-lb-img{position:relative;overflow:auto;background:#f5f3f1;min-height:200px}
 .csb-sg-lb-img img{display:block;width:100%;height:auto}
 .csb-sg-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+/* Define: no 3D turn — the statement recedes, the question arrives */
+.csb-psf-card.is-fade{transform-style:flat;perspective:none}
+.csb-psf-card.is-fade .csb-psf-face{backface-visibility:visible;-webkit-backface-visibility:visible}
+.csb-psf-card.is-fade .csb-psf-face.is-back{transform:none;pointer-events:none}
+.csb-psf-card.is-fade .csb-psf-face.is-back .csb-psf-bubble{pointer-events:auto}
