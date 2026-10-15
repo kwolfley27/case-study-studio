@@ -26,13 +26,13 @@ export function CoverHero({ section, editorMode, onUploadMedia }: { section: Cas
       <motion.h1 initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08, ease: [0.22, 1, 0.36, 1] }}><EditableText field="title" value={section.title} /></motion.h1>
       {(editorMode || section.body) && <motion.p className="csb-cover-summary" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .8, delay: .2 }}><EditableText field="body" value={section.body} /></motion.p>}
     </div>
-    <motion.figure className={`csb-cover-media ${dragging ? 'is-dragging' : ''}`} {...drop} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}>
+    <motion.figure data-image-slot={`${section.id}:0`} className={`csb-cover-media ${dragging ? 'is-dragging' : ''}`} {...drop} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}>
       {media.image
         ? <img src={media.image} alt={media.title || section.title} />
         : editorMode
-          ? <label className="csb-cover-empty"><FileUp size={26} strokeWidth={1.4} /><strong>Drop your hero image or GIF</strong><span>or click to choose · it scrolls up over the title</span><input type="file" accept="image/*,.gif" onChange={event => { const file = event.target.files?.[0]; if (file) onUploadMedia?.(section.id, 0, file); event.target.value = ''; }} /></label>
+          ? <label className="csb-cover-empty"><FileUp size={26} strokeWidth={1.4} /><strong>Drop your hero image or GIF</strong><span>click for files or a Figma link · it scrolls up over the title</span><input type="file" accept="image/*,.gif" onChange={event => { const file = event.target.files?.[0]; if (file) onUploadMedia?.(section.id, 0, file); event.target.value = ''; }} /></label>
           : <div className="csb-cover-empty" aria-hidden="true" />}
-      {editorMode && media.image && <span className="csb-cover-replace">Drop an image to replace</span>}
+      {editorMode && media.image && <span className="csb-cover-replace">Click or drop to replace</span>}
     </motion.figure>
     {(editorMode || media.detail) && <p className="csb-cover-caption"><EditableText field="items.0.detail" value={media.detail} /></p>}
   </div>;
