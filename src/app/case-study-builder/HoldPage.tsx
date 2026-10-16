@@ -84,9 +84,10 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   const image = mob?.image;
   const showLive = live && !!liveSrc;
   return <div className={`hold ${showLive ? 'is-live' : ''}`}>
-    <motion.div className="hold-pill" initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .9, duration: .4 }}>
-      <i className={linked ? 'is-on' : ''} />{linked ? (compare ? `Connected · ${stage === 'b' ? nameB : nameA}` : `Connected to ${title || 'the case study'}`) : 'Connecting to the laptop…'}
-    </motion.div>
+    {/* Only while it's still connecting; once linked it gets out of the way. */}
+    <AnimatePresence>{!linked && <motion.div key="pill" className="hold-pill" initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }} transition={{ delay: .9, duration: .4 }}>
+      <i />Connecting to the laptop…
+    </motion.div>}</AnimatePresence>
     {showLive
       ? <iframe key={liveSrc} className="hold-live" src={liveSrc} title="Live prototype" allow="fullscreen; clipboard-write" />
       : <motion.div className="hold-screen" ref={scroller} onScroll={report} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}

@@ -2755,7 +2755,7 @@ html.csb-holding{overflow:hidden}
 /* Hold it: the calm, dark screen while their phone drives (HeldView) */
 .csb-ss.is-held{background:#0c0b0a;color:#fdfcfc;padding:0}
 .csb-held{position:relative;height:100%;overflow:hidden;isolation:isolate}
-.csb-held-glow{position:absolute;left:58%;top:50%;width:62vmax;height:62vmax;translate:-50% -50%;border-radius:50%;background:#c4553a;opacity:.32;filter:blur(110px);transition:background-color 1.4s ease;z-index:-1;animation:csb-held-breathe 9s ease-in-out infinite}
+.csb-held-glow{position:absolute;left:58%;top:50%;width:62vmax;height:62vmax;translate:-50% -50%;border-radius:50%;background:var(--csb-accent,#c4553a);opacity:.32;filter:blur(110px);transition:background-color 1.4s ease;z-index:-1;animation:csb-held-breathe 9s ease-in-out infinite}
 .csb-held-glow.is-b{left:18%;top:78%;width:40vmax;height:40vmax;opacity:.18;animation-duration:13s;animation-direction:reverse}
 @keyframes csb-held-breathe{50%{scale:1.12;opacity:.24}}
 @media (prefers-reduced-motion:reduce){.csb-held-glow{animation:none}}
