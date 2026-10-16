@@ -1,3 +1,4 @@
+import { caller } from '../_shared/access.ts';
 // Case Study Studio — Research (your own Maze-style studies)
 //
 // Studies and responses live in a private Storage bucket ("case-study-research").
@@ -63,7 +64,8 @@ Deno.serve(async (request) => {
   const writeJson = (path: string, value: unknown) => store.upload(path, new Blob([JSON.stringify(value)], { type: 'application/json' }), { upsert: true, contentType: 'application/json' });
 
   const action = String(body.action || '');
-  const owner = () => { const pass = Deno.env.get('STUDIO_PASSCODE') || ''; return !!pass && request.headers.get('x-studio-passcode') === pass; };
+  const who = await caller(request, { ownerOnly: true });
+  const owner = () => who.ok;
 
   try {
     // ---------- Public: participants ----------

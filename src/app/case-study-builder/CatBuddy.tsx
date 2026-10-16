@@ -1,3 +1,4 @@
+import { authHeaders } from './auth';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import sprite from './assets/cat-sprite.png';
@@ -133,6 +134,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const hearRef = useRef<(said: string, fromFigma: boolean, done?: boolean) => boolean>(() => false); const startBriefRef = useRef<(f: boolean) => void>(() => {});
   const wakeRef = useRef<(on: boolean) => void>(() => {});
   const [ext, setExt] = useState('');               // extension version, once it answers
+  const extRef = useRef(''); extRef.current = ext;   // Miso lives in the Chrome extension: no extension, no Miso
   const [level, setLevel] = useState(0);              // mic loudness 0–1
   const [heard, setHeard] = useState('');             // live caption
   const [bubble, setBubble] = useState<{ text: string; n: number; stay?: boolean } | null>(null);
@@ -272,7 +274,6 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const a = act.current;
     let pass = ''; try { pass = localStorage.getItem('csb-ai-passcode') || ''; } catch { /* ignore */ }
     if (!AI_URL) { say('I can only do the basics here.', 'hm'); return; }
-    if (!pass) { say('I need your Studio passcode first. Add it in Draft with AI.', 'hm'); return; }
     // "Put my screenshot in…": a Mac screenshot copied to the clipboard (⌘⌃⇧4) becomes what I'm holding.
     if (/screen ?shot|what i (just )?copied|from my clipboard/i.test(said)) {
       try { for (const it of await navigator.clipboard.read()) { const t = it.types.find(x => x.startsWith('image/')); if (t) { const blob = await it.getType(t); const image = await new Promise<string>(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(blob); }); const c: Clip = { image, name: 'your screenshot', at: Date.now() }; clipRef.current = c; setClip(c); break; } } } catch { /* clipboard not allowed or empty */ }
@@ -298,7 +299,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     try {
       const c = clipRef.current; const fresh = !!c && Date.now() - (c.at ?? 0) < 20 * 60 * 1000;
       const image = fresh && (event || remote.current || /\b(this|it|that|frame|screen|build|make|use|put|fill|add)\b/i.test(said)) ? await small(c!.image).catch(() => '') : '';
-      const r = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': pass }, body: JSON.stringify({ task: 'assistant', said, context, image }), signal: AbortSignal.timeout(35000) });
+      const r = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': pass }, body: JSON.stringify({ task: 'assistant', said, context, image }), signal: AbortSignal.timeout(35000) });
       const d = await r.json().catch(() => ({}));
       if (r.status === 401) { say('That passcode didn’t work.', 'hm'); return; }
       if (!r.ok || !d || !Array.isArray(d.actions)) { say(/Notion research link/.test(d?.error || '') ? 'My brain needs the latest AI update deployed.' : 'Hmm, that didn’t work. Try again?', 'hm'); return; }
@@ -417,7 +418,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
 
   const start = () => {
     const C = getSR(); if (!C || SPEECH_BAD.includes(browser)) { setError(`${browser} can’t turn speech into words. Open the studio in Google Chrome (or Safari) to talk to me.`); setStatus('unsupported'); return; }
-    if (sr.current || document.hidden || (figmaHas.current && !document.hasFocus())) return;
+    if (!extRef.current || sr.current || document.hidden || (figmaHas.current && !document.hasFocus())) return;
     if (listenRef.current === 'push' && !turn.current) { setStatus('off'); return; }
     const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US'; setStatus('starting');
     (r as any).onstart = () => setStatus(st => st === 'words' ? st : 'listening');
@@ -528,6 +529,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
 
   if (!supported && !awake) { /* still show the cat; clicking explains */ }
   const bars = [0, 1, 2].map(i => Math.max(.15, Math.min(1, level * (1.4 - i * .3) + (hearing ? .1 : 0))));
+  if (!ext) return null;
   return <>
     {lasso && <svg className="csb-cat-lasso" aria-hidden="true"><polyline points={lasso.map(p => p.join(',')).join(' ')} /></svg>}
     <div className={`csb-cat ${talking ? 'is-talking is-hearing' : ''} ${typing ? 'is-typing' : ''} ${awake ? 'is-awake' : 'is-asleep'} ${hearing ? 'is-hearing' : ''} ${thinking ? 'is-thinking' : ''} ${clip ? 'has-clip' : ''} ${spot ? 'is-placed' : ''} ${spot && spot[1] < .35 ? 'is-high' : ''} ${spot && spot[0] > .6 ? 'is-right' : ''}`}

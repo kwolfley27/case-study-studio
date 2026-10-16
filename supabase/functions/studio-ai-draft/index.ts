@@ -1,3 +1,4 @@
+import { caller } from '../_shared/access.ts';
 // Case Study Studio — "Draft with AI"
 // Deployed automatically by .github/workflows/deploy-functions.yml when this folder changes.
 // Reads the linked Notion project page and Figma design page, asks Claude to
@@ -33,8 +34,8 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return reply({ error: 'Use POST.' }, 405);
   if (origin && !allowed.has(origin)) return reply({ error: 'Origin not allowed.' }, 403);
 
-  const passcode = Deno.env.get('STUDIO_PASSCODE') || '';
-  if (!passcode || request.headers.get('x-studio-passcode') !== passcode) return reply({ error: 'passcode', message: 'Enter your Studio passcode to use AI drafting.' }, 401);
+  const who = await caller(request, { ownerOnly: true });
+  if (!who.ok) return reply({ error: who.error, message: who.message }, who.status);
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
   if (!anthropicKey) return reply({ error: 'AI drafting is not configured yet (missing ANTHROPIC_API_KEY).' }, 500);
 

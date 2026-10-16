@@ -1,3 +1,4 @@
+import { authHeaders } from '../auth';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 /* Your own research tool: studies, questions, scoring and the server calls. */
@@ -109,7 +110,7 @@ export async function call<T>(action: string, body: Record<string, unknown> = {}
   if (!RESEARCH_URL) throw new Error('Research is not connected on this site.');
   let response: globalThis.Response;
   try {
-    response = await fetch(RESEARCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, ...(owner ? { 'X-Studio-Passcode': getPasscode() } : {}) }, body: JSON.stringify({ action, ...body }) });
+    response = await fetch(RESEARCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(owner ? { 'X-Studio-Passcode': getPasscode() } : {}) }, body: JSON.stringify({ action, ...body }) });
   } catch { throw new Error('Could not reach the research service. Check your connection.'); }
   const data = await response.json().catch(() => ({}));
   if (response.status === 401) throw new NeedsPasscode(data.message || 'Enter your Studio passcode.');

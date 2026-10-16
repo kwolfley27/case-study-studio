@@ -1,0 +1,47 @@
+# Sets up the Studio's database tables and sign-in settings whenever a file in supabase/migrations changes
+# (or when run by hand from the Actions tab). Uses the same SUPABASE_ACCESS_TOKEN secret as the functions deploy.
+# Optional: add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET secrets to switch on "Continue with Google" from here.
+name: Set up database and sign-in
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['supabase/migrations/**', '.github/workflows/setup-database.yml']
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      PROJECT_REF: nmbtgpipjdfcksrapasn
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run migrations
+        run: |
+          set -e
+          for f in supabase/migrations/*.sql; do
+            echo "Running $f"
+            body=$(jq -Rs '{query: .}' < "$f")
+            code=$(curl -sS -o out.json -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$body")
+            echo "HTTP $code"; head -c 600 out.json; echo
+            if [ "$code" -ge 300 ]; then exit 1; fi
+          done
+      - name: Sign-in settings (site address, allowed return links, Google if its keys are set)
+        run: |
+          set -e
+          cfg=$(jq -n --arg site "https://kwolfley27.github.io/case-study-studio/" \
+            --arg allow "https://kwolfley27.github.io/case-study-studio/**,http://localhost:5173/**,http://127.0.0.1:5173/**" \
+            '{site_url: $site, uri_allow_list: $allow, external_email_enabled: true, mailer_otp_exp: 3600}')
+          if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+            cfg=$(echo "$cfg" | jq --arg id "$GOOGLE_CLIENT_ID" --arg sec "$GOOGLE_CLIENT_SECRET" '. + {external_google_enabled: true, external_google_client_id: $id, external_google_secret: $sec}')
+            echo "Google sign-in: switching on"
+          else
+            echo "Google sign-in: keys not set yet (email links still work)"
+          fi
+          code=$(curl -sS -o out.json -w '%{http_code}' -X PATCH "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$cfg")
+          echo "HTTP $code"; if [ "$code" -ge 300 ]; then head -c 600 out.json; exit 1; fi

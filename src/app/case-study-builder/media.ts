@@ -1,3 +1,4 @@
+import { authHeaders } from './auth';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 /*
   Large media (screen recordings, uploaded videos) can't live in the browser
@@ -59,7 +60,7 @@ export async function uploadToStudio(file: Blob, study: string, onProgress: (fra
   let passcode = ''; try { passcode = localStorage.getItem(PASSCODE_KEY) || ''; } catch { /* storage unavailable */ }
   const type = file.type.split(';')[0] || 'video/webm';
   let response: Response;
-  try { response = await fetch(UPLOAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': passcode }, body: JSON.stringify({ type, size: file.size, study }) }); }
+  try { response = await fetch(UPLOAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ type, size: file.size, study }) }); }
   catch { throw new UploadSetupError('One-click upload is not switched on yet (the upload function is not deployed).'); }
   const data = await response.json().catch(() => ({}));
   if (response.status === 401) throw new PasscodeError(data.message || 'Enter your Studio passcode.');

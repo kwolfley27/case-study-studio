@@ -4,7 +4,7 @@ import './reset.css';
 
 // Participant links (#/r/<study id>) open the research study instead of the studio.
 // Every page is loaded on demand, so a visitor reading a case study doesn't download the whole studio.
-const CaseStudyBuilder = lazy(() => import('./app/case-study-builder/CaseStudyBuilder'));
+const CaseStudyBuilder = lazy(() => import('./app/case-study-builder/StudioEntry'));
 const ParticipantPage = lazy(() => import('./app/case-study-builder/research/SurveyRunner'));
 const PublicPage = lazy(() => import('./app/case-study-builder/PublishedCaseStudy'));
 const pub = location.hash.match(/^#\/p\/([a-z0-9-]+)/)?.[1];

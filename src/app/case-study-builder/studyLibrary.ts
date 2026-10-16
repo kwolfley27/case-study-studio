@@ -20,14 +20,19 @@ const tx = async <T,>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => 
   return new Promise<T>((resolve, reject) => { const req = run(db.transaction(STORE, mode).objectStore(STORE)); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); });
 };
 
-export const saveStudy = (study: BuilderStudy) => tx('readwrite', s => s.put({ ...study, updatedAt: new Date().toISOString() }));
+// Every save also goes to the signed-in person's account (see cloud.ts).
+const toCloud = (s: SavedStudy & { deletedAt?: string }) => { void import('./cloud').then(c => c.queueCloudSave(s)).catch(() => undefined); };
+export const saveStudy = async (study: BuilderStudy) => { const rec = { ...study, updatedAt: new Date().toISOString() }; const r = await tx('readwrite', s => s.put(rec)); toCloud(rec); return r; };
+/** Store a record exactly as given (used when bringing a newer copy down from the account). */
+export const putRaw = (study: SavedStudy & { deletedAt?: string }) => tx('readwrite', s => s.put(study));
 export const getStudy = (id: string) => tx<SavedStudy | undefined>('readonly', s => s.get(id));
 /* Deleting moves a study to Recently deleted (kept 30 days) instead of removing it. */
 export type Trashed = SavedStudy & { deletedAt?: string };
-export const deleteStudy = async (id: string) => { const s = await getStudy(id); if (s) await tx('readwrite', st => st.put({ ...s, deletedAt: new Date().toISOString() })); };
-export const restoreStudy = async (id: string) => { const s = await getStudy(id) as Trashed | undefined; if (s) { const { deletedAt: _d, ...rest } = s; void _d; await tx('readwrite', st => st.put(rest)); } };
-export const purgeStudy = (id: string) => tx('readwrite', s => s.delete(id));
+export const deleteStudy = async (id: string) => { const s = await getStudy(id); if (s) { const rec = { ...s, deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; await tx('readwrite', st => st.put(rec)); toCloud(rec); } };
+export const restoreStudy = async (id: string) => { const s = await getStudy(id) as Trashed | undefined; if (s) { const { deletedAt: _d, ...rest } = s; void _d; const rec = { ...rest, updatedAt: new Date().toISOString() }; await tx('readwrite', st => st.put(rec)); toCloud(rec); } };
+export const purgeStudy = async (id: string) => { await tx('readwrite', s => s.delete(id)); void import('./cloud').then(c => c.cloudPurge(id)).catch(() => undefined); };
 /** Read every study one by one, so a single unreadable record never hides the others. */
+export const readEverything = () => readAll();
 async function readAll(): Promise<Trashed[]> {
   const db = await open();
   return new Promise((resolve, reject) => {

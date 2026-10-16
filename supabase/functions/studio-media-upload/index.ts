@@ -7,6 +7,7 @@
 // SUPABASE_SERVICE_ROLE_KEY are provided by Supabase automatically.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { caller } from '../_shared/access.ts';
 
 const allowed = new Set(['https://kwolfley27.github.io', 'http://localhost:5173', 'http://127.0.0.1:5173']);
 const BUCKET = 'case-study-media';
@@ -27,8 +28,8 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return reply({ error: 'Use POST.' }, 405);
   if (origin && !allowed.has(origin)) return reply({ error: 'Origin not allowed.' }, 403);
 
-  const passcode = Deno.env.get('STUDIO_PASSCODE') || '';
-  if (!passcode || request.headers.get('x-studio-passcode') !== passcode) return reply({ error: 'passcode', message: 'Enter your Studio passcode to upload.' }, 401);
+  const who = await caller(request);
+  if (!who.ok) return reply({ error: who.error, message: who.message }, who.status);
 
   let body: { name?: string; type?: string; size?: number; study?: string; publish?: string };
   try { body = await request.json(); } catch { return reply({ error: 'Send JSON.' }, 400); }
@@ -41,6 +42,11 @@ Deno.serve(async (request) => {
   if (body.publish) {
     const slug = String(body.publish).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
     if (!slug) return reply({ error: 'Give the case study a page address first.' }, 400);
+    // A page address belongs to whoever published it first (Katelyn's earlier pages belong to her).
+    const { data: taken } = await supabase.from('published_slugs').select('owner').eq('slug', slug).maybeSingle();
+    if (taken?.owner && who.userId && taken.owner !== who.userId) return reply({ error: 'That page address is already used by someone else. Pick another in Page settings.' }, 409);
+    if (taken && !taken.owner && !who.owner) return reply({ error: 'That page address is already used. Pick another in Page settings.' }, 409);
+    await supabase.from('published_slugs').upsert({ slug, owner: who.userId ?? taken?.owner ?? null, updated_at: new Date().toISOString() });
     const path = `published/${slug}.json`;
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path, { upsert: true });
     if (error || !data) return reply({ error: `Storage: ${error?.message || 'could not create an upload link.'}` }, 500);
@@ -51,7 +57,7 @@ Deno.serve(async (request) => {
 
   const ext = ({ 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' } as Record<string, string>)[type];
   const folder = String(body.study || 'studio').toLowerCase().replace(/[^a-z0-9-]+/g, '-').slice(0, 60) || 'studio';
-  const path = `${folder}/${new Date().toISOString().slice(0, 10)}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+  const path = `${who.userId ? `u/${who.userId}/` : ''}${folder}/${new Date().toISOString().slice(0, 10)}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
   if (error || !data) return reply({ error: `Storage: ${error?.message || 'could not create an upload link.'}` }, 500);

@@ -1,3 +1,4 @@
+import { authHeaders } from './auth';
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw, Sparkles } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
@@ -118,7 +119,7 @@ export function AiDraftCard({ study, onApply, notify }: { study: BuilderStudy; o
     const started = Date.now();
     timer.current = window.setInterval(() => { const elapsed = Math.round((Date.now() - started) / 1000); setSeconds(elapsed); setStage(Math.min(STAGES.length - 2, Math.floor(elapsed / 14))); }, 1000);
     try {
-      const response = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': passcode }, body: JSON.stringify({ notionUrl, figmaUrl, guidance, catalog: catalog(), current: { title: study.title, summary: study.summary, client: study.client, role: study.role, timeframe: study.timeframe, sections: study.sections.map(({ kind, title, body, eyebrow, navLabel, items }) => ({ kind, title, body, eyebrow, navLabel, items: items.map(({ image, ...rest }) => rest) })) } }) });
+      const response = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ notionUrl, figmaUrl, guidance, catalog: catalog(), current: { title: study.title, summary: study.summary, client: study.client, role: study.role, timeframe: study.timeframe, sections: study.sections.map(({ kind, title, body, eyebrow, navLabel, items }) => ({ kind, title, body, eyebrow, navLabel, items: items.map(({ image, ...rest }) => rest) })) } }) });
       const data = await response.json().catch(() => ({}));
       if (response.status === 401) { setNeedsPasscode(true); throw new Error(data.message || 'Enter your Studio passcode.'); }
       if (!response.ok) throw new Error(data.error || `AI draft failed (${response.status}).`);

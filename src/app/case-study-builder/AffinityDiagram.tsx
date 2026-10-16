@@ -1,3 +1,4 @@
+import { authHeaders } from './auth';
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { animate as animateValue, motion, useMotionValue, useTransform, type MotionValue } from 'motion/react';
 import { publicAnonKey } from '../../utils/supabase/info';
@@ -181,7 +182,7 @@ export function AffinityControls({ section, onChange }: { section: CaseStudySect
     if (!ENDPOINT) { setNote({ text: 'AI sorting is not connected on this site.', error: true }); return; }
     setBusy(true); setNote(null);
     try {
-      const response = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': passcode }, body: JSON.stringify({ task: 'affinity', notes: all }) });
+      const response = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ task: 'affinity', notes: all }) });
       const result = await response.json().catch(() => ({}));
       if (response.status === 401) { setNeedsPass(true); throw new Error('Enter your Studio passcode to use AI sorting.'); }
       if (!response.ok || !Array.isArray(result.groups)) throw new Error(/Notion research link/.test(result.error || '') ? 'AI sorting needs the latest studio-ai-draft function deployed. Ask Codex to redeploy it.' : (result.error || 'Sorting failed. Try again.'));

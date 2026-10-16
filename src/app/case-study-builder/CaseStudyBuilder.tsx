@@ -1,3 +1,5 @@
+import { AccountMenu } from "./AccountMenu";
+import type { Account } from "./auth";
 import { PanelResizer, usePanelWidths } from "./PanelResizer";
 import { ColorDots, bubbleOptions, inkOn } from "./ColorDots";
 import { SectionBasics } from "./SectionBasics";
@@ -87,7 +89,8 @@ function downloadStudy(study: BuilderStudy) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export default function CaseStudyBuilder() {
+export default function CaseStudyBuilder({ account }: { account: Account }) {
+  const owner = account.role === 'owner';
   const [study, setStudy] = useState<BuilderStudy>(readLocalStudy);
   const studyRef = useRef(study); studyRef.current = study;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -328,6 +331,7 @@ export default function CaseStudyBuilder() {
           { label: "Download a copy", hint: "Save this case study as a file", onClick: () => downloadStudy(study) },
         ]} />
         <button className="csb-primary-button csb-hdr-publish" onClick={() => setShowPublish(true)}><Globe size={14} /> Publish</button>
+        <AccountMenu account={account} />
       </div></header>
     <div className="csb-studio-shell">
       <aside className="csb-panel csb-panel-left" aria-label="Sections and connections">{!leftRail && <PanelResizer side="left" width={panelW.left} onWidth={panelW.setLeft} />}<button className="csb-panel-hide" onClick={() => setLeftRail(r => !r)} aria-label={leftRail ? "Expand the sections panel" : "Shrink the sections panel to icons"} title={leftRail ? "Expand" : "Shrink to icons"}><PanelLeft size={15} /></button><div className="csb-panel-scroll">
@@ -340,7 +344,7 @@ export default function CaseStudyBuilder() {
         
         {message && <div className={`csb-inline-status ${message.error ? "csb-inline-error" : ""}`} role="status">{message.text}</div>}
         <div className="csb-nav-groups">
-          <details className="csb-disclosure"><summary>Draft with AI</summary><div className="csb-disclosure-body"><AiDraftCard study={study} onApply={next => { setStudy(migrateStudy(next)); setSelectedId(null); }} notify={(text, error) => setMessage({ text, error })} /></div></details>
+          {owner && <details className="csb-disclosure"><summary>Draft with AI</summary><div className="csb-disclosure-body"><AiDraftCard study={study} onApply={next => { setStudy(migrateStudy(next)); setSelectedId(null); }} notify={(text, error) => setMessage({ text, error })} /></div></details>}
           <details className="csb-disclosure"><summary>Linked sources</summary><div className="csb-disclosure-body">
             {renderField("Notion research", study.sources?.notionUrl || "", notionUrl => updateStudy({ sources: { ...study.sources, notionUrl } }), false, "Research notes the AI briefs draw from.")}
         {study.sources?.notionUrl && /^https:\/\/(?:www\.)?(?:notion\.so|notion\.site|app\.notion\.com)\//.test(study.sources.notionUrl) && <a className="csb-connection-link" href={study.sources.notionUrl} target="_blank" rel="noreferrer">Open in Notion <ExternalLink size={11} /></a>}
@@ -435,7 +439,7 @@ export default function CaseStudyBuilder() {
         <ProjectSettings onPickGradient={() => { setRightOpen(false); setGradPick(true); }} study={study} update={updateStudy} pickBgImage={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.onchange = async () => { const file = input.files?.[0]; if (!file) return; const url = URL.createObjectURL(file); try { const { downloadIntoDraft } = await import("./ImageSlots"); updateStudy({ hero: { style: "immersive", frame: "laptop", ...study.hero!, bg: "image", bgImage: await downloadIntoDraft(url, 700_000, 2200) } }); } finally { URL.revokeObjectURL(url); } }; input.click(); }} />
       </>}</div></aside>
     </div>
-    {!presenting && <CatBuddy actions={{
+    {!presenting && owner && <CatBuddy actions={{
       sections: study.sections, selectedId, templates,
       select: id => { setSelectedId(id); if (view === "canvas") setRightOpen(true); },
       move: moveSection,

@@ -1,3 +1,4 @@
+import { authHeaders } from './auth';
 import { useEffect, useRef, useState } from 'react';
 import { Download, Film, Sparkles, Trash2 } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
@@ -85,7 +86,7 @@ async function framesFromVideo(file: File, onProgress: (p: number) => void): Pro
 async function nameWithAI(r: Recording): Promise<Recording> {
   const passcode = (() => { try { return localStorage.getItem(PASS) || ''; } catch { return ''; } })();
   const images = r.steps.filter(s => s.image).slice(0, 20).map(s => s.image!.split(',')[1]);
-  const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': passcode }, body: JSON.stringify({ task: 'flowFromScreens', images, context: r.name }) });
+  const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ task: 'flowFromScreens', images, context: r.name }) });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) throw new Error('Enter your Studio passcode in Draft with AI first (left panel).');
   if (!res.ok || !Array.isArray(data.steps)) throw new Error(/Notion research link/.test(data.error || '') ? 'Naming steps needs the latest studio-ai-draft deployed. Ask Codex to redeploy it.' : data.error || 'AI naming failed.');

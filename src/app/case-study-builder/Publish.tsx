@@ -1,3 +1,4 @@
+import { authHeaders } from './auth';
 import { useState } from 'react';
 import { Copy, ExternalLink, Globe, X } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
@@ -15,9 +16,10 @@ export const publishedJsonUrl = (slug: string) => `https://${projectId}.supabase
 export const publicPageUrl = (slug: string) => `${location.origin}${location.pathname}#/p/${slug}`;
 
 async function uploadJson(study: BuilderStudy, passcode: string) {
-  const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': passcode }, body: JSON.stringify({ publish: study.slug }) });
+  const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ publish: study.slug }) });
   const d = await r.json().catch(() => ({}));
-  if (r.status === 401) throw new Error('Enter your Studio passcode.');
+  if (r.status === 401) throw new Error('Please sign in again.');
+  if (r.status === 409) throw new Error(d.error || 'That page address belongs to someone else. Pick another in Page settings.');
   if (!r.ok || !d.uploadUrl) throw new Error(d.error === 'Upload a video (mp4, webm, mov) or an image.' ? 'Publishing needs the latest studio-media-upload function. Ask Codex to redeploy it.' : d.error || `Publish failed (${r.status}).`);
   const put = await fetch(d.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-upsert': 'true' }, body: JSON.stringify(study) });
   if (!put.ok) throw new Error(`Publish failed (${put.status}).`);
@@ -89,8 +91,7 @@ export function PublishDialog({ study, onClose, onPublished }: { study: BuilderS
         <button type="button" onClick={() => { void navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }} disabled={!done}><Copy size={13} /> {copied ? 'Copied' : 'Copy'}</button>
         <a href={url} target="_blank" rel="noreferrer" aria-disabled={!done}><ExternalLink size={13} /> Open</a>
       </div>
-      {!pass && <input type="password" placeholder="Studio passcode" value={pass} onChange={e => setPass(e.target.value)} aria-label="Studio passcode" />}
-      <button type="button" className={`csb-pub-go ${busy ? 'is-busy' : ''} ${justDone ? 'is-done' : ''}`} disabled={!!busy || !pass} onClick={() => void run()}
+      <button type="button" className={`csb-pub-go ${busy ? 'is-busy' : ''} ${justDone ? 'is-done' : ''}`} disabled={!!busy} onClick={() => void run()}
         aria-busy={!!busy} aria-valuenow={busy ? Math.round(progress * 100) : undefined} aria-valuemin={0} aria-valuemax={100} role={busy ? 'progressbar' : undefined} aria-label={busy ? `${busy}, ${Math.round(progress * 100)}%` : undefined}>
         {busy && <i className="csb-pub-fill" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />}
         <span>{busy ? busy : justDone ? 'Published' : done ? 'Publish changes' : 'Publish'}</span>
