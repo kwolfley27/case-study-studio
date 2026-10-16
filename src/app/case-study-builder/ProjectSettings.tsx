@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import { AppWindow, Ban, ImagePlus, Laptop, Monitor, Smartphone } from 'lucide-react';
-import type { BuilderStudy } from './model';
+import { heroFacts, type BuilderStudy } from './model';
+import { SPOT_DEFAULT } from './HeroSpot';
+import { X } from 'lucide-react';
 import { ColorDots, type ColorOption } from './ColorDots';
 
 /* The page-level inspector (nothing selected): visual choices instead of long dropdowns. */
@@ -57,6 +59,30 @@ export function ProjectSettings({ study, update, pickBgImage, onPickGradient }: 
         { v: 'browser', l: 'Browser', icon: <AppWindow size={15} strokeWidth={1.6} /> },
       ]} />
       <p className="csb-ps-hint">Click the image in the header to add or replace your screen.</p>
+
+      <label className="csb-ps-switch"><span>Spotlight<small>Lift one part of the screen out, larger, on top</small></span><input type="checkbox" role="switch" checked={!!study.heroSpot?.on} onChange={e => update({ heroSpot: { ...SPOT_DEFAULT, ...study.heroSpot, on: e.target.checked } })} /><i aria-hidden="true" /></label>
+      {study.heroSpot?.on && <div className="csb-ps-sub">
+        <label className="csb-ps-check"><input type="checkbox" checked={study.heroSpot.dim !== false} onChange={e => update({ heroSpot: { ...SPOT_DEFAULT, ...study.heroSpot, dim: e.target.checked } })} /><span>Dim the screen behind<small>So the highlighted part stands out</small></span></label>
+        <label className="csb-ps-check"><input type="checkbox" checked={!!study.heroSpot.ring} onChange={e => update({ heroSpot: { ...SPOT_DEFAULT, ...study.heroSpot, ring: e.target.checked } })} /><span>Mark where it lives<small>A soft ring on the screen, joined to the card</small></span></label>
+        <label className="csb-ps-field"><span className="csb-ps-label">Describe the image <small>for screen readers</small></span><input value={study.heroSpot.alt ?? ''} placeholder="Comment nudge: Turn your comments into edits" onChange={e => update({ heroSpot: { ...SPOT_DEFAULT, ...study.heroSpot, alt: e.target.value } })} /></label>
+        <p className="csb-ps-hint">On the page: click the card to add the image (paste a Figma frame or upload). Drag to move it, drag its corner to resize.{study.heroSpot.image ? '' : ' Tip: crop just the component in Figma first.'}</p>
+        {study.heroSpot.image && <button type="button" className="csb-link-button" onClick={() => update({ heroSpot: { ...SPOT_DEFAULT, ...study.heroSpot, image: undefined } })}>Remove the spotlight image</button>}
+      </div>}
+    </section>
+
+    <section>
+      <h3>Details under the title</h3>
+      <div className="csb-ps-facts">
+        {heroFacts(study).map((f, i, all) => <div key={i} className="csb-ps-fact">
+          <input aria-label={`Detail ${i + 1} label`} value={f.label} placeholder="Label" onChange={e => update({ facts: all.map((x, k) => k === i ? { ...x, label: e.target.value } : x) })} />
+          <input aria-label={`Detail ${i + 1} value`} value={f.value} placeholder="Add a value" onChange={e => update({ facts: all.map((x, k) => k === i ? { ...x, value: e.target.value } : x) })} />
+          <button type="button" aria-label={`Remove ${f.label || 'detail'}`} onClick={() => update({ facts: all.filter((_, k) => k !== i) })}><X size={14} /></button>
+        </div>)}
+      </div>
+      {heroFacts(study).length < 4 && <div className="csb-ps-chips" aria-label="Add a detail">
+        {['Role', 'Team', 'Timeline', 'Status', 'Company', 'Platform', 'Tools'].filter(l => !heroFacts(study).some(f => f.label.toLowerCase() === l.toLowerCase())).map(l => <button key={l} type="button" onClick={() => update({ facts: [...heroFacts(study), { label: l, value: '' }] })}>+ {l}</button>)}
+      </div>}
+      <p className="csb-ps-hint">Up to four. Empty ones don’t show on the page. Hiring managers look for role, team, timeline and whether it shipped.</p>
     </section>
 
     <section>

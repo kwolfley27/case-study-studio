@@ -3042,3 +3042,39 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-cat-sprite.is-nod{animation:csb-cat-nod .9s cubic-bezier(.3,.7,.3,1)}
 @keyframes csb-cat-nod{0%,100%{transform:none}25%{transform:translateY(4px) rotate(-2deg)}50%{transform:none}70%{transform:translateY(3px)}}
 @media (prefers-reduced-motion:reduce){.csb-cat-sprite.is-nod{animation:none}}
+
+/* ── Header spotlight: one part of the screen lifted out, larger, on top ── */
+.csb-hero-visual{position:relative}
+.csb-spot{position:absolute;inset:0;pointer-events:none;z-index:3}
+.csb-spot-dim{position:absolute;inset:0;border-radius:inherit;background:rgba(15,14,13,.16);pointer-events:none}
+.csb-spot-card{position:absolute;left:var(--sx);top:var(--sy);width:var(--sw);translate:-50% -50%;border-radius:14px;background:#fdfcfc;overflow:hidden;box-shadow:0 0 0 1px rgba(15,14,13,.08),0 2px 6px rgba(15,14,13,.06),0 30px 60px -24px rgba(15,14,13,.34);pointer-events:auto}
+.csb-spot-card img{display:block;width:100%;height:auto;user-select:none}
+.csb-spot-empty{display:grid;gap:4px;padding:22px 20px;font-size:13px;line-height:1.4;color:#6f6961;text-align:left;border:1px dashed #d6d1cb;border-radius:14px}
+.csb-spot-empty strong{font-weight:500;color:#0f0e0d;font-size:14px}
+.csb-spot-ring{position:absolute;left:var(--rx);top:var(--ry);width:var(--rw);height:var(--rh);border-radius:12px;box-shadow:0 0 0 2px var(--csb-accent),0 0 0 9px color-mix(in srgb,var(--csb-accent) 18%,transparent);pointer-events:none}
+.csb-spot-line{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.csb-spot-line line{stroke:var(--csb-accent);stroke-width:1.5;stroke-dasharray:3 4;opacity:.8}
+.csb-spot.is-editing .csb-spot-card{cursor:grab}
+.csb-spot.is-editing .csb-spot-card:active{cursor:grabbing}
+.csb-spot.is-editing .csb-spot-ring{pointer-events:auto;cursor:grab}
+.csb-spot-handle{position:absolute;right:-1px;bottom:-1px;width:22px;height:22px;cursor:nwse-resize;pointer-events:auto;background:linear-gradient(135deg,transparent 52%,#0f0e0d 52%,#0f0e0d 60%,transparent 60%,transparent 70%,#0f0e0d 70%,#0f0e0d 78%,transparent 78%);opacity:.55}
+.csb-spot-handle:hover{opacity:1}
+@container (max-width:700px){.csb-spot-card{border-radius:10px}}
+
+/* Details under the title: empty ones show a quiet "Add" in the editor */
+.csb-hero-facts .csb-editable-text:empty:before{content:'Add';color:#a59f97}
+.csb-hero-facts small .csb-editable-text:empty:before{content:'Label'}
+
+/* Header settings: details list and spotlight options */
+.csb-ps-switch small{display:block;font-size:11.5px;color:#6f6961;margin-top:1px}
+.csb-ps-sub{margin:6px 0 2px;padding-left:2px}
+.csb-ps-field{display:grid;gap:6px;margin:8px 0}
+.csb-ps-field input,.csb-ps-fact input{height:34px;border:1px solid #e3dfda;border-radius:10px;padding:0 10px;font:inherit;font-size:13px;background:#fdfcfc;color:#0f0e0d;min-width:0}
+.csb-ps-field input:focus,.csb-ps-fact input:focus{outline:2px solid #0f0e0d;outline-offset:1px}
+.csb-ps-facts{display:grid;gap:6px}
+.csb-ps-fact{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) 28px;gap:6px;align-items:center}
+.csb-ps-fact button{width:28px;height:28px;border:0;border-radius:999px;background:none;color:#6f6961;display:grid;place-items:center;cursor:pointer}
+.csb-ps-fact button:hover{background:#f5f3f1;color:#0f0e0d}
+.csb-ps-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.csb-ps-chips button{height:28px;padding:0 11px;border-radius:999px;border:1px solid #e3dfda;background:#fdfcfc;font:inherit;font-size:12.5px;color:#44403b;cursor:pointer}
+.csb-ps-chips button:hover{background:#f5f3f1;color:#0f0e0d}

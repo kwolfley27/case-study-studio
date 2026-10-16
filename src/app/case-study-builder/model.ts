@@ -92,6 +92,10 @@ export interface BuilderStudy {
   timeframe: string;
   accent: string;
   heroImage?: string;
+  /** Details under the header (label + value), up to four. Missing = role, team, timeline, status. */
+  facts?: Array<{ label: string; value: string }>;
+  /** Spotlight: one part of the hero screen shown larger, floating over it. Positions are % of the hero visual. */
+  heroSpot?: { on: boolean; image?: string; alt?: string; x: number; y: number; w: number; dim?: boolean; ring?: boolean; rx: number; ry: number; rw: number; rh: number };
   /** Figma frame the hero image is pulled from. */
   heroFigmaUrl?: string;
   /** When this case study was last published (public page at #/p/<slug>). */
@@ -521,3 +525,11 @@ export function introHidden(section: Pick<CaseStudySection, "kind" | "options">)
   const pick = (key: string, fallback: boolean) => o[key] === undefined ? fallback : !!o[key];
   return { eyebrow: pick("hideEyebrow", false), title: pick("hideTitle", statement), body: pick("hideBody", statement) };
 }
+
+/** The details shown under the header. */
+export const heroFacts = (study: BuilderStudy) => study.facts ?? [
+  { label: 'Role', value: study.role },
+  { label: 'Team', value: '' },
+  { label: 'Timeline', value: study.timeframe },
+  { label: 'Status', value: '' },
+];

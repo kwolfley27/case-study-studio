@@ -46,7 +46,8 @@ import { ImmersiveHero } from "./ImmersiveHero";
 import { DeviceFrame, HeroFramePicker } from "./DeviceFrame";
 import { ProblemStatement } from "./ProblemStatement";
 import { EmpathyMap } from "./EmpathyMap";
-import { introHidden, navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
+import { heroFacts, introHidden, navLabelFor, type BuilderStudy, type CaseStudySection } from "./model";
+import { HeroSpot } from "./HeroSpot";
 import { brandStyleVars, loadFont } from "./brand";
 
 function Enter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -223,6 +224,13 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
   </nav>;
 }
 
+/* The details under the header: your own labels, empty ones hidden on the page. */
+function HeroFacts({ study, editorMode }: { study: BuilderStudy; editorMode: boolean }) {
+  const facts = heroFacts(study).filter(f => editorMode || (f.value.trim() && f.label.trim()));
+  if (!facts.length) return null;
+  return <div className="csb-hero-facts">{facts.map((f, i) => <div key={i} className={!f.value.trim() ? "is-empty" : ""}><small><EditableText field={`facts.${i}.label`} value={f.label} /></small><strong><EditableText field={`facts.${i}.value`} value={f.value} /></strong></div>)}</div>;
+}
+
 export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype, bare = false, forceMotion = false }: { bare?: boolean; forceMotion?: boolean; study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
   const showNav = !bare && study.showNav !== false;
   useEffect(() => { if (study.brand?.display) loadFont(study.brand.display); if (study.brand?.text) loadFont(study.brand.text); }, [study.brand?.display, study.brand?.text]);
@@ -239,9 +247,12 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     {!coverFirst && !bare && !(study.hero?.style === "immersive" || study.hero?.style === "reveal") && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
       <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       <HeroFramePicker value={study.hero?.frame ?? "none"} />
+      <div className="csb-hero-visual">
       {study.hero?.frame && study.hero.frame !== "none" ? <div className="csb-hero-device"><DeviceFrame frame={study.hero.frame} image={study.heroImage} alt={`${study.title} hero visual`} slot="hero" hint={editorMode ? "Click to add your screen" : undefined} /></div>
         : <div className={`csb-hero-art ${study.heroImage ? "has-image" : ""}`} data-image-slot="hero">{study.heroImage ? <Media src={study.heroImage} alt={`${study.title} hero visual`} /> : <div className="csb-designed-media"><strong>Hero visual</strong><span>1920 × 1080 · designed per case study</span></div>}</div>}
-      {!study.sections.some(section => section.kind === "details") && <div className="csb-hero-facts"><div><small>Role</small><strong><EditableText field="role" value={study.role} /></strong></div><div><small>Timeline</small><strong><EditableText field="timeframe" value={study.timeframe} /></strong></div><div><small>Project</small><strong><EditableText field="client" value={study.client} /></strong></div></div>}
+      {study.heroSpot?.on && <HeroSpot spot={study.heroSpot} />}
+      </div>
+      {!study.sections.some(section => section.kind === "details") && <HeroFacts study={study} editorMode={editorMode} />}
     </header></EditingContext.Provider>}
     {(() => {
       // Sections sharing options.group form one phase with a pinned step menu.
