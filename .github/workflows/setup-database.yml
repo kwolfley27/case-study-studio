@@ -33,7 +33,7 @@ jobs:
       - name: Sign-in settings (site address, allowed return links, Google if its keys are set)
         run: |
           set -e
-          cfg=$(jq -n --arg site "https://kwolfley27.github.io/case-study-studio/" \
+          cfg=$(jq -n --arg site "https://studio.katelynwolfley.design/" \
             --arg allow "https://studio.katelynwolfley.design/**,https://kwolfley27.github.io/case-study-studio/**,http://localhost:5173/**,http://127.0.0.1:5173/**" \
             '{site_url: $site, uri_allow_list: $allow, external_email_enabled: true, mailer_otp_exp: 3600}')
           if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
