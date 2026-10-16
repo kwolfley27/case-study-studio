@@ -22,6 +22,9 @@
   .miso-chat>div{padding:2px 16px 14px}.miso-chat p{margin:0 0 6px}.miso-chat p.is-point{position:relative;padding-left:14px}
   .miso-chat p.is-point:before{content:'';position:absolute;left:2px;top:.62em;width:4px;height:4px;border-radius:50%;background:#a59f97}
   .miso-carry{cursor:pointer;pointer-events:auto}
+  .miso-snip{position:fixed;inset:0;z-index:2147483647;cursor:crosshair;background:rgba(15,14,13,.18)}
+  .miso-snip i{position:absolute;display:none;outline:1.5px solid #fff;box-shadow:0 0 0 9999px rgba(15,14,13,.22);background:transparent}
+  .miso-snip span{position:absolute;left:50%;top:18px;translate:-50% 0;padding:8px 14px;border-radius:999px;background:#000;color:#fff;font:500 13px/1 Inter,system-ui,-apple-system,sans-serif}
   .miso-laptop{position:fixed;z-index:2147483647;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(40,30,20,.22))}
   .miso-laptop svg{display:block}.miso-paw{animation:miso-tap .32s steps(1) infinite}.miso-paw.is-r{animation-delay:.16s}
   @keyframes miso-tap{0%{transform:translateY(0)}50%{transform:translateY(1px)}}
@@ -115,6 +118,11 @@
     if (!close) return;
     const hasNode = /[?&]node-id=/.test(location.href);
     const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
+    capture(rect, file);
+  };
+  /* Take the picture (and the words) inside a rectangle on screen. Used by the circle and by the snip (⌃⇧4). */
+  const capture = (rect, file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim()) => {
+    const hasNode = /[?&]node-id=/.test(location.href);
     if (stale()) return;
     const text = textIn(rect);
     const label = isFigma ? (file ? `your ${file} frame` : 'the frame') : `a clip from ${site}`;
@@ -134,6 +142,28 @@
   addEventListener('pointermove', e => { if (pts) add(e.clientX, e.clientY); }, true);
   // Pressing the mouse while holding Option is Figma's (duplicate, measure): drop the loop.
   addEventListener('pointerdown', () => { if (pts) { pts = null; svg?.remove(); svg = null; } }, true);
+
+  /* ---- snip: ⌃⇧4, then drag a box (like the Mac's ⌘⇧4) ---- */
+  let snipping = null;
+  const snip = () => {
+    if (snipping || stale()) return;
+    const layer = document.createElement('div'); layer.className = 'miso-snip'; const box = document.createElement('i'); layer.appendChild(box);
+    const hint = document.createElement('span'); hint.textContent = 'Drag over what you want. Esc to cancel.'; layer.appendChild(hint);
+    document.documentElement.appendChild(layer); snipping = layer;
+    let start = null;
+    const end = () => { layer.remove(); snipping = null; removeEventListener('keydown', key, true); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(); } };
+    addEventListener('keydown', key, true);
+    layer.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); start = [e.clientX, e.clientY]; layer.setPointerCapture(e.pointerId); hint.remove(); });
+    layer.addEventListener('pointermove', e => { if (!start) return; const x = Math.min(start[0], e.clientX), y = Math.min(start[1], e.clientY); Object.assign(box.style, { left: x + 'px', top: y + 'px', width: Math.abs(e.clientX - start[0]) + 'px', height: Math.abs(e.clientY - start[1]) + 'px', display: 'block' }); });
+    layer.addEventListener('pointerup', e => {
+      if (!start) return; const rect = { x: Math.min(start[0], e.clientX), y: Math.min(start[1], e.clientY), w: Math.abs(e.clientX - start[0]), h: Math.abs(e.clientY - start[1]) };
+      end(); if (rect.w < 12 || rect.h < 12) return;
+      if (!awake) { cat.style.display = ''; }
+      requestAnimationFrame(() => requestAnimationFrame(() => capture(rect)));
+    });
+  };
+  addEventListener('keydown', e => { if (e.ctrlKey && e.shiftKey && !e.metaKey && (e.code === 'Digit4' || e.key === '$')) { e.preventDefault(); e.stopPropagation(); snip(); } }, true);
 
   /* ---- clicking a frame while I'm awake: I pick it up (Figma puts the frame's id in the address when you select it) ---- */
   let downAt = null, lastPick = '';
@@ -162,7 +192,7 @@
     const bmp = await createImageBitmap(blob); const k = Math.min(1, 2000 / bmp.width, 6000 / bmp.height);
     const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
     const image = c.toDataURL('image/webp', .92);
-    await chrome.storage.local.set({ clip: { image, figmaUrl: location.href, name, at: Date.now(), picked: true, png: true } });
+    await chrome.storage.local.set({ clip: { image, figmaUrl: isFigma ? location.href : undefined, url: location.href, site, name, at: Date.now(), picked: true, png: true } });
   };
   let copying = false;
   const copyAsPng = async (node, cr) => {
@@ -193,7 +223,8 @@
   /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, follow = 0, buf = [], bt = 0;
-  const send = () => { if (stale()) return; const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
+  const send = async () => { if (stale()) return;
+    if (/screen ?shot|what i (just )?copied|from my clipboard/i.test(buf.join(' '))) { try { const b = await readPng(600); if (b) await keepPng(b, 'your screenshot'); } catch { /* nothing on the clipboard */ } } const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
   // After the extension is updated, this old copy can't reach it; say so instead of failing silently.
   const stale = () => { if (chrome.runtime?.id) return false; try { rec?.abort(); } catch { /* ignore */ } rec = null; say('Miso was updated. Reload this tab to bring me back.'); return true; };
@@ -257,6 +288,7 @@
     toast.style.opacity = '0';
   };
   chrome.runtime.onMessage.addListener(msg => {
+    if (msg?.type === 'miso-snip') { snip(); return; }
     if (msg?.type !== 'miso-reply' || !msg.text) return;
     typing(msg.kind === 'think');
     if (msg.kind === 'chat') { showChat(msg.text); chirp(); follow = Date.now() + 15000; return; }

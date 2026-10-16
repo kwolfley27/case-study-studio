@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Miso for Case Study Studio",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Miso comes with you to Figma and any website. Hold Option and circle something to bring it (with its words) to Case Study Studio, then tell Miso what to make. On most sites Miso only appears while listening (\u2303M).",
   "permissions": [
     "storage",
@@ -66,6 +66,13 @@
         "mac": "MacCtrl+M"
       },
       "description": "Turn Miso's listening on or off"
+    },
+    "snip": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+4",
+        "mac": "MacCtrl+Shift+4"
+      },
+      "description": "Snip part of the page for Miso (drag a box)"
     }
   }
 }

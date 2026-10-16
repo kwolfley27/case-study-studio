@@ -268,6 +268,10 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     let pass = ''; try { pass = localStorage.getItem('csb-ai-passcode') || ''; } catch { /* ignore */ }
     if (!AI_URL) { say('I can only do the basics here.', 'hm'); return; }
     if (!pass) { say('I need your Studio passcode first. Add it in Draft with AI.', 'hm'); return; }
+    // "Put my screenshot in…": a Mac screenshot copied to the clipboard (⌘⌃⇧4) becomes what I'm holding.
+    if (/screen ?shot|what i (just )?copied|from my clipboard/i.test(said)) {
+      try { for (const it of await navigator.clipboard.read()) { const t = it.types.find(x => x.startsWith('image/')); if (t) { const blob = await it.getType(t); const image = await new Promise<string>(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(blob); }); const c: Clip = { image, name: 'your screenshot', at: Date.now() }; clipRef.current = c; setClip(c); break; } } } catch { /* clipboard not allowed or empty */ }
+    }
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
       ambient, event, plan: plan.current, history: history.current.slice(-16, event ? undefined : -1), studyTitle: a.studyTitle, header: a.header, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
@@ -531,6 +535,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         <div className="csb-cat-cmds">{['preview', 'edit', 'present', 'publish', 'open research', 'go to the persona', 'add a bar chart', 'move this up', 'make this dark', 'delete this section', 'sleep'].map(c => <i key={c}>{c}</i>)}</div>
         <p>Hold <kbd>⌥ Option</kbd> and draw around something to point at it.</p>
         <p>Press <kbd>⌃ Control</kbd> <kbd>M</kbd> to turn my listening on and off, on any tab.</p>
+        <p>Press <kbd>⌃ Control</kbd> <kbd>⇧ Shift</kbd> <kbd>4</kbd> on any site and drag a box to snip it for me. Or copy a Mac screenshot (<kbd>⌘ ⌃ ⇧ 4</kbd>) and say “put my screenshot in…”.</p>
         <p>Ask me things like “how’s the title looking?” and I’ll answer in a little chat.</p>
         <p className="is-note">Hearing you happens in your browser. What you say goes to Claude to understand it (in “Everything” mode, after each pause). “Undo” takes back my last change.</p>
         <p className="is-note">Drag me anywhere on the screen. Double-click me to send me back to my corner.</p>

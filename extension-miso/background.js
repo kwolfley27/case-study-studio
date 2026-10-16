@@ -70,7 +70,8 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 });
 
 // ⌃M anywhere in Chrome: turn Miso's listening on or off (the studio and Figma tabs follow).
-chrome.commands.onCommand.addListener(async cmd => {
+chrome.commands.onCommand.addListener(async (cmd, tab) => {
+  if (cmd === 'snip') { const t = tab ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]; if (t?.id) chrome.tabs.sendMessage(t.id, { type: 'miso-snip' }).catch(() => {}); return; }
   if (cmd !== 'toggle-listening') return;
   const { misoAwake } = await chrome.storage.local.get('misoAwake');
   await chrome.storage.local.set({ misoAwake: !misoAwake });
