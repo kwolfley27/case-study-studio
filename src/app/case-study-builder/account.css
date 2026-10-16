@@ -46,3 +46,7 @@
 .acct-invites li small{color:#6f6961}
 .acct-invites li button{border:0;background:none;color:#6f6961;font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .acct-invites .acct-fine{margin:4px 0 0!important}
+
+/* Opening: only show the card if checking your account takes a moment. */
+.acct.is-quiet .acct-card{animation:acct-late .25s ease .7s both}
+@keyframes acct-late{from{opacity:0;transform:translateY(4px)}}

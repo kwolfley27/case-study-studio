@@ -15,8 +15,8 @@ export function AccountGate({ children }: { children: (account: Account) => Reac
     const err = new URLSearchParams(location.hash.replace(/^#/, '').split('?')[1] || location.search).get('error_description');
     const r = await loadAccount().catch(() => ({ account: null, invited: false } as Awaited<ReturnType<typeof loadAccount>>));
     if (r.account) {
-      setPhase({ kind: 'syncing', text: 'Getting your case studies…' });
-      await syncLibrary(text => setPhase({ kind: 'syncing', text })).catch(() => undefined);
+      // Only the quick step (bringing newer copies down) happens before opening; saving up runs in the background.
+      await syncLibrary().catch(() => undefined);
       setPhase({ kind: 'in', account: r.account }); return;
     }
     if (r.email) { setPhase({ kind: 'not-invited', email: r.email }); return; }
@@ -29,7 +29,7 @@ export function AccountGate({ children }: { children: (account: Account) => Reac
   }, []);
 
   if (phase.kind === 'in') return <>{children(phase.account)}</>;
-  return <main className="acct">
+  return <main className={`acct ${phase.kind === 'checking' ? 'is-quiet' : ''}`}>
     <div className="acct-card">
       <p className="acct-mark"><span aria-hidden="true">✳</span> Case Study Studio</p>
       {phase.kind === 'checking' && <p className="acct-quiet" role="status">One moment…</p>}

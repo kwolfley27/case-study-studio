@@ -55,7 +55,7 @@ export const PASSCODE_KEY = 'csb-ai-passcode';
 export class UploadSetupError extends Error {}
 export class PasscodeError extends Error {}
 
-export async function uploadToStudio(file: Blob, study: string, onProgress: (fraction: number) => void): Promise<string> {
+export async function uploadToStudio(file: Blob, study: string, onProgress: (fraction: number) => void = () => undefined): Promise<string> {
   if (!UPLOAD_ENDPOINT) throw new UploadSetupError('One-click upload is not set up for this site yet.');
   let passcode = ''; try { passcode = localStorage.getItem(PASSCODE_KEY) || ''; } catch { /* storage unavailable */ }
   const type = file.type.split(';')[0] || 'video/webm';

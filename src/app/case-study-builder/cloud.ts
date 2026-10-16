@@ -77,8 +77,9 @@ export async function syncLibrary(onProgress?: (text: string) => void) {
     if (!mine || Date.parse(r.updated_at) > Date.parse(mine.updatedAt || '0')) await lib.putRaw({ ...r.data, id: r.id, updatedAt: r.updated_at, ...(r.deleted_at ? { deletedAt: r.deleted_at } : {}) });
   }
   // Newer here (or never uploaded): send it up.
+  // Newer here (or never uploaded): send it up quietly in the background, so the studio opens right away.
   const up = local.filter(s => { const r = cloud.get(s.id); return !r || Date.parse(s.updatedAt || '0') > Date.parse(r.updated_at); });
-  for (let i = 0; i < up.length; i++) { onProgress?.(`Saving ${i + 1} of ${up.length} to your account…`); await push(up[i]); }
+  if (up.length) void (async () => { for (const s of up) await push(s); })();
   // The editor opens whatever is in this browser's "current" slot: make sure it's the newest copy
   // (or, on a new device, your most recent case study).
   const KEY = 'katelyn-case-study-builder-v1';
@@ -89,5 +90,5 @@ export async function syncLibrary(onProgress?: (text: string) => void) {
     const pick = newer || (!open ? merged.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0] : null);
     if (pick) localStorage.setItem(KEY, JSON.stringify(pick));
   } catch { /* storage full or unavailable: the editor keeps what it has */ }
-  setState('saved');
+  if (!up.length) setState('saved');
 }
