@@ -20,6 +20,7 @@
    "accent": "#2D1B06",
    "hero": "library/attendease/74db1c2c600703839088a4bf.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "narrative",
@@ -645,6 +646,7 @@
    "accent": "#282C33",
    "hero": "library/lucid/image_1.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "narrative",
@@ -686,6 +688,7 @@
    "accent": "#05271C",
    "hero": "library/reviive/84cfd22f3864e6456055859a.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "narrative",
@@ -1125,6 +1128,7 @@
    "accent": "#1A2540",
    "hero": "library/apple-camera/3df7ec2ce235566751a717fe.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "narrative",
@@ -1399,6 +1403,7 @@
    "accent": "#004D98",
    "hero": "library/dogtoy/95108f97429eda0099aefd83.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "narrative",
@@ -2442,6 +2447,7 @@
    "accent": "#1C1A18",
    "hero": "library/versa-table/ed38490bed1db862941f14e0.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "gallery",
@@ -2567,6 +2573,7 @@
    "accent": "#0f1228",
    "hero": "library/astria-lamp/9ef2ab8ba39052eb371d25d4.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "gallery",
@@ -2723,6 +2730,7 @@
    "accent": "#2A2A2A",
    "hero": "library/bike-seat/46ea50f49de4a5a244aa2cbd.webp",
    "parent": null,
+   "group": "work",
    "sections": [
     {
      "kind": "gallery",
@@ -2774,6 +2782,7 @@
    "accent": "#1071E5",
    "hero": "library/lucid/image_1.webp",
    "parent": "lucid",
+   "group": "lucid",
    "sections": [
     {
      "kind": "narrative",
@@ -3034,6 +3043,7 @@
    "accent": "#1071E5",
    "hero": "library/lucid/image_1.webp",
    "parent": "lucid",
+   "group": "lucid",
    "sections": [
     {
      "kind": "narrative",
@@ -3069,6 +3079,7 @@
    "accent": "#1071E5",
    "hero": "library/lucid/image_1.webp",
    "parent": "lucid",
+   "group": "lucid",
    "sections": [
     {
      "kind": "narrative",
@@ -3083,6 +3094,582 @@
      "src": "library/lucid/image_1.webp",
      "kind": "image",
      "from": "Card image"
+    }
+   ]
+  },
+  {
+   "key": "steinway",
+   "replaces": "pj-steinway",
+   "slug": "steinway",
+   "name": "Steinway PDP Redesign",
+   "title": "Rebuilt a luxury PDP around 3 buyer trust barriers",
+   "summary": "A UX redesign of the Certified Pre-Owned Steinway Center PDP, focused on user persona Lauren \u2014 a budget-conscious luxury buyer who needs pricing transparency, refurbisher credibility, and visualization tools before committing to a grand piano purchase.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "PDP REDESIGN",
+    "E-COMMERCE",
+    "LUXURY"
+   ],
+   "accent": "#1B2A44",
+   "hero": "library/steinway/251a7a9fd17b35552272148f.webp",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "Rebuilt a luxury PDP around 3 buyer trust barriers",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/steinway/251a7a9fd17b35552272148f.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/steinway/9ad33f56da4b84c346c06194.webp"
+      },
+      {
+       "title": "Slide 3",
+       "detail": "",
+       "image": "library/steinway/5248f2cfd7af394a069cb618.webp"
+      },
+      {
+       "title": "Slide 4",
+       "detail": "",
+       "image": "library/steinway/949bae5bfab479555f631e2c.webp"
+      },
+      {
+       "title": "Slide 5",
+       "detail": "",
+       "image": "library/steinway/25bf5b8d22ca3fd6640ebaf1.webp"
+      },
+      {
+       "title": "Slide 6",
+       "detail": "",
+       "image": "library/steinway/f7e3484452845a7ba75c9a5a.webp"
+      },
+      {
+       "title": "Slide 7",
+       "detail": "",
+       "image": "library/steinway/1ad795e93ab763d25b7e8183.webp"
+      },
+      {
+       "title": "Slide 8",
+       "detail": "",
+       "image": "library/steinway/28b64bb74c8db8feefd7cc54.webp"
+      },
+      {
+       "title": "Slide 9",
+       "detail": "",
+       "image": "library/steinway/17f88a98e0f10198be9fa437.webp"
+      },
+      {
+       "title": "Slide 10",
+       "detail": "",
+       "image": "library/steinway/6e3b7b1b624d7b0ecc50ce8b.webp"
+      },
+      {
+       "title": "Slide 11",
+       "detail": "",
+       "image": "library/steinway/31af4c4c4c923c43dd35c4f8.webp"
+      },
+      {
+       "title": "Slide 12",
+       "detail": "",
+       "image": "library/steinway/2ba9b21a7be5b25a058103e3.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/steinway/251a7a9fd17b35552272148f.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/steinway/9b5625b47b23d502526b92b8.webp",
+     "kind": "image",
+     "from": "Logo"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1774303001/Steinway_rrfadq.mp4",
+     "kind": "video",
+     "from": "Card video"
+    },
+    {
+     "src": "library/steinway/9ad33f56da4b84c346c06194.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    },
+    {
+     "src": "library/steinway/5248f2cfd7af394a069cb618.webp",
+     "kind": "image",
+     "from": "Slide 3"
+    },
+    {
+     "src": "library/steinway/949bae5bfab479555f631e2c.webp",
+     "kind": "image",
+     "from": "Slide 4"
+    },
+    {
+     "src": "library/steinway/25bf5b8d22ca3fd6640ebaf1.webp",
+     "kind": "image",
+     "from": "Slide 5"
+    },
+    {
+     "src": "library/steinway/f7e3484452845a7ba75c9a5a.webp",
+     "kind": "image",
+     "from": "Slide 6"
+    },
+    {
+     "src": "library/steinway/1ad795e93ab763d25b7e8183.webp",
+     "kind": "image",
+     "from": "Slide 7"
+    },
+    {
+     "src": "library/steinway/28b64bb74c8db8feefd7cc54.webp",
+     "kind": "image",
+     "from": "Slide 8"
+    },
+    {
+     "src": "library/steinway/17f88a98e0f10198be9fa437.webp",
+     "kind": "image",
+     "from": "Slide 9"
+    },
+    {
+     "src": "library/steinway/6e3b7b1b624d7b0ecc50ce8b.webp",
+     "kind": "image",
+     "from": "Slide 10"
+    },
+    {
+     "src": "library/steinway/31af4c4c4c923c43dd35c4f8.webp",
+     "kind": "image",
+     "from": "Slide 11"
+    },
+    {
+     "src": "library/steinway/2ba9b21a7be5b25a058103e3.webp",
+     "kind": "image",
+     "from": "Slide 12"
+    }
+   ],
+   "skipIf": "starter-steinway-pdp"
+  },
+  {
+   "key": "utility-knife",
+   "replaces": "pj-utility-knife",
+   "slug": "utility-knife",
+   "name": "Utility Knife",
+   "title": "From foam prototype to final form \u2014 designing for two distinct users",
+   "summary": "A DESPX 220 industrial design project exploring the ergonomics and form language of a utility knife for two different user personas: a DIY crafter and an outdoor camper. Developed through multiple foam prototypes, sketching iterations, and context research.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "INDUSTRIAL DESIGN",
+    "PROTOTYPING",
+    "FORM EXPLORATION"
+   ],
+   "accent": "#E8F5F5",
+   "hero": "library/utility-knife/02d5220f898b93ad6355525d.webp",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "From foam prototype to final form \u2014 designing for two distinct users",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/utility-knife/02d5220f898b93ad6355525d.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/utility-knife/597c7e5a4490e4c9c10f5cea.webp"
+      },
+      {
+       "title": "Slide 3",
+       "detail": "",
+       "image": "library/utility-knife/9bba5af54dc75f98e970928d.webp"
+      },
+      {
+       "title": "Slide 4",
+       "detail": "",
+       "image": "library/utility-knife/7f7c5855c884c38c2c496f7a.webp"
+      },
+      {
+       "title": "Slide 5",
+       "detail": "",
+       "image": "library/utility-knife/822d2725b88301693a860709.webp"
+      },
+      {
+       "title": "Slide 6",
+       "detail": "",
+       "image": "library/utility-knife/485454e36b7f5eba9e743952.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/utility-knife/02d5220f898b93ad6355525d.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/utility-knife/597c7e5a4490e4c9c10f5cea.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    },
+    {
+     "src": "library/utility-knife/9bba5af54dc75f98e970928d.webp",
+     "kind": "image",
+     "from": "Slide 3"
+    },
+    {
+     "src": "library/utility-knife/7f7c5855c884c38c2c496f7a.webp",
+     "kind": "image",
+     "from": "Slide 4"
+    },
+    {
+     "src": "library/utility-knife/822d2725b88301693a860709.webp",
+     "kind": "image",
+     "from": "Slide 5"
+    },
+    {
+     "src": "library/utility-knife/485454e36b7f5eba9e743952.webp",
+     "kind": "image",
+     "from": "Slide 6"
+    }
+   ]
+  },
+  {
+   "key": "hangar",
+   "replaces": "pj-hangar",
+   "slug": "hangar",
+   "name": "Hangar One",
+   "title": "A luxury Red Bull gym \u2014 designed floor plan to facade in 3D",
+   "summary": "An interior design project that pushed systems thinking into physical space. I rebranded Red Bull as a luxury fitness experience called Hangar One, redesigned the logo and palette, then modeled the entire gym \u2014 lobby, cafe, weight floor, locker rooms \u2014 in 3D and rendered each space with AI. Every design decision had to express the brand language in the real world.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "INTERIOR DESIGN",
+    "3D MODELING",
+    "BRANDING"
+   ],
+   "accent": "#1A0608",
+   "hero": "library/hangar/86f8b630602920a8a7a00d37.webp",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "A luxury Red Bull gym \u2014 designed floor plan to facade in 3D",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/hangar/86f8b630602920a8a7a00d37.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/hangar/6d02f04bfc1f181413396697.webp"
+      },
+      {
+       "title": "Slide 3",
+       "detail": "",
+       "image": "library/hangar/20b94b218c749bca8179dd64.webp"
+      },
+      {
+       "title": "Slide 4",
+       "detail": "",
+       "image": "library/hangar/15e35e18c3e5bc5e4ab269b8.webp"
+      },
+      {
+       "title": "Slide 5",
+       "detail": "",
+       "image": "library/hangar/50494261abdb281692b85114.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/hangar/86f8b630602920a8a7a00d37.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/hangar/6d02f04bfc1f181413396697.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    },
+    {
+     "src": "library/hangar/20b94b218c749bca8179dd64.webp",
+     "kind": "image",
+     "from": "Slide 3"
+    },
+    {
+     "src": "library/hangar/15e35e18c3e5bc5e4ab269b8.webp",
+     "kind": "image",
+     "from": "Slide 4"
+    },
+    {
+     "src": "library/hangar/50494261abdb281692b85114.webp",
+     "kind": "image",
+     "from": "Slide 5"
+    }
+   ]
+  },
+  {
+   "key": "airpods",
+   "replaces": "pj-airpods",
+   "slug": "airpods",
+   "name": "AirPods 3D Model",
+   "title": "A high-fidelity 3D model of Apple AirPods rendered in studio lighting",
+   "summary": "A self-directed 3D modeling exercise recreating Apple AirPods from reference. Built to practice hard-surface modeling, surface continuity, and product rendering \u2014 studying how Apple achieves its characteristic gloss and subtle form transitions.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "3D MODELING",
+    "PRODUCT DESIGN",
+    "RENDERING"
+   ],
+   "accent": "#2A2A2A",
+   "hero": "library/airpods/22462b1b0dce3cfaa965dd36.webp",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The project",
+     "title": "A high-fidelity 3D model of Apple AirPods rendered in studio lighting",
+     "items": [
+      {
+       "title": "A high-fidelity 3D model of Apple AirPods rendered in studio lighting",
+       "detail": "",
+       "image": "library/airpods/22462b1b0dce3cfaa965dd36.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/airpods/22462b1b0dce3cfaa965dd36.webp",
+     "kind": "image",
+     "from": "Card image"
+    }
+   ]
+  },
+  {
+   "key": "dish-rack",
+   "replaces": "pj-dish-rack",
+   "slug": "dish-rack",
+   "name": "Collapsible Dish Rack",
+   "title": "A charming, space-saving kitchen product designed from research to CAD",
+   "summary": "A full design process project starting from user interviews in college apartments, through rapid sketch brainstorming, concept refinement, and final CAD modeling. The result is a collapsible dish rack in a pastel palette \u2014 designed to solve real storage and cleanliness frustrations in shared kitchens.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "PRODUCT DESIGN",
+    "SKETCHING",
+    "CAD",
+    "USER RESEARCH"
+   ],
+   "accent": "#C47E89",
+   "hero": "library/dish-rack/5df1198a671195dd5341c702.webp",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "A charming, space-saving kitchen product designed from research to CAD",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/dish-rack/5df1198a671195dd5341c702.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/dish-rack/f54ed22ff1a71fe79db9e383.webp"
+      },
+      {
+       "title": "Slide 3",
+       "detail": "",
+       "image": "library/dish-rack/c2a6f617af66e92255379520.webp"
+      },
+      {
+       "title": "Slide 4",
+       "detail": "",
+       "image": "library/dish-rack/d0f2d819330873b42f83cc39.webp"
+      },
+      {
+       "title": "Slide 5",
+       "detail": "",
+       "image": "library/dish-rack/59fc7f62e5e493088a7cadc6.webp"
+      },
+      {
+       "title": "Slide 6",
+       "detail": "",
+       "image": "library/dish-rack/c1c828ae480e00db79c96c1a.webp"
+      },
+      {
+       "title": "Slide 7",
+       "detail": "",
+       "image": "library/dish-rack/59fc7f62e5e493088a7cadc6.webp"
+      },
+      {
+       "title": "Slide 8",
+       "detail": "",
+       "image": "library/dish-rack/c1c828ae480e00db79c96c1a.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/dish-rack/5df1198a671195dd5341c702.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/dish-rack/f54ed22ff1a71fe79db9e383.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    },
+    {
+     "src": "library/dish-rack/c2a6f617af66e92255379520.webp",
+     "kind": "image",
+     "from": "Slide 3"
+    },
+    {
+     "src": "library/dish-rack/d0f2d819330873b42f83cc39.webp",
+     "kind": "image",
+     "from": "Slide 4"
+    },
+    {
+     "src": "library/dish-rack/59fc7f62e5e493088a7cadc6.webp",
+     "kind": "image",
+     "from": "Slide 5"
+    },
+    {
+     "src": "library/dish-rack/c1c828ae480e00db79c96c1a.webp",
+     "kind": "image",
+     "from": "Slide 6"
+    }
+   ]
+  },
+  {
+   "key": "windsor",
+   "replaces": "pj-windsor",
+   "slug": "windsor",
+   "name": "Sack-Back Windsor Chair",
+   "title": "A 30-minute perspective sketch of an 18th-century classic",
+   "summary": "A timed sketching exercise studying the iconic Sack-Back Windsor Chair (c.1760s). Starting from the original design, I sketched a 30-minute perspective study in Nano Banana, then ran the sketch through AI to render a modern leather + metal reinterpretation.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "SKETCHING",
+    "FURNITURE",
+    "INDUSTRIAL DESIGN"
+   ],
+   "accent": "#1B2F50",
+   "hero": "https://res.cloudinary.com/dtbcr1gqy/video/upload/so_auto/v1773807319/Sketching_Project_1_t71hdo.jpg",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The project",
+     "title": "A 30-minute perspective sketch of an 18th-century classic",
+     "items": [
+      {
+       "title": "A 30-minute perspective sketch of an 18th-century classic",
+       "detail": "",
+       "image": "https://res.cloudinary.com/dtbcr1gqy/video/upload/so_auto/v1773807319/Sketching_Project_1_t71hdo.jpg"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/so_auto/v1773807319/Sketching_Project_1_t71hdo.jpg",
+     "kind": "video",
+     "from": "Card image"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773807319/Sketching_Project_1_t71hdo.mp4",
+     "kind": "video",
+     "from": "Card video"
+    }
+   ]
+  },
+  {
+   "key": "tripolina",
+   "replaces": "pj-tripolina",
+   "slug": "tripolina",
+   "name": "Tripolina Folding Chair",
+   "title": "Sketching a 19th-century folding chair from structure to skin",
+   "summary": "A timed sketching exercise studying the Tripolina Folding Chair (c.1885, Joseph Beverly Fenby). Starting from the original canvas-and-wood design, I produced a 30-minute Nano Banana perspective study, then rendered it in AI as a warm leather + walnut reinterpretation.",
+   "role": "",
+   "timeframe": "",
+   "team": "",
+   "tags": [
+    "SKETCHING",
+    "FURNITURE",
+    "INDUSTRIAL DESIGN"
+   ],
+   "accent": "#3D2314",
+   "hero": "https://res.cloudinary.com/dtbcr1gqy/video/upload/so_auto/v1773807296/Sketching_Project_sd2qyy.jpg",
+   "parent": "playground",
+   "group": "playground",
+   "sections": [
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The project",
+     "title": "Sketching a 19th-century folding chair from structure to skin",
+     "items": [
+      {
+       "title": "Sketching a 19th-century folding chair from structure to skin",
+       "detail": "",
+       "image": "https://res.cloudinary.com/dtbcr1gqy/video/upload/so_auto/v1773807296/Sketching_Project_sd2qyy.jpg"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/so_auto/v1773807296/Sketching_Project_sd2qyy.jpg",
+     "kind": "video",
+     "from": "Card image"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773807296/Sketching_Project_sd2qyy.mp4",
+     "kind": "video",
+     "from": "Card video"
     }
    ]
   }

@@ -1,3 +1,4 @@
+import { BuiltView } from './Built';
 import { ABTest } from "./ABTest";
 import { Media } from "./Media";
 import { TaskSuccess } from "./TaskSuccess";
@@ -115,9 +116,9 @@ function Gallery({ section }: { section: CaseStudySection }) {
   const columns = layout?.columns ?? 1;
   const items = section.items.slice(0, layout?.count ?? section.items.length);
   const phones = layout?.presentation === "phones";
-  return <div className={`csb-gallery csb-gallery-adjustable ${phones ? "is-phones" : ""}`} style={{ "--csb-gallery-columns": columns, "--csb-gallery-gap": `${layout?.gap ?? 20}px`, "--csb-gallery-scale": (layout?.scale ?? 100) / 100 } as React.CSSProperties}>{items.map((item, index) => {
+  return <div className={`csb-gallery csb-gallery-adjustable ${phones ? "is-phones" : ""} ${layout?.fit === "fill" ? "is-fill" : "is-hug"}`} style={{ "--csb-gallery-columns": columns, "--csb-gallery-gap": `${layout?.gap ?? 20}px`, "--csb-gallery-scale": (layout?.scale ?? 100) / 100 } as React.CSSProperties}>{items.map((item, index) => {
     const size = layout?.pattern === "bento" ? item.tileSize ?? (index === 0 ? "wide" : "standard") : "standard";
-    return <Enter key={index} className={`csb-gallery-card csb-tile-${size}`}><div className="csb-gallery-image" data-image-slot={`${section.id}:${index}`}>{phones ? <div className="csb-gallery-phone"><div className="csb-gallery-phone-screen">{item.image ? <Media src={item.image} alt={item.title} loading="lazy" /> : <span>Drop screen {String(index + 1).padStart(2, "0")}</span>}</div><span className="csb-gallery-phone-island" /></div> : item.image ? <Media src={item.image} alt={item.title} loading="lazy" /> : <div className="csb-gallery-placeholder"><span>Visual {String(index + 1).padStart(2, "0")}</span><div className="csb-gallery-placeholder-shape" /></div>}</div><div className="csb-gallery-caption"><strong><EditableText field={`items.${index}.title`} value={item.title} /></strong><span><EditableText field={`items.${index}.detail`} value={item.detail} /></span></div></Enter>;
+    return <Enter key={index} className={`csb-gallery-card csb-tile-${size}`}><div className={`csb-gallery-image ${item.image ? "has-image" : ""}`} data-image-slot={`${section.id}:${index}`}>{phones ? <div className="csb-gallery-phone"><div className="csb-gallery-phone-screen">{item.image ? <Media src={item.image} alt={item.title} loading="lazy" /> : <span>Drop screen {String(index + 1).padStart(2, "0")}</span>}</div><span className="csb-gallery-phone-island" /></div> : item.image ? <Media src={item.image} alt={item.title} loading="lazy" /> : <div className="csb-gallery-placeholder"><span>Visual {String(index + 1).padStart(2, "0")}</span><div className="csb-gallery-placeholder-shape" /></div>}</div><div className="csb-gallery-caption"><strong><EditableText field={`items.${index}.title`} value={item.title} /></strong><span><EditableText field={`items.${index}.detail`} value={item.detail} /></span></div></Enter>;
   })}</div>;
 }
 
@@ -183,6 +184,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "screenGroups": return <ScreenGroups section={section} editorMode={editorMode} />;
     case "comparison": return <Comparison section={section} />;
     case "gallery": return <Gallery section={section} />;
+    case "built": return <BuiltView section={section} editorMode={editorMode} />;
     default: return <Enter className="csb-editorial-statement"><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
   }
 }

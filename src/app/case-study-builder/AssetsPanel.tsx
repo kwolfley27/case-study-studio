@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Sparkles } from 'lucide-react';
 import type { BuilderStudy } from './model';
 
 /*
   Everything brought in from this project's old version: pictures and videos to drag onto any image spot,
   and the words that lived inside its hand-built visuals (click a line to copy it).
 */
-export function AssetsPanel({ study }: { study: BuilderStudy }) {
+export function AssetsPanel({ study, onBuild }: { study: BuilderStudy; onBuild?: (src: string) => void }) {
   const assets = study.assets ?? [];
   const notes = (study.notes ?? []).filter(n => n.text.length);
   const groups = useMemo(() => [...new Set(assets.map(a => a.from.split(':')[0].trim()))], [assets]);
@@ -25,13 +25,14 @@ export function AssetsPanel({ study }: { study: BuilderStudy }) {
       {groups.length > 1 && <select className="csb-assets-filter" value={group} onChange={e => setGroup(e.target.value)} aria-label="Show pictures from">
         <option>All</option>{groups.map(g => <option key={g}>{g}</option>)}
       </select>}
-      <p className="csb-field-note">Drag a picture onto any image spot in your case study.</p>
+      <p className="csb-field-note">Drag a picture onto any image spot in your case study.{onBuild ? ' Or hover one and build a section like it.' : ''}</p>
       <div className="csb-assets-grid">
         {shown.map(a => <figure key={a.src} title={a.from}>
           {a.kind === 'video'
             ? <video src={a.src} muted playsInline preload="metadata" draggable onDragStart={e => { e.dataTransfer.setData('text/uri-list', a.src); e.dataTransfer.setData('text/plain', a.src); }} />
             : <img src={a.src} alt={a.from} loading="lazy" draggable onDragStart={e => { e.dataTransfer.setData('text/uri-list', a.src); e.dataTransfer.setData('text/plain', a.src); }} />}
           <figcaption>{a.from.replace(/^[^:]+:\s*/, '')}</figcaption>
+          {onBuild && a.kind === 'image' && <button type="button" className="csb-assets-build" onClick={() => onBuild(a.src)} title="AI lays this picture out as an editable section, in your colours and type"><Sparkles size={12} />Build a section like this</button>}
         </figure>)}
       </div>
     </> : <div className="csb-assets-words">

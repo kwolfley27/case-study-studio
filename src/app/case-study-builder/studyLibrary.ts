@@ -43,12 +43,12 @@ async function readAll(): Promise<Trashed[]> {
 }
 export async function listStudies(): Promise<SavedStudy[]> {
   const all = await readAll();
-  return all.filter(s => !s.deletedAt).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  return all.filter(s => !s.deletedAt && !s.id.startsWith('__')).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
 }
 export async function listTrash(): Promise<Trashed[]> {
   const all = await readAll(); const cutoff = Date.now() - 30 * 864e5;
   all.filter(s => s.deletedAt && Date.parse(s.deletedAt) < cutoff).forEach(s => void purgeStudy(s.id).catch(() => undefined));
-  return all.filter(s => s.deletedAt && Date.parse(s.deletedAt) >= cutoff).sort((a, b) => (b.deletedAt || '').localeCompare(a.deletedAt || ''));
+  return all.filter(s => s.deletedAt && !s.id.startsWith('__') && Date.parse(s.deletedAt) >= cutoff).sort((a, b) => (b.deletedAt || '').localeCompare(a.deletedAt || ''));
 }
 
 export const newId = () => crypto.randomUUID();

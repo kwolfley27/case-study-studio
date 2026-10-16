@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Clapperboard, Tablet, Layers, GalleryVerticalEnd, Laptop, GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, Type, Lightbulb, Flag, History, UserRound, Users, Video, Workflow } from 'lucide-react';
+import { Clapperboard, Tablet, Layers, GalleryVerticalEnd, Laptop, GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, Type, Lightbulb, Flag, History, UserRound, Users, Video, Workflow, Sparkles } from 'lucide-react';
 import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, type SectionKind } from './model';
 
 /*
@@ -8,6 +8,7 @@ import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, 
 */
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 const ICONS: Record<SectionKind, Icon> = {
+  built: Sparkles,
   coverHero: LayoutTemplate, details: Info, timeline: CalendarRange, empathy: Brain, persona: UserRound, journey: Route, problem: Target,
   findings: ListOrdered, methods: FlaskConical, interviews: MessagesSquare, quotes: Quote, survey: BarChart3, metrics: Hash, affinity: StickyNote,
   aeiou: Eye, abtest: Columns2, taskSuccess: CircleCheck, roadmap: CalendarRange, flowCompare: GitCompare, userFlow: Workflow, jtbd: Target, scrollSite: Laptop, barChart: BarChart3, typeSpec: Type, insights: Lightbulb, screenGroups: GalleryVerticalEnd, isoShowcase: Layers, gifBoard: Clapperboard, screenTrio: GalleryHorizontal, floatDevices: Tablet, interviewQs: MessagesSquare, iterations: History, flowDiff: GitCompare, featureCompare: ListChecks, positioning: Grid2x2, prototype: MousePointerClick, screenRecording: Video, wireframes: Frame, fullMedia: Image,

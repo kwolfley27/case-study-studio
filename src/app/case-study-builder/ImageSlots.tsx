@@ -17,7 +17,7 @@ export const setFigmaToken = (token: string) => { figmaToken = token.trim(); };
 
 const FIGMA_RE = /figma\.com\/(?:design|file|proto)\/([a-zA-Z0-9]+)[^?#]*\?[^#]*node-id=([0-9]+[-:][0-9]+)/;
 export const isFigmaFrameLink = (text: string) => FIGMA_RE.test(text.trim());
-const isImageLink = (text: string) => /^https:\/\/\S+$/i.test(text.trim()) && !isFigmaFrameLink(text);
+const isImageLink = (text: string) => (/^https:\/\/\S+$/i.test(text.trim()) || text.trim().startsWith(`${location.origin}/`)) && !isFigmaFrameLink(text);
 
 async function figmaFrameImage(link: string): Promise<string> {
   const match = link.trim().match(FIGMA_RE);

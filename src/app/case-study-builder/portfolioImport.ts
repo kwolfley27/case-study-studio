@@ -10,9 +10,12 @@ import { freshCopy, listStudies, saveStudy } from './studyLibrary';
 type PlanSection = { kind: CaseStudySection['kind']; eyebrow?: string; title?: string; body?: string; items?: Array<{ title?: string; detail?: string; value?: string; image?: string }>; fromVisual?: string };
 export type PlanAsset = { src: string; kind: 'image' | 'video'; from: string };
 export type PlanNote = { from: string; visual: string; text: string[]; images: string[] };
-type Plan = { key: string; replaces: string; slug: string; name: string; title: string; summary: string; role: string; timeframe: string; team: string; tags: string[]; accent?: string; hero?: string | null; parent?: string | null; sections: PlanSection[]; notes: PlanNote[]; assets: PlanAsset[] };
+type Plan = { key: string; replaces: string; slug: string; name: string; title: string; summary: string; role: string; timeframe: string; team: string; tags: string[]; accent?: string; hero?: string | null; parent?: string | null; skipIf?: string; sections: PlanSection[]; notes: PlanNote[]; assets: PlanAsset[] };
 
 const abs = (u?: string | null) => !u ? undefined : /^https?:/.test(u) ? u : new URL(u, `${location.origin}${location.pathname}`).href;
+
+/** Plans not brought in yet. */
+export const pending = (plans: Plan[], studies: Array<{ id: string }>) => { const have = new Set(studies.map(x => (x as BuilderStudy).replaces).filter(Boolean)); const ids = new Set(studies.map(x => x.id)); return plans.filter(p => !have.has(p.replaces) && !(p.skipIf && ids.has(p.skipIf))); };
 
 export async function loadPortfolioPlans(): Promise<Plan[]> {
   const r = await fetch(`${import.meta.env.BASE_URL}library/portfolio-import.json?v=${Date.now()}`);
@@ -55,10 +58,12 @@ function toStudy(p: Plan): BuilderStudy {
 /** Add any website case studies that aren't in the studio yet. Returns how many were added. */
 export async function importPortfolio(onProgress?: (text: string) => void): Promise<number> {
   const plans = await loadPortfolioPlans();
-  const have = new Set((await listStudies()).map(s => (s as BuilderStudy).replaces).filter(Boolean));
+  const list = await listStudies();
+  const have = new Set(list.map(s => (s as BuilderStudy).replaces).filter(Boolean));
+  const ids = new Set(list.map(s => s.id));
   let added = 0;
   for (const p of plans) {
-    if (have.has(p.replaces)) continue;
+    if (have.has(p.replaces) || (p.skipIf && ids.has(p.skipIf))) continue;
     onProgress?.(`Bringing in ${p.title}…`);
     await saveStudy(toStudy(p)); added++;
   }

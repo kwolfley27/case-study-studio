@@ -1,4 +1,4 @@
-export type SectionKind = "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -42,6 +42,8 @@ export interface CaseStudySection {
   navLabel?: string;
   /** Hide this section from the side menu. */
   hideFromNav?: boolean;
+  /** Built from a picture: its blocks (see Built.tsx). */
+  built?: import("./Built").BuiltData;
   /** Keep the section but leave it off the page. */
   hidden?: boolean;
   layout?: {
@@ -51,6 +53,8 @@ export interface CaseStudySection {
     gap?: number;
     scale?: number;
     presentation?: "images" | "phones";
+    /** hug: each frame takes its picture's shape (default). fill: frames stay one shape and the picture fills it, cropping the edges. */
+    fit?: "hug" | "fill";
   };
   figmaSource?: { url: string; fileKey: string; nodeId: string; importedAt: string; mode: "snapshot" | "live" };
   surveySource?: SurveySource;
@@ -143,6 +147,7 @@ export interface BuilderStudy {
 }
 
 export const componentNames: Record<SectionKind, string> = {
+  built: "Built from a picture",
   coverHero: "Title reveal hero",
   abtest: "A/B test",
   taskSuccess: "Task success",
@@ -196,6 +201,7 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  built: "A layout rebuilt from a picture you dropped in, using your colours and type.",
   showcase: "A bento of soft panels, each showing one designed component at its real size. Pull them straight from Figma.",
   screenFocus: "Screens slide past as you scroll; each one comes to the centre big enough to read, with optional spotlights.",
   screenStory: "A big screen stays pinned while short steps scroll beside it and swap what it shows.",
@@ -248,6 +254,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
+  built: "Section",
   showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", isoShowcase: "Showcase", gifBoard: "Inspiration", screenTrio: "Screens", floatDevices: "Devices", interviewQs: "Questions", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
@@ -267,6 +274,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   kind,
   eyebrow: componentNames[kind],
   title: {
+    built: "",
     coverHero: "Making access feel obvious, not accidental.",
     timeline: "How the work unfolded",
     details: "Project overview",
@@ -321,6 +329,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   body: kind === "coverHero" ? "" : kind === "fullMedia" ? "Add a short introduction, or leave this blank to let the media speak for itself." : "Add the key idea you want a reader to remember. Keep it short enough to let the visual carry the story.",
   variant: "light",
   items: {
+    built: [],
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
     affinity: [],
     showcase: [{ title: "Task details", detail: "", image: "", tileSize: "standard" }, { title: "Filter menu", detail: "", image: "", tileSize: "standard" }, { title: "Calendar view", detail: "", image: "", tileSize: "wide" }],

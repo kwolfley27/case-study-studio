@@ -53,6 +53,12 @@ Deno.serve(async (request) => {
       if (images.length < 2) return reply({ error: 'Send at least two screenshots.' }, 400);
       return reply(await nameScreens(anthropicKey, images, String(body.context || '').slice(0, 200)));
     }
+    // Build a section from a picture: lay out the reference with the studio's building blocks.
+    if (body.task === 'buildSection') {
+      const image = String(body.image || '');
+      if (!/^[A-Za-z0-9+/=]+$/.test(image) || image.length > 3_000_000) return reply({ error: 'Send one JPEG picture (base64).' }, 400);
+      return reply(await buildSection(anthropicKey, image, String(body.hint || '').slice(0, 600)));
+    }
     const notionUrl: string = body.notionUrl || '';
     const figmaUrl: string = body.figmaUrl || '';
     const catalog: unknown = body.catalog;
@@ -363,3 +369,55 @@ async function nameScreens(anthropicKey: string, images: string[], context: stri
 }
 
 
+
+/* A reference picture → a reusable section made of boxes, words, pictures and chips (a flat list; parent links make the tree). */
+async function buildSection(anthropicKey: string, image: string, hint: string) {
+  const tool = {
+    name: 'section_layout',
+    description: 'The layout of the section in the picture, rebuilt from simple blocks.',
+    input_schema: { type: 'object', required: ['name', 'nodes'], properties: {
+      name: { type: 'string', description: 'A reusable name for this kind of section, 2–4 words, sentence case, about its shape not its topic, e.g. "Three photo cards", "Stat pills with photo".' },
+      eyebrow: { type: 'string', description: 'Small label above the section heading, if the picture has one. Otherwise empty.' },
+      title: { type: 'string', description: 'The section heading if the picture has one. Otherwise empty.' },
+      body: { type: 'string', description: 'A short intro paragraph under the heading if the picture has one. Otherwise empty.' },
+      background: { type: 'string', enum: ['none', 'surface', 'accent', 'accentSoft', 'dark'], description: 'The colour band behind the whole layout.' },
+      nodes: { type: 'array', description: 'Every block, parents before children. Top-level blocks have parent "root". Keep it under 60 blocks.', items: { type: 'object', required: ['id', 'parent', 'type'], properties: {
+        id: { type: 'string', description: 'Short unique id, e.g. "b1".' },
+        parent: { type: 'string', description: 'id of the containing box, or "root".' },
+        type: { type: 'string', enum: ['box', 'text', 'image', 'chip', 'divider'] },
+        dir: { type: 'string', enum: ['row', 'column', 'grid'], description: 'box: how its children flow. grid = equal columns.' },
+        columns: { type: 'integer', minimum: 1, maximum: 6, description: 'box grid: number of columns.' },
+        gap: { type: 'string', enum: ['none', 's', 'm', 'l'] },
+        pad: { type: 'string', enum: ['none', 's', 'm', 'l'] },
+        bg: { type: 'string', enum: ['none', 'paper', 'surface', 'accent', 'accentSoft', 'dark'], description: 'box fill. accent = the brand colour, accentSoft = a pale tint of it, dark = near-black.' },
+        radius: { type: 'string', enum: ['none', 's', 'm', 'l', 'pill'] },
+        border: { type: 'boolean' },
+        align: { type: 'string', enum: ['start', 'center', 'end', 'stretch'] },
+        justify: { type: 'string', enum: ['start', 'center', 'end', 'between'] },
+        width: { type: 'string', enum: ['auto', 'third', 'half', 'twoThirds', 'full'], description: 'Share of the parent row this block takes.' },
+        repeat: { type: 'boolean', description: 'box: true when its children are copies of one design (cards, pills, steps), so the user can add or remove one.' },
+        role: { type: 'string', enum: ['eyebrow', 'heading', 'subheading', 'body', 'small', 'stat', 'label', 'quote'], description: 'text: its job and size.' },
+        text: { type: 'string', description: 'text/chip: the words as they appear (copy them exactly; keep quotes and numbers). Use a short placeholder only if unreadable.' },
+        weight: { type: 'string', enum: ['regular', 'bold'] },
+        textAlign: { type: 'string', enum: ['start', 'center', 'end'] },
+        ratio: { type: 'string', enum: ['square', 'landscape', 'portrait', 'wide', 'tall'], description: 'image: its shape.' },
+        alt: { type: 'string', description: 'image: what it shows, a few words.' },
+        chipStyle: { type: 'string', enum: ['outline', 'filled', 'soft'] },
+        icon: { type: 'string', enum: ['none', 'arrow', 'check', 'dot', 'plus'] },
+      } } },
+    } },
+  };
+  const system = `You rebuild sections of a designer's portfolio case study from a screenshot, using only the section_layout blocks. Match the structure, proportions and hierarchy closely: rows vs columns, how many cards, where pictures sit, which areas are filled with colour, rounded corners, pills. Photos, screenshots, illustrations and charts become image blocks (the designer drops her own pictures in later). Words become text blocks with the right role; copy them exactly. Repeated cards should be identical in structure and sit in a box with repeat=true. Do not invent content that is not in the picture. Always answer by calling section_layout.`;
+  const content: any[] = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } }, { type: 'text', text: `Rebuild this section.${hint ? ` Note from the designer: ${hint}` : ''}` }];
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 8000, system, tools: [tool], tool_choice: { type: 'tool', name: 'section_layout' }, messages: [{ role: 'user', content }] }),
+    signal: AbortSignal.timeout(140000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
+  const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
+  if (!use) throw new Error('Claude did not return a layout. Try again.');
+  return use.input;
+}
