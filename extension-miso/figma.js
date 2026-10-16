@@ -73,16 +73,17 @@
   });
 
   /* ---- awake / asleep follows the studio ---- */
-  let awake = false, name = 'Miso', mode = 'all';
+  let awake = false, name = 'Miso', mode = 'push';
+  let turn = null;   // push to talk: ⌃M starts, ⌃M again ends
   const showCat = () => {
     cat.src = chrome.runtime.getURL(awake ? 'cat.png' : 'cat-sleep.png'); cat.title = awake ? `${name} is listening` : `${name} is asleep (press ⌃M to wake ${name})`;
     const show = isFigma || awake; cat.style.display = show ? '' : 'none'; if (!show) { toast.style.opacity = '0'; carry.style.visibility = 'hidden'; } else carry.style.visibility = '';
   };
   const showClip = clip => { if (clip?.image) { carry.src = clip.image; carry.style.display = ''; } else carry.style.display = 'none'; };
-  chrome.storage.local.get(['clip', 'misoAwake', 'misoName', 'misoListen']).then(r => { showClip(r.clip); awake = !!r.misoAwake; name = r.misoName || 'Miso'; mode = r.misoListen || 'all'; showCat(); listen(); });
+  chrome.storage.local.get(['clip', 'misoAwake', 'misoName', 'misoListen']).then(r => { showClip(r.clip); awake = !!r.misoAwake; name = r.misoName || 'Miso'; mode = r.misoListen || 'push'; showCat(); listen(); });
   chrome.storage.onChanged.addListener(ch => {
     if (ch.clip) showClip(ch.clip.newValue);
-    if (ch.misoListen) mode = ch.misoListen.newValue || 'all';
+    if (ch.misoListen) { mode = ch.misoListen.newValue || 'push'; listen(); }
     if (ch.misoAwake && !document.hidden) { say(ch.misoAwake.newValue ? 'Listening.' : 'Stopped listening.'); chirp(ch.misoAwake.newValue ? 'ok' : 'hm'); }
     if (ch.misoAwake || ch.misoName) { if (ch.misoAwake) awake = !!ch.misoAwake.newValue; if (ch.misoName) name = ch.misoName.newValue || 'Miso'; showCat(); listen(); }
   });
@@ -223,6 +224,12 @@
   /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, follow = 0, buf = [], bt = 0;
+  const sendTurn = async () => {
+    if (stale()) return;
+    if (/screen ?shot|what i (just )?copied|from my clipboard/i.test(buf.join(' '))) { try { const b = await readPng(600); if (b) await keepPng(b, 'your screenshot'); } catch { /* nothing */ } }
+    const said = buf.join(' ').trim(); buf = []; if (!said) return;
+    chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: false, turn: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } });
+  };
   const send = async () => { if (stale()) return;
     if (/screen ?shot|what i (just )?copied|from my clipboard/i.test(buf.join(' '))) { try { const b = await readPng(600); if (b) await keepPng(b, 'your screenshot'); } catch { /* nothing on the clipboard */ } } const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -232,12 +239,20 @@
   const listen = () => {
     if (stale()) return;
     // Only the tab you're working in listens (two tabs fighting over the mic is what made words stop).
-    const want = awake && !document.hidden && document.hasFocus() && !!SR;
+    const want = awake && !document.hidden && document.hasFocus() && !!SR && (mode !== 'push' || !!turn);
     chrome.storage.local.set({ misoFigma: want ? Date.now() : 0 }).catch(() => {});
     if (!want) { try { rec?.abort(); } catch { /* ignore */ } rec = null; cat.classList.remove('is-hearing'); return; }
     if (rec) return; blocked = false;
     const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
     r.onresult = e => {
+      if (mode === 'push') {
+        if (!turn) return; quietSince = Date.now();
+        for (let i = e.resultIndex; i < e.results.length; i++) { const raw = e.results[i][0].transcript.trim(); if (e.results[i].isFinal) { turn.words.push(raw); turn.interim = ''; } else turn.interim = raw; }
+        const heard = [...turn.words, turn.interim].join(' ').slice(-200);
+        clearTimeout(tt); toast.classList.remove('is-heard'); toast.classList.add('is-notes');
+        toast.innerHTML = `<b>${noteText ? 'Taking notes' : 'Listening'}</b>${heard ? esc(heard) : '…'}<i style="display:block;margin-top:4px;font-size:11.5px;font-style:normal">Press ⌃M when you’re done</i>`; toast.style.opacity = '1';
+        return;
+      }
       quietSince = Date.now();
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const s = norm(e.results[i][0].transcript), nm = norm(name); const at = (' ' + s + ' ').indexOf(' ' + nm + ' ');
@@ -259,11 +274,35 @@
     };
     r.onsoundstart = () => cat.classList.add('is-hearing');
     r.onsoundend = () => cat.classList.remove('is-hearing');
-    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { blocked = true; say('To hear you on Figma, allow the microphone for figma.com: click the icon at the left of the address bar.'); } };
+    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { blocked = true; say(`To hear you here, allow the microphone for ${site}: click the icon at the left of the address bar.`); } };
     r.onend = () => { rec = null; setTimeout(listen, blocked ? 5000 : 400); };
     try { r.start(); rec = r; quietSince = Date.now(); } catch { /* already running */ }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyM' && !stale()) { e.preventDefault(); e.stopPropagation(); chrome.storage.local.set({ misoAwake: !awake }); } }, true);
+  const beginTurn = () => {
+    if (stale()) return;
+    turn = { words: [], interim: '' }; cat.classList.add('is-hearing', 'is-talking'); chirp();
+    if (!awake) { awake = true; chrome.storage.local.set({ misoAwake: true }); showCat(); }
+    clearTimeout(tt); toast.classList.add('is-notes'); toast.innerHTML = `<b>Listening</b>…<i style="display:block;margin-top:4px;font-size:11.5px;font-style:normal">Press ⌃M when you’re done</i>`; toast.style.opacity = '1';
+    try { rec?.abort(); } catch { /* ignore */ } rec = null; listen();
+  };
+  const endTurn = () => {
+    const t = turn; if (!t) return; cat.classList.remove('is-talking');
+    try { rec?.stop(); } catch { /* ignore */ }
+    setTimeout(() => {
+      turn = null; cat.classList.remove('is-hearing'); try { rec?.abort(); } catch { /* ignore */ } rec = null; listen();
+      const said = [...t.words, t.interim].join(' ').replace(/\s+/g, ' ').trim();
+      if (!said) { say('I didn’t catch anything.'); chirp('hm'); return; }
+      say('…'); buf = [said]; sendTurn();
+    }, 700);
+  };
+  const toggleTurn = () => { if (turn) endTurn(); else beginTurn(); };
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyM' && !stale()) { e.preventDefault(); e.stopPropagation(); toggleTurn(); } }, true);
+  cat.addEventListener('click', () => { if (turn) endTurn(); });
+  // Double-tap Option to snip.
+  let altAt = 0, altClean = true;
+  addEventListener('keydown', e => { if (e.key !== 'Alt') altClean = false; else if (!e.repeat) altClean = true; }, true);
+  addEventListener('pointerdown', () => { altClean = false; }, true);
+  addEventListener('keyup', e => { if (e.key !== 'Alt' || !altClean) return; const now = Date.now(); if (now - altAt < 380) { altAt = 0; snip(); } else altAt = now; }, true);
   document.addEventListener('visibilitychange', listen); addEventListener('focus', listen); addEventListener('blur', listen);
   let quietSince = Date.now();
   setInterval(() => { if (rec) chrome.storage.local.set({ misoFigma: Date.now() }).catch(() => {}); if (rec && Date.now() - quietSince > 50000) { quietSince = Date.now(); try { rec.abort(); } catch { /* ignore */ } } }, 5000);
@@ -289,6 +328,7 @@
   };
   chrome.runtime.onMessage.addListener(msg => {
     if (msg?.type === 'miso-snip') { snip(); return; }
+    if (msg?.type === 'miso-talk') { toggleTurn(); return; }
     if (msg?.type !== 'miso-reply' || !msg.text) return;
     typing(msg.kind === 'think');
     if (msg.kind === 'chat') { showChat(msg.text); chirp(); follow = Date.now() + 15000; return; }

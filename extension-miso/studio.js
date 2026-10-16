@@ -13,5 +13,5 @@
     if (e.data.type === 'reply') chrome.runtime.sendMessage({ type: 'miso-reply', text: e.data.text, tone: e.data.tone, kind: e.data.kind || '' }).catch(() => {});
   });
   chrome.storage.onChanged.addListener(ch => { if (ch.clip) post('clip', { clip: ch.clip.newValue || null }); if (ch.misoAwake) post('wake', { awake: !!ch.misoAwake.newValue }); if (ch.misoFigma) post('figma', { on: !!ch.misoFigma.newValue }); });
-  chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-command') post('command', { said: msg.said, clip: msg.clip, ambient: !!msg.ambient }); });
+  chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-command') post('command', { said: msg.said, clip: msg.clip, ambient: !!msg.ambient, turn: !!msg.turn }); if (msg?.type === 'miso-talk') post('talk'); });
 })();

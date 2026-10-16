@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       if (!tabs.length) { reply({ ok: false, error: 'Open Case Study Studio in another tab first (it can stay in the background).' }); return; }
       const { clip } = await chrome.storage.local.get('clip');
       askedFrom = sender.tab.id;
-      for (const t of tabs) chrome.tabs.sendMessage(t.id, { type: 'miso-command', said: msg.said, ambient: !!msg.ambient, clip: clip || null }).catch(() => {});
+      for (const t of tabs) chrome.tabs.sendMessage(t.id, { type: 'miso-command', said: msg.said, ambient: !!msg.ambient, turn: !!msg.turn, clip: clip || null }).catch(() => {});
       reply({ ok: true });
     })();
     return true;
@@ -73,6 +73,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 chrome.commands.onCommand.addListener(async (cmd, tab) => {
   if (cmd === 'snip') { const t = tab ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]; if (t?.id) chrome.tabs.sendMessage(t.id, { type: 'miso-snip' }).catch(() => {}); return; }
   if (cmd !== 'toggle-listening') return;
-  const { misoAwake } = await chrome.storage.local.get('misoAwake');
-  await chrome.storage.local.set({ misoAwake: !misoAwake });
+  // ⌃M: start or end a talking turn on the tab you're on (the studio or any site).
+  const t = tab ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+  if (t?.id) chrome.tabs.sendMessage(t.id, { type: 'miso-talk' }).catch(() => {});
 });
