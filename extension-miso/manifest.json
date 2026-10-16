@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Miso for Case Study Studio",
-  "version": "1.6.1",
-  "description": "Click a frame in Figma and Miso copies it as PNG; tell Miso what to build with it and it does it in Case Study Studio. Chrome briefly shows \u201cstarted debugging this browser\u201d while Miso presses Copy as PNG for you.",
+  "version": "1.7.0",
+  "description": "Miso comes with you to Figma and any website. Hold Option and circle something to bring it (with its words) to Case Study Studio, then tell Miso what to make. On most sites Miso only appears while listening (\u2303M).",
   "permissions": [
     "storage",
     "debugger",
@@ -28,21 +28,24 @@
         "cat-sleep.png"
       ],
       "matches": [
-        "https://www.figma.com/*",
-        "https://figma.com/*"
+        "<all_urls>"
       ]
     }
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://www.figma.com/*",
-        "https://figma.com/*"
+        "<all_urls>"
       ],
       "js": [
         "figma.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "https://kwolfley27.github.io/case-study-studio/*",
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*"
+      ]
     },
     {
       "matches": [

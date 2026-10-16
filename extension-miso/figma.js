@@ -1,10 +1,14 @@
-// Miso on Figma.
+// Miso, on Figma and on any website (Lucid, the App Store, competitor sites…).
+// On ordinary sites Miso only shows up while awake (⌃M), so it stays out of the way otherwise.
+// Circling something on a web page brings both a picture and the exact text inside the circle.
 // - Point (while Miso is awake): hold Option and move the mouse in a loop around a frame, then let go of Option.
 //   No clicking. Miso takes a picture of it, plus the link to the frame you have selected.
 // - Talk: while Miso is awake in the studio, it listens here too. Say "Miso, make this the hero" and the studio
 //   (open in another tab, even in the background) does it. The answer appears here.
 (() => {
   if (window.top !== window || window.__miso) return; window.__miso = true;
+  const isFigma = /(^|\.)figma\.com$/.test(location.hostname);
+  const site = location.hostname.replace(/^www\./, '');
   const css = `
   .miso-cat{position:fixed;z-index:2147483646;width:74px;height:96px;image-rendering:pixelated;pointer-events:auto;cursor:grab;touch-action:none;filter:drop-shadow(0 6px 10px rgba(40,30,20,.25))}
   .miso-cat.is-hearing{animation:miso-bop .5s ease-in-out infinite}
@@ -67,7 +71,10 @@
 
   /* ---- awake / asleep follows the studio ---- */
   let awake = false, name = 'Miso', mode = 'all';
-  const showCat = () => { cat.src = chrome.runtime.getURL(awake ? 'cat.png' : 'cat-sleep.png'); cat.title = awake ? `${name} is listening` : `${name} is asleep (wake ${name} in the studio)`; };
+  const showCat = () => {
+    cat.src = chrome.runtime.getURL(awake ? 'cat.png' : 'cat-sleep.png'); cat.title = awake ? `${name} is listening` : `${name} is asleep (press ⌃M to wake ${name})`;
+    const show = isFigma || awake; cat.style.display = show ? '' : 'none'; if (!show) { toast.style.opacity = '0'; carry.style.visibility = 'hidden'; } else carry.style.visibility = '';
+  };
   const showClip = clip => { if (clip?.image) { carry.src = clip.image; carry.style.display = ''; } else carry.style.display = 'none'; };
   chrome.storage.local.get(['clip', 'misoAwake', 'misoName', 'misoListen']).then(r => { showClip(r.clip); awake = !!r.misoAwake; name = r.misoName || 'Miso'; mode = r.misoListen || 'all'; showCat(); listen(); });
   chrome.storage.onChanged.addListener(ch => {
@@ -82,6 +89,21 @@
   let pts = null, svg = null, line = null;
   const begin = (x, y) => { pts = x == null ? [] : [[x, y]]; svg = document.createElementNS(svgNS, 'svg'); svg.setAttribute('class', 'miso-lasso'); line = document.createElementNS(svgNS, 'polyline'); svg.appendChild(line); document.documentElement.appendChild(svg); };
   const add = (x, y) => { if (!pts) return; const l = pts[pts.length - 1]; if (l && Math.hypot(x - l[0], y - l[1]) < 3) return; pts.push([x, y]); line.setAttribute('points', pts.map(p => p.join(',')).join(' ')); };
+  // The words inside the circle, in reading order (for quotes, reviews, competitor copy).
+  const textIn = rect => {
+    if (isFigma) return '';
+    const out = []; let lastBlock = null;
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: n => n.textContent.trim() && !n.parentElement?.closest('script,style,noscript,.miso-cat,.miso-toast,.miso-chat') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+    const range = document.createRange();
+    for (let n = walk.nextNode(); n && out.join(' ').length < 6000; n = walk.nextNode()) {
+      range.selectNodeContents(n);
+      const inside = [...range.getClientRects()].some(r => r.width && r.left + r.width / 2 >= rect.x && r.left + r.width / 2 <= rect.x + rect.w && r.top + r.height / 2 >= rect.y && r.top + r.height / 2 <= rect.y + rect.h);
+      if (!inside) continue;
+      const block = n.parentElement?.closest('p,li,h1,h2,h3,h4,h5,h6,blockquote,td,th,figcaption,article,section,div');
+      out.push((lastBlock && block !== lastBlock ? '\n' : '') + n.textContent.replace(/\s+/g, ' ').trim()); lastBlock = block;
+    }
+    return out.join(' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 6000);
+  };
   const finish = () => {
     if (!pts) return; const p = pts; pts = null; svg?.remove(); svg = null;
     if (p.length < 8) return;
@@ -93,10 +115,15 @@
     if (!close) return;
     const hasNode = /[?&]node-id=/.test(location.href);
     const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
-    say('Got it…');
     if (stale()) return;
-    requestAnimationFrame(() => requestAnimationFrame(() => chrome.runtime.sendMessage({ type: 'miso-capture', rect, viewport: { w: innerWidth, h: innerHeight }, url: location.href, name: file ? `your ${file} frame` : 'the frame' }, res => {
+    const text = textIn(rect);
+    const label = isFigma ? (file ? `your ${file} frame` : 'the frame') : `a clip from ${site}`;
+    // Keep myself out of the picture.
+    cat.style.visibility = 'hidden'; toast.style.opacity = '0'; carry.style.visibility = 'hidden'; chatBox.style.display = 'none';
+    requestAnimationFrame(() => requestAnimationFrame(() => chrome.runtime.sendMessage({ type: 'miso-capture', lasso: true, rect, viewport: { w: innerWidth, h: innerHeight }, url: location.href, name: label, text, site, title: document.title.slice(0, 140) }, res => {
+      cat.style.visibility = ''; carry.style.visibility = '';
       if (!res?.ok) { say('I couldn’t take that picture. Try again?'); chirp('hm'); return; }
+      if (!isFigma) { chirp(); say(text ? 'Got it, words and all.' : 'Got the picture.'); return; }
       chirp(); say(awake ? `Got it! Tell me where it goes (“${name}, make this the hero”).` : (hasNode ? 'Got it! In the studio, point and say “put it here”.' : 'Got the picture. Tip: click the frame first, so I bring its link too.'));
     })));
   };
@@ -111,7 +138,7 @@
   /* ---- clicking a frame while I'm awake: I pick it up (Figma puts the frame's id in the address when you select it) ---- */
   let downAt = null, lastPick = '';
   const nodeOf = u => (u.match(/[?&]node-id=([^&#]+)/) || [])[1] || '';
-  addEventListener('pointerdown', e => { downAt = e.target instanceof HTMLCanvasElement && !e.altKey && e.button === 0 ? [e.clientX, e.clientY, nodeOf(location.href), e.target] : null; }, true);
+  addEventListener('pointerdown', e => { downAt = isFigma && e.target instanceof HTMLCanvasElement && !e.altKey && e.button === 0 ? [e.clientX, e.clientY, nodeOf(location.href), e.target] : null; }, true);
   addEventListener('pointerup', e => {
     const d = downAt; downAt = null; if (!d || !awake || Math.hypot(e.clientX - d[0], e.clientY - d[1]) > 4) return;
     setTimeout(() => {
@@ -149,7 +176,7 @@
     } finally { copying = false; }
   };
   // Pressing ⌘⇧C yourself works too.
-  addEventListener('keydown', e => { if (!awake || copying || !(e.metaKey || e.ctrlKey) || !e.shiftKey || e.code !== 'KeyC') return; copying = true; setTimeout(async () => { try { const b = await readPng(2500); if (b) { const nm = frameName(); await keepPng(b, nm || 'that frame'); chirp(); say(`Holding ${nm || 'that frame'}. Tell me what to make with it.`); } } finally { copying = false; } }, 400); }, true);
+  addEventListener('keydown', e => { if (!isFigma || !awake || copying || !(e.metaKey || e.ctrlKey) || !e.shiftKey || e.code !== 'KeyC') return; copying = true; setTimeout(async () => { try { const b = await readPng(2500); if (b) { const nm = frameName(); await keepPng(b, nm || 'that frame'); chirp(); say(`Holding ${nm || 'that frame'}. Tell me what to make with it.`); } } finally { copying = false; } }, 400); }, true);
 
   const shoot = (node, cr, nm) => {
       {

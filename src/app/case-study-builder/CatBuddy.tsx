@@ -43,7 +43,7 @@ export type CatActions = {
   header: { eyebrow: string; title: string; summary: string; facts: Array<{ label: string; value: string }> };
   setStudyText: (field: string, value: string) => void;
 };
-export type Clip = { image: string; figmaUrl?: string; name?: string; at?: number; picked?: boolean };
+export type Clip = { image: string; figmaUrl?: string; name?: string; at?: number; picked?: boolean; text?: string; site?: string; url?: string; title?: string };
 type Reply = 'chirp' | 'voice' | 'silent';
 
 /* A soft two-note "mrrp", made on the spot (no audio files). */
@@ -271,7 +271,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
       ambient, event, plan: plan.current, history: history.current.slice(-16, event ? undefined : -1), studyTitle: a.studyTitle, header: a.header, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
-      clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl } : null,
+      clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl, site: clipRef.current.site, url: clipRef.current.url, pageTitle: clipRef.current.title, text: clipRef.current.text?.slice(0, 5000) } : null,
       pointingAtSlot: slotHere(),
       sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, title: cut(x.title, 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, 240), variant: x.variant, items: x.items.slice(0, 12).map((it, k) => ({ i: k, title: cut(it.title, 80), detail: cut(it.detail, 160), hasImage: !!it.image })) })),
       templates: a.templates.map(t => ({ id: t.id, name: t.name, kind: t.kind })),
@@ -351,7 +351,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       clipRef.current = c;
       // Picked by clicking in Figma while we have a plan (like filling this case study): let Claude place it.
       if (c?.picked && Date.now() - (c.at ?? 0) < 60 * 1000 && c.at !== lastPicked.current) { lastPicked.current = c.at; startBriefRef.current(true); return; }
-      if (c && Date.now() - (c.at ?? 0) < 10 * 60 * 1000) { setBubble(b => ({ text: `Got ${c.name || 'a frame'} from Figma. Point and say “put it here”.`, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 12000; chirp(); }
+      if (c && Date.now() - (c.at ?? 0) < 10 * 60 * 1000) { setBubble(b => ({ text: `Got ${c.name || 'a frame'}. Point and say “put it here”.`, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 12000; chirp(); }
     };
     window.addEventListener('message', on);
     const hello = () => window.postMessage({ source: 'miso-page', type: 'hello' }, location.origin);
@@ -517,7 +517,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           <div><b>Browser</b><i className={SPEECH_BAD.includes(browser) ? 'is-bad' : 'is-ok'}>{browser}{SPEECH_BAD.includes(browser) ? ' (can’t do speech; use Chrome)' : ''}</i></div>
           <div><b>Figma extension</b><i className={ext ? 'is-ok' : ''}>{ext ? `connected${ext !== 'yes' ? ' · v' + ext : ''}` : 'not found here'}</i></div>
           <div><b>Microphone</b><i className={sound || level > .05 ? 'is-ok' : ''}>{testing ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : <>{sound ? 'hearing sound' : awake ? 'quiet' : 'asleep'} · <button type="button" className="csb-cat-link" onClick={() => void testMic()}>Test it</button></>}</i></div>
-          <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{onFigma ? 'on your Figma tab' : status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
+          <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{onFigma ? 'on your other tab' : status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
         </div>
         <div className="csb-cat-reply" role="radiogroup" aria-label="What I listen for"><span>What I listen for</span>
           <div>{([['all', 'Everything you say'], ['name', 'Only after “' + name + '”']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={listenMode === v} onClick={() => { setListenMode(v); store.set('csb-cat-listen', v); }}>{l}</button>)}</div>
@@ -526,7 +526,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         <div className="csb-cat-reply" role="radiogroup" aria-label="How I answer"><span>How I answer</span>
           <div>{([['chirp', 'Little chirp'], ['voice', 'Voice'], ['silent', 'Silent']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={replyMode === v} onClick={() => { setReplyMode(v); store.set('csb-cat-reply', v); if (v === 'chirp') chirp(); if (v === 'voice' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance('Hi, I’m ' + name + '.'); const vv = niceVoice(); if (vv) u.voice = vv; speechSynthesis.speak(u); } }}>{l}</button>)}</div>
         </div>
-        {clip && <div className="csb-cat-clip"><img src={clip.image} alt="" /><span>From Figma: <b>{clip.name || 'a frame'}</b><small>Point at a spot and say “put it here”. Say “drop it” or click it on me to let go.</small></span><button type="button" aria-label="Drop this frame" onClick={() => dropClip(true)}>×</button></div>}
+        {clip && <div className="csb-cat-clip"><img src={clip.image} alt="" /><span>{clip.site && !/figma/.test(clip.site) ? <>From {clip.site}: </> : <>From Figma: </>}<b>{clip.name || 'a frame'}</b><small>Point at a spot and say “put it here”. Say “drop it” or click it on me to let go.</small></span><button type="button" aria-label="Drop this frame" onClick={() => dropClip(true)}>×</button></div>}
         <p>Say “{name}”, then:</p>
         <div className="csb-cat-cmds">{['preview', 'edit', 'present', 'publish', 'open research', 'go to the persona', 'add a bar chart', 'move this up', 'make this dark', 'delete this section', 'sleep'].map(c => <i key={c}>{c}</i>)}</div>
         <p>Hold <kbd>⌥ Option</kbd> and draw around something to point at it.</p>
@@ -534,7 +534,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         <p>Ask me things like “how’s the title looking?” and I’ll answer in a little chat.</p>
         <p className="is-note">Hearing you happens in your browser. What you say goes to Claude to understand it (in “Everything” mode, after each pause). “Undo” takes back my last change.</p>
         <p className="is-note">Drag me anywhere on the screen. Double-click me to send me back to my corner.</p>
-        <p className="is-note"><a href={`${import.meta.env.BASE_URL}miso-extension.zip`} download>Get the Chrome extension</a> to bring frames over from Figma.</p>
+        <p className="is-note"><a href={`${import.meta.env.BASE_URL}miso-extension.zip`} download>Get the Chrome extension</a> to bring me along to Figma and any website (Lucid, the App Store, competitors). Circle something and I bring the picture and its words.</p>
         <button type="button" onClick={() => setMenu(false)}>Done</button>
       </div>}
       <button type="button" className="csb-cat-btn" aria-pressed={awake} aria-label={awake ? `${name} is listening. Click to put ${name} to sleep.` : `Wake ${name} up to talk`}

@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         const c = new OffscreenCanvas(Math.round(r.w * scale), Math.round(r.h * scale));
         c.getContext('2d').drawImage(bmp, r.x, r.y, r.w, r.h, 0, 0, c.width, c.height);
         const image = await toDataUrl(await c.convertToBlob({ type: 'image/jpeg', quality: 0.9 }));
-        await chrome.storage.local.set({ clip: { image, figmaUrl: msg.url, name: msg.name, at: Date.now(), picked: !!msg.selection } });
+        await chrome.storage.local.set({ clip: { image, figmaUrl: /figma\.com/.test(msg.url) ? msg.url : undefined, url: msg.url, name: msg.name, text: msg.text || '', site: msg.site || '', title: msg.title || '', at: Date.now(), picked: !!msg.selection || !!msg.lasso } });
         reply({ ok: true });
       } catch (e) { reply({ ok: false, error: String(e?.message || e) }); }
     })();
