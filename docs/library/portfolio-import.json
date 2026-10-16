@@ -1,0 +1,3090 @@
+{
+ "version": 1,
+ "source": "katelynwolfley.design",
+ "studies": [
+  {
+   "key": "attendease",
+   "replaces": "cs-attendease",
+   "slug": "attendease",
+   "name": "AttendEase",
+   "title": "Giving back teachers their time through automated attendance",
+   "summary": "Manual roll call takes 5\u20137 minutes per class and still leaves room for error. AttendEase automates attendance, saving teachers time and providing accurate, real time data. I designed the brand and teacher/admin dashboards, collaborated with developers to launch a classroom pilot, and refined the experience using teacher feedback.",
+   "role": "Product/UX Designer",
+   "timeframe": "Jan 2025 \u2013 Apr 2026",
+   "team": "6 person multidisciplinary team",
+   "tags": [
+    "0 \u2192 1",
+    "EDTECH",
+    "WEB APP"
+   ],
+   "accent": "#2D1B06",
+   "hero": "library/attendease/74db1c2c600703839088a4bf.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "",
+     "body": "Projected from the pilot\u2019s avg per class savings over five class periods.\n\nLed teacher research, designed the brand and teacher/admin dashboards, and partnered with developers to bring the experience into a live pilot.\n\nTested by real teachers in a real classroom\n\nTested the core workflow in a live classroom and used teacher feedback to improve clarity, prioritization, and usability."
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "At a glance",
+     "title": "",
+     "items": [
+      {
+       "title": "",
+       "detail": "",
+       "image": "library/attendease/c5b4343a50d122e6036732e9.webp"
+      }
+     ],
+     "fromVisual": "AtAGlance"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The problem",
+     "title": "Attendance processes create stress for teachers and school admins",
+     "body": "Taking attendance sounds easy. But it\u2019s manual, it\u2019s repetitive, and when something inevitably goes wrong, everyone feels it: teachers, office staff, parents. Here\u2019s what we kept hearing.\n\nBefore we brainstormed solutions, we went to schools. We interviewed teachers, sat in classrooms, and talked to the people who actually deal with attendance every day.\n\nThe interviews below are a snapshot of what insights we gathered to help shape a solution via an iOT device.\n\nSo how did we come to our solution, anyway?"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The solution",
+     "title": "iOT device + a simple teacher app = AttendEase",
+     "body": "What if attendance just\u2026 took itself?\n\nAttendEase uses a small classroom camera to recognize students the moment they walk in. By the time the bell rings, attendance is already done.\n\nThe split view lets teachers immediately focus on who\u2019s missing. It follows the F-shaped reading pattern: absent students on the left where the eye naturally goes first, since those are the ones requiring teacher action.\n\nTeachers and admins have completely different jobs, so they needed completely different dashboards. Admins aren\u2019t taking attendance, they\u2019re watching patterns. So their view is built around trends over time, grade-level data, and a flag for students who might be chronically skipping. Principals pretty much said the same thing: they care most about accurate reporting for funding sake and seeing things get better over time.\n\nAttendEase classroom camera and teacher dashboard\n\nSelected AttendEase dashboard design with separate absent and present student lists\n\nAttendEase administrator dashboard with school-wide attendance overview\n\nFirst iteration, designed to answer school-wide questions, not individual classroom ones"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The solution",
+     "title": "iOT device + a simple teacher app = AttendEase",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/attendease/74db1c2c600703839088a4bf.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/attendease/6500d50743120e18e526b97b.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/attendease/ae7d4fba56bb31b053f14729.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/attendease/c5b4343a50d122e6036732e9.webp"
+      }
+     ],
+     "fromVisual": "Solution"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Key decisions",
+     "title": "The original MVP",
+     "body": "We explored a few potential solutions \u2014 RFID being the obvious one. Talking to schools, we found that some were already experimenting with it: tags on backpacks, cards students scan at the door. It sounds simple. But the issues became clear fast.\n\nAny solution that requires a student to remember something, carry something, or do something wasn\u2019t foolproof. Forgotten tags, kids who just don\u2019t scan \u2014 these techniques weren\u2019t solving the problem, just moving it.\n\nFacial recognition worked because it asked nothing of the student. They walk in. That\u2019s it. That\u2019s the whole interaction.\n\nWhy we built a standalone MVP: the chicken-and-egg problem\n\nWe never wanted AttendEase to be its own platform. The real vision is a lightweight integration that lives inside Infinite Campus or PowerSchool, so teachers never have to learn anything new.\n\nBut when we reached out to those companies \u2014 we actually got on a Zoom with PowerSchool \u2014 we hit a wall. They wouldn\u2019t integrate with us until we were already in schools. And schools didn\u2019t want us until we had that integration.\n\nSo the standalone MVP was a deliberate wedge. Build just enough to run a real pilot, get real data, and go back to the SIS platforms with actual proof.\n\nDesign \u2192 AI code \u2192 redesign\n\nTo move faster, our developer used AI to code the initial dashboard, but the result looked noticeably different from my Figma designs, sort of keeping the branding but a little off..\n\nRather than nit picking the pixel differences for our pilot stage, I developed a rapid iteration workflow: I take screenshots of the coded output on our live dashboard pilot website, bring them into Figma, iterate directly on top of them, and feed those updated designs back into the AI for the next build cycle.\n\nThis let me stay in Figma (where I\u2019m fastest) while still directly shaping the coded product. It also meant I could evaluate AI\u2019s design decisions alongside my own. It wasn\u2019t my ideal dashboard, but once connected to the dashboard it made a great prototype.\n\nWith our pilot dashboard in place, I decided my next step would be figuring out which variations of the attendance data visualization would be best. I answered that question by taking the designs to 10 real teachers for testing. Each version below shows what I changed, why, and the results of those tests."
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "Key decisions",
+     "title": "The original MVP",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/attendease/74db1c2c600703839088a4bf.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/attendease/588018c8d89549d90f75fe0b.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/attendease/37f7735dec9fbee62f1fd267.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/attendease/7532171271b6d841aca88736.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/attendease/preference-survey.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/attendease/ai-build.webp"
+      }
+     ],
+     "fromVisual": "Decisions"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Design system",
+     "title": "How do you make an ed-tech brand feel trustworthy?",
+     "body": "Facial recognition in schools comes with a lot of questions, and rightfully so. Our design needed to answer those questions through the branding \u2014 feel safe and professional, but easy.\n\nI built AttendEase\u2019s visual identity around those values.\n\nTo start the UI design process, I built a design system in Figma to keep everything consistent as I designed.\n\nI built four variable collections in Figma: Alias, Brand, Mapped, and Responsive, totaling 98 alias tokens and 51 mapped tokens. Semantic names like action, present, and error kept the UI consistent and made light/dark mode a single swap.\n\nThe logo colors were the basis for the system and doubled as state indicator colors for the attendance UI pretty well.\n\nPoppins\u2019 rounded letterforms create a friendly tone that felt right for a product used by teachers daily. I paired it with Inter for body text and data-heavy screens.\n\nPoppins \u00b7 H1 Regular / H2 Regular\n\nInter \u00b7 H3 Bold / B Regular\n\n23 on time, 3 tardy, 1 unexcused, 2 excused\n\n98 tokens: color, spacing, typography, and more\n\n51 tokens: semantic names with light & dark mode values\n\nFigma variables panel showing the Mapped collection with light and dark mode values"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "Design system",
+     "title": "How do you make an ed-tech brand feel trustworthy?",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/attendease/ae7d4fba56bb31b053f14729.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/attendease/22028d1d68c6d59ec2b2e38b.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/attendease/chip-absent.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/attendease/chip-excused.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/attendease/chip-present.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/attendease/ring-ontime.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/attendease/ring-unexcused.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/attendease/button-submit.webp"
+      },
+      {
+       "title": "Image 9",
+       "detail": "",
+       "image": "library/attendease/nav-active.webp"
+      },
+      {
+       "title": "Image 10",
+       "detail": "",
+       "image": "library/attendease/card-absent.webp"
+      },
+      {
+       "title": "Image 11",
+       "detail": "",
+       "image": "library/attendease/row-student.webp"
+      }
+     ],
+     "fromVisual": "DesignSystem"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "User testing",
+     "title": "A 2 week-long pilot proved the tech and saved teachers ~34 minutes a day",
+     "body": "We made a connection with the head of technology at American Heritage Schools who allowed us the opportunity to pilot in a real classroom environment. Our goals were to validate both the facial recognition hardware and the teacher dashboard experience under actual conditions. The pilot results discovered that our system cut attendance time from 5\u20137 minutes to under 45 seconds per period.\n\nTesting our MVP at American Heritage Schools\n\nWe worked with the school\u2019s IT team to install the camera. We also worked with the school to send out permission slips to parents for the students to participate in the test. As they installed the camera, I ran user tests on Mr. Hancock and observed how he interacted with the dashboard and what his preferences were.\n\nAfter the trust-building curve in week one, teachers reduced attendance time from a 5\u201310 minute manual process to a 30\u201345 second review-and-submit. Across 5 class periods, that\u2019s roughly 34 minutes returned to instruction every day, or over 100 hours per teacher per school year.\n\nTesting our camera in a BYU Lecture Hall\n\nWe took our camera into a massive BYU lecture hall to see if our tech could actually handle a crowd of 100 students. To keep ourselves honest, we had every student fill out a Google Form with their section via a map I made so we could compare our camera\u2019s \u201cvision\u201d against where people were actually sitting. The professors cooperated with us to provide the students\u2019 ID pictures for testing purposes.\n\nFor the first 25 minutes, everything worked. The camera picked out faces in a sea of 100 students, matching them to sections in real time. We were watching the detection data come in live and it felt amazing to see what it was capable of.\n\nThen we were met with a little trouble when someone accidentally kicked the power strip and the camera lost power halfway through the lecture. Sadly all of our data was gone.\n\nThat moment exposed a critical gap: we had no local data buffer. If the connection drops, even for a second, everything captured up to that point disappears. Our developer immediately prioritized building a local fail-safe so the system saves detection data continuously, independent of the power or network state. Without that failure, we would have shipped a product that silently loses data any time something goes wrong.\n\nAttendEase has completed two competitive funding rounds through BYU\u2019s Rollins Center for Entrepreneurship & Technology, presenting to judges and reporting on progress milestones each round. Total funding to date: $5,000.\n\nTwo charter school expos, 50+ educator conversations, and a shifted pitch\n\nWe exhibited at two private school and charter school tradeshows: one in Las Vegas and one in Utah. As the sole designer, my role expanded to \u201ctradeshow booth designer\u201d. I designed all the marketing and promo materials, mapped out the booth layout to scale, and then actually built it: laser cutting and painting our wood signage (color matching our exact brand orange with paint chips on the Home Depot floor). It would be our first time in front of potential adopters for our pilot program which meant we needed to show up looking like a real product, not a class project."
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "User testing",
+     "title": "A 2 week-long pilot proved the tech and saved teachers ~34 minutes a day",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/attendease/74db1c2c600703839088a4bf.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/attendease/ae7d4fba56bb31b053f14729.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/attendease/c5b4343a50d122e6036732e9.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/attendease/61f0dac37fe2c06952f5554b.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/attendease/9a9142185819435c687531c5.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/attendease/7d139467a0e9f067bdb7e99a.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/attendease/fafc93cc7de04db37a57fef0.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/attendease/f990672c5c238763faa27273.webp"
+      }
+     ],
+     "fromVisual": "Validation"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "What\u2019s next",
+     "title": "Two critical validations, outside funding, and a roadmap for what\u2019s next",
+     "body": "The pilot proved the technology works and that schools are willing to trust it. That gave us the confidence, and the backing, to keep building.\n\nThe system works reliably in real classroom conditions\n\nParents and schools gave consent, signaling trust despite facial recognition technology being relatively new in school environments\n\nExpand testing to three classrooms at American Heritage through spring 2026.\n\nTarget 2 new school partnerships by 2026\u20132027 school year.\n\nIterate v2 of admin and teacher dashboard based on user testing feedback"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "What\u2019s next",
+     "title": "Two critical validations, outside funding, and a roadmap for what\u2019s next",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/attendease/74db1c2c600703839088a4bf.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/attendease/ae7d4fba56bb31b053f14729.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/attendease/c5b4343a50d122e6036732e9.webp"
+      }
+     ],
+     "fromVisual": "WhatsNext"
+    }
+   ],
+   "notes": [
+    {
+     "from": "At a glance",
+     "visual": "AtAGlance",
+     "text": [
+      "Pilot based estimate",
+      "Potential time reclaimed",
+      "daily per teacher",
+      "Projected from the pilot\u2019s avg per class savings over five class periods.",
+      "Research to working pilot",
+      "Led teacher research, designed the brand and teacher/admin dashboards, and partnered with developers to bring the experience into a live pilot.",
+      "Tested by real teachers in a real classroom",
+      "Tested the core workflow in a live classroom and used teacher feedback to improve clarity, prioritization, and usability."
+     ],
+     "images": [
+      "library/attendease/c5b4343a50d122e6036732e9.webp"
+     ]
+    },
+    {
+     "from": "The problem",
+     "visual": "Problem",
+     "text": [
+      "Taking attendance sounds easy. But it\u2019s manual, it\u2019s repetitive, and when something inevitably goes wrong, everyone feels it: teachers, office staff, parents. Here\u2019s what we kept hearing.",
+      "Before we brainstormed solutions, we went to schools. We interviewed teachers, sat in classrooms, and talked to the people who actually deal with attendance every day.",
+      "The interviews below are a snapshot of what insights we gathered to help shape a solution via an iOT device.",
+      "So how did we come to our solution, anyway?"
+     ],
+     "images": []
+    },
+    {
+     "from": "The solution",
+     "visual": "Solution",
+     "text": [
+      "What if attendance just\u2026 took itself?",
+      "AttendEase uses a small classroom camera to recognize students the moment they walk in. By the time the bell rings, attendance is already done.",
+      "How it works",
+      "Teacher dashboard \u00b7 selected design",
+      "Split view: Absent/Present sections",
+      "The split view lets teachers immediately focus on who\u2019s missing. It follows the F-shaped reading pattern: absent students on the left where the eye naturally goes first, since those are the ones requiring teacher action.",
+      "Admin Dashboard: Today\u2019s Attendance Overview",
+      "Teachers and admins have completely different jobs, so they needed completely different dashboards. Admins aren\u2019t taking attendance, they\u2019re watching patterns. So their view is built around trends over time, grade-level data, and a flag for students who might be chronically skipping. Principals pretty much said the same thing: they care most about accurate reporting for funding sake and seeing things get better over time.",
+      "AttendEase classroom camera and teacher dashboard",
+      "Selected AttendEase dashboard design with separate absent and present student lists",
+      "AttendEase administrator dashboard with school-wide attendance overview",
+      "First iteration, designed to answer school-wide questions, not individual classroom ones"
+     ],
+     "images": [
+      "library/attendease/74db1c2c600703839088a4bf.webp",
+      "library/attendease/6500d50743120e18e526b97b.webp",
+      "library/attendease/ae7d4fba56bb31b053f14729.webp",
+      "library/attendease/c5b4343a50d122e6036732e9.webp"
+     ]
+    },
+    {
+     "from": "Key decisions",
+     "visual": "Decisions",
+     "text": [
+      "Why facial recognition?",
+      "We explored a few potential solutions \u2014 RFID being the obvious one. Talking to schools, we found that some were already experimenting with it: tags on backpacks, cards students scan at the door. It sounds simple. But the issues became clear fast.",
+      "Any solution that requires a student to remember something, carry something, or do something wasn\u2019t foolproof. Forgotten tags, kids who just don\u2019t scan \u2014 these techniques weren\u2019t solving the problem, just moving it.",
+      "Facial recognition worked because it asked nothing of the student. They walk in. That\u2019s it. That\u2019s the whole interaction.",
+      "Why we built a standalone MVP: the chicken-and-egg problem",
+      "We never wanted AttendEase to be its own platform. The real vision is a lightweight integration that lives inside Infinite Campus or PowerSchool, so teachers never have to learn anything new.",
+      "But when we reached out to those companies \u2014 we actually got on a Zoom with PowerSchool \u2014 we hit a wall. They wouldn\u2019t integrate with us until we were already in schools. And schools didn\u2019t want us until we had that integration.",
+      "So the standalone MVP was a deliberate wedge. Build just enough to run a real pilot, get real data, and go back to the SIS platforms with actual proof.",
+      "Design \u2192 AI code \u2192 redesign",
+      "To move faster, our developer used AI to code the initial dashboard, but the result looked noticeably different from my Figma designs, sort of keeping the branding but a little off..",
+      "Rather than nit picking the pixel differences for our pilot stage, I developed a rapid iteration workflow: I take screenshots of the coded output on our live dashboard pilot website, bring them into Figma, iterate directly on top of them, and feed those updated designs back into the AI for the next build cycle.",
+      "This let me stay in Figma (where I\u2019m fastest) while still directly shaping the coded product. It also meant I could evaluate AI\u2019s design decisions alongside my own. It wasn\u2019t my ideal dashboard, but once connected to the dashboard it made a great prototype.",
+      "AI coded version of V1",
+      "With our pilot dashboard in place, I decided my next step would be figuring out which variations of the attendance data visualization would be best. I answered that question by taking the designs to 10 real teachers for testing. Each version below shows what I changed, why, and the results of those tests.",
+      "The voting exercise",
+      "I created a structured voting exercise in Figma for 10 teachers to weigh in on the design explorations between the versions above. I combined the elements they voted on to create Version 3.",
+      "05 \u00b7 Trade-offs",
+      "AI-coded build of the dashboard",
+      "My redesigned dashboard with separate absent and present lists",
+      "Dashboard versions 1, 2 and 3 and the selected design",
+      "See the first screens I designed"
+     ],
+     "images": [
+      "library/attendease/74db1c2c600703839088a4bf.webp",
+      "library/attendease/588018c8d89549d90f75fe0b.webp",
+      "library/attendease/37f7735dec9fbee62f1fd267.webp",
+      "library/attendease/7532171271b6d841aca88736.webp",
+      "library/attendease/preference-survey.webp",
+      "library/attendease/ai-build.webp"
+     ]
+    },
+    {
+     "from": "Design system",
+     "visual": "DesignSystem",
+     "text": [
+      "Facial recognition in schools comes with a lot of questions, and rightfully so. Our design needed to answer those questions through the branding \u2014 feel safe and professional, but easy.",
+      "I built AttendEase\u2019s visual identity around those values.",
+      "To start the UI design process, I built a design system in Figma to keep everything consistent as I designed.",
+      "I built four variable collections in Figma: Alias, Brand, Mapped, and Responsive, totaling 98 alias tokens and 51 mapped tokens. Semantic names like action, present, and error kept the UI consistent and made light/dark mode a single swap.",
+      "Primary and state colors",
+      "The logo colors were the basis for the system and doubled as state indicator colors for the attendance UI pretty well.",
+      "Poppins and Inter",
+      "Poppins\u2019 rounded letterforms create a friendly tone that felt right for a product used by teachers daily. I paired it with Inter for body text and data-heavy screens.",
+      "Poppins \u00b7 H1 Regular / H2 Regular",
+      "Aa Bb Cc 0123456789",
+      "Inter \u00b7 H3 Bold / B Regular",
+      "Period 2 | Biology 1",
+      "23 on time, 3 tardy, 1 unexcused, 2 excused",
+      "Action and navigation",
+      "98 tokens: color, spacing, typography, and more",
+      "51 tokens: semantic names with light & dark mode values",
+      "Figma variables panel showing the Mapped collection with light and dark mode values"
+     ],
+     "images": [
+      "library/attendease/ae7d4fba56bb31b053f14729.webp",
+      "library/attendease/22028d1d68c6d59ec2b2e38b.webp",
+      "library/attendease/chip-absent.webp",
+      "library/attendease/chip-excused.webp",
+      "library/attendease/chip-present.webp",
+      "library/attendease/ring-ontime.webp",
+      "library/attendease/ring-unexcused.webp",
+      "library/attendease/button-submit.webp",
+      "library/attendease/nav-active.webp",
+      "library/attendease/card-absent.webp",
+      "library/attendease/row-student.webp"
+     ]
+    },
+    {
+     "from": "User testing",
+     "visual": "Validation",
+     "text": [
+      "We made a connection with the head of technology at American Heritage Schools who allowed us the opportunity to pilot in a real classroom environment. Our goals were to validate both the facial recognition hardware and the teacher dashboard experience under actual conditions. The pilot results discovered that our system cut attendance time from 5\u20137 minutes to under 45 seconds per period.",
+      "User test 01",
+      "Testing our MVP at American Heritage Schools",
+      "We worked with the school\u2019s IT team to install the camera. We also worked with the school to send out permission slips to parents for the students to participate in the test. As they installed the camera, I ran user tests on Mr. Hancock and observed how he interacted with the dashboard and what his preferences were.",
+      "Time saved calculation",
+      "After the trust-building curve in week one, teachers reduced attendance time from a 5\u201310 minute manual process to a 30\u201345 second review-and-submit. Across 5 class periods, that\u2019s roughly 34 minutes returned to instruction every day, or over 100 hours per teacher per school year.",
+      "User test 02",
+      "Testing our camera in a BYU Lecture Hall",
+      "We took our camera into a massive BYU lecture hall to see if our tech could actually handle a crowd of 100 students. To keep ourselves honest, we had every student fill out a Google Form with their section via a map I made so we could compare our camera\u2019s \u201cvision\u201d against where people were actually sitting. The professors cooperated with us to provide the students\u2019 ID pictures for testing purposes.",
+      "For the first 25 minutes, everything worked. The camera picked out faces in a sea of 100 students, matching them to sections in real time. We were watching the detection data come in live and it felt amazing to see what it was capable of.",
+      "Then we were met with a little trouble when someone accidentally kicked the power strip and the camera lost power halfway through the lecture. Sadly all of our data was gone.",
+      "That moment exposed a critical gap: we had no local data buffer. If the connection drops, even for a second, everything captured up to that point disappears. Our developer immediately prioritized building a local fail-safe so the system saves detection data continuously, independent of the power or network state. Without that failure, we would have shipped a product that silently loses data any time something goes wrong.",
+      "$5,000 in Competitive Funding Secured",
+      "AttendEase has completed two competitive funding rounds through BYU\u2019s Rollins Center for Entrepreneurship & Technology, presenting to judges and reporting on progress milestones each round. Total funding to date: $5,000.",
+      "Two charter school expos, 50+ educator conversations, and a shifted pitch",
+      "We exhibited at two private school and charter school tradeshows: one in Las Vegas and one in Utah. As the sole designer, my role expanded to \u201ctradeshow booth designer\u201d. I designed all the marketing and promo materials, mapped out the booth layout to scale, and then actually built it: laser cutting and painting our wood signage (color matching our exact brand orange with paint chips on the Home Depot floor). It would be our first time in front of potential adopters for our pilot program which meant we needed to show up looking like a real product, not a class project.",
+      "AttendEase camera installed in the American Heritage classroom",
+      "Facial recognition camera detection view during lecture hall test",
+      "BYU lecture hall, testing AttendEase at scale",
+      "Zone map of the lecture hall seating areas",
+      "AttendEase at an education expo",
+      "AttendEase booth at an education expo",
+      "AttendEase team members at the expo booth",
+      "See the expo results and voices from the expo floor"
+     ],
+     "images": [
+      "library/attendease/74db1c2c600703839088a4bf.webp",
+      "library/attendease/ae7d4fba56bb31b053f14729.webp",
+      "library/attendease/c5b4343a50d122e6036732e9.webp",
+      "library/attendease/61f0dac37fe2c06952f5554b.webp",
+      "library/attendease/9a9142185819435c687531c5.webp",
+      "library/attendease/7d139467a0e9f067bdb7e99a.webp",
+      "library/attendease/fafc93cc7de04db37a57fef0.webp",
+      "library/attendease/f990672c5c238763faa27273.webp"
+     ]
+    },
+    {
+     "from": "What\u2019s next",
+     "visual": "WhatsNext",
+     "text": [
+      "The pilot proved the technology works and that schools are willing to trust it. That gave us the confidence, and the backing, to keep building.",
+      "The system works reliably in real classroom conditions",
+      "Parents and schools gave consent, signaling trust despite facial recognition technology being relatively new in school environments",
+      "Expand testing to three classrooms at American Heritage through spring 2026.",
+      "Target 2 new school partnerships by 2026\u20132027 school year.",
+      "Iterate v2 of admin and teacher dashboard based on user testing feedback"
+     ],
+     "images": [
+      "library/attendease/74db1c2c600703839088a4bf.webp",
+      "library/attendease/ae7d4fba56bb31b053f14729.webp",
+      "library/attendease/c5b4343a50d122e6036732e9.webp"
+     ]
+    }
+   ],
+   "assets": [
+    {
+     "src": "library/attendease/d19dbb0a5890960c34e6e92c.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/attendease/74db1c2c600703839088a4bf.webp",
+     "kind": "image",
+     "from": "Header image"
+    },
+    {
+     "src": "library/attendease/59ff760ff0aed0ff7046f0e9.webp",
+     "kind": "image",
+     "from": "Team photo"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773773421/Cardvideo-attendease-gray_o2deve.mp4",
+     "kind": "video",
+     "from": "Card video"
+    },
+    {
+     "src": "library/attendease/saskia.webp",
+     "kind": "image",
+     "from": "Team: Saskia Hunter"
+    },
+    {
+     "src": "library/attendease/henry.webp",
+     "kind": "image",
+     "from": "Team: Henry Wooley"
+    },
+    {
+     "src": "library/attendease/john.webp",
+     "kind": "image",
+     "from": "Team: John McConkie"
+    },
+    {
+     "src": "library/attendease/tommy.webp",
+     "kind": "image",
+     "from": "Team: Tommy Bigland"
+    },
+    {
+     "src": "library/attendease/katelyn.webp",
+     "kind": "image",
+     "from": "Team: Katelyn Wolfley"
+    },
+    {
+     "src": "library/attendease/eddie.webp",
+     "kind": "image",
+     "from": "Team: Eddie Rydell"
+    },
+    {
+     "src": "library/attendease/c5b4343a50d122e6036732e9.webp",
+     "kind": "image",
+     "from": "At a glance: AtAGlance"
+    },
+    {
+     "src": "library/attendease/6500d50743120e18e526b97b.webp",
+     "kind": "image",
+     "from": "The solution: Solution"
+    },
+    {
+     "src": "library/attendease/ae7d4fba56bb31b053f14729.webp",
+     "kind": "image",
+     "from": "The solution: Solution"
+    },
+    {
+     "src": "library/attendease/588018c8d89549d90f75fe0b.webp",
+     "kind": "image",
+     "from": "Key decisions: Decisions"
+    },
+    {
+     "src": "library/attendease/37f7735dec9fbee62f1fd267.webp",
+     "kind": "image",
+     "from": "Key decisions: Decisions"
+    },
+    {
+     "src": "library/attendease/7532171271b6d841aca88736.webp",
+     "kind": "image",
+     "from": "Key decisions: Decisions"
+    },
+    {
+     "src": "library/attendease/preference-survey.webp",
+     "kind": "image",
+     "from": "Key decisions: Decisions"
+    },
+    {
+     "src": "library/attendease/ai-build.webp",
+     "kind": "image",
+     "from": "Key decisions: Decisions"
+    },
+    {
+     "src": "library/attendease/22028d1d68c6d59ec2b2e38b.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/chip-absent.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/chip-excused.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/chip-present.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/ring-ontime.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/ring-unexcused.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/button-submit.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/nav-active.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/card-absent.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/row-student.webp",
+     "kind": "image",
+     "from": "Design system: DesignSystem"
+    },
+    {
+     "src": "library/attendease/61f0dac37fe2c06952f5554b.webp",
+     "kind": "image",
+     "from": "User testing: Validation"
+    },
+    {
+     "src": "library/attendease/9a9142185819435c687531c5.webp",
+     "kind": "image",
+     "from": "User testing: Validation"
+    },
+    {
+     "src": "library/attendease/7d139467a0e9f067bdb7e99a.webp",
+     "kind": "image",
+     "from": "User testing: Validation"
+    },
+    {
+     "src": "library/attendease/fafc93cc7de04db37a57fef0.webp",
+     "kind": "image",
+     "from": "User testing: Validation"
+    },
+    {
+     "src": "library/attendease/f990672c5c238763faa27273.webp",
+     "kind": "image",
+     "from": "User testing: Validation"
+    }
+   ]
+  },
+  {
+   "key": "lucid",
+   "replaces": "cs-lucid",
+   "slug": "lucid",
+   "name": "Lucid Internship",
+   "title": "UX design internship at Lucid Software",
+   "summary": "Product design work from my summer internship at Lucid Software, the company behind Lucidchart and Lucidspark.",
+   "role": "Product Design Intern",
+   "timeframe": "Summer 2026",
+   "team": "",
+   "tags": [
+    "INTERNSHIP",
+    "PRODUCT DESIGN",
+    "ENTERPRISE UX"
+   ],
+   "accent": "#282C33",
+   "hero": "library/lucid/image_1.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "A summer of product design at Lucid Software",
+     "body": "During my summer internship at Lucid Software, the company behind Lucidchart and Lucidspark, I worked on enterprise monetization, user activation, and licensing alongside senior product managers, staff engineers, and UX researchers.\n\nMost of my time went into finding friction in how people move between access levels, auditing high-volume conversion funnels, and testing design ideas through quick internal research. Each project below is a different problem I worked on during the internship."
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Reflection",
+     "title": "What I took away from enterprise UX at this scale",
+     "body": "\u2022 The biggest breakthrough came from stepping back to audit how the system actually behaved before jumping into high-fidelity design, so I learned to question the brief early.\n\u2022 Working closely with engineering, product management, and QA kept our decisions grounded in what was technically possible and caught edge cases early.\n\u2022 In enterprise software, clear feedback and trust matter far more than growth prompts or pushy funnels."
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/lucid/image_1.webp",
+     "kind": "image",
+     "from": "Card image"
+    }
+   ]
+  },
+  {
+   "key": "reviive",
+   "replaces": "cs-reviive",
+   "slug": "reviive",
+   "name": "Reviive",
+   "title": "Turning costly product returns into community donations",
+   "summary": "I designed Reviive from 0\u21921, a platform that catches low-value product returns before they\u2019re liquidated or landfilled and routes them to nearby nonprofits instead. I did the branding, the product design, and the dashboard nonprofit volunteers use.",
+   "role": "Lead Product Designer",
+   "timeframe": "2025",
+   "team": "1 PM, 3 Engineers, 1 Researcher",
+   "tags": [
+    "0 \u2192 1",
+    "BRANDING",
+    "WEB APP"
+   ],
+   "accent": "#05271C",
+   "hero": "library/reviive/84cfd22f3864e6456055859a.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "What Reviive does",
+     "body": "When a customer returns a product, the company ships it to a warehouse, inspects it, and works out whether the resale value justifies the processing cost. For low-value items it usually doesn\u2019t, so those returns get bulked together and liquidated, destroyed, or sent straight to a landfill.\n\nReviive intercepts that flow. Companies flag items as eligible for donation, and Reviive automatically routes those returns to a nearby nonprofit. A volunteer scans the item using the Reviive Dashboard, the customer gets their refund, and the item is logged in the nonprofit\u2019s inventory, ready to go to community members who need it.\n\nCompanies save on processing costs and get a tax deduction, less ends up in landfills, and the goods reach families who can use them."
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The problem",
+     "title": "Understanding where returned goods end up",
+     "body": "Research \u00b7 $817B in annual returns, and 8.4 billion pounds of usable goods landfilled every year\n\nBefore designing anything, I needed to understand the full ecosystem. Retail returns cost companies $817 billion a year (NRF, 2024), 44% of returned items are never resold (EU study, 2021), and the process creates an estimated 15 million tons of CO\u2082 emissions (Retail Dive). That\u2019s 8.4 billion pounds of usable goods landfilled every year while families in need go without basic necessities.\n\nTeam sprint \u00b7 From an assigned prompt to a shared idea in four weeks\n\nReviive started as a team project. For the first half, I worked with three teammates to explore the returns problem space, map stakeholders, and settle on the concept. Then I took it on solo for branding, design, prototyping, and testing.\n\nThe problem we set out to tackle was how to reduce returns waste and save retailers money.\n\nStakeholders \u00b7 Three groups with one thing in common\n\nI mapped three core stakeholders: retailers buried in processing costs, nonprofits facing surging demand with limited inventory, and communities that can\u2019t access the goods being destroyed. Each group had its own pain points, but the current system wastes resources because nothing lines up the needs of all three.\n\nPersona \u00b7 Designing for Lindsey\n\nFrom there, I built a primary persona: Lindsey Right, a 49-year-old Donations and Outreach Coordinator at a nonprofit in Austin. She\u2019s passionate about impact but overwhelmed by manual processes like spreadsheets, emails, and hand-sorting, and she isn\u2019t very tech-savvy. Designing for Lindsey meant the dashboard had to be simple, scannable, and built around tasks rather than data."
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Research",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/reviive/cc47437dca28dc19e3f5d6bb.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/reviive/22356dd4bc325dba7e49e0e3.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/reviive/29174e377e9c0f2faa12dae3.webp"
+      }
+     ],
+     "fromVisual": "ReviiveResearch"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Team sprint",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/reviive/a410e777682568192b7efab9.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/reviive/a3ec184fba01c1c61c2c3c24.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/reviive/69b976d8253d6a71aafcdbdd.webp"
+      }
+     ],
+     "fromVisual": "ReviiveTeamSprint"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The solution",
+     "title": "Designing a dashboard volunteers can use without training",
+     "body": "The core interaction \u00b7 Scan the item, and the dashboard logs everything else\n\nA volunteer at a nonprofit receives a routed return, opens the Reviive Dashboard, and scans the item. The system logs it into inventory with the item details, condition, and donor information, so nobody has to enter data by hand.\n\nWireframes \u00b7 Starting with the screen volunteers use most\n\nI started wireframing the Returns Management page, where volunteers spend most of their time. V1 used a traditional spreadsheet table separating incoming and processed returns, but testing showed volunteers struggled to scan rows quickly. V2 replaced rows with visual cards showing item photos and added filter chips for time and region. The detail modal, which opens when a package is scanned, lists every item inside with its size, category, and a one-tap status action.\n\nThe Inventory Management and Distribution pages went through a similar process. For inventory, volunteers needed to see all available stock at a glance, check item details, and add donations by hand. For distribution, the challenge was creating orders across several clothing categories for families while managing community member profiles and a cart. I explored several interaction patterns for each."
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The solution",
+     "title": "Wireframes",
+     "items": [
+      {
+       "title": "Wireframes",
+       "detail": "",
+       "image": "library/reviive/fd4434f2e52357d45e55da36.webp"
+      }
+     ],
+     "fromVisual": "ReviiveWireframes"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Design system",
+     "title": "Designing for volunteers with little to no training",
+     "body": "I wanted Reviive to feel fresh but simple. I stayed away from harsh blacks and whites and stuck with soft dark greens and pale yellows to create a gentler, friendlier feel.\n\nComponents \u00b7 Inspired by inventory tools, adapted for volunteers\n\nI took inspiration from inventory systems like Shopify and ReturnGo, but adapted them for volunteers instead of professional staff. Everything came back to my persona: charity workers don\u2019t have time to learn fancy new software.\n\nI also added small motivational touches, like the daily progress bar and hover animations, to give volunteers a little hit of satisfaction when they finish a task, which matters when the work can feel repetitive. I wanted something intuitive and even a little fun to use that mostly stays out of the way."
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "Design system",
+     "title": "Brand",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/reviive/d66be09d83a2e74580521263.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/reviive/5c0c4f3928b14383cbe5526e.webp"
+      }
+     ],
+     "fromVisual": "ReviiveBrandingBoard"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "Design system",
+     "title": "Inspired by inventory tools, adapted for volunteers",
+     "items": [
+      {
+       "title": "Inspired by inventory tools, adapted for volunteers",
+       "detail": "A collage of Reviive\u2019s core UI components across the dashboard, scanning, and review flows",
+       "image": "library/reviive/874a9a45ec893eb0bcdce094.webp"
+      }
+     ]
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "Design system",
+     "title": "Designing for volunteers with little to no training",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/reviive/0e96b956ba66d2e11262b1ef.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/reviive/df3a3b6dd041b9012a05a06b.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/reviive/3a30e8579f3b1c6eb5193231.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/reviive/6ad5f8bc8638db168bdc8e2d.webp"
+      }
+     ],
+     "fromVisual": "ReviiveDesignSystem"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Validation",
+     "title": "Testing revealed gaps in sorting, messaging, and scan feedback",
+     "body": "High-fidelity prototype \u00b7 Testing the returns page first\n\nFor this sprint, I focused on redesigning and testing the returns management (Donations) page. The flow walks through the key states a volunteer runs into: connecting the scanner, scanning a package, reviewing each item inside, and seeing the table update after processing. Click any screen to enlarge it and step through the flow.\n\nUser flow \u00b7 Answering the questions that came up in testing\n\nTo improve the first prototype, I made a more complete flow that answered the questions volunteers asked during testing, and I tweaked the messaging to make managing donations clearer. That meant UI and UX changes to the prototype.\n\n\u2022 What do I do if my scanner isn\u2019t connecting?\n\u2022 Is there a way to enter the item manually?\n\nV2 prototype \u00b7 Progress bars, manual entry, and multi-item animations\n\nAfter working in all the testing feedback and the new user flow, I built the final V2. It adds a progress bar for the day, manual entry and scanner troubleshooting flows, interactive hover states, and animations for packages with several items."
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Reflection",
+     "title": "What I learned and what I\u2019d do with more time",
+     "body": "Designing Reviive from 0 to 1 for three different groups (retailers, nonprofits, and the people receiving donations) taught me how much it matters to design for non-technical users who are working in a fast-paced setting.\n\nIf I had more time \u00b7 Three things I\u2019d build next\n\n\u2022 Field test with nonprofit volunteers during peak donation intake, to refine how scanning feels and what happens when the scanner can\u2019t read a label.\n\u2022 Build a dashboard for retailers with automatic tax receipts and live carbon-offset numbers for their sustainability reporting.\n\u2022 Prototype accessible mobile notifications for community members receiving high-demand donated items."
+    }
+   ],
+   "notes": [
+    {
+     "from": "At a glance \u00b7 How it works",
+     "visual": "ReviiveProcessDiagram",
+     "text": [
+      "Normal Return Process",
+      "Compare the typical return flow with the Reviive donation flow"
+     ],
+     "images": []
+    },
+    {
+     "from": "The problem \u00b7 Research",
+     "visual": "ReviiveResearch",
+     "text": [
+      "The Real Cost of Our Returns: $817B annual returns cost, 44% never resold, 15M tons CO\u2082 emissions",
+      "Stakeholder analysis: Retailers losing millions on returns, Nonprofits overwhelmed by demand, Communities lacking basic necessities",
+      "User Persona: Lindsey Right, Donations & Outreach Coordinator, nonprofit volunteer focused on impact over logistics",
+      "flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1",
+      "inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+     ],
+     "images": [
+      "library/reviive/cc47437dca28dc19e3f5d6bb.webp",
+      "library/reviive/22356dd4bc325dba7e49e0e3.webp",
+      "library/reviive/29174e377e9c0f2faa12dae3.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Team sprint",
+     "visual": "ReviiveTeamSprint",
+     "text": [
+      "(null); return (",
+      "The sprint team",
+      "From team sprint to solo design",
+      "After the team sprint established the concept and stakeholder landscape, the second half of the semester shifted to individual work. I took the shared research foundation and owned the product from here \u2014 branding, design system, wireframes, prototyping, and user testing. Everything that follows in this case study is my solo work, built on top of what we discovered together.",
+      "a.id === expandedImage ); if (!artifact) return null; return (",
+      "w-9 h-9 rounded-full flex items-center justify-center mx-auto mb-2",
+      "Each team member brainstormed questions about the returns ecosystem \u2014 targeting merchants, charities, customers, and benefactors.",
+      "We mapped every actor in the system and traced how goods, actions, and value flow between them.",
+      "questions onto the map to identify where design could intervene at each touchpoint.",
+      "absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center",
+      "opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-3 shadow-lg",
+      "fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-auto",
+      "absolute -top-3 -right-3 z-10 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors shadow-lg",
+      "max-w-full max-h-[82vh] rounded-xl shadow-2xl object-contain"
+     ],
+     "images": [
+      "library/reviive/a410e777682568192b7efab9.webp",
+      "library/reviive/a3ec184fba01c1c61c2c3c24.webp",
+      "library/reviive/69b976d8253d6a71aafcdbdd.webp"
+     ]
+    },
+    {
+     "from": "The solution \u00b7 Wireframes",
+     "visual": "ReviiveWireframes",
+     "text": [
+      "(null); const [openGroups, setOpenGroups] = useState"
+     ],
+     "images": [
+      "library/reviive/fd4434f2e52357d45e55da36.webp"
+     ]
+    },
+    {
+     "from": "Design system \u00b7 Brand",
+     "visual": "ReviiveBrandingBoard",
+     "text": [
+      "represents two people, the donor and the recipient, symbolizing that Reviive is about community, not just logistics.",
+      "Headings & Logo",
+      "The quick brown fox",
+      "Body & Interface",
+      "Rooted in earth tones but intentionally vibrant, the palette evokes sustainability and growth without feeling muted or clinical.",
+      "Custom Icon Set",
+      "Each icon was custom-designed using the whitespace and geometry of MuseoModerno itself, pulling from the font's rounded terminals and open counters to keep everything visually cohesive with the logotype.",
+      "Reviive icon mark on dark background",
+      "'Garet', 'DM Sans', system-ui, sans-serif",
+      "rounded-xl p-10 flex items-center justify-center",
+      "Reviive custom icon set: Return, Impact, Dash, Nature, Planet, Recycle, People, Data"
+     ],
+     "images": [
+      "library/reviive/d66be09d83a2e74580521263.webp",
+      "library/reviive/5c0c4f3928b14383cbe5526e.webp"
+     ]
+    },
+    {
+     "from": "Design system",
+     "visual": "ReviiveDesignSystem",
+     "text": [
+      "UI Component Library",
+      "Scroll horizontally to browse all components",
+      "Progress & Status",
+      "Step Progress Bar",
+      "Step 1 of 3",
+      "3 of 3 returns",
+      "Cards & Information Panels",
+      "1 of 2",
+      "Place in Bin B2",
+      "Item 1 of 2",
+      "Scan incoming packages",
+      "Scanner Troubleshooting Modal",
+      "1. Check Physical Connection",
+      "\u2022 Ensure scanner is plugged into USB",
+      "\u2022 Try a different USB port",
+      "\u2022 Check cable is not damaged",
+      "Package Confirmation Popup",
+      "w-full h-2.5 rounded-full bg-[#E8EAE9] overflow-hidden",
+      "w-[72px] h-[80px] rounded-lg overflow-hidden border shrink-0",
+      "flex items-center gap-2.5 p-2.5 rounded-xl border",
+      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+      "text-[10px] font-semibold tracking-[0.1em] uppercase mb-2",
+      "w-[120px] h-[120px] rounded-xl overflow-hidden border-4 border-white",
+      "w-[36px] h-[36px] rounded-lg overflow-hidden border-2",
+      "w-[36px] h-[36px] rounded-lg overflow-hidden border",
+      "rounded-xl border p-3 flex items-center gap-3",
+      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+      "w-5 h-5 flex items-center justify-center opacity-60",
+      "mx-4 my-3 rounded-xl border p-4",
+      "w-[44%] p-4 border-r flex flex-col items-center",
+      "w-[130px] h-[130px] rounded-xl overflow-hidden border-4 border-white mb-2",
+      "w-9 h-9 rounded-lg flex items-center justify-center",
+      "ml-auto w-5 h-5 flex items-center justify-center opacity-60 cursor-pointer",
+      "flex items-center gap-2 p-2 rounded-lg border",
+      "w-[14px] h-[14px] rounded-full border-[1.5px] shrink-0"
+     ],
+     "images": [
+      "library/reviive/0e96b956ba66d2e11262b1ef.webp",
+      "library/reviive/df3a3b6dd041b9012a05a06b.webp",
+      "library/reviive/3a30e8579f3b1c6eb5193231.webp",
+      "library/reviive/6ad5f8bc8638db168bdc8e2d.webp"
+     ]
+    },
+    {
+     "from": "Validation \u00b7 Prototype",
+     "visual": "ReviivePrototypeFlow",
+     "text": [
+      "(null); const containerRef = useRef",
+      "setModalStep(STEPS[currentIdx - 1]) : null; const handleNext = currentIdx",
+      "setModalStep(STEPS[currentIdx + 1]) : null; return (",
+      "What two people found when they tried it",
+      ". Their feedback changed the flow and gave me new ideas for V2. Since there was no real scanner, I had them press S on the keyboard to scan a package."
+     ],
+     "images": []
+    },
+    {
+     "from": "Validation \u00b7 User flow",
+     "visual": "ReviiveUserFlow",
+     "text": [
+      "Manual Entry Flow",
+      "Worker opts to do manual entry instead",
+      "New submission added to donations table",
+      "Scanner indicator shows its not connected",
+      "Charity worker opens donations page",
+      "Scanner connected and ready to scan packages",
+      "Package information appears upon scan",
+      "Package row on donations table updates to processed and progress bar updates"
+     ],
+     "images": []
+    },
+    {
+     "from": "Validation \u00b7 V2 prototype",
+     "visual": "ReviiveAnnotatedV2",
+     "text": [
+      "final prototype in Figma",
+      "Press S to scan a package. You\u2019ll need to troubleshoot the scanner first.",
+      "What changed in V2",
+      "Figma file walkthrough",
+      "Screen mapping & flow",
+      "A behind-the-scenes walkthrough of how I mapped out every screen and prepped the design components for development.",
+      "grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-0 items-start",
+      "w-1.5 h-1.5 rounded-full mt-[7px] shrink-0",
+      "relative w-full rounded-xl overflow-hidden bg-[#0a0a0a]"
+     ],
+     "images": []
+    }
+   ],
+   "assets": [
+    {
+     "src": "library/reviive/84cfd22f3864e6456055859a.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/reviive/d66be09d83a2e74580521263.webp",
+     "kind": "image",
+     "from": "Logo"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773773961/green_card_reviive_3_vwsu4c.mp4",
+     "kind": "video",
+     "from": "Card video"
+    },
+    {
+     "src": "library/reviive/cc47437dca28dc19e3f5d6bb.webp",
+     "kind": "image",
+     "from": "The problem: ReviiveResearch"
+    },
+    {
+     "src": "library/reviive/22356dd4bc325dba7e49e0e3.webp",
+     "kind": "image",
+     "from": "The problem: ReviiveResearch"
+    },
+    {
+     "src": "library/reviive/29174e377e9c0f2faa12dae3.webp",
+     "kind": "image",
+     "from": "The problem: ReviiveResearch"
+    },
+    {
+     "src": "library/reviive/a410e777682568192b7efab9.webp",
+     "kind": "image",
+     "from": "The problem: ReviiveTeamSprint"
+    },
+    {
+     "src": "library/reviive/a3ec184fba01c1c61c2c3c24.webp",
+     "kind": "image",
+     "from": "The problem: ReviiveTeamSprint"
+    },
+    {
+     "src": "library/reviive/69b976d8253d6a71aafcdbdd.webp",
+     "kind": "image",
+     "from": "The problem: ReviiveTeamSprint"
+    },
+    {
+     "src": "library/reviive/fd4434f2e52357d45e55da36.webp",
+     "kind": "image",
+     "from": "The solution: ReviiveWireframes"
+    },
+    {
+     "src": "library/reviive/5c0c4f3928b14383cbe5526e.webp",
+     "kind": "image",
+     "from": "Design system: ReviiveBrandingBoard"
+    },
+    {
+     "src": "library/reviive/874a9a45ec893eb0bcdce094.webp",
+     "kind": "image",
+     "from": "Design system: A collage of Reviive\u2019s core UI components across the dashboard, scanning, and review flows"
+    },
+    {
+     "src": "library/reviive/0e96b956ba66d2e11262b1ef.webp",
+     "kind": "image",
+     "from": "Design system: ReviiveDesignSystem"
+    },
+    {
+     "src": "library/reviive/df3a3b6dd041b9012a05a06b.webp",
+     "kind": "image",
+     "from": "Design system: ReviiveDesignSystem"
+    },
+    {
+     "src": "library/reviive/3a30e8579f3b1c6eb5193231.webp",
+     "kind": "image",
+     "from": "Design system: ReviiveDesignSystem"
+    },
+    {
+     "src": "library/reviive/6ad5f8bc8638db168bdc8e2d.webp",
+     "kind": "image",
+     "from": "Design system: ReviiveDesignSystem"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773765122/Reviive_Final_walkthrough_c7bhld.mp4",
+     "kind": "video",
+     "from": "Validation: ReviiveAnnotatedV2"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773764246/Reviive_Figma_File_kmxkpf.mp4",
+     "kind": "video",
+     "from": "Validation: ReviiveAnnotatedV2"
+    }
+   ]
+  },
+  {
+   "key": "apple-camera",
+   "replaces": "pj-apple-camera",
+   "slug": "apple-camera",
+   "name": "Apple Camera",
+   "title": "Adding a pause button to the iPhone camera",
+   "summary": "A reimagined Apple Camera app for video creators, with an in-video pause that saves storage and turns several clips into one video, straight from camera to gallery.",
+   "role": "UX Designer",
+   "timeframe": "2024",
+   "team": "",
+   "tags": [
+    "FEATURE DESIGN",
+    "IOS",
+    "CONCEPT"
+   ],
+   "accent": "#1A2540",
+   "hero": "library/apple-camera/3df7ec2ce235566751a717fe.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "What the project set out to do",
+     "body": "For a class project at BYU, I reimagined the Apple Camera app for video creators with an in-video pause. It saves storage space and turns several clips into one video, straight from the camera to the gallery."
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The problem",
+     "title": "Finding the gap in how people record video",
+     "body": "User flow \u00b7 Mapping every tap in the existing camera app\n\nUsability test \u00b7 Asking five people to record a trip to the zoo\n\nCompetitive analysis \u00b7 Comparing Apple Camera with the apps creators use\n\nPositioning \u00b7 Aiming for easy to use with the features that matter"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "User flow",
+     "items": [
+      {
+       "title": "User flow",
+       "detail": "",
+       "image": "library/apple-camera/a993b9b7b43d01fc47d6d53a.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraUserFlow"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Usability test",
+     "items": [
+      {
+       "title": "Usability test",
+       "detail": "",
+       "image": "library/apple-camera/25e6c7df54faec1c438148d1.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraUsabilityTesting"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Competitors",
+     "items": [
+      {
+       "title": "Competitors",
+       "detail": "",
+       "image": "library/apple-camera/41176468cd7a7c8742aa517f.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraCompetitor"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Positioning",
+     "items": [
+      {
+       "title": "Positioning",
+       "detail": "",
+       "image": "library/apple-camera/29d951f17cdd11de7b09b4b6.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraQuadrant"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The solution",
+     "title": "Designing in-video pause",
+     "body": "User task diagram \u00b7 Where pause fits in taking a video\n\nDigital wireframe \u00b7 Working out placement, icons, and feedback\n\nHigh-fidelity prototype \u00b7 From first open to a saved video"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The solution",
+     "title": "Task flow",
+     "items": [
+      {
+       "title": "Task flow",
+       "detail": "",
+       "image": "library/apple-camera/02821a1df92a4768eb102b3d.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraTaskDiagram"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The solution",
+     "title": "Wireframes",
+     "items": [
+      {
+       "title": "Wireframes",
+       "detail": "",
+       "image": "library/apple-camera/304067b11fa06d1bee4c7f1f.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraWireframeEdits"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The solution",
+     "title": "Prototype",
+     "items": [
+      {
+       "title": "Prototype",
+       "detail": "",
+       "image": "library/apple-camera/3df7ec2ce235566751a717fe.webp"
+      }
+     ],
+     "fromVisual": "AppleCameraHiFi"
+    }
+   ],
+   "notes": [
+    {
+     "from": "The problem \u00b7 User flow",
+     "visual": "AppleCameraUserFlow",
+     "text": [
+      "(prev === n ? null : n)); return (",
+      "A quick note before you read",
+      "This case study documents that original design thinking exactly as it was conceived.",
+      "Before redesigning anything, I mapped every step a user takes to record a video in the existing Apple Camera app \u2014 from lock screen to saved clip \u2014 noting the pros and cons at each step to identify exactly where friction creeps in.",
+      "Lock screen \u2192 launch \u2192 record \u2192 stop & save",
+      "linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%)",
+      "Existing Apple Camera user flow, 4 screens"
+     ],
+     "images": [
+      "library/apple-camera/a993b9b7b43d01fc47d6d53a.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Usability test",
+     "visual": "AppleCameraUsabilityTesting",
+     "text": [
+      "I ran a task-oriented usability session with five participants to evaluate how discoverable and intuitive the existing Apple Camera app is, and to validate the core design gap this project addresses.",
+      "\"Imagine you're on a trip to the zoo with your friends. You want to capture some videos of the animals and your trip with your iPhone.\"",
+      "Existing Apple Camera app",
+      "Scroll to see all tasks \u2192",
+      "iPhone Camera app showing video recording"
+     ],
+     "images": [
+      "library/apple-camera/25e6c7df54faec1c438148d1.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Competitors",
+     "visual": "AppleCameraCompetitor",
+     "text": [
+      "c.id === active) ?? null; return (",
+      "I audited Apple Camera against TikTok, Instagram, VideoCam+, and a traditional camcorder to understand where each tool lands on ease-of-use versus feature depth, and where the redesign should aim to land. Click any app below to explore its strengths and weaknesses.",
+      "Click a competitor to read pros & cons",
+      "Competitive analysis: Apple Camera, TikTok, Instagram, VideoCam+, and Camcorder",
+      "background 0.18s ease, border-color 0.18s ease"
+     ],
+     "images": [
+      "library/apple-camera/41176468cd7a7c8742aa517f.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Positioning",
+     "visual": "AppleCameraQuadrant",
+     "text": [
+      "Plotting each app on an ease-of-use versus feature-depth axis reveals where Apple Camera currently sits, and where the redesign should land. The ideal region (upper-right) means being genuinely easy to use while offering a meaningful set of features, without becoming overwhelming.",
+      "Quadrant positioning chart: ease of use vs. feature depth for Apple Camera, TikTok, Instagram, VideoCam+, and Camcorder"
+     ],
+     "images": [
+      "library/apple-camera/29d951f17cdd11de7b09b4b6.webp"
+     ]
+    },
+    {
+     "from": "The solution \u00b7 Task flow",
+     "visual": "AppleCameraTaskDiagram",
+     "text": [
+      "Before designing the new feature, I mapped the full user task of \"taking a video\" as a flow diagram showing both the existing path and where the new in-video pause feature slots in. Blue diamonds represent the new feature nodes added by this redesign.",
+      "User Task Diagram, full flow from opening the camera app through the new pause feature"
+     ],
+     "images": [
+      "library/apple-camera/02821a1df92a4768eb102b3d.webp"
+     ]
+    },
+    {
+     "from": "The solution \u00b7 Wireframes",
+     "visual": "AppleCameraWireframeEdits",
+     "text": [
+      "s.id === active) ?? null; return (",
+      "After mapping the existing user flow, I translated the redesign into a digital wireframe prototype, iterating on button placement, iconography, and state feedback to make the pause interaction feel native to Apple Camera. Click any step below to see what changed.",
+      "Click a step to read the design annotations",
+      "Digital wireframe prototype: four screen states of the redesigned Apple Camera",
+      "background 0.18s ease, border-color 0.18s ease",
+      "color 0.18s ease, font-weight 0.18s ease"
+     ],
+     "images": [
+      "library/apple-camera/304067b11fa06d1bee4c7f1f.webp"
+     ]
+    },
+    {
+     "from": "The solution \u00b7 Prototype",
+     "visual": "AppleCameraHiFi",
+     "text": [
+      "s.id === activeId) ?? null; return (",
+      "With the wireframe edits validated, I brought the redesign to high fidelity, applying real iOS visual language, live camera footage as context, and the full multi-clip interaction loop. The prototype follows a single continuous flow from first open to saved video across eight screen states.",
+      "Click a number to read the design notes",
+      "Hi-fi prototype: all 8 screen states in one flow",
+      "background 0.18s ease, border-color 0.18s ease"
+     ],
+     "images": [
+      "library/apple-camera/3df7ec2ce235566751a717fe.webp"
+     ]
+    }
+   ],
+   "assets": [
+    {
+     "src": "library/apple-camera/3df7ec2ce235566751a717fe.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/apple-camera/6c3dcef403f80642d156c995.webp",
+     "kind": "image",
+     "from": "Logo"
+    },
+    {
+     "src": "https://res.cloudinary.com/dtbcr1gqy/video/upload/v1773806755/Untitled_design_4_sbe7oa.mp4",
+     "kind": "video",
+     "from": "Card video"
+    },
+    {
+     "src": "library/apple-camera/a993b9b7b43d01fc47d6d53a.webp",
+     "kind": "image",
+     "from": "The problem: AppleCameraUserFlow"
+    },
+    {
+     "src": "library/apple-camera/25e6c7df54faec1c438148d1.webp",
+     "kind": "image",
+     "from": "The problem: AppleCameraUsabilityTesting"
+    },
+    {
+     "src": "library/apple-camera/41176468cd7a7c8742aa517f.webp",
+     "kind": "image",
+     "from": "The problem: AppleCameraCompetitor"
+    },
+    {
+     "src": "library/apple-camera/29d951f17cdd11de7b09b4b6.webp",
+     "kind": "image",
+     "from": "The problem: AppleCameraQuadrant"
+    },
+    {
+     "src": "library/apple-camera/02821a1df92a4768eb102b3d.webp",
+     "kind": "image",
+     "from": "The solution: AppleCameraTaskDiagram"
+    },
+    {
+     "src": "library/apple-camera/304067b11fa06d1bee4c7f1f.webp",
+     "kind": "image",
+     "from": "The solution: AppleCameraWireframeEdits"
+    }
+   ]
+  },
+  {
+   "key": "dogtoy",
+   "replaces": "pj-dogtoy",
+   "slug": "dogtoy",
+   "name": "Barkcelona",
+   "title": "A soccer ball dog toy built for dogs, not just their owners",
+   "summary": "A consumer research project about what makes a dog toy engaging, durable, and worth buying. We walked the dog toy aisle at Walmart, interviewed seven dog owners, and ended up designing Barkcelona, a solid rubber soccer ball with hollow treat pockets and a parody FC Barcelona brand.",
+   "role": "UX Researcher + Product Designer",
+   "timeframe": "Fall 2025",
+   "team": "3 person research team",
+   "tags": [
+    "RESEARCH",
+    "PRODUCT DESIGN",
+    "CLASS PROJECT"
+   ],
+   "accent": "#004D98",
+   "hero": "library/dogtoy/95108f97429eda0099aefd83.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "What Barkcelona is",
+     "body": "Barkcelona is a soccer ball dog toy made of solid rubber, with hollow pockets you can fill with treats. It started as a consumer research project, where my team and I set out to understand what makes a dog toy engaging, durable, and worth buying.\n\nWe walked the dog toy aisle at Walmart, interviewed seven dog owners, and studied the best-selling toys online. The most popular soccer ball toy on Amazon turned out to fall apart within days, sometimes into pieces small enough to swallow. Barkcelona keeps what people love about that toy and fixes what makes it unsafe."
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "body": "Field research \u00b7 Walking the dog toy aisle at Walmart\n\nWe started at a local Walmart to see what was on the shelf and how toys were grouped, priced, and marketed to owners. Almost everything was sold on the idea that pets are part of the family, so owners look for toys that are enriching, safe, and satisfying rather than cheap and disposable.\n\nInterviews \u00b7 What seven dog owners told us\n\nWe talked to seven owners whose dogs ranged from a young beagle mix to an older Labrador who didn\u2019t care much for toys. A few things kept coming up. Dogs destroy plush toys quickly and the pieces can become a choking hazard, scent and treats keep a dog interested longer, and a good grip point makes a toy easier to pick up and shake.\n\nCompetitive analysis \u00b7 Who each toy on the market is really designed for\n\nWe mapped existing toys by whether they get a dog moving or keep it busy, and by whether they\u2019re designed around the dog or the owner. A lot of popular toys sit on the owner\u2019s side. They\u2019re funny or high tech, and the dog just goes along with them.\n\nBenchmark \u00b7 Reading the reviews of the top dog toy on Amazon\n\nThe QDAN soccer ball has 12,351 ratings and a 4.3 star average, but the reviews tell a different story. People loved the idea, and then their dogs tore off the nylon handles, popped the ball, and chewed it to pieces, sometimes within the first hour.\n\nProblem \u00b7 A durability and safety problem hiding inside a bestseller\n\nThe soccer ball is one of the most popular dog toy formats right now, and also one of the most dangerous. Its inflatable build tears, pops, and shreds into pieces small enough to swallow. Owners rank swallowing foreign objects as their top health concern for their pets, and about 15% of dog owners have watched their dog choke on a toy or a piece of one."
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Understanding what dogs and their owners want from a toy",
+       "detail": "",
+       "image": "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+      }
+     ],
+     "fromVisual": "StoreAisle"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/4a0df33f2b587eb7095e1f55.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/dogtoy/63b28a87515686bbc097b1ff.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/dogtoy/c3b5bb4642ce17fc220e9067.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/dogtoy/68713401e328ec409e640dbf.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/dogtoy/2eea314cdbda8ff33112b6de.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/dogtoy/8cb22ec23d51a147103740f4.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/dogtoy/243d6403a9eeaf153c64206e.webp"
+      },
+      {
+       "title": "Image 9",
+       "detail": "",
+       "image": "library/dogtoy/15af731ba8c707b3c9ab9c03.webp"
+      },
+      {
+       "title": "Image 10",
+       "detail": "",
+       "image": "library/dogtoy/10914c0c7f070b9f71108513.webp"
+      },
+      {
+       "title": "Image 11",
+       "detail": "",
+       "image": "library/dogtoy/cb6e8b32244830a76fb4bb20.webp"
+      },
+      {
+       "title": "Image 12",
+       "detail": "",
+       "image": "library/dogtoy/563e05d135336d6a05c17d1f.webp"
+      }
+     ],
+     "fromVisual": "ToyCategories"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/51fdf0a91b5812be200e6336.webp"
+      }
+     ],
+     "fromVisual": "SecondaryResearch"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/4a0df33f2b587eb7095e1f55.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/dogtoy/63b28a87515686bbc097b1ff.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/dogtoy/c3b5bb4642ce17fc220e9067.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/dogtoy/68713401e328ec409e640dbf.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/dogtoy/2eea314cdbda8ff33112b6de.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/dogtoy/8cb22ec23d51a147103740f4.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/dogtoy/243d6403a9eeaf153c64206e.webp"
+      },
+      {
+       "title": "Image 9",
+       "detail": "",
+       "image": "library/dogtoy/15af731ba8c707b3c9ab9c03.webp"
+      },
+      {
+       "title": "Image 10",
+       "detail": "",
+       "image": "library/dogtoy/10914c0c7f070b9f71108513.webp"
+      },
+      {
+       "title": "Image 11",
+       "detail": "",
+       "image": "library/dogtoy/cb6e8b32244830a76fb4bb20.webp"
+      },
+      {
+       "title": "Image 12",
+       "detail": "",
+       "image": "library/dogtoy/563e05d135336d6a05c17d1f.webp"
+      }
+     ],
+     "fromVisual": "InterviewNotes"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Competitors",
+     "items": [
+      {
+       "title": "Competitors",
+       "detail": "",
+       "image": "library/dogtoy/58699ac7ae384b548f607f1d.webp"
+      }
+     ],
+     "fromVisual": "MarketMap"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Bestseller reviews",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/11930e12f66072052f16869d.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/f9c616e68136f4c18fea4fbb.webp"
+      }
+     ],
+     "fromVisual": "AmazonBenchmark"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/4a0df33f2b587eb7095e1f55.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/dogtoy/63b28a87515686bbc097b1ff.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/dogtoy/c3b5bb4642ce17fc220e9067.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/dogtoy/68713401e328ec409e640dbf.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/dogtoy/2eea314cdbda8ff33112b6de.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/dogtoy/8cb22ec23d51a147103740f4.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/dogtoy/243d6403a9eeaf153c64206e.webp"
+      },
+      {
+       "title": "Image 9",
+       "detail": "",
+       "image": "library/dogtoy/15af731ba8c707b3c9ab9c03.webp"
+      },
+      {
+       "title": "Image 10",
+       "detail": "",
+       "image": "library/dogtoy/10914c0c7f070b9f71108513.webp"
+      },
+      {
+       "title": "Image 11",
+       "detail": "",
+       "image": "library/dogtoy/cb6e8b32244830a76fb4bb20.webp"
+      },
+      {
+       "title": "Image 12",
+       "detail": "",
+       "image": "library/dogtoy/563e05d135336d6a05c17d1f.webp"
+      }
+     ],
+     "fromVisual": "ReviewNotes"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/5f9f9b78881752b8af06dce2.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/50991030813f9ea7ecbebf27.webp"
+      }
+     ],
+     "fromVisual": "Anthropomorphism"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Understanding what dogs and their owners want from a toy",
+     "items": [
+      {
+       "title": "Understanding what dogs and their owners want from a toy",
+       "detail": "Sources: Forbes Advisor pet insurance statistics and the American Kennel Club",
+       "image": "library/dogtoy/a5f6484d79df712399214748.webp"
+      }
+     ]
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The solution",
+     "title": "Keeping the soccer ball and fixing what made it unsafe",
+     "body": "Design direction \u00b7 Designing for the dog and the owner at the same time\n\nOwners want the fun of watching their dog chase a soccer ball, and they want the photo. What they don\u2019t want is a trip to the vet because the toy shredded. The toy has to appeal to the person buying it off the shelf and to the dog, who cares about texture, scent, and how it feels to chew.\n\nDesign goals \u00b7 Four goals that came from the gaps in the market\n\nThe toy needed to be durable enough for heavy chewers, entertaining enough to keep a dog playing, friendly to how dogs see and carry things, and still feel like a real game of soccer.\n\nFinal design \u00b7 Barkcelona, a soccer ball built to survive a dog\n\nEvery part of the design traces back to the research. The color blocking comes from how dogs see color, the panel layout from soccer ball geometry, and the concave ridges are sized to an average dog\u2019s snout. The treat holes make the ball fun to chase, and they\u2019re also why the core can be hollow, which keeps the ball light enough to carry."
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The solution",
+     "title": "Keeping the soccer ball and fixing what made it unsafe",
+     "items": [
+      {
+       "title": "Keeping the soccer ball and fixing what made it unsafe",
+       "detail": "A soccer-style toy that keeps dogs happy and gives owners peace of mind",
+       "image": "library/dogtoy/60ce0649a52b4a1834922e87.webp"
+      }
+     ]
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The solution",
+     "title": "Keeping the soccer ball and fixing what made it unsafe",
+     "items": [
+      {
+       "title": "Keeping the soccer ball and fixing what made it unsafe",
+       "detail": "Durable, entertaining, dog friendly, and a soccer experience",
+       "image": "library/dogtoy/a38e108bef708c61eb7fcc09.webp"
+      }
+     ]
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The solution",
+     "title": "Final design",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/4a0df33f2b587eb7095e1f55.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/dogtoy/63b28a87515686bbc097b1ff.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/dogtoy/c3b5bb4642ce17fc220e9067.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/dogtoy/68713401e328ec409e640dbf.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/dogtoy/2eea314cdbda8ff33112b6de.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/dogtoy/8cb22ec23d51a147103740f4.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/dogtoy/243d6403a9eeaf153c64206e.webp"
+      },
+      {
+       "title": "Image 9",
+       "detail": "",
+       "image": "library/dogtoy/15af731ba8c707b3c9ab9c03.webp"
+      },
+      {
+       "title": "Image 10",
+       "detail": "",
+       "image": "library/dogtoy/10914c0c7f070b9f71108513.webp"
+      },
+      {
+       "title": "Image 11",
+       "detail": "",
+       "image": "library/dogtoy/cb6e8b32244830a76fb4bb20.webp"
+      },
+      {
+       "title": "Image 12",
+       "detail": "",
+       "image": "library/dogtoy/563e05d135336d6a05c17d1f.webp"
+      }
+     ],
+     "fromVisual": "GoalCarousel"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The solution",
+     "title": "Keeping the soccer ball and fixing what made it unsafe",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/dogtoy/4a0df33f2b587eb7095e1f55.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/dogtoy/63b28a87515686bbc097b1ff.webp"
+      },
+      {
+       "title": "Image 4",
+       "detail": "",
+       "image": "library/dogtoy/c3b5bb4642ce17fc220e9067.webp"
+      },
+      {
+       "title": "Image 5",
+       "detail": "",
+       "image": "library/dogtoy/68713401e328ec409e640dbf.webp"
+      },
+      {
+       "title": "Image 6",
+       "detail": "",
+       "image": "library/dogtoy/2eea314cdbda8ff33112b6de.webp"
+      },
+      {
+       "title": "Image 7",
+       "detail": "",
+       "image": "library/dogtoy/8cb22ec23d51a147103740f4.webp"
+      },
+      {
+       "title": "Image 8",
+       "detail": "",
+       "image": "library/dogtoy/243d6403a9eeaf153c64206e.webp"
+      },
+      {
+       "title": "Image 9",
+       "detail": "",
+       "image": "library/dogtoy/15af731ba8c707b3c9ab9c03.webp"
+      },
+      {
+       "title": "Image 10",
+       "detail": "",
+       "image": "library/dogtoy/10914c0c7f070b9f71108513.webp"
+      },
+      {
+       "title": "Image 11",
+       "detail": "",
+       "image": "library/dogtoy/cb6e8b32244830a76fb4bb20.webp"
+      },
+      {
+       "title": "Image 12",
+       "detail": "",
+       "image": "library/dogtoy/563e05d135336d6a05c17d1f.webp"
+      }
+     ],
+     "fromVisual": "FinalFeatures"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Key decisions",
+     "title": "How the design came together",
+     "body": "Ideation \u00b7 Building a soccer ball that can survive a dog\n\nWe started with three open sketch directions, then focused on one question: how do you build a soccer ball that a dog can\u2019t destroy? The answer was layers. An outer shell of puncture-resistant rubber, a textured middle for grip, and a hollow center that keeps the weight down and can hold treats.\n\nTreat pockets \u00b7 Turning the pentagons into treat pockets\n\nA standard soccer ball has 12 pentagons and 20 hexagons. We explored using the pentagon panels as openings that drop kibble as the ball rolls. The hollow sockets also give a dog something to grip, deep enough to get a snout in and lift the ball, but not so deep that the rubber walls get thin and tear. Packed with peanut butter, the same pockets turn a fetch toy into a lick toy.\n\nKey decision \u00b7 Cutting the handle\n\nIn the reviews that mentioned damage, the fabric handles on the QDAN ball were where the tearing started, because they gave dogs an easy place to bite and pull. We cut the handle early, so the final ball is handle-free, smooth-edged, and solid enough for long chewing sessions. Removing it was the first structural improvement over the existing toys.\n\nColor and brand \u00b7 Blue and yellow led to Barkcelona\n\nDogs see blue and yellow most clearly, so the color study started there. Those colors also belong to two of the biggest soccer clubs in the world, which is how the toy became Barkcelona, a parody of FC Barcelona. The name says what the toy is and where the idea came from, and the crest keeps the club\u2019s shield shape while swapping in a dog bone banner, a paw print, and a soccer ball.\n\nPhysical prototype \u00b7 Carving a full-size prototype out of foam\n\nThe sketches and renders only went so far. I needed to hold the ball, feel the ridges, and check the proportions at real size, so I carved one out of foam by hand. I traced the panel geometry onto a foam sphere, outlined every ridge in red marker, carved the recesses and punched the treat holes, then sealed it with gesso and painted it in the Barkcelona colors. It was the hardest prototype I\u2019ve ever made.\n\nIt confirmed that a ridge depth of about 8 to 10 mm felt substantial without being harsh, and that the treat holes took out enough of the core to make the ball noticeably lighter. It was easy to carry in a dog\u2019s mouth but still heavy enough to roll predictably."
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "Key decisions",
+     "title": "How the design came together",
+     "items": [
+      {
+       "title": "How the design came together",
+       "detail": "Early sketches: tool-shaped toys, a rubber creature, and a modular ring system",
+       "image": "library/dogtoy/4a83d82b36755db2ea67d472.webp"
+      }
+     ]
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "Key decisions",
+     "title": "How the design came together",
+     "items": [
+      {
+       "title": "How the design came together",
+       "detail": "Layered construction, pentagon treat pockets, and a color study",
+       "image": "library/dogtoy/447bd2272e0d6b717215aad9.webp"
+      }
+     ]
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "Key decisions",
+     "title": "How the design came together",
+     "items": [
+      {
+       "title": "How the design came together",
+       "detail": "Nine color combination studies, next to the FC Barcelona and Real Madrid crests",
+       "image": "library/dogtoy/8af65323a51ba3f6dd184f04.webp"
+      }
+     ]
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "Key decisions",
+     "title": "How the design came together",
+     "items": [
+      {
+       "title": "How the design came together",
+       "detail": "",
+       "image": "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp"
+      }
+     ],
+     "fromVisual": "BrandStudy"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Reflection",
+     "title": "What I\u2019d do next",
+     "body": "The design is finished, but the product isn\u2019t. Next I\u2019d test it with real dogs and their owners, spec the actual rubber material, add a Real Madrid colorway, and design packaging that leans into the parody.\n\nBarkcelona started with a walk down the pet toy aisle and ended with a foam ball, a parody crest, and a dog in a soccer jersey."
+    }
+   ],
+   "notes": [
+    {
+     "from": "The problem",
+     "visual": "StoreAisle",
+     "text": [
+      "The pet toy aisle at Walmart"
+     ],
+     "images": [
+      "library/dogtoy/b0b11863db7bab905ec871d8.webp"
+     ]
+    },
+    {
+     "from": "The problem",
+     "visual": "ToyCategories",
+     "text": [
+      "Toy categories on the shelf",
+      "Halloween squeakers and costumes for events",
+      "Physical exercise and bonding between dog and owner",
+      "Treats inside, so one toy works for fetch and enrichment",
+      "Chewing to relieve anxiety and support dental health",
+      "Scent and flavor infused, with squeaks and varied textures"
+     ],
+     "images": [
+      "library/dogtoy/b0b11863db7bab905ec871d8.webp",
+      "library/dogtoy/4a0df33f2b587eb7095e1f55.webp",
+      "library/dogtoy/63b28a87515686bbc097b1ff.webp",
+      "library/dogtoy/c3b5bb4642ce17fc220e9067.webp",
+      "library/dogtoy/68713401e328ec409e640dbf.webp",
+      "library/dogtoy/2eea314cdbda8ff33112b6de.webp",
+      "library/dogtoy/8cb22ec23d51a147103740f4.webp",
+      "library/dogtoy/243d6403a9eeaf153c64206e.webp",
+      "library/dogtoy/15af731ba8c707b3c9ab9c03.webp",
+      "library/dogtoy/10914c0c7f070b9f71108513.webp",
+      "library/dogtoy/cb6e8b32244830a76fb4bb20.webp",
+      "library/dogtoy/563e05d135336d6a05c17d1f.webp",
+      "library/dogtoy/e7722969b292ce62c551cee0.webp",
+      "library/dogtoy/16a9f0f3a92e5b25d72769b7.webp",
+      "library/dogtoy/f160f38dd0186708915cf031.webp",
+      "library/dogtoy/3e09aa9e2a7f49bfe6c90d8d.webp",
+      "library/dogtoy/419f070ff51a3d1d86795263.webp",
+      "library/dogtoy/e0473bf8ef57a389e6f9b1f1.webp",
+      "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+      "library/dogtoy/51fdf0a91b5812be200e6336.webp",
+      "library/dogtoy/58699ac7ae384b548f607f1d.webp",
+      "library/dogtoy/11930e12f66072052f16869d.webp",
+      "library/dogtoy/f9c616e68136f4c18fea4fbb.webp",
+      "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+      "library/dogtoy/50991030813f9ea7ecbebf27.webp",
+      "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp",
+      "library/dogtoy/939a89afedba3db2b56d9355.webp",
+      "library/dogtoy/2c60bb845e91f88270d414c9.webp",
+      "library/dogtoy/1d20ae1012dc2e3c730ac39e.webp",
+      "library/dogtoy/e49523d6797f0a9a0e457eea.webp"
+     ]
+    },
+    {
+     "from": "The problem",
+     "visual": "SecondaryResearch",
+     "text": [
+      "Google Trends showed two directions in what people search for. One is durable toys that keep a dog\u2019s mind busy, not just its body. The other is novelty toys that reflect the owner\u2019s own identity, like Harry Potter or Dunkin\u2019 themed toys. Highlighted searches below are brands marketed around enrichment and interactive play.",
+      "Strong demand for long-lasting toys that engage a dog\u2019s mind, not just its body.",
+      "Themed toys like Harry Potter and Dunkin\u2019 show owners buying toys that reflect who they are.",
+      "Dog toy market taxonomy",
+      "Designing for how dogs see",
+      "That means the toy has to appeal to two audiences at once: the person who buys it based on how it looks on the shelf, and the dog, who plays with it based on instinct and texture.",
+      "Best dog toys for aggressive chewers",
+      "Dog toys for heavy chewers",
+      "Driven by durability and mental stimulation",
+      "Food toys: Kongs, treat balls, lick mats, food puzzles",
+      "Behavior and instinct: snuffle mats, animal look-alikes, hunting and chasing",
+      "Distraction: stuffed toys, squeaky balls, chew toys",
+      "Interaction: tug toys, balls, frisbees",
+      "Driven by novelty and human identity",
+      "Franchised: Harry Potter, Dunkin\u2019 Donuts, brand collaborations",
+      "Human items: mini food replicas, lifestyle shapes",
+      "Bright colors: high contrast, neon colorways",
+      "Google Trends research diagram with the dog toy taxonomy",
+      "The original research diagram from the Google Trends analysis",
+      "Dog color spectrum compared with the human color spectrum",
+      "What this means for the design",
+      "Red and orange toys look brownish to dogs, so they\u2019re vivid to owners but not to dogs.",
+      "Blue and yellow are the colors dogs see most clearly.",
+      "Contrast matters more than hue, because dogs track motion by contrast.",
+      "Texture, scent, and sound engage dogs more than how a toy looks."
+     ],
+     "images": [
+      "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+      "library/dogtoy/51fdf0a91b5812be200e6336.webp"
+     ]
+    },
+    {
+     "from": "The problem",
+     "visual": "InterviewNotes",
+     "text": [],
+     "images": [
+      "library/dogtoy/b0b11863db7bab905ec871d8.webp",
+      "library/dogtoy/4a0df33f2b587eb7095e1f55.webp",
+      "library/dogtoy/63b28a87515686bbc097b1ff.webp",
+      "library/dogtoy/c3b5bb4642ce17fc220e9067.webp",
+      "library/dogtoy/68713401e328ec409e640dbf.webp",
+      "library/dogtoy/2eea314cdbda8ff33112b6de.webp",
+      "library/dogtoy/8cb22ec23d51a147103740f4.webp",
+      "library/dogtoy/243d6403a9eeaf153c64206e.webp",
+      "library/dogtoy/15af731ba8c707b3c9ab9c03.webp",
+      "library/dogtoy/10914c0c7f070b9f71108513.webp",
+      "library/dogtoy/cb6e8b32244830a76fb4bb20.webp",
+      "library/dogtoy/563e05d135336d6a05c17d1f.webp",
+      "library/dogtoy/e7722969b292ce62c551cee0.webp",
+      "library/dogtoy/16a9f0f3a92e5b25d72769b7.webp",
+      "library/dogtoy/f160f38dd0186708915cf031.webp",
+      "library/dogtoy/3e09aa9e2a7f49bfe6c90d8d.webp",
+      "library/dogtoy/419f070ff51a3d1d86795263.webp",
+      "library/dogtoy/e0473bf8ef57a389e6f9b1f1.webp",
+      "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+      "library/dogtoy/51fdf0a91b5812be200e6336.webp",
+      "library/dogtoy/58699ac7ae384b548f607f1d.webp",
+      "library/dogtoy/11930e12f66072052f16869d.webp",
+      "library/dogtoy/f9c616e68136f4c18fea4fbb.webp",
+      "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+      "library/dogtoy/50991030813f9ea7ecbebf27.webp",
+      "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp",
+      "library/dogtoy/939a89afedba3db2b56d9355.webp",
+      "library/dogtoy/2c60bb845e91f88270d414c9.webp",
+      "library/dogtoy/1d20ae1012dc2e3c730ac39e.webp",
+      "library/dogtoy/e49523d6797f0a9a0e457eea.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Competitors",
+     "visual": "MarketMap",
+     "text": [
+      "Automatic ball launchers, suction cup balls, and rolling robots. They\u2019re high tech and save the owner effort, so the dog exercises but the owner barely takes part.",
+      "Flirt poles, herding balls, and tug toys. They tap into a dog\u2019s instincts to fetch, herd, and hunt, and keep both the dog and the owner engaged.",
+      "Harry Potter plush, coffee cup toys, and funny squeakers. They\u2019re fun for the owner, and the dog mostly just puts up with them.",
+      "Competitive map: active versus passive play, owner-centric versus dog-centric design"
+     ],
+     "images": [
+      "library/dogtoy/58699ac7ae384b548f607f1d.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Bestseller reviews",
+     "visual": "AmazonBenchmark",
+     "text": [
+      "The QDAN dog soccer ball, a top seller on Amazon",
+      "The QDAN dog soccer ball. Many sellers list the identical product.",
+      "Amazon customer reviews for the QDAN dog soccer ball"
+     ],
+     "images": [
+      "library/dogtoy/11930e12f66072052f16869d.webp",
+      "library/dogtoy/f9c616e68136f4c18fea4fbb.webp"
+     ]
+    },
+    {
+     "from": "The problem",
+     "visual": "ReviewNotes",
+     "text": [],
+     "images": [
+      "library/dogtoy/b0b11863db7bab905ec871d8.webp",
+      "library/dogtoy/4a0df33f2b587eb7095e1f55.webp",
+      "library/dogtoy/63b28a87515686bbc097b1ff.webp",
+      "library/dogtoy/c3b5bb4642ce17fc220e9067.webp",
+      "library/dogtoy/68713401e328ec409e640dbf.webp",
+      "library/dogtoy/2eea314cdbda8ff33112b6de.webp",
+      "library/dogtoy/8cb22ec23d51a147103740f4.webp",
+      "library/dogtoy/243d6403a9eeaf153c64206e.webp",
+      "library/dogtoy/15af731ba8c707b3c9ab9c03.webp",
+      "library/dogtoy/10914c0c7f070b9f71108513.webp",
+      "library/dogtoy/cb6e8b32244830a76fb4bb20.webp",
+      "library/dogtoy/563e05d135336d6a05c17d1f.webp",
+      "library/dogtoy/e7722969b292ce62c551cee0.webp",
+      "library/dogtoy/16a9f0f3a92e5b25d72769b7.webp",
+      "library/dogtoy/f160f38dd0186708915cf031.webp",
+      "library/dogtoy/3e09aa9e2a7f49bfe6c90d8d.webp",
+      "library/dogtoy/419f070ff51a3d1d86795263.webp",
+      "library/dogtoy/e0473bf8ef57a389e6f9b1f1.webp",
+      "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+      "library/dogtoy/51fdf0a91b5812be200e6336.webp",
+      "library/dogtoy/58699ac7ae384b548f607f1d.webp",
+      "library/dogtoy/11930e12f66072052f16869d.webp",
+      "library/dogtoy/f9c616e68136f4c18fea4fbb.webp",
+      "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+      "library/dogtoy/50991030813f9ea7ecbebf27.webp",
+      "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp",
+      "library/dogtoy/939a89afedba3db2b56d9355.webp",
+      "library/dogtoy/2c60bb845e91f88270d414c9.webp",
+      "library/dogtoy/1d20ae1012dc2e3c730ac39e.webp",
+      "library/dogtoy/e49523d6797f0a9a0e457eea.webp"
+     ]
+    },
+    {
+     "from": "The problem",
+     "visual": "Anthropomorphism",
+     "text": [
+      "People are wired to find human-like behavior in animals adorable, and it happens before we even think about it. A toy that makes a dog look like it\u2019s playing soccer sets that off right at the moment someone is deciding what to buy. It\u2019s a feeling on the owner\u2019s side, so the best toys delight the owner visually and satisfy the dog physically.",
+      "Disney\u2019s Air Bud movies are built on one idea, a dog playing human sports: volleyball, baseball, soccer, and basketball. Each sequel makes the same emotional bet, and it kept working. The tagline, \u201cHe\u2019s got the Golden touch,\u201d is about giving a dog human athletic talent, which is anthropomorphism used as marketing.",
+      "Why dogs doing human things feel so cute",
+      "Air Bud movie posters with dogs playing different sports"
+     ],
+     "images": [
+      "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+      "library/dogtoy/50991030813f9ea7ecbebf27.webp"
+     ]
+    },
+    {
+     "from": "The solution \u00b7 Final design",
+     "visual": "GoalCarousel",
+     "text": [
+      "go((idx + 1) % GOAL_SLIDES.length); return ("
+     ],
+     "images": [
+      "library/dogtoy/b0b11863db7bab905ec871d8.webp",
+      "library/dogtoy/4a0df33f2b587eb7095e1f55.webp",
+      "library/dogtoy/63b28a87515686bbc097b1ff.webp",
+      "library/dogtoy/c3b5bb4642ce17fc220e9067.webp",
+      "library/dogtoy/68713401e328ec409e640dbf.webp",
+      "library/dogtoy/2eea314cdbda8ff33112b6de.webp",
+      "library/dogtoy/8cb22ec23d51a147103740f4.webp",
+      "library/dogtoy/243d6403a9eeaf153c64206e.webp",
+      "library/dogtoy/15af731ba8c707b3c9ab9c03.webp",
+      "library/dogtoy/10914c0c7f070b9f71108513.webp",
+      "library/dogtoy/cb6e8b32244830a76fb4bb20.webp",
+      "library/dogtoy/563e05d135336d6a05c17d1f.webp",
+      "library/dogtoy/e7722969b292ce62c551cee0.webp",
+      "library/dogtoy/16a9f0f3a92e5b25d72769b7.webp",
+      "library/dogtoy/f160f38dd0186708915cf031.webp",
+      "library/dogtoy/3e09aa9e2a7f49bfe6c90d8d.webp",
+      "library/dogtoy/419f070ff51a3d1d86795263.webp",
+      "library/dogtoy/e0473bf8ef57a389e6f9b1f1.webp",
+      "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+      "library/dogtoy/51fdf0a91b5812be200e6336.webp",
+      "library/dogtoy/58699ac7ae384b548f607f1d.webp",
+      "library/dogtoy/11930e12f66072052f16869d.webp",
+      "library/dogtoy/f9c616e68136f4c18fea4fbb.webp",
+      "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+      "library/dogtoy/50991030813f9ea7ecbebf27.webp",
+      "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp",
+      "library/dogtoy/939a89afedba3db2b56d9355.webp",
+      "library/dogtoy/2c60bb845e91f88270d414c9.webp",
+      "library/dogtoy/1d20ae1012dc2e3c730ac39e.webp",
+      "library/dogtoy/e49523d6797f0a9a0e457eea.webp"
+     ]
+    },
+    {
+     "from": "The solution",
+     "visual": "FinalFeatures",
+     "text": [
+      "Punched through the pentagon panels. Kibble drops out at irregular moments, so the dog keeps chasing because it can\u2019t predict when the next piece will fall.",
+      "A solid rubber ball 12 cm across would be too heavy to carry. The hollow core keeps it light enough to pick up and heavy enough to roll on grass.",
+      "Blue webbing, red hexagons, and yellow pentagons. Blue has the highest contrast for dogs, and the yellow marks where the treat openings are.",
+      "Concave ridges about 4 to 5 cm across, sized to an average dog\u2019s snout so its teeth settle into the groove. They work as a grip, not just decoration."
+     ],
+     "images": [
+      "library/dogtoy/b0b11863db7bab905ec871d8.webp",
+      "library/dogtoy/4a0df33f2b587eb7095e1f55.webp",
+      "library/dogtoy/63b28a87515686bbc097b1ff.webp",
+      "library/dogtoy/c3b5bb4642ce17fc220e9067.webp",
+      "library/dogtoy/68713401e328ec409e640dbf.webp",
+      "library/dogtoy/2eea314cdbda8ff33112b6de.webp",
+      "library/dogtoy/8cb22ec23d51a147103740f4.webp",
+      "library/dogtoy/243d6403a9eeaf153c64206e.webp",
+      "library/dogtoy/15af731ba8c707b3c9ab9c03.webp",
+      "library/dogtoy/10914c0c7f070b9f71108513.webp",
+      "library/dogtoy/cb6e8b32244830a76fb4bb20.webp",
+      "library/dogtoy/563e05d135336d6a05c17d1f.webp",
+      "library/dogtoy/e7722969b292ce62c551cee0.webp",
+      "library/dogtoy/16a9f0f3a92e5b25d72769b7.webp",
+      "library/dogtoy/f160f38dd0186708915cf031.webp",
+      "library/dogtoy/3e09aa9e2a7f49bfe6c90d8d.webp",
+      "library/dogtoy/419f070ff51a3d1d86795263.webp",
+      "library/dogtoy/e0473bf8ef57a389e6f9b1f1.webp",
+      "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+      "library/dogtoy/51fdf0a91b5812be200e6336.webp",
+      "library/dogtoy/58699ac7ae384b548f607f1d.webp",
+      "library/dogtoy/11930e12f66072052f16869d.webp",
+      "library/dogtoy/f9c616e68136f4c18fea4fbb.webp",
+      "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+      "library/dogtoy/50991030813f9ea7ecbebf27.webp",
+      "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp",
+      "library/dogtoy/939a89afedba3db2b56d9355.webp",
+      "library/dogtoy/2c60bb845e91f88270d414c9.webp",
+      "library/dogtoy/1d20ae1012dc2e3c730ac39e.webp",
+      "library/dogtoy/e49523d6797f0a9a0e457eea.webp"
+     ]
+    },
+    {
+     "from": "Key decisions",
+     "visual": "BrandStudy",
+     "text": [
+      "Blue and garnet since 1899, with yellow from the Catalan flag. That three-color palette was almost a perfect match for the direction the toy was already going.",
+      "White with navy and gold accents, which would work well as a white, navy, and yellow version of the toy and still reads clearly to a dog.",
+      "linear-gradient(135deg, #A50044 50%, #004D98 50%)",
+      "linear-gradient(135deg, #FEBE10 50%, #00529F 50%)",
+      "The FC Barcelona crest next to the Barkcelona parody crest with a dog bone banner, paw print, and soccer ball",
+      "Left, the FC Barcelona crest. Right, the Barkcelona parody with a dog bone banner, a paw print, and a soccer ball."
+     ],
+     "images": [
+      "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp"
+     ]
+    }
+   ],
+   "assets": [
+    {
+     "src": "library/dogtoy/95108f97429eda0099aefd83.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/dogtoy/b0b11863db7bab905ec871d8.webp",
+     "kind": "image",
+     "from": "The problem: StoreAisle"
+    },
+    {
+     "src": "library/dogtoy/4a0df33f2b587eb7095e1f55.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/63b28a87515686bbc097b1ff.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/c3b5bb4642ce17fc220e9067.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/68713401e328ec409e640dbf.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/2eea314cdbda8ff33112b6de.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/8cb22ec23d51a147103740f4.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/243d6403a9eeaf153c64206e.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/15af731ba8c707b3c9ab9c03.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/10914c0c7f070b9f71108513.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/cb6e8b32244830a76fb4bb20.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/563e05d135336d6a05c17d1f.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/e7722969b292ce62c551cee0.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/16a9f0f3a92e5b25d72769b7.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/f160f38dd0186708915cf031.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/3e09aa9e2a7f49bfe6c90d8d.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/419f070ff51a3d1d86795263.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/e0473bf8ef57a389e6f9b1f1.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/c8fa20bc1c8aac989b8ea108.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/51fdf0a91b5812be200e6336.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/58699ac7ae384b548f607f1d.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/11930e12f66072052f16869d.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/f9c616e68136f4c18fea4fbb.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/5f9f9b78881752b8af06dce2.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/50991030813f9ea7ecbebf27.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/3c6b0ad5ecb254b20b13c0e2.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/939a89afedba3db2b56d9355.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/2c60bb845e91f88270d414c9.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/1d20ae1012dc2e3c730ac39e.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/e49523d6797f0a9a0e457eea.webp",
+     "kind": "image",
+     "from": "The problem: ToyCategories"
+    },
+    {
+     "src": "library/dogtoy/a5f6484d79df712399214748.webp",
+     "kind": "image",
+     "from": "The problem: Sources: Forbes Advisor pet insurance statistics and the American Kennel Club"
+    },
+    {
+     "src": "library/dogtoy/60ce0649a52b4a1834922e87.webp",
+     "kind": "image",
+     "from": "The solution: A soccer-style toy that keeps dogs happy and gives owners peace of mind"
+    },
+    {
+     "src": "library/dogtoy/a38e108bef708c61eb7fcc09.webp",
+     "kind": "image",
+     "from": "The solution: Durable, entertaining, dog friendly, and a soccer experience"
+    },
+    {
+     "src": "library/dogtoy/4a83d82b36755db2ea67d472.webp",
+     "kind": "image",
+     "from": "Key decisions: Early sketches: tool-shaped toys, a rubber creature, and a modular ring system"
+    },
+    {
+     "src": "library/dogtoy/447bd2272e0d6b717215aad9.webp",
+     "kind": "image",
+     "from": "Key decisions: Layered construction, pentagon treat pockets, and a color study"
+    },
+    {
+     "src": "library/dogtoy/8af65323a51ba3f6dd184f04.webp",
+     "kind": "image",
+     "from": "Key decisions: Nine color combination studies, next to the FC Barcelona and Real Madrid crests"
+    }
+   ]
+  },
+  {
+   "key": "versa-table",
+   "replaces": "pj-versa-table",
+   "slug": "versa-table",
+   "name": "Versa Table",
+   "title": "A coffee and dining room table that transforms to fit your space",
+   "summary": "A convertible furniture design that transforms from a coffee table to a full dining room table. Built-in lift top, storage drawers, integrated stools with LED lighting, and a marble-style surface \u2014 designed for small urban spaces that need to do more.",
+   "role": "Industrial Designer",
+   "timeframe": "Fall 2024",
+   "team": "",
+   "tags": [
+    "FURNITURE DESIGN",
+    "INDUSTRIAL DESIGN"
+   ],
+   "accent": "#1C1A18",
+   "hero": "library/versa-table/ed38490bed1db862941f14e0.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "A coffee and dining room table that transforms to fit your space",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/versa-table/af433693ee1a0cbddfba3c46.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/versa-table/549b627b36db16e70d88ff53.webp"
+      },
+      {
+       "title": "Slide 3",
+       "detail": "",
+       "image": "library/versa-table/0fa1c67df7a580f238f689c5.webp"
+      },
+      {
+       "title": "Slide 4",
+       "detail": "",
+       "image": "library/versa-table/206c9ba8d5131b95160e6e7b.webp"
+      },
+      {
+       "title": "Slide 5",
+       "detail": "",
+       "image": "library/versa-table/1fc845d8c90cc26a162cc489.webp"
+      },
+      {
+       "title": "Slide 6",
+       "detail": "",
+       "image": "library/versa-table/faf3fed399057e77e57f62b7.webp"
+      },
+      {
+       "title": "Slide 7",
+       "detail": "",
+       "image": "library/versa-table/449c67b3ac10551c620028ca.webp"
+      },
+      {
+       "title": "Slide 8",
+       "detail": "",
+       "image": "library/versa-table/0c9e0e46b236b055379e7111.webp"
+      },
+      {
+       "title": "Slide 9",
+       "detail": "",
+       "image": "library/versa-table/3c14561c0fbd2f47f072458f.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/versa-table/ed38490bed1db862941f14e0.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/versa-table/af433693ee1a0cbddfba3c46.webp",
+     "kind": "image",
+     "from": "Slide 1"
+    },
+    {
+     "src": "library/versa-table/549b627b36db16e70d88ff53.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    },
+    {
+     "src": "library/versa-table/0fa1c67df7a580f238f689c5.webp",
+     "kind": "image",
+     "from": "Slide 3"
+    },
+    {
+     "src": "library/versa-table/206c9ba8d5131b95160e6e7b.webp",
+     "kind": "image",
+     "from": "Slide 4"
+    },
+    {
+     "src": "library/versa-table/1fc845d8c90cc26a162cc489.webp",
+     "kind": "image",
+     "from": "Slide 5"
+    },
+    {
+     "src": "library/versa-table/faf3fed399057e77e57f62b7.webp",
+     "kind": "image",
+     "from": "Slide 6"
+    },
+    {
+     "src": "library/versa-table/449c67b3ac10551c620028ca.webp",
+     "kind": "image",
+     "from": "Slide 7"
+    },
+    {
+     "src": "library/versa-table/0c9e0e46b236b055379e7111.webp",
+     "kind": "image",
+     "from": "Slide 8"
+    },
+    {
+     "src": "library/versa-table/3c14561c0fbd2f47f072458f.webp",
+     "kind": "image",
+     "from": "Slide 9"
+    }
+   ]
+  },
+  {
+   "key": "astria-lamp",
+   "replaces": "pj-astria-lamp",
+   "slug": "astria-lamp",
+   "name": "Astria Lamp",
+   "title": "A flat-packable table lamp with a milky way star pattern cut into its accordion-folded shade",
+   "summary": "A material-constrained lamp project built from copper-plated wire legs, white plastic sheets, and 3D-printed connectors. The shade folds into a circle accordion shape and ships sealed \u2014 assembly takes 10 steps on arrival.",
+   "role": "Industrial Designer",
+   "timeframe": "Spring 2024",
+   "team": "",
+   "tags": [
+    "PRODUCT DESIGN",
+    "FABRICATION"
+   ],
+   "accent": "#0f1228",
+   "hero": "library/astria-lamp/9ef2ab8ba39052eb371d25d4.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "A flat-packable table lamp with a milky way star pattern cut into its accordion-folded shade",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/astria-lamp/0d9d0f029e603ce1d1362aec.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/astria-lamp/8feb6f4b966239b9d2a3786a.webp"
+      },
+      {
+       "title": "Slide 3",
+       "detail": "",
+       "image": "library/astria-lamp/5bc64a813214a2cc95365ce3.webp"
+      },
+      {
+       "title": "Slide 4",
+       "detail": "",
+       "image": "library/astria-lamp/1b21997d2846f204ff5b1739.webp"
+      },
+      {
+       "title": "Slide 5",
+       "detail": "",
+       "image": "library/astria-lamp/9815b94f2c2c21a9a9327dc1.webp"
+      },
+      {
+       "title": "Slide 6",
+       "detail": "",
+       "image": "library/astria-lamp/6d89a22f7a0fa3cb486855aa.webp"
+      },
+      {
+       "title": "Slide 7",
+       "detail": "",
+       "image": "library/astria-lamp/8479c2a7388ec2fad12b942c.webp"
+      },
+      {
+       "title": "Slide 8",
+       "detail": "",
+       "image": "library/astria-lamp/b0a9554f0ab5eb693a09ee8a.webp"
+      },
+      {
+       "title": "Slide 9",
+       "detail": "",
+       "image": "library/astria-lamp/9084fa8ed81d9f8bf5074acb.webp"
+      },
+      {
+       "title": "Slide 10",
+       "detail": "",
+       "image": "library/astria-lamp/909c476ff358a9bc48d1b343.webp"
+      },
+      {
+       "title": "Slide 11",
+       "detail": "",
+       "image": "library/astria-lamp/6f2010e14fb88df4e837db48.webp"
+      },
+      {
+       "title": "Slide 12",
+       "detail": "",
+       "image": "library/astria-lamp/e7cb8e10a0a9a611a6e49122.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/astria-lamp/9ef2ab8ba39052eb371d25d4.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/astria-lamp/0d9d0f029e603ce1d1362aec.webp",
+     "kind": "image",
+     "from": "Slide 1"
+    },
+    {
+     "src": "library/astria-lamp/8feb6f4b966239b9d2a3786a.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    },
+    {
+     "src": "library/astria-lamp/5bc64a813214a2cc95365ce3.webp",
+     "kind": "image",
+     "from": "Slide 3"
+    },
+    {
+     "src": "library/astria-lamp/1b21997d2846f204ff5b1739.webp",
+     "kind": "image",
+     "from": "Slide 4"
+    },
+    {
+     "src": "library/astria-lamp/9815b94f2c2c21a9a9327dc1.webp",
+     "kind": "image",
+     "from": "Slide 5"
+    },
+    {
+     "src": "library/astria-lamp/6d89a22f7a0fa3cb486855aa.webp",
+     "kind": "image",
+     "from": "Slide 6"
+    },
+    {
+     "src": "library/astria-lamp/8479c2a7388ec2fad12b942c.webp",
+     "kind": "image",
+     "from": "Slide 7"
+    },
+    {
+     "src": "library/astria-lamp/b0a9554f0ab5eb693a09ee8a.webp",
+     "kind": "image",
+     "from": "Slide 8"
+    },
+    {
+     "src": "library/astria-lamp/9084fa8ed81d9f8bf5074acb.webp",
+     "kind": "image",
+     "from": "Slide 9"
+    },
+    {
+     "src": "library/astria-lamp/909c476ff358a9bc48d1b343.webp",
+     "kind": "image",
+     "from": "Slide 10"
+    },
+    {
+     "src": "library/astria-lamp/6f2010e14fb88df4e837db48.webp",
+     "kind": "image",
+     "from": "Slide 11"
+    },
+    {
+     "src": "library/astria-lamp/e7cb8e10a0a9a611a6e49122.webp",
+     "kind": "image",
+     "from": "Slide 12"
+    }
+   ]
+  },
+  {
+   "key": "bike-seat",
+   "replaces": "pj-bike-seat",
+   "slug": "bike-seat",
+   "name": "Trek Bike Seat",
+   "title": "A redesigned mountain bike saddle for comfort and trail performance",
+   "summary": "An industrial design exploration reimagining the Trek mountain bike saddle \u2014 balancing ergonomic pressure relief, material texture, and brand integration. Modeled in CAD and rendered alongside a real-world prototype photograph.",
+   "role": "Industrial Designer",
+   "timeframe": "Spring 2025",
+   "team": "",
+   "tags": [
+    "PRODUCT DESIGN",
+    "INDUSTRIAL DESIGN",
+    "CAD"
+   ],
+   "accent": "#2A2A2A",
+   "hero": "library/bike-seat/46ea50f49de4a5a244aa2cbd.webp",
+   "parent": null,
+   "sections": [
+    {
+     "kind": "gallery",
+     "eyebrow": "The project",
+     "title": "A redesigned mountain bike saddle for comfort and trail performance",
+     "items": [
+      {
+       "title": "Slide 1",
+       "detail": "",
+       "image": "library/bike-seat/46ea50f49de4a5a244aa2cbd.webp"
+      },
+      {
+       "title": "Slide 2",
+       "detail": "",
+       "image": "library/bike-seat/84c7e43600c39a121122ca3e.webp"
+      }
+     ]
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/bike-seat/46ea50f49de4a5a244aa2cbd.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/bike-seat/84c7e43600c39a121122ca3e.webp",
+     "kind": "image",
+     "from": "Slide 2"
+    }
+   ]
+  },
+  {
+   "key": "lucid-solving-the-wrong-problem",
+   "replaces": "cs-lucid-p1",
+   "slug": "lucid-solving-the-wrong-problem",
+   "name": "Lucid Internship",
+   "title": "We were solving the wrong problem",
+   "summary": "The brief asked me to redesign an upgrade prompt, but auditing the real flow showed the friction was somewhere else, so I reframed the problem before designing any screens.",
+   "role": "Product Design Intern",
+   "timeframe": "Summer 2026",
+   "team": "",
+   "tags": [
+    "PRODUCT DESIGN",
+    "FLOW AUDIT",
+    "RESEARCH"
+   ],
+   "accent": "#1071E5",
+   "hero": "library/lucid/image_1.webp",
+   "parent": "lucid",
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "What I was asked to design",
+     "body": "I was asked to design a modal to invite users to request a paid license.\n\nLimited Access (free) enterprise users could have a pre-purchased license waiting for them on their company's Lucid account. I was asked to make that more visible and encourage them to claim it.\n\nUsers don't know a license is available.\n\nShow a modal prompting them to request it.\n\nMaking the license more visible will increase requests."
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The problem",
+     "title": "Finding out the brief was solving the wrong problem",
+     "body": "Based on the original brief, I explored several ways to tell Limited Access users that a license was available: a modal, welcome pop up, banner, and an edit to what Lucid calls a \"license chip.\n\nAt this point, I was still designing around the assumption that users needed to actively request or claim the license.\n\nRapid prototyping concepts exploring modal, welcome pop-up, banner, and license chip\n\nI went to Preprod to figure out how the design would fit into the current flow\n\nThat's when I learned something that changed the trajectory of this project. I had been operating on the assumption that the need for this modal was validated, but discovered that users on auto-grant accounts were already upgraded automatically through high-intent actions due to a recent update to admin settings.\n\nBut the interaction logic started to fall apart.\n\nThe modal used CTA language like \"Request a license\" giving users a choice to dismiss the prompt.\n\nOn auto-grant accounts, if a user dismissed the prompt and continued into the canvas, it'd still trigger the license automatically anyway because that's the setting their company account was on.\n\nThat meant the interface could imply that the user had declined or postponed the license, while the system granted it anyway.\n\nThat inconsistency made me stop working on the UI and test the assumption from the original project assignment I was given.\n\nThe user didn't need to request a license. They already had one.\n\nOn auto-grant accounts, I found that the assumptions behind the original concept could not all be true at once. If an eligible license was available, Lucid could already grant it automatically after certain user actions."
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Early exploration",
+     "items": [
+      {
+       "title": "Early exploration",
+       "detail": "",
+       "image": "library/lucid-solving-the-wrong-problem/Screenshot_2026-09-18_at.webp"
+      }
+     ],
+     "fromVisual": "EarlyExplorationSection"
+    },
+    {
+     "kind": "fullMedia",
+     "eyebrow": "The problem",
+     "title": "Discovery",
+     "items": [
+      {
+       "title": "Discovery",
+       "detail": "",
+       "image": "library/lucid-solving-the-wrong-problem/Screenshot_2026-09-18_at.webp"
+      }
+     ],
+     "fromVisual": "DiscoverySection"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Validation",
+     "title": "Testing the new question with 15 users",
+     "body": "I put together a research plan and ran 15 user tests in three days to understand whether users noticed when their account access type changed, whether they understood what their new access meant and if it mattered to them.\n\nparticipants did not notice the \"License granted\" growl.\n\nThis was my original hypothesis confirmed. The few participants who noticed it described it as easy to miss.\n\nparticipants did not understand the term \"edit access.\"\n\nTerms such as \"full access\" and \"edit access\" were inconsistently used across product, creating confusion.\n\nUsers cared more about what they could do than what tier they were on.\n\nMost participants expressed this sentiment. Many did not care whether they were on a \"Standard,\" \"Free,\" or \"Suite\" tier unless that status prevented them from doing something.\n\nmt-8 grid grid-cols-1 lg:grid-cols-3 gap-x-10 gap-y-8"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "The solution",
+     "title": "Redesigning the moment access changes",
+     "body": "I redesigned the modal to improve clarity and trust in the moment the account access changed.\n\nto create an animated illustration of the lock unlocking \u2014 giving the modal a moment of delight that made the access grant feel tangible and rewarding rather than like a system event happening in the background.\n\nMake sure they know what just happened\n\nThey were getting full access either way, so I didn\u2019t want it to feel like something happened behind their back to improve trust.\n\nHelp them understand what that actually gives them\n\nIn order for the user and the admin paying for the seat the most value out of their paid seat, it's important that the user understand what the seat gives them the power to do.\n\nTheir company had already paid for the seat. I wanted it to feel like, \"Oh nice, I have access now,\" not, \"Wait\u2026 did I just buy something?\"\n\nFinal design: Lucid modal reading 'Welcome, User! We saved you a seat.' with annotated design decisions"
+    },
+    {
+     "kind": "gallery",
+     "eyebrow": "The solution",
+     "title": "Design direction",
+     "items": [
+      {
+       "title": "Image 1",
+       "detail": "",
+       "image": "library/lucid-solving-the-wrong-problem/Frame_1321314703.webp"
+      },
+      {
+       "title": "Image 2",
+       "detail": "",
+       "image": "library/lucid-solving-the-wrong-problem/gif_first_draft-1.webp"
+      },
+      {
+       "title": "Image 3",
+       "detail": "",
+       "image": "library/lucid-solving-the-wrong-problem/Unlocking_Access_Modal_G.webp"
+      }
+     ],
+     "fromVisual": "DesignDirectionSection"
+    },
+    {
+     "kind": "narrative",
+     "eyebrow": "Reflection",
+     "title": "What changed because of it",
+     "body": "The biggest outcome was changing the direction of the work.\n\nI caught a gap during my own pre-prod walkthrough, tested the assumption with 15 users, and found the original modal was solving the wrong problem. That helped shift the work toward making auto-grant easier to understand. I also caught a license-chip timing bug and passed other issues to the right teams.\n\nI learned to question the brief.\n\nThis project taught me to validate the problem before diving deep into a solution. I was operating under the assumption that each project brief given to me had been validated but testing proved otherwise. The modal made sense on paper, but once I traced the actual system behavior, the premise behind it no longer held.\n\nThe most useful thing I did was question the assignment, investigate the flow for myself thoroughly in preprod, validate the gap with users, and redirect the work toward a problem supported by evidence."
+    }
+   ],
+   "notes": [
+    {
+     "from": "At a glance \u00b7 The brief",
+     "visual": "BriefSection",
+     "text": [
+      "01 / The Brief",
+      "I was asked to design a modal to invite users to request a paid license.",
+      "Limited Access (free) enterprise users could have a pre-purchased license waiting for them on their company's Lucid account. I was asked to make that more visible and encourage them to claim it.",
+      "Users don't know a license is available.",
+      "Show a modal prompting them to request it.",
+      "Making the license more visible will increase requests."
+     ],
+     "images": []
+    },
+    {
+     "from": "The problem \u00b7 Early exploration",
+     "visual": "EarlyExplorationSection",
+     "text": [
+      "I did some rapid prototyping",
+      "Based on the original brief, I explored several ways to tell Limited Access users that a license was available: a modal, welcome pop up, banner, and an edit to what Lucid calls a \"license chip.",
+      "At this point, I was still designing around the assumption that users needed to actively request or claim the license.",
+      "Rapid prototyping concepts exploring modal, welcome pop-up, banner, and license chip"
+     ],
+     "images": [
+      "library/lucid-solving-the-wrong-problem/Screenshot_2026-09-18_at.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Flow audit",
+     "visual": "FlowAuditSection",
+     "text": [
+      "02 / Flow Audit",
+      "I went to Preprod to figure out how the design would fit into the current flow",
+      "That's when I learned something that changed the trajectory of this project. I had been operating on the assumption that the need for this modal was validated, but discovered that users on auto-grant accounts were already upgraded automatically through high-intent actions due to a recent update to admin settings.",
+      "But the interaction logic started to fall apart.",
+      "The modal used CTA language like \"Request a license\" giving users a choice to dismiss the prompt.",
+      "On auto-grant accounts, if a user dismissed the prompt and continued into the canvas, it'd still trigger the license automatically anyway because that's the setting their company account was on.",
+      "That meant the interface could imply that the user had declined or postponed the license, while the system granted it anyway.",
+      "That inconsistency made me stop working on the UI and test the assumption from the original project assignment I was given.",
+      "mt-8 flex flex-wrap items-stretch gap-y-3",
+      "User opens a shared document",
+      "User takes a high-intent action"
+     ],
+     "images": []
+    },
+    {
+     "from": "The problem \u00b7 Discovery",
+     "visual": "DiscoverySection",
+     "text": [
+      "03 / Discovery",
+      "The user didn't need to request a license. They already had one.",
+      "On auto-grant accounts, I found that the assumptions behind the original concept could not all be true at once. If an eligible license was available, Lucid could already grant it automatically after certain user actions.",
+      "During one of my own walkthroughs, I triggered a full license without realizing it. I didn't notice the confirmation until later in the experience.",
+      "Walkthrough of Lucid experience showing automatic license confirmation growl"
+     ],
+     "images": [
+      "library/lucid-solving-the-wrong-problem/Screenshot_2026-09-18_at.webp"
+     ]
+    },
+    {
+     "from": "The problem \u00b7 Reframe",
+     "visual": "ReframeSection",
+     "text": [
+      "04 / Reframe",
+      "Rewriting the problem statement",
+      "How do we get Limited Access users to request a license faster?",
+      "How do we help users understand that a license has already been granted?",
+      "Instead of forcing the original modal into the flow,I decided to test my new hypothesis."
+     ],
+     "images": []
+    },
+    {
+     "from": "Validation \u00b7 Research",
+     "visual": "ResearchSection",
+     "text": [
+      "05 / RESEARCH FINDINGS",
+      "The experience was frictionless...and invisible",
+      "I put together a research plan and ran 15 user tests in three days to understand whether users noticed when their account access type changed, whether they understood what their new access meant and if it mattered to them.",
+      "12 of 15",
+      "participants did not notice the \"License granted\" growl.",
+      "This was my original hypothesis confirmed. The few participants who noticed it described it as easy to miss.",
+      "5 of 12",
+      "participants did not understand the term \"edit access.\"",
+      "Terms such as \"full access\" and \"edit access\" were inconsistently used across product, creating confusion.",
+      "Users cared more about what they could do than what tier they were on.",
+      "Most participants expressed this sentiment. Many did not care whether they were on a \"Standard,\" \"Free,\" or \"Suite\" tier unless that status prevented them from doing something.",
+      "mt-8 grid grid-cols-1 lg:grid-cols-3 gap-x-10 gap-y-8"
+     ],
+     "images": []
+    },
+    {
+     "from": "The solution \u00b7 Design direction",
+     "visual": "DesignDirectionSection",
+     "text": [
+      "06 / Design Direction",
+      "I redesigned the modal to improve clarity and trust in the moment the account access changed.",
+      "to create an animated illustration of the lock unlocking \u2014 giving the modal a moment of delight that made the access grant feel tangible and rewarding rather than like a system event happening in the background.",
+      "Make sure they know what just happened",
+      "They were getting full access either way, so I didn\u2019t want it to feel like something happened behind their back to improve trust.",
+      "Help them understand what that actually gives them",
+      "In order for the user and the admin paying for the seat the most value out of their paid seat, it's important that the user understand what the seat gives them the power to do.",
+      "Don\u2019t make it feel sketchy",
+      "Their company had already paid for the seat. I wanted it to feel like, \"Oh nice, I have access now,\" not, \"Wait\u2026 did I just buy something?\"",
+      "Final design: Lucid modal reading 'Welcome, User! We saved you a seat.' with annotated design decisions"
+     ],
+     "images": [
+      "library/lucid-solving-the-wrong-problem/Frame_1321314703.webp",
+      "library/lucid-solving-the-wrong-problem/gif_first_draft-1.webp",
+      "library/lucid-solving-the-wrong-problem/Unlocking_Access_Modal_G.webp"
+     ]
+    },
+    {
+     "from": "Reflection \u00b7 Impact",
+     "visual": "ImpactSection",
+     "text": [
+      "07 / Impact",
+      "The biggest outcome was changing the direction of the work.",
+      "I caught a gap during my own pre-prod walkthrough, tested the assumption with 15 users, and found the original modal was solving the wrong problem. That helped shift the work toward making auto-grant easier to understand. I also caught a license-chip timing bug and passed other issues to the right teams."
+     ],
+     "images": []
+    },
+    {
+     "from": "Reflection \u00b7 Takeaways",
+     "visual": "ReflectionSection",
+     "text": [
+      "08 / Reflection",
+      "I learned to question the brief.",
+      "This project taught me to validate the problem before diving deep into a solution. I was operating under the assumption that each project brief given to me had been validated but testing proved otherwise. The modal made sense on paper, but once I traced the actual system behavior, the premise behind it no longer held.",
+      "The most useful thing I did was question the assignment, investigate the flow for myself thoroughly in preprod, validate the gap with users, and redirect the work toward a problem supported by evidence."
+     ],
+     "images": []
+    }
+   ],
+   "assets": [
+    {
+     "src": "library/lucid/image_1.webp",
+     "kind": "image",
+     "from": "Card image"
+    },
+    {
+     "src": "library/lucid-solving-the-wrong-problem/Screenshot_2026-09-18_at.webp",
+     "kind": "image",
+     "from": "The problem: EarlyExplorationSection"
+    },
+    {
+     "src": "library/lucid-solving-the-wrong-problem/Frame_1321314703.webp",
+     "kind": "image",
+     "from": "The solution: DesignDirectionSection"
+    },
+    {
+     "src": "library/lucid-solving-the-wrong-problem/gif_first_draft-1.webp",
+     "kind": "image",
+     "from": "The solution: DesignDirectionSection"
+    },
+    {
+     "src": "library/lucid-solving-the-wrong-problem/Unlocking_Access_Modal_G.webp",
+     "kind": "image",
+     "from": "The solution: DesignDirectionSection"
+    }
+   ]
+  },
+  {
+   "key": "lucid-license-chip-timing",
+   "replaces": "cs-lucid-p2",
+   "slug": "lucid-license-chip-timing",
+   "name": "Lucid Internship",
+   "title": "License chip timing and state sync",
+   "summary": "I fixed a delay during auto-grant so a user's access badge matched their license the moment it changed.",
+   "role": "Product Design Intern",
+   "timeframe": "Summer 2026",
+   "team": "",
+   "tags": [
+    "PRODUCT DESIGN",
+    "STATE SYNC",
+    "QA"
+   ],
+   "accent": "#1071E5",
+   "hero": "library/lucid/image_1.webp",
+   "parent": "lucid",
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "Fixing a delay between getting a license and seeing it",
+     "body": "While auditing the auto-grant flow, I found a timing gap between when the backend assigned a license and when the interface showed it. Users who triggered a full license waited several seconds before their in-app badge changed from \u201cLimited Access\u201d to \u201cFull Access.\u201d\n\nWorking with engineering and QA, I mapped the lifecycle state changes, defined immediate optimistic UI updates, and helped write QA edge-case scenarios so people weren\u2019t left confused while they were in the middle of editing a canvas."
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/lucid/image_1.webp",
+     "kind": "image",
+     "from": "Card image"
+    }
+   ]
+  },
+  {
+   "key": "lucid-enterprise-admin-control",
+   "replaces": "cs-lucid-p3",
+   "slug": "lucid-enterprise-admin-control",
+   "name": "Lucid Internship",
+   "title": "Enterprise admin control exploration",
+   "summary": "I explored auto-grant controls that give enterprise admins fine-grained rules without burying them in manual approvals.",
+   "role": "Product Design Intern",
+   "timeframe": "Summer 2026",
+   "team": "",
+   "tags": [
+    "PRODUCT DESIGN",
+    "ENTERPRISE UX",
+    "ADMIN TOOLS"
+   ],
+   "accent": "#1071E5",
+   "hero": "library/lucid/image_1.webp",
+   "parent": "lucid",
+   "sections": [
+    {
+     "kind": "narrative",
+     "eyebrow": "At a glance",
+     "title": "Giving enterprise admins control over auto-grant",
+     "body": "Enterprise account administrators needed fine-grained control over auto-grant thresholds without burying their team in manual license approval requests.\n\nI explored admin patterns in the Lucid Admin Portal that let IT managers set auto-grant rules by domain, department, and activity level. Pairing clear defaults with flexible overrides gave us a setup experience that kept security compliance intact while making licenses easier to roll out."
+    }
+   ],
+   "notes": [],
+   "assets": [
+    {
+     "src": "library/lucid/image_1.webp",
+     "kind": "image",
+     "from": "Card image"
+    }
+   ]
+  }
+ ]
+}

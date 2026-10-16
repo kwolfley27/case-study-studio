@@ -3203,3 +3203,22 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-pub-site input:checked+i{background:#000}
 .csb-pub-site input:checked+i:after{transform:translateX(16px)}
 .csb-pub-site input:focus-visible+i{outline:2px solid #0f0e0d;outline-offset:2px}
+/* Asset gallery: everything brought in from the old case study */
+.csb-assets{display:grid;gap:10px}
+.csb-assets-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:2px;border-radius:999px;background:#f5f3f1}
+.csb-assets-tabs button{height:28px;border:0;border-radius:999px;background:none;font:inherit;font-size:12.5px;color:#6f6961;cursor:pointer}
+.csb-assets-tabs button small{color:#a59f97;margin-left:3px}
+.csb-assets-tabs button[aria-selected=true]{background:#fdfcfc;color:#0f0e0d;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.csb-assets-filter{height:30px;border:1px solid #e3dfda;border-radius:10px;padding:0 8px;font:inherit;font-size:12.5px;background:#fdfcfc;color:#0f0e0d}
+.csb-assets-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:min(520px,55vh);overflow:auto;padding-right:2px}
+.csb-assets-grid figure{margin:0;display:grid;gap:4px}
+.csb-assets-grid img,.csb-assets-grid video{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#f5f3f1;box-shadow:0 0 0 1px rgba(0,0,0,.05);cursor:grab}
+.csb-assets-grid img:active,.csb-assets-grid video:active{cursor:grabbing}
+.csb-assets-grid figcaption{font-size:11.5px;color:#6f6961;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.csb-assets-words{display:grid;gap:6px;max-height:min(520px,55vh);overflow:auto}
+.csb-assets-words details{border-radius:10px;background:#f5f3f1;padding:8px 10px}
+.csb-assets-words summary{font-size:12.5px;color:#44403b;cursor:pointer}
+.csb-assets-words button{display:flex;gap:6px;align-items:flex-start;width:100%;margin-top:6px;padding:6px 8px;border:0;border-radius:8px;background:#fdfcfc;font:inherit;font-size:12.5px;line-height:1.4;color:#0f0e0d;text-align:left;cursor:pointer}
+.csb-assets-words button svg{flex:none;margin-top:2px;color:#a59f97}
+.csb-assets-words button.is-copied svg{color:#3f8f5a}
+.csb-assets-words button:hover{background:#fff}

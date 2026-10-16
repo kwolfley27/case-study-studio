@@ -16,7 +16,7 @@ export const publishedJsonUrl = (slug: string) => `https://${projectId}.supabase
 export const publicPageUrl = (slug: string) => `${location.origin}${location.pathname}#/p/${slug}`;
 
 // What your website needs to show a card for this case study (sent with each publish).
-const websiteCard = (s: BuilderStudy) => ({ title: s.title, summary: s.summary, eyebrow: s.client, heroImage: s.heroImage && /^https?:/.test(s.heroImage) ? s.heroImage : undefined, accent: s.accent, role: s.role, timeframe: s.timeframe });
+const websiteCard = (s: BuilderStudy) => ({ replaces: s.replaces, title: s.title, summary: s.summary, eyebrow: s.client, heroImage: s.heroImage && /^https?:/.test(s.heroImage) ? s.heroImage : undefined, accent: s.accent, role: s.role, timeframe: s.timeframe });
 async function uploadJson(study: BuilderStudy, passcode: string, onWebsite?: boolean) {
   const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ publish: study.slug, ...(onWebsite === undefined ? {} : { website: onWebsite ? websiteCard(study) : null }) }) });
   const d = await r.json().catch(() => ({}));

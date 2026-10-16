@@ -1,3 +1,4 @@
+import { AssetsPanel } from "./AssetsPanel";
 import { AccountMenu } from "./AccountMenu";
 import type { Account } from "./auth";
 import { PanelResizer, usePanelWidths } from "./PanelResizer";
@@ -312,7 +313,7 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
 
   const openStudy = (next: BuilderStudy) => { void saveStudy(study).catch(() => undefined); setStudy(migrateStudy(next)); setSelectedId(null); setShowHome(false); setMessage(null); window.scrollTo(0, 0); };
   if (showResearch) return <Suspense fallback={null}><ResearchWorkspace project={{ id: study.id, title: study.title }} initialId={typeof showResearch === "string" ? showResearch : undefined} onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
-  if (showHome) return <HomeGallery onOpenResearch={id => { setShowHome(false); setShowResearch(id ?? true); }} current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
+  if (showHome) return <HomeGallery owner={owner} onOpenResearch={id => { setShowHome(false); setShowResearch(id ?? true); }} current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
 
   return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"} ${leftOpen && leftRail ? "left-rail" : ""}`} style={{ ["--csb-left-w" as string]: `${leftRail ? 60 : panelW.left}px`, ["--csb-right-w" as string]: `${panelW.right}px`, ["--inset-l" as string]: leftOpen ? `${(leftRail ? 60 : panelW.left) + 32}px` : "0px", ["--inset-r" as string]: rightOpen ? `${panelW.right + 32}px` : "0px" }}>
     <header className="csb-studio-header"><button type="button" className="csb-wordmark csb-wordmark-home" onClick={() => { void saveStudy(study).finally(() => setShowHome(true)); }} title="Home: all your case studies"><span className="csb-wordmark-icon">✳</span>Case Study Studio</button><span className="csb-header-separator" /><span className="csb-header-project" title={study.title}>{study.title}</span><div className="csb-hdr-modes" role="group" aria-label="Mode">
@@ -344,6 +345,7 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
         {message && <div className={`csb-inline-status ${message.error ? "csb-inline-error" : ""}`} role="status">{message.text}</div>}
         <div className="csb-nav-groups">
           {owner && <details className="csb-disclosure"><summary>Draft with AI</summary><div className="csb-disclosure-body"><AiDraftCard study={study} onApply={next => { setStudy(migrateStudy(next)); setSelectedId(null); }} notify={(text, error) => setMessage({ text, error })} /></div></details>}
+          {(study.assets?.length || study.notes?.length) ? <details className="csb-disclosure" open><summary>From your old case study</summary><div className="csb-disclosure-body"><AssetsPanel study={study} /></div></details> : null}
           <details className="csb-disclosure"><summary>Linked sources</summary><div className="csb-disclosure-body">
             {renderField("Notion research", study.sources?.notionUrl || "", notionUrl => updateStudy({ sources: { ...study.sources, notionUrl } }), false, "Research notes the AI briefs draw from.")}
         {study.sources?.notionUrl && /^https:\/\/(?:www\.)?(?:notion\.so|notion\.site|app\.notion\.com)\//.test(study.sources.notionUrl) && <a className="csb-connection-link" href={study.sources.notionUrl} target="_blank" rel="noreferrer">Open in Notion <ExternalLink size={11} /></a>}

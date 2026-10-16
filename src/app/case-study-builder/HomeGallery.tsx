@@ -35,14 +35,18 @@ function Card({ study, current, onOpen, actions, note }: { study: BuilderStudy; 
   </article>;
 }
 
-export function HomeGallery({ current, onOpen, onNew, onOpenResearch }: { current: BuilderStudy; onOpen: (study: BuilderStudy) => void; onNew: () => void; onOpenResearch?: (id?: string) => void }) {
+export function HomeGallery({ current, onOpen, onNew, onOpenResearch, owner = false }: { current: BuilderStudy; onOpen: (study: BuilderStudy) => void; onNew: () => void; onOpenResearch?: (id?: string) => void; owner?: boolean }) {
+  // Bring the case studies from katelynwolfley.design in as drafts (owner only, once each).
+  const [importing, setImporting] = useState('');
+  const [toImport, setToImport] = useState(0);
   const [research, setResearch] = useState<Study[]>(() => readDrafts());
-  useEffect(() => { call<{ studies: Study[] }>('list', {}, true).then(d => setResearch(list => { const byId = new Map(list.map(s => [s.id, s])); for (const s of d.studies) byId.set(s.id, { ...s, ...byId.get(s.id), responses: s.responses, published: true }); return [...byId.values()]; })).catch(() => undefined); }, []);
+  useEffect(() => { call<{ studies: Study[] }>('list', {}, true).then(d => setResearch(list => { const byId = new Map(list.map(s => [s.id, s])); for (const s of d?.studies ?? []) byId.set(s.id, { ...s, ...byId.get(s.id), responses: s.responses, published: true }); return [...byId.values()]; })).catch(() => undefined); }, []);
   const [studies, setStudies] = useState<SavedStudy[] | null>(null);
   const [published, setPublished] = useState<BuilderStudy[]>([]);
   const [trash, setTrash] = useState<Trashed[]>([]);
   const [loadError, setLoadError] = useState('');
   const [restoring, setRestoring] = useState('');
+  useEffect(() => { if (!owner || studies === null) return; void import('./portfolioImport').then(async m => { const plans = await m.loadPortfolioPlans(); const have = new Set(studies.map(x => (x as BuilderStudy).replaces).filter(Boolean)); setToImport(plans.filter(p => !have.has(p.replaces)).length); }).catch(() => undefined); }, [owner, studies]);
   const refresh = () => { listStudies().then(s => { setStudies(s); setLoadError(''); }).catch(e => { setLoadError(e instanceof Error ? e.message : 'Could not read your saved case studies.'); setStudies(prev => prev ?? []); }); listTrash().then(setTrash).catch(() => undefined); };
   // The Steinway project can always be brought back: the published copy first (it has your frames), else rebuilt from the starter.
   const steinwayMissing = studies !== null && !loadError && current.id !== 'starter-steinway-pdp' && !studies.some(s => s.id === 'starter-steinway-pdp') && !trash.some(s => s.id === 'starter-steinway-pdp');
@@ -73,6 +77,7 @@ export function HomeGallery({ current, onOpen, onNew, onOpenResearch }: { curren
       <div className="csb-home-title"><h1>Your case studies</h1><p>Everything saves automatically in this browser. Open one to keep working.</p></div>
       <div className="csb-home-grid">
         <button type="button" className="csb-home-new" onClick={onNew}><Plus size={22} /><strong>New case study</strong><small>Start from the starter layout</small></button>
+        {owner && toImport > 0 && <button type="button" className="csb-home-new is-restore" disabled={!!importing} onClick={() => { setImporting('Starting…'); void import('./portfolioImport').then(m => m.importPortfolio(t => setImporting(t))).then(() => { setImporting(''); setToImport(0); refresh(); }).catch(() => setImporting('')); }}><strong>{importing || `Bring in ${toImport} case studies from your website`}</strong><small>Each comes in as a draft with its words in sections and every picture in its asset gallery</small></button>}
         {steinwayMissing && <button type="button" className="csb-home-new is-restore" onClick={() => void restoreSteinway()}><strong>{restoring || 'Restore Steinway PDP Redesign'}</strong><small>Brings it back from your published page, or rebuilds it from your Figma links and words</small></button>}
         {studies === null ? <div className="csb-home-loading">Loading…</div> : studies.map(study => <Card key={study.id} study={study} current={study.id === current.id} note={ago(study.updatedAt)} onOpen={() => onOpen(study)}
           actions={<>

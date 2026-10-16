@@ -94,6 +94,12 @@ export interface BuilderStudy {
   heroImage?: string;
   /** Show this case study on katelynwolfley.design when it's published (owner only). */
   onWebsite?: boolean;
+  /** The hand-built website case study this one replaces (its card hides once this is on the site). */
+  replaces?: string;
+  /** Every picture and video brought in from the old version, to drag into image spots. */
+  assets?: Array<{ src: string; kind: 'image' | 'video'; from: string }>;
+  /** Words that lived inside the old version's hand-built visuals, kept for reference. */
+  notes?: Array<{ from: string; visual: string; text: string[]; images: string[] }>;
   /** Details under the header (label + value), up to four. Missing = role, team, timeline, status. */
   facts?: Array<{ label: string; value: string }>;
   /** Spotlight: one part of the hero screen shown larger, floating over it. Positions are % of the hero visual. */
