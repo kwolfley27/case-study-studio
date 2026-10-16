@@ -41,7 +41,7 @@ export type CatActions = {
   studyTitle: string;
   heroHasImage: boolean;
 };
-export type Clip = { image: string; figmaUrl?: string; name?: string; at?: number };
+export type Clip = { image: string; figmaUrl?: string; name?: string; at?: number; picked?: boolean };
 type Reply = 'chirp' | 'voice' | 'silent';
 
 /* A soft two-note "mrrp", made on the spot (no audio files). */
@@ -109,14 +109,20 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   // 'all': everything you say goes to Claude (smart, follows the conversation). 'name': only after "Miso".
   const [listenMode, setListenMode] = useState<'all' | 'name'>(() => (store.get('csb-cat-listen', 'all') === 'name' ? 'name' : 'all'));
   const listenRef = useRef(listenMode); listenRef.current = listenMode;
-  const history = useRef<Array<{ who: 'katelyn' | 'miso'; text: string }>>([]);
-  const remember = (who: 'katelyn' | 'miso', text: string) => { if (!text) return; history.current = [...history.current, { who, text: text.slice(0, 300) }].slice(-14); };
+  // What we've said lately and what we're working on, kept through reloads (this tab only for the talk, a few hours for the plan).
+  const history = useRef<Array<{ who: 'katelyn' | 'miso'; text: string }>>((() => { try { return JSON.parse(sessionStorage.getItem('csb-cat-talk') || '[]'); } catch { return []; } })());
+  const remember = (who: 'katelyn' | 'miso', text: string) => { if (!text) return; history.current = [...history.current, { who, text: text.slice(0, 300) }].slice(-20); try { sessionStorage.setItem('csb-cat-talk', JSON.stringify(history.current)); } catch { /* ignore */ } };
+  const plan = useRef<string>((() => { try { const p = JSON.parse(localStorage.getItem('csb-cat-plan') || 'null'); return p && Date.now() - p.at < 6 * 3600e3 ? String(p.text) : ''; } catch { return ''; } })());
+  const setPlan = (t: string) => { plan.current = t.slice(0, 200); try { localStorage.setItem('csb-cat-plan', JSON.stringify({ text: plan.current, at: Date.now() })); } catch { /* ignore */ } };
   const buffer = useRef<string[]>([]); const bufTimer = useRef(0); const busy = useRef(false);
   const [clip, setClip] = useState<Clip | null>(null);
   const clipRef = useRef<Clip | null>(null); clipRef.current = clip;
   const undo = useRef<BuilderStudy[]>([]);
   const pointer = useRef<[number, number] | null>(null);
   const [frame, setFrame] = useState(0);              // 0 idle, 1 blink, 2 ears up
+  const startRef = useRef<() => void>(() => {}); const fails = useRef(0); const lastWords = useRef(0); const lastPicked = useRef<number | undefined>(0); const figmaAt = useRef(0); const bornAt = useRef(0);
+  const figmaHas = useRef(false);               // the Figma tab is listening right now (only one tab can at a time)
+  const [onFigma, setOnFigma] = useState(false);
   const wakeRef = useRef<(on: boolean) => void>(() => {});
   const [ext, setExt] = useState('');               // extension version, once it answers
   const [level, setLevel] = useState(0);              // mic loudness 0–1
@@ -204,14 +210,14 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   };
 
   /* Anything I don't understand myself goes to Claude, with a compact picture of the case study. */
-  const askClaude = async (said: string, ambient = false) => {
+  const askClaude = async (said: string, ambient = false, event = '') => {
     const a = act.current;
     let pass = ''; try { pass = localStorage.getItem('csb-ai-passcode') || ''; } catch { /* ignore */ }
     if (!AI_URL) { say('I can only do the basics here.', 'hm'); return; }
     if (!pass) { say('I need your Studio passcode first. Add it in Draft with AI.', 'hm'); return; }
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
-      ambient, history: history.current.slice(-12, -1), studyTitle: a.studyTitle, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
+      ambient, event, plan: plan.current, history: history.current.slice(-16, event ? undefined : -1), studyTitle: a.studyTitle, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
       clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl } : null,
       pointingAtSlot: slotHere(),
       sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, title: cut(x.title, 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, 240), variant: x.variant, items: x.items.slice(0, 12).map((it, k) => ({ i: k, title: cut(it.title, 80), detail: cut(it.detail, 160), hasImage: !!it.image })) })),
@@ -224,6 +230,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       if (r.status === 401) { say('That passcode didn’t work.', 'hm'); return; }
       if (!r.ok || !d || !Array.isArray(d.actions)) { say(/Notion research link/.test(d?.error || '') ? 'My brain needs the latest AI update deployed.' : 'Hmm, that didn’t work. Try again?', 'hm'); return; }
       const acts = d.actions as Array<Record<string, any>>;
+      if (typeof d.plan === 'string') setPlan(d.plan);
       const risky = acts.some(x => x.type === 'delete_section');
       const apply = () => {
         if (acts.length) undo.current.push(a.snapshot());
@@ -252,6 +259,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const on = (e: MessageEvent) => {
       if (e.source !== window || e.data?.source !== 'miso-ext') return;
       setExt(String(e.data.version || 'yes'));
+      if (e.data.type === 'figma') { figmaAt.current = Date.now(); if (!!e.data.on === figmaHas.current) return; figmaHas.current = !!e.data.on; setOnFigma(!!e.data.on); if (e.data.on && !document.hasFocus()) { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; } else startRef.current(); return; }
       if (e.data.type === 'wake') { const want = !!e.data.awake; if (want !== (store.get('csb-cat-on', '0') === '1')) wakeRef.current(want); return; }
       if (e.data.type !== 'clip' && e.data.type !== 'command') return;
       if (e.data.type === 'command') {
@@ -260,6 +268,9 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         return;
       }
       const c = e.data.clip as Clip | null; setClip(c);
+      clipRef.current = c;
+      // Picked by clicking in Figma while we have a plan (like filling this case study): let Claude place it.
+      if (c?.picked && plan.current && Date.now() - (c.at ?? 0) < 60 * 1000 && c.at !== lastPicked.current) { lastPicked.current = c.at; remote.current = true; Promise.resolve(askClaude(`(I clicked “${c.name || 'a frame'}” in Figma)`, true, 'figma_pick')).finally(() => { remote.current = false; }); return; }
       if (c && Date.now() - (c.at ?? 0) < 10 * 60 * 1000) { setBubble(b => ({ text: `Got ${c.name || 'a frame'} from Figma. Point and say “put it here”.`, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 12000; chirp(); }
     };
     window.addEventListener('message', on);
@@ -304,19 +315,28 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
 
   const start = () => {
     const C = getSR(); if (!C || SPEECH_BAD.includes(browser)) { setError(`${browser} can’t turn speech into words. Open the studio in Google Chrome (or Safari) to talk to me.`); setStatus('unsupported'); return; }
-    if (sr.current) return;
+    if (sr.current || document.hidden || (figmaHas.current && !document.hasFocus())) return;
     const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US'; setStatus('starting');
     (r as any).onstart = () => setStatus(st => st === 'words' ? st : 'listening');
     (r as any).onsoundstart = () => setSound(true);
     (r as any).onsoundend = () => setSound(false);
     // Heard speech but no words a while later: usually Chrome is listening to a different microphone than you think.
-    (r as any).onspeechstart = () => { const before = gotWords.current; setTimeout(() => { if (!before && !gotWords.current && store.get('csb-cat-on', '0') === '1') setError('I hear speech but get no words. Check your Mac’s input (System Settings → Sound → Input) matches the microphone you’re using, then click me twice.'); }, 7000); };
-    r.onresult = (e: any) => { setError(''); gotWords.current = true; setStatus('words'); for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
-    r.onerror = (e: any) => { if (e.error !== 'no-speech' && e.error !== 'aborted') setStatus('error: ' + e.error); if (e.error === 'not-allowed') { setError('I need the microphone. Click the icon at the left of the address bar, allow the microphone, then click me.'); sleep(); } else if (e.error === 'service-not-allowed') { setError(browser === 'Safari' ? 'Safari needs dictation turned on: System Settings → Keyboard → Dictation. Or use Google Chrome.' : 'Speech-to-text is switched off in this browser. Use Google Chrome.'); sleep(); } else if (e.error === 'network') setError('Chrome’s speech service isn’t reachable right now. I’ll keep trying.'); else if (e.error === 'audio-capture') setError('I can’t find a microphone.'); };
+    (r as any).onspeechstart = () => { const heardAt = Date.now();
+      setTimeout(() => { if (sr.current === r && gotWords.current && lastWords.current < heardAt) { try { r.abort(); } catch { /* ignore */ } } }, 6000);
+      const before = gotWords.current; setTimeout(() => { if (!before && !gotWords.current && store.get('csb-cat-on', '0') === '1') setError('I hear speech but get no words. Check your Mac’s input (System Settings → Sound → Input) matches the microphone you’re using, then click me twice.'); }, 7000); };
+    r.onresult = (e: any) => { setError(''); fails.current = 0; lastWords.current = Date.now(); gotWords.current = true; setStatus('words'); for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
+    r.onerror = (e: any) => { if (e.error !== 'no-speech' && e.error !== 'aborted') setStatus('error: ' + e.error); if (e.error === 'no-speech' || e.error === 'aborted') return; fails.current++;
+      if (e.error === 'not-allowed' && gotWords.current) { setError('Chrome paused the microphone. Click me to start again.'); sleep(); } else if (e.error === 'not-allowed') { setError('I need the microphone. Click the icon at the left of the address bar, allow the microphone, then click me.'); sleep(); } else if (e.error === 'service-not-allowed') { setError(browser === 'Safari' ? 'Safari needs dictation turned on: System Settings → Keyboard → Dictation. Or use Google Chrome.' : 'Speech-to-text is switched off in this browser. Use Google Chrome.'); sleep(); } else if (e.error === 'network') setError('Chrome’s speech service isn’t reachable right now. I’ll keep trying.'); else if (e.error === 'audio-capture') setError('I can’t find a microphone.'); };
     // Browsers stop listening after a while; quietly start again while I'm awake.
-    r.onend = () => { sr.current = null; if (store.get('csb-cat-on', '0') === '1' && !document.hidden) setTimeout(() => { if (store.get('csb-cat-on', '0') === '1' && !document.hidden) start(); }, 300); };
-    try { r.start(); sr.current = r; setError(''); } catch { /* already running */ }
+    r.onend = () => { if (sr.current === r) sr.current = null; setSound(false); if (store.get('csb-cat-on', '0') === '1') setTimeout(() => startRef.current(), fails.current > 3 ? 2500 : 250); };
+    try { r.start(); sr.current = r; bornAt.current = Date.now(); } catch { sr.current = null; fails.current++; }
   };
+  startRef.current = start;
+  // Watchdog: if Chrome dropped listening without telling me, start again.
+  useEffect(() => {
+    const t = setInterval(() => { if (figmaHas.current && Date.now() - figmaAt.current > 15000) { figmaHas.current = false; setOnFigma(false); } if (sr.current && Date.now() - Math.max(bornAt.current, lastWords.current) > 50000) { try { sr.current.abort(); } catch { /* ignore */ } } if (store.get('csb-cat-on', '0') === '1' && !sr.current && !document.hidden && (!figmaHas.current || document.hasFocus())) startRef.current(); }, 2000);
+    return () => clearInterval(t);
+  }, []);
   const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); setStatus('off'); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
   wakeRef.current = on => { if (on) wake(); else sleep(); };
   const wake = () => { store.set('csb-cat-on', '1'); setAwake(true); start(); setHello(true); setTimeout(() => setHello(false), 2600); };
@@ -395,7 +415,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           <div><b>Browser</b><i className={SPEECH_BAD.includes(browser) ? 'is-bad' : 'is-ok'}>{browser}{SPEECH_BAD.includes(browser) ? ' (can’t do speech; use Chrome)' : ''}</i></div>
           <div><b>Figma extension</b><i className={ext ? 'is-ok' : ''}>{ext ? `connected${ext !== 'yes' ? ' · v' + ext : ''}` : 'not found here'}</i></div>
           <div><b>Microphone</b><i className={sound || level > .05 ? 'is-ok' : ''}>{testing ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : <>{sound ? 'hearing sound' : awake ? 'quiet' : 'asleep'} · <button type="button" className="csb-cat-link" onClick={() => void testMic()}>Test it</button></>}</i></div>
-          <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
+          <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{onFigma ? 'on your Figma tab' : status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
         </div>
         <div className="csb-cat-reply" role="radiogroup" aria-label="What I listen for"><span>What I listen for</span>
           <div>{([['all', 'Everything you say'], ['name', 'Only after “' + name + '”']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={listenMode === v} onClick={() => { setListenMode(v); store.set('csb-cat-listen', v); }}>{l}</button>)}</div>

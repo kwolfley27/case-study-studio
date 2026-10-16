@@ -87,6 +87,26 @@
   // Pressing the mouse while holding Option is Figma's (duplicate, measure): drop the loop.
   addEventListener('pointerdown', () => { if (pts) { pts = null; svg?.remove(); svg = null; } }, true);
 
+  /* ---- clicking a frame while I'm awake: I pick it up (Figma puts the frame's id in the address when you select it) ---- */
+  let downAt = null, lastPick = '';
+  const nodeOf = u => (u.match(/[?&]node-id=([^&#]+)/) || [])[1] || '';
+  addEventListener('pointerdown', e => { downAt = e.target instanceof HTMLCanvasElement && !e.altKey && e.button === 0 ? [e.clientX, e.clientY, nodeOf(location.href), e.target] : null; }, true);
+  addEventListener('pointerup', e => {
+    const d = downAt; downAt = null; if (!d || !awake || Math.hypot(e.clientX - d[0], e.clientY - d[1]) > 4) return;
+    setTimeout(() => {
+      const node = nodeOf(location.href); if (!node || node === d[2] || node === lastPick || stale()) return;
+      lastPick = node; const cr = d[3].getBoundingClientRect();
+      const sel = document.querySelector('[class*="layer_row"][class*="selected"] [class*="name"], [aria-selected="true"] [class*="layer_name"]');
+      const nm = (sel?.textContent || '').trim(); const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
+      cat.style.visibility = 'hidden'; toast.style.visibility = 'hidden'; carry.style.visibility = 'hidden';
+      requestAnimationFrame(() => requestAnimationFrame(() => chrome.runtime.sendMessage({ type: 'miso-capture', selection: true, rect: { x: cr.left, y: cr.top, w: cr.width, h: cr.height }, viewport: { w: innerWidth, h: innerHeight }, url: location.href, name: nm || (file ? `a frame from ${file}` : 'the frame') }, res => {
+        cat.style.visibility = ''; toast.style.visibility = ''; carry.style.visibility = '';
+        if (!res?.ok) { lastPick = ''; if (res?.error === 'no-outline') say('I couldn’t see that frame. Hold Option and circle it instead.'); return; }
+        chirp(); say(`Holding ${nm || 'that frame'}.`);
+      })));
+    }, 450);
+  }, true);
+
   /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, follow = 0, buf = [], bt = 0;
@@ -97,11 +117,14 @@
   let blocked = false;
   const listen = () => {
     if (stale()) return;
-    const want = awake && !document.hidden && !!SR;
+    // Only the tab you're working in listens (two tabs fighting over the mic is what made words stop).
+    const want = awake && !document.hidden && document.hasFocus() && !!SR;
+    chrome.storage.local.set({ misoFigma: want ? Date.now() : 0 }).catch(() => {});
     if (!want) { try { rec?.abort(); } catch { /* ignore */ } rec = null; cat.classList.remove('is-hearing'); return; }
     if (rec) return; blocked = false;
     const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
     r.onresult = e => {
+      quietSince = Date.now();
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const s = norm(e.results[i][0].transcript), nm = norm(name); const at = (' ' + s + ' ').indexOf(' ' + nm + ' ');
         const raw = e.results[i][0].transcript.trim();
@@ -124,8 +147,10 @@
     r.onsoundend = () => cat.classList.remove('is-hearing');
     r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { blocked = true; say('To hear you on Figma, allow the microphone for figma.com: click the icon at the left of the address bar.'); } };
     r.onend = () => { rec = null; setTimeout(listen, blocked ? 5000 : 400); };
-    try { r.start(); rec = r; } catch { /* already running */ }
+    try { r.start(); rec = r; quietSince = Date.now(); } catch { /* already running */ }
   };
-  document.addEventListener('visibilitychange', listen);
+  document.addEventListener('visibilitychange', listen); addEventListener('focus', listen); addEventListener('blur', listen);
+  let quietSince = Date.now();
+  setInterval(() => { if (rec) chrome.storage.local.set({ misoFigma: Date.now() }).catch(() => {}); if (rec && Date.now() - quietSince > 50000) { quietSince = Date.now(); try { rec.abort(); } catch { /* ignore */ } } }, 5000);
   chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-reply' && msg.text) { say(msg.text); chirp(msg.tone || 'ok'); follow = Date.now() + 8000; } });
 })();

@@ -7,11 +7,11 @@
     if (e.source !== window || e.data?.source !== 'miso-page') return;
     // After the extension is updated, this old copy can't talk to it any more; stay quiet until the tab is reloaded.
     if (!chrome.runtime?.id) return;
-    if (e.data.type === 'hello') chrome.storage.local.get('clip').then(r => post('clip', { clip: r.clip || null }));
+    if (e.data.type === 'hello') chrome.storage.local.get(['clip', 'misoFigma']).then(r => { post('clip', { clip: r.clip || null }); post('figma', { on: !!r.misoFigma && Date.now() - r.misoFigma < 15000 }); });
     if (e.data.type === 'clear') chrome.storage.local.remove('clip');
     if (e.data.type === 'state') chrome.storage.local.set({ misoAwake: !!e.data.awake, misoName: e.data.name || 'Miso', misoListen: e.data.listen || 'all' });
     if (e.data.type === 'reply') chrome.runtime.sendMessage({ type: 'miso-reply', text: e.data.text, tone: e.data.tone }).catch(() => {});
   });
-  chrome.storage.onChanged.addListener(ch => { if (ch.clip) post('clip', { clip: ch.clip.newValue || null }); if (ch.misoAwake) post('wake', { awake: !!ch.misoAwake.newValue }); });
+  chrome.storage.onChanged.addListener(ch => { if (ch.clip) post('clip', { clip: ch.clip.newValue || null }); if (ch.misoAwake) post('wake', { awake: !!ch.misoAwake.newValue }); if (ch.misoFigma) post('figma', { on: !!ch.misoFigma.newValue }); });
   chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-command') post('command', { said: msg.said, clip: msg.clip, ambient: !!msg.ambient }); });
 })();
