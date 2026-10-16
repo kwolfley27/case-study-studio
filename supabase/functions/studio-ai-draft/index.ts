@@ -355,17 +355,9 @@ async function nameScreens(anthropicKey: string, images: string[], context: stri
   };
   const content: any[] = [{ type: 'text', text: `These ${images.length} screenshots are consecutive screens from a screen recording of someone using an app or website${context ? ` (${context})` : ''}. Name each screen and the action between screens.` }];
   images.forEach((data, i) => { content.push({ type: 'text', text: `Screen ${i + 1}:` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } }); });
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 3000, system: 'You are a UX designer documenting a user flow from screenshots. Be literal: only describe what is visible. Always answer by calling the user_flow tool with exactly one step per screenshot.', tools: [tool], tool_choice: { type: 'tool', name: 'user_flow' }, messages: [{ role: 'user', content }] }),
-    signal: AbortSignal.timeout(120000),
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
-  const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
-  if (!use) throw new Error('Claude did not name the screens. Try again.');
-  return use.input;
+  const result = await askWithTool(anthropicKey, 'You are a UX designer documenting a user flow from screenshots. Be literal: only describe what is visible. Always answer by calling the user_flow tool with exactly one step per screenshot.', tool, content, 3000, 120000);
+  if (!result) throw new Error('Claude did not name the screens. Try again.');
+  return result;
 }
 
 
@@ -409,15 +401,26 @@ async function buildSection(anthropicKey: string, image: string, hint: string) {
   };
   const system = `You rebuild sections of a designer's portfolio case study from a screenshot, using only the section_layout blocks. Match the structure, proportions and hierarchy closely: rows vs columns, how many cards, where pictures sit, which areas are filled with colour, rounded corners, pills. Photos, screenshots, illustrations and charts become image blocks (the designer drops her own pictures in later). Words become text blocks with the right role; copy them exactly. Repeated cards should be identical in structure and sit in a box with repeat=true. Do not invent content that is not in the picture. Always answer by calling section_layout.`;
   const content: any[] = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } }, { type: 'text', text: `Rebuild this section.${hint ? ` Note from the designer: ${hint}` : ''}` }];
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: 8000, system, tools: [tool], tool_choice: { type: 'tool', name: 'section_layout' }, messages: [{ role: 'user', content }] }),
-    signal: AbortSignal.timeout(140000),
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
-  const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
-  if (!use) throw new Error('Claude did not return a layout. Try again.');
-  return use.input;
+  const result = await askWithTool(anthropicKey, system, tool, content, 8000, 140000);
+  if (!result) throw new Error('Claude did not return a layout. Try again.');
+  return result;
+}
+
+/* Ask Claude to answer with one tool. Some models refuse a forced tool_choice, so ask with "auto" and nudge once if it replies in text. */
+async function askWithTool(anthropicKey: string, system: string, tool: any, content: any[], maxTokens: number, timeout: number) {
+  const messages: any[] = [{ role: 'user', content }];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: Deno.env.get('CLAUDE_MODEL') || 'claude-sonnet-5-5', max_tokens: maxTokens, system, tools: [tool], tool_choice: { type: 'auto' }, messages }),
+      signal: AbortSignal.timeout(timeout),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
+    const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
+    if (use) return use.input;
+    messages.push({ role: 'assistant', content: data.content?.length ? data.content : [{ type: 'text', text: '(no answer)' }] }, { role: 'user', content: `Now call the ${tool.name} tool.` });
+  }
+  return null;
 }
