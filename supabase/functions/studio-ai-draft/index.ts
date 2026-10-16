@@ -39,6 +39,12 @@ Deno.serve(async (request) => {
 
   try {
     const body = await request.json();
+    // Miso, the studio cat: turn one spoken request into a few studio actions. Small and fast.
+    if (body.task === 'assistant') {
+      const said = String(body.said || '').slice(0, 600);
+      if (!said) return reply({ error: 'Nothing was said.' }, 400);
+      return reply(await assist(anthropicKey, said, body.context ?? {}));
+    }
     // Affinity diagram: sort research notes into a bottom-up hierarchy.
     if (body.task === 'affinity') {
       const notes = (Array.isArray(body.notes) ? body.notes : []).map((n: unknown) => String(n).slice(0, 400)).filter(Boolean).slice(0, 300);
@@ -358,4 +364,40 @@ async function nameScreens(anthropicKey: string, images: string[], context: stri
   const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
   if (!use) throw new Error('Claude did not name the screens. Try again.');
   return use.input;
+}
+
+
+/* ── Miso, the studio cat ──────────────────────────────────────────────── */
+async function assist(anthropicKey: string, said: string, context: any) {
+  const ctx = JSON.stringify(context).slice(0, 24_000);
+  const tool = {
+    name: 'studio_actions',
+    description: 'Reply to Katelyn and change her case study.',
+    input_schema: { type: 'object', required: ['say', 'actions'], properties: {
+      say: { type: 'string', description: 'A very short spoken reply, 2–10 words, warm and plain (e.g. "Done, it’s shorter now."). If you need to ask something, ask one short question.' },
+      actions: { type: 'array', description: 'What to do, in order. Empty if you only answer or ask.', items: { type: 'object', required: ['type'], properties: {
+        type: { type: 'string', enum: ['set_text', 'add_section', 'move_section', 'delete_section', 'set_variant', 'select', 'place_clip', 'set_mode'] },
+        sectionId: { type: 'string' },
+        field: { type: 'string', description: 'set_text: "title", "eyebrow", "body", "items.N.title" or "items.N.detail" (N = item index from the context).' },
+        value: { type: 'string', description: 'set_text: the new text. Keep her voice: plain, short, sentence case, no hype, never invent numbers or quotes.' },
+        templateId: { type: 'string', description: 'add_section: a template id from context.templates.' },
+        afterId: { type: 'string', description: 'add_section: put it after this section (optional).' },
+        toIndex: { type: 'number', description: 'move_section: new position, 0-based.' },
+        variant: { type: 'string', enum: ['light', 'tinted', 'dark'] },
+        itemIndex: { type: 'number', description: 'place_clip: which image spot in the section (optional; defaults to the spot she is pointing at or the first empty one).' },
+        mode: { type: 'string', enum: ['canvas', 'preview', 'present'] },
+      } } },
+    } },
+  };
+  const system = `You are Miso, a small helpful cat living in Katelyn's case study editor. She talks to you out loud while she works, so requests can be rough ("um", run-ons). Do exactly what she asked, nothing more. "This"/"it"/"here" means context.target (what she circled or selected); otherwise context.selectedId. context.clip is a screen she brought from Figma; use place_clip when she says to put it somewhere. Use only section ids, item indexes and template ids that exist in the context. Deleting is allowed only if she clearly asked. Keep text edits in her voice: plain, short, sentence case. Never invent metrics, quotes or results; if something needs facts you don't have, ask. Always respond by calling studio_actions.`;
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: Deno.env.get('CLAUDE_ASSIST_MODEL') || 'claude-haiku-5-5', max_tokens: 1500, system, tools: [tool], tool_choice: { type: 'tool', name: 'studio_actions' }, messages: [{ role: 'user', content: `CONTEXT:\n${ctx}\n\nKATELYN SAID: ${said}` }] }),
+    signal: AbortSignal.timeout(30000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message ? `Claude: ${data.error.message}` : `Claude request failed (${response.status}).`);
+  const use = (data.content ?? []).find((part: any) => part.type === 'tool_use');
+  return use?.input ?? { say: 'Sorry, I missed that.', actions: [] };
 }
