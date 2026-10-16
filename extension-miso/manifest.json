@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Miso for Case Study Studio",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "description": "Miso comes with you to Figma and any website. Hold Option and circle something to bring it (with its words) to Case Study Studio, then tell Miso what to make. On most sites Miso only appears while listening (\u2303M).",
   "permissions": [
     "storage",
@@ -42,6 +42,7 @@
       ],
       "run_at": "document_idle",
       "exclude_matches": [
+        "https://studio.katelynwolfley.design/*",
         "https://kwolfley27.github.io/case-study-studio/*",
         "http://localhost:5173/*",
         "http://127.0.0.1:5173/*"
@@ -49,6 +50,7 @@
     },
     {
       "matches": [
+        "https://studio.katelynwolfley.design/*",
         "https://kwolfley27.github.io/case-study-studio/*",
         "http://localhost:5173/*",
         "http://127.0.0.1:5173/*"

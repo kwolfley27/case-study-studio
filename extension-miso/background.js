@@ -1,6 +1,6 @@
 // Miso: takes a picture of what you circled in Figma, carries your spoken request to the Case Study Studio tab
 // (it can stay in the background), and brings the answer back. Nothing is uploaded by the extension itself.
-const STUDIO = ['https://kwolfley27.github.io/case-study-studio/*', 'http://localhost:5173/*', 'http://127.0.0.1:5173/*'];
+const STUDIO = ['https://studio.katelynwolfley.design/*', 'https://kwolfley27.github.io/case-study-studio/*', 'http://localhost:5173/*', 'http://127.0.0.1:5173/*'];
 const toDataUrl = async blob => { const buf = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000)); return `data:${blob.type};base64,${btoa(s)}`; };
 // Figma draws the selected frame with a blue outline. Find it: the rows and columns where blue runs a long way.
 const findSelection = (bmp, area) => {

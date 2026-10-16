@@ -22,7 +22,7 @@ import { caller } from '../_shared/access.ts';
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const allowed = new Set(['https://kwolfley27.github.io', 'http://localhost:5173', 'http://127.0.0.1:5173']);
+const allowed = new Set(['https://kwolfley27.github.io', 'https://studio.katelynwolfley.design', 'http://localhost:5173', 'http://127.0.0.1:5173']);
 const BUCKET = 'case-study-research';
 const NOTION_VERSION = '2022-06-28';
 const MAX_BODY = 400_000;

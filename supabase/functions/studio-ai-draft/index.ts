@@ -11,7 +11,7 @@ import { caller } from '../_shared/access.ts';
 //   STUDIO_PASSCODE     Any phrase; the Studio asks for it once so strangers can't spend your credits
 //   CLAUDE_MODEL        Optional, defaults to claude-sonnet-5-5
 
-const allowed = new Set(['https://kwolfley27.github.io', 'http://localhost:5173', 'http://127.0.0.1:5173']);
+const allowed = new Set(['https://kwolfley27.github.io', 'https://studio.katelynwolfley.design', 'http://localhost:5173', 'http://127.0.0.1:5173']);
 const NOTION_VERSION = '2022-06-28';
 const MAX_NOTION_CHARS = 60_000;
 const MAX_FRAMES = 40;

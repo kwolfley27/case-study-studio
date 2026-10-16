@@ -1,5 +1,5 @@
 // Browser-facing Figma frame catalog. The caller supplies a short-lived-in-memory PAT.
-const allowed = new Set(['https://kwolfley27.github.io', 'http://localhost:5173', 'http://127.0.0.1:5173']);
+const allowed = new Set(['https://kwolfley27.github.io', 'https://studio.katelynwolfley.design', 'http://localhost:5173', 'http://127.0.0.1:5173']);
 
 Deno.serve(async (request) => {
   const origin = request.headers.get('origin') || '';

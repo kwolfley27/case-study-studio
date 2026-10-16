@@ -9,7 +9,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { caller } from '../_shared/access.ts';
 
-const allowed = new Set(['https://kwolfley27.github.io', 'http://localhost:5173', 'http://127.0.0.1:5173']);
+const allowed = new Set(['https://kwolfley27.github.io', 'https://studio.katelynwolfley.design', 'http://localhost:5173', 'http://127.0.0.1:5173']);
 const BUCKET = 'case-study-media';
 const TYPES = /^(video\/(mp4|webm|quicktime)|image\/(png|jpeg|webp|gif|avif))$/;
 
