@@ -519,33 +519,44 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           {error || (heard ? `“${heard}”` : bubble?.text ?? (notes ? 'Got it. Thinking…' : `Hi! Say “${name}” and then what you need.`))}
         </motion.div>}
       </AnimatePresence>
-      {menu && <div className="csb-cat-menu" role="dialog" aria-label={`${name} settings`}>
-        <label><span>Name</span><input value={name} onChange={e => { setName(e.target.value); store.set('csb-cat-name', e.target.value); }} /></label>
-        <div className="csb-cat-check-panel" aria-live="polite">
-          <span>Check</span>
-          <div><b>Browser</b><i className={SPEECH_BAD.includes(browser) ? 'is-bad' : 'is-ok'}>{browser}{SPEECH_BAD.includes(browser) ? ' (can’t do speech; use Chrome)' : ''}</i></div>
-          <div><b>Figma extension</b><i className={ext ? 'is-ok' : ''}>{ext ? `connected${ext !== 'yes' ? ' · v' + ext : ''}` : 'not found here'}</i></div>
-          <div><b>Microphone</b><i className={sound || level > .05 ? 'is-ok' : ''}>{testing ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : <>{sound ? 'hearing sound' : awake ? 'quiet' : 'asleep'} · <button type="button" className="csb-cat-link" onClick={() => void testMic()}>Test it</button></>}</i></div>
-          <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{onFigma ? 'on your other tab' : status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
+      {menu && <div className="csb-cm" role="dialog" aria-label={`${name} settings`}>
+        <header>
+          <input className="csb-cm-name" value={name} aria-label="Name" onChange={e => { setName(e.target.value); store.set('csb-cat-name', e.target.value); }} />
+          <span className={`csb-cm-state ${awake ? 'is-on' : ''}`}>{awake ? 'Listening' : 'Asleep'}</span>
+          <button type="button" className="csb-cm-x" aria-label="Close" onClick={() => setMenu(false)}>×</button>
+        </header>
+
+        {clip && <div className="csb-cm-hold">
+          <img src={clip.image} alt="" />
+          <span><small>Holding</small>{clip.name || 'a frame'}</span>
+          <button type="button" onClick={() => dropClip(true)}>Drop</button>
+        </div>}
+
+        <div className="csb-cm-row"><span>Listen to</span>
+          <div className="csb-cm-seg" role="radiogroup" aria-label="What I listen for">{([['all', 'Everything'], ['name', `“${name}” first`]] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={listenMode === v} onClick={() => { setListenMode(v); store.set('csb-cat-listen', v); }}>{l}</button>)}</div>
         </div>
-        <div className="csb-cat-reply" role="radiogroup" aria-label="What I listen for"><span>What I listen for</span>
-          <div>{([['all', 'Everything you say'], ['name', 'Only after “' + name + '”']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={listenMode === v} onClick={() => { setListenMode(v); store.set('csb-cat-listen', v); }}>{l}</button>)}</div>
-          <small className="csb-cat-hint">{listenMode === 'all' ? 'Smartest: I follow along and only act or answer when you want something. Each pause sends what you said to Claude, so it costs a little while you talk.' : 'Cheapest: I ignore everything until you say my name.'}</small>
+        <div className="csb-cm-row"><span>Answer with</span>
+          <div className="csb-cm-seg" role="radiogroup" aria-label="How I answer">{([['chirp', 'Chirp'], ['voice', 'Voice'], ['silent', 'Silent']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={replyMode === v} onClick={() => { setReplyMode(v); store.set('csb-cat-reply', v); if (v === 'chirp') chirp(); if (v === 'voice' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance('Hi, I’m ' + name + '.'); const vv = niceVoice(); if (vv) u.voice = vv; speechSynthesis.speak(u); } }}>{l}</button>)}</div>
         </div>
-        <div className="csb-cat-reply" role="radiogroup" aria-label="How I answer"><span>How I answer</span>
-          <div>{([['chirp', 'Little chirp'], ['voice', 'Voice'], ['silent', 'Silent']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={replyMode === v} onClick={() => { setReplyMode(v); store.set('csb-cat-reply', v); if (v === 'chirp') chirp(); if (v === 'voice' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance('Hi, I’m ' + name + '.'); const vv = niceVoice(); if (vv) u.voice = vv; speechSynthesis.speak(u); } }}>{l}</button>)}</div>
-        </div>
-        {clip && <div className="csb-cat-clip"><img src={clip.image} alt="" /><span>{clip.site && !/figma/.test(clip.site) ? <>From {clip.site}: </> : <>From Figma: </>}<b>{clip.name || 'a frame'}</b><small>Point at a spot and say “put it here”. Say “drop it” or click it on me to let go.</small></span><button type="button" aria-label="Drop this frame" onClick={() => dropClip(true)}>×</button></div>}
-        <p>Say “{name}”, then:</p>
-        <div className="csb-cat-cmds">{['preview', 'edit', 'present', 'publish', 'open research', 'go to the persona', 'add a bar chart', 'move this up', 'make this dark', 'delete this section', 'sleep'].map(c => <i key={c}>{c}</i>)}</div>
-        <p>Hold <kbd>⌥ Option</kbd> and draw around something to point at it.</p>
-        <p>Press <kbd>⌃ Control</kbd> <kbd>M</kbd> to turn my listening on and off, on any tab.</p>
-        <p>Press <kbd>⌃ Control</kbd> <kbd>⇧ Shift</kbd> <kbd>4</kbd> on any site and drag a box to snip it for me. Or copy a Mac screenshot (<kbd>⌘ ⌃ ⇧ 4</kbd>) and say “put my screenshot in…”.</p>
-        <p>Ask me things like “how’s the title looking?” and I’ll answer in a little chat.</p>
-        <p className="is-note">Hearing you happens in your browser. What you say goes to Claude to understand it (in “Everything” mode, after each pause). “Undo” takes back my last change.</p>
-        <p className="is-note">Drag me anywhere on the screen. Double-click me to send me back to my corner.</p>
-        <p className="is-note"><a href={`${import.meta.env.BASE_URL}miso-extension.zip`} download>Get the Chrome extension</a> to bring me along to Figma and any website (Lucid, the App Store, competitors). Circle something and I bring the picture and its words.</p>
-        <button type="button" onClick={() => setMenu(false)}>Done</button>
+
+        <dl className="csb-cm-keys">
+          <div><dt>Listen on or off</dt><dd><kbd>⌃</kbd><kbd>M</kbd></dd></div>
+          <div><dt>Snip part of a page</dt><dd><kbd>⌃</kbd><kbd>⇧</kbd><kbd>4</kbd></dd></div>
+          <div><dt>Point at something</dt><dd>hold <kbd>⌥</kbd>, circle</dd></div>
+          <div><dt>Ask for feedback</dt><dd>“how’s the title?”</dd></div>
+          <div><dt>Let go of a frame</dt><dd>“drop it”</dd></div>
+        </dl>
+
+        <details className="csb-cm-check">
+          <summary><span>Check hearing</span><i className={status === 'words' || onFigma ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''} />{onFigma ? 'On another tab' : status === 'words' ? 'Hearing words' : !awake ? 'Asleep' : /error|unsupported/.test(status) ? 'Problem' : 'Waiting for words'}</summary>
+          <div><b>Browser</b><i className={SPEECH_BAD.includes(browser) ? 'is-bad' : ''}>{browser}{SPEECH_BAD.includes(browser) ? ' · use Chrome' : ''}</i></div>
+          <div><b>Extension</b><i>{ext ? (ext === 'yes' ? 'connected' : `connected · v${ext}`) : 'not found'}</i></div>
+          <div><b>Microphone</b><i>{testing ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : <>{sound ? 'hearing sound' : 'quiet'} · <button type="button" className="csb-cat-link" onClick={() => void testMic()}>Test</button></>}</i></div>
+          <div><b>Words</b><i>{status === 'words' ? 'yes' : status === 'listening' ? 'listening…' : status === 'off' ? 'asleep' : status}</i></div>
+          <p>Speech becomes words in your browser; what you say goes to Claude. “Undo” takes back my last change.</p>
+        </details>
+
+        <footer><a href={`${import.meta.env.BASE_URL}miso-extension.zip`} download>Get the Chrome extension</a><span>for Figma and other sites</span></footer>
       </div>}
       <button type="button" className="csb-cat-btn" aria-pressed={awake} aria-label={awake ? `${name} is listening. Click to put ${name} to sleep.` : `Wake ${name} up to talk`}
         onPointerDown={startDrag} onDoubleClick={() => { setSpot(null); try { localStorage.removeItem('csb-cat-spot'); } catch { /* ignore */ } }}
