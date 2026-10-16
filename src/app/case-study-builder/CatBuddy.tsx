@@ -67,6 +67,20 @@ function niceVoice(): SpeechSynthesisVoice | null {
 type SR = { continuous: boolean; interimResults: boolean; lang: string; start: () => void; stop: () => void; abort: () => void; onresult: ((e: any) => void) | null; onend: (() => void) | null; onerror: ((e: any) => void) | null };
 const getSR = (): (new () => SR) | null => (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
 const store = { get: (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
+/* Which browser this is. Speech-to-text only works in Google Chrome, Edge and Safari; Brave, Arc, Opera and
+   Firefox either lack it or have it switched off. */
+function browserName(): string {
+  const n = navigator as any; const brands: string[] = (n.userAgentData?.brands ?? []).map((b: any) => b.brand);
+  if (n.brave) return 'Brave';
+  try { if (getComputedStyle(document.documentElement).getPropertyValue('--arc-palette-title')) return 'Arc'; } catch { /* ignore */ }
+  if (brands.some(b => /Edge/.test(b))) return 'Edge';
+  if (brands.some(b => /Opera/.test(b)) || /OPR\//.test(navigator.userAgent)) return 'Opera';
+  if (brands.some(b => /Google Chrome/.test(b))) return 'Chrome';
+  if (/Firefox\//.test(navigator.userAgent)) return 'Firefox';
+  if (/Safari\//.test(navigator.userAgent) && !/Chrome\//.test(navigator.userAgent)) return 'Safari';
+  return brands.find(b => !/Not|Chromium/.test(b)) || 'this browser';
+}
+const SPEECH_BAD = ['Brave', 'Arc', 'Opera', 'Firefox'];
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
 /* Pick the best match for spoken words among names (simple word overlap, good enough for section names). */
@@ -88,6 +102,10 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const [name, setName] = useState(() => store.get('csb-cat-name', 'Miso'));
   const [replyMode, setReplyMode] = useState<Reply>(() => (store.get('csb-cat-reply', 'chirp') as Reply));
   const [thinking, setThinking] = useState(false);
+  // What's going on with hearing, so problems are visible instead of silent.
+  const [status, setStatus] = useState<'off' | 'starting' | 'listening' | 'words' | string>('off');
+  const gotWords = useRef(false); const loudFor = useRef(0);
+  const browser = typeof window !== 'undefined' ? browserName() : '';
   // 'all': everything you say goes to Claude (smart, follows the conversation). 'name': only after "Miso".
   const [listenMode, setListenMode] = useState<'all' | 'name'>(() => (store.get('csb-cat-listen', 'all') === 'name' ? 'name' : 'all'));
   const listenRef = useRef(listenMode); listenRef.current = listenMode;
@@ -280,16 +298,17 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   };
 
   const start = () => {
-    const C = getSR(); if (!C) { setError('Talking to me works in Chrome or Safari.'); return; }
+    const C = getSR(); if (!C || SPEECH_BAD.includes(browser)) { setError(`${browser} can’t turn speech into words. Open the studio in Google Chrome (or Safari) to talk to me.`); setStatus('unsupported'); return; }
     if (sr.current) return;
-    const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
-    r.onresult = (e: any) => { setError(''); for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
-    r.onerror = (e: any) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setError('I need the microphone. Allow it in the address bar, then click me.'); sleep(); } else if (e.error === 'network') setError('Chrome’s speech service isn’t reachable right now. I’ll keep trying.'); else if (e.error === 'audio-capture') setError('I can’t find a microphone.'); };
+    const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US'; setStatus('starting');
+    (r as any).onstart = () => setStatus(st => st === 'words' ? st : 'listening');
+    r.onresult = (e: any) => { setError(''); gotWords.current = true; setStatus('words'); for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
+    r.onerror = (e: any) => { if (e.error !== 'no-speech' && e.error !== 'aborted') setStatus('error: ' + e.error); if (e.error === 'not-allowed') { setError('I need the microphone. Click the icon at the left of the address bar, allow the microphone, then click me.'); sleep(); } else if (e.error === 'service-not-allowed') { setError(browser === 'Safari' ? 'Safari needs dictation turned on: System Settings → Keyboard → Dictation. Or use Google Chrome.' : 'Speech-to-text is switched off in this browser. Use Google Chrome.'); sleep(); } else if (e.error === 'network') setError('Chrome’s speech service isn’t reachable right now. I’ll keep trying.'); else if (e.error === 'audio-capture') setError('I can’t find a microphone.'); };
     // Browsers stop listening after a while; quietly start again while I'm awake.
     r.onend = () => { sr.current = null; if (store.get('csb-cat-on', '0') === '1' && !document.hidden) setTimeout(() => { if (store.get('csb-cat-on', '0') === '1' && !document.hidden) start(); }, 300); };
     try { r.start(); sr.current = r; setError(''); } catch { /* already running */ }
   };
-  const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
+  const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); setStatus('off'); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
   const wake = () => { store.set('csb-cat-on', '1'); setAwake(true); start(); setHello(true); setTimeout(() => setHello(false), 2600); };
   useEffect(() => { if (awake) start(); return () => { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; }; }, []);
   useEffect(() => { window.postMessage({ source: 'miso-page', type: 'state', awake, name, listen: listenMode }, location.origin); }, [awake, name, listenMode]);
@@ -307,7 +326,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       if (dead) { st.getTracks().forEach(t => t.stop()); return; }
       stream = st; ctx = new AudioContext(); const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(st).connect(an);
       const buf = new Uint8Array(an.fftSize); let last = 0;
-      const loop = (t: number) => { raf = requestAnimationFrame(loop); if (t - last < 80) return; last = t; an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += (v - 128) ** 2; setLevel(Math.min(1, Math.sqrt(sum / buf.length) / 22)); };
+      const loop = (t: number) => { raf = requestAnimationFrame(loop); if (t - last < 80) return; last = t; an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += (v - 128) ** 2; const lv = Math.min(1, Math.sqrt(sum / buf.length) / 22); setLevel(lv); if (lv > .25 && !gotWords.current) { loudFor.current += 80; if (loudFor.current > 4000) { loudFor.current = -60000; setError(`I can hear sound, but ${browser} isn’t turning it into words. Try Google Chrome, and check the right microphone is chosen (address bar → microphone icon).`); } } };
       raf = requestAnimationFrame(loop);
     }).catch(() => setError('I need the microphone. Allow it in the address bar, then click me.'));
     return () => { dead = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()); void ctx?.close(); };
@@ -354,6 +373,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       </AnimatePresence>
       {menu && <div className="csb-cat-menu" role="dialog" aria-label={`${name} settings`}>
         <label><span>Name</span><input value={name} onChange={e => { setName(e.target.value); store.set('csb-cat-name', e.target.value); }} /></label>
+        <div className="csb-cat-check-panel" aria-live="polite">
+          <span>Check</span>
+          <div><b>Browser</b><i className={SPEECH_BAD.includes(browser) ? 'is-bad' : 'is-ok'}>{browser}{SPEECH_BAD.includes(browser) ? ' (can’t do speech; use Chrome)' : ''}</i></div>
+          <div><b>Microphone</b><i className={awake ? (level > .05 ? 'is-ok' : '') : ''}>{awake ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : 'wake me to test'}</i></div>
+          <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
+        </div>
         <div className="csb-cat-reply" role="radiogroup" aria-label="What I listen for"><span>What I listen for</span>
           <div>{([['all', 'Everything you say'], ['name', 'Only after “' + name + '”']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={listenMode === v} onClick={() => { setListenMode(v); store.set('csb-cat-listen', v); }}>{l}</button>)}</div>
           <small className="csb-cat-hint">{listenMode === 'all' ? 'Smartest: I follow along and only act or answer when you want something. Each pause sends what you said to Claude, so it costs a little while you talk.' : 'Cheapest: I ignore everything until you say my name.'}</small>

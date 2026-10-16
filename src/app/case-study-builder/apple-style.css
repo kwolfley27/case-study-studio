@@ -3022,3 +3022,12 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-cat.is-right.is-high .csb-cat-bubble{border-radius:16px 4px 16px 16px}
 .csb-cat.is-right .csb-cat-menu{left:auto;right:0}
 .csb-cat-hint{display:block;font-size:11.5px;line-height:1.4;color:#67615a;max-width:250px}
+.csb-cat-check-panel{display:grid;gap:5px;padding:10px 12px;border-radius:12px;background:#f5f3f1}
+.csb-cat-check-panel>span{font-size:12px;color:#67615a}
+.csb-cat-check-panel>div{display:grid;grid-template-columns:104px 1fr;align-items:center;gap:8px;font-size:12.5px}
+.csb-cat-check-panel b{font-weight:500}
+.csb-cat-check-panel i{font-style:normal;color:#67615a}
+.csb-cat-check-panel i.is-ok{color:#2f7d4f}
+.csb-cat-check-panel i.is-bad{color:#b42318}
+.csb-cat-meter{display:block;height:6px;border-radius:9999px;background:#e7e5e4;overflow:hidden}
+.csb-cat-meter em{display:block;height:100%;background:#2f7d4f;transform-origin:left;transition:transform .08s linear}
