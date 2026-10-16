@@ -38,6 +38,13 @@ type Grid = { cols: number; margin: number; gutter: number } | null;
   background colour) and stacked top to bottom, so it scrolls like the real thing.
 */
 type Seg = { x: number; y: number; w: number; h: number };
+function useNarrow(px: number) {
+  const q = `(max-width: ${px}px)`;
+  const [on, setOn] = useState(() => typeof matchMedia !== 'undefined' && matchMedia(q).matches);
+  useEffect(() => { const m = matchMedia(q); const f = () => setOn(m.matches); f(); m.addEventListener('change', f); return () => m.removeEventListener('change', f); }, [q]);
+  return on;
+}
+
 export function useScreens(image: string | undefined, on: boolean) {
   const [segs, setSegs] = useState<{ W: number; H: number; list: Seg[] } | null>(null);
   useEffect(() => {
@@ -214,7 +221,10 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const [held, setHeldRaw] = useState(false);
   const [heldBox, setHeldBox] = useState<React.CSSProperties | undefined>();
   const [heldPos, setHeldPos] = useState({ f: 0, v: .35 });
-  const show = held ? 'mobile' : (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
+  // On a phone there's no room for a laptop beside a phone: show the mobile screen on its own, with its notes.
+  const narrow = useNarrow(760);
+  const chosen = (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
+  const show = held ? 'mobile' : narrow && chosen === 'both' ? 'mobile' : chosen;
   const compare = section.options?.compare === true; const base = stageBase(section);
   const [stage, setStageRaw] = useState<Stage>('a');
   const [both, setBoth] = useState(false);
@@ -319,15 +329,15 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const screen = (d: Device) => { const it = d === 'desktop' ? desk : mob; return <Screen stack={section.options?.[d === 'desktop' ? 'stackDesk' : 'stackMob'] === true} takeRestore={() => { const r = pending.current[d]; pending.current[d] = null; return r; }} image={it?.image} slot={`${section.id}:${off + (d === 'desktop' ? 0 : 1)}`} label={it?.title || `${compare ? `${stage === 'a' ? nameA : nameB}: ` : ''}${d === 'desktop' ? 'desktop frame' : 'mobile frame'}`} grid={d === 'desktop' ? deskGrid : mobGrid} notes={notesFor(d)} activeI={device === d ? note?.i ?? null : null} onView={onView(d)} scrollRef={el => { scrollers.current[d] = el; }} editorMode={editorMode} onMoveNote={moveNote} onBox={(i, b, c) => { edit?.(`items.${i}.box`, b); edit?.(`items.${i}.point`, String(c)); }} />; };
   return <div ref={wrap} className={`csb-ss is-${show} ${compare ? 'is-compare' : ''} ${!annotate || (!list.length && !editorMode) ? 'no-notes' : ''} ${held ? 'is-held' : ''}`} style={heldBox ?? { ['--ss-vh' as string]: `${vh}px` }}>
     {compare && !held && <div className="csb-ss-stages" role="radiogroup" aria-label="Design stage">
-      {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={!both && stage === st} onClick={() => { setBoth(false); setStage(st); }}>{!both && stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
+      {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={!(both && !narrow) && stage === st} onClick={() => { setBoth(false); setStage(st); }}>{!(both && !narrow) && stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
       <button type="button" role="radio" aria-checked={both} onClick={() => setBoth(true)}>{both && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>Side by side</span></button>
     </div>}
     {held ? <HeldView image={mob?.image} stackMob={section.options?.stackMob === true} notes={notesFor('mobile').map(n => ({ title: n.title, detail: n.detail, at: n.at, i: n.i }))} f={heldPos.f} v={heldPos.v}
       stage={compare ? { names: [nameA, nameB], current: stage } : undefined} onStage={st => { setBoth(false); setStage(st); }} />
-    : (compare && both) || show === 'both' ? <>
+    : (compare && both && !narrow) || show === 'both' ? <>
       {show === 'both' && !both && layerToggle && <div className="csb-ss-layerrow">{layerToggle}</div>}
       <TwoScreens key={compare && both ? 'stages' : 'mixed'} kind={compare && both ? 'stages' : 'mixed'} section={section} editorMode={editorMode} annotate={annotate} scrollersRef={paneScrollers} takeRestore={p => { const r = panePending.current[p]; panePending.current[p] = null; return r; }}
-        panes={compare && both ? [{ st: 'a', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameA }, { st: 'b', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameB }] : [{ st: stage, d: 'desktop', grid: deskGrid }, { st: stage, d: 'mobile', grid: mobGrid }]} />
+        panes={compare && both && !narrow ? [{ st: 'a', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameA }, { st: 'b', d: show === 'mobile' ? 'mobile' : 'desktop', label: nameB }] : [{ st: stage, d: 'desktop', grid: deskGrid }, { st: stage, d: 'mobile', grid: mobGrid }]} />
     </> : <>
     <div className="csb-ss-stage" ref={stageEl}>
       <svg className="csb-ss-lines" aria-hidden="true">{note && line && <motion.path key={note.i} d={line} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }} />}</svg>

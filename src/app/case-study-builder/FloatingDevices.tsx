@@ -36,17 +36,20 @@ const PENCIL_SPREAD: Pose = { x: 14, y: -10, z: 60, rx: -16, ry: 20, rz: 30 };
 
 type Off = [number, number];
 /* Position, depth and spin for one object: its resting pose, thrown out by the scroll, nudged by your drag offset. */
-function usePose(p: MotionValue<number>, r: Pose, s: Pose, off: Off, reduce: boolean) {
+type Box = { W: MotionValue<number>; H: MotionValue<number> };
+function usePose(p: MotionValue<number>, r: Pose, s: Pose, off: Off, reduce: boolean, box: Box) {
   const ox = useMotionValue(off[0]), oy = useMotionValue(off[1]);
   useEffect(() => { ox.set(off[0]); oy.set(off[1]); }, [off[0], off[1]]);
   const m = (a: number, b: number) => useTransform(p, [0, .55, 1], [a + b, a, a - b * .35]);
   const x = m(r.x, s.x), y = m(r.y, s.y), z = m(r.z, s.z), rx = m(r.rx, s.rx), ry = m(r.ry, s.ry), rz = m(r.rz, s.rz);
-  const left = useTransform([x, ox], ([a, d]: number[]) => `${a + d}%`), top = useTransform([y, oy], ([a, d]: number[]) => `${a + d}%`);
+  // Moved with transforms (pixels from the stage size), not left/top, so scrolling never re-lays out the page.
+  const left = useTransform([x, ox, box.W], ([a, d, w]: number[]) => (a + d) / 100 * w), top = useTransform([y, oy, box.H], ([a, d, h]: number[]) => (a + d) / 100 * h);
   const still = { left: `${r.x + off[0]}%`, top: `${r.y + off[1]}%` };
-  return { left, top, z, rx, ry, rz, still, reduce, r };
+  const yDrop = useTransform([top, z], ([t, zz]: number[]) => t + 70 + (zz + 100) * .3);
+  return { left, top, yDrop, z, rx, ry, rz, still, reduce, r };
 }
 type PoseT = ReturnType<typeof usePose>;
-const poseStyle = (q: PoseT) => q.reduce ? { ...q.still, z: q.r.z, rotateX: q.r.rx, rotateY: q.r.ry, rotateZ: q.r.rz } : { left: q.left, top: q.top, z: q.z, rotateX: q.rx, rotateY: q.ry, rotateZ: q.rz };
+const poseStyle = (q: PoseT) => q.reduce ? { ...q.still, z: q.r.z, rotateX: q.r.rx, rotateY: q.r.ry, rotateZ: q.r.rz } : { left: 0, top: 0, x: q.left, y: q.top, z: q.z, rotateX: q.rx, rotateY: q.ry, rotateZ: q.rz };
 
 function Device({ img, alt, tablet, k, slot, q, drag }: { img?: string; alt: string; tablet: boolean; k: number; slot?: string; q: PoseT; drag?: (e: React.PointerEvent) => void }) {
   return <motion.div className={`csb-fd-dev ${tablet ? 'is-tablet' : 'is-phone'} ${drag ? 'is-draggable' : ''}`} style={{ ...poseStyle(q), zIndex: 1000 + q.r.z }} onPointerDown={drag}>
@@ -63,11 +66,10 @@ function Device({ img, alt, tablet, k, slot, q, drag }: { img?: string; alt: str
 /* A soft shadow on the "floor" under each object: it stays in screen space (no 3D), follows the
    object's position and spin, and spreads and fades the higher the object floats. */
 function FloorShadow({ q, kind }: { q: PoseT; kind: 'phone' | 'tablet' | 'pencil' }) {
-  const drop = useTransform(q.z, v => 70 + (v + 100) * .3);
   const fade = useTransform(q.z, v => Math.max(.35, Math.min(.85, .8 - v / 600)));
   const spread = useTransform(q.z, v => 1 + Math.max(0, v) / 900);
   const r = q.r;
-  const style = q.reduce ? { ...q.still, y: 70 + (r.z + 100) * .3, rotate: r.rz, opacity: Math.max(.35, Math.min(.85, .8 - r.z / 600)) } : { left: q.left, top: q.top, y: drop, rotate: q.rz, opacity: fade, scale: spread };
+  const style = q.reduce ? { ...q.still, y: 70 + (r.z + 100) * .3, rotate: r.rz, opacity: Math.max(.35, Math.min(.85, .8 - r.z / 600)) } : { left: 0, top: 0, x: q.left, y: q.yDrop, rotate: q.rz, opacity: fade, scale: spread };
   return <motion.i className={`csb-fd-floor is-${kind}`} style={style} aria-hidden="true" />;
 }
 
@@ -89,8 +91,12 @@ export function FloatingDevices({ section, editorMode }: { section: CaseStudySec
   // While dragging, the live offset; saved when you let go (items.N.point / options.pencilAt as "x,y" in %).
   const [live, setLive] = useState<Record<string, Off>>({});
   const offOf = (key: string, saved: unknown) => live[key] ?? parseOff(saved);
-  const slots = [0, 1, 2, 3, 4].map(k => usePose(p, REST[k], SPREAD[k], offOf(`d${k}`, items[k]?.point), reduce));
-  const pencilQ = usePose(p, PENCIL, PENCIL_SPREAD, offOf('pencil', section.options?.pencilAt), reduce);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const W = useMotionValue(0), H = useMotionValue(0);
+  useEffect(() => { const el = stageRef.current; if (!el) return; const ro = new ResizeObserver(() => { W.set(el.clientWidth); H.set(el.clientHeight); }); ro.observe(el); W.set(el.clientWidth); H.set(el.clientHeight); return () => ro.disconnect(); }, []);
+  const box = { W, H };
+  const slots = [0, 1, 2, 3, 4].map(k => usePose(p, REST[k], SPREAD[k], offOf(`d${k}`, items[k]?.point), reduce, box));
+  const pencilQ = usePose(p, PENCIL, PENCIL_SPREAD, offOf('pencil', section.options?.pencilAt), reduce, box);
   const startDrag = (key: string, field: string) => editorMode && edit ? (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     const box = ref.current?.getBoundingClientRect(); if (!box) return;
@@ -114,7 +120,7 @@ export function FloatingDevices({ section, editorMode }: { section: CaseStudySec
       {pencilOn && <FloorShadow q={pencilQ} kind="pencil" />}
       {items.map((_, k) => <FloorShadow key={k} q={slots[k]} kind={isTab(k) ? 'tablet' : 'phone'} />)}
     </div>
-    <div className="csb-fd-stage">
+    <div className="csb-fd-stage" ref={stageRef}>
       {pencilOn && <Pencil q={pencilQ} drag={startDrag('pencil', 'options.pencilAt')} />}
       {items.map((it, k) => <Device key={k} k={k} q={slots[k]} img={it.image} alt={it.title || 'Screen'} tablet={isTab(k)} slot={editorMode ? `${section.id}:${k}` : undefined} drag={startDrag(`d${k}`, `items.${k}.point`)} />)}
     </div>

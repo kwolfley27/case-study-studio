@@ -51,7 +51,9 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held, onScroll 
   // Let the phone fly off the page first, then dim the screen.
   useEffect(() => { if (state !== 'live') { liveRef.current?.(false); return; } const t = setTimeout(() => liveRef.current?.(true), 950); return () => clearTimeout(t); }, [state]);
   useEffect(() => { if (!held) return; const k = (e: KeyboardEvent) => { if (e.key === 'Escape') liveRef.current?.(false); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [held]);
-  useEffect(() => { if ((open || peeking) && link) { void start(); QRCode.toString(link, { type: 'svg', margin: 0, color: { dark: '#000000', light: '#00000000' } }).then(setQr, () => setQr('')); } }, [open, peeking, link]);
+  // Draw the code as soon as the little phone peeks; only open the live connection once someone shows interest.
+  useEffect(() => { if ((open || peeking) && link && !qr) QRCode.toString(link, { type: 'svg', margin: 0, color: { dark: '#000000', light: '#00000000' } }).then(setQr, () => setQr('')); }, [open, peeking, link]);
+  useEffect(() => { if ((open || peekOpen) && link) void start(); }, [open, peekOpen, link]);
   useEffect(() => { if (state === 'live') ch.current?.send({ t: 'stage', stage }); }, [stage, state]);
   // If the phone goes quiet for a while, show the button again.
   useEffect(() => { if (state !== 'live') return; const t = setInterval(() => { if (Date.now() - lastSeen.current > 20000) setState('waiting'); }, 5000); return () => clearInterval(t); }, [state]);
@@ -63,7 +65,7 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held, onScroll 
     initial={{ y: 470, rotate: 6 }} animate={{ y: peekOpen ? 0 : 196, rotate: peekOpen ? 0 : -4 }} exit={{ y: 480, rotate: 6 }}
     transition={{ type: 'spring', stiffness: 170, damping: 19, delay: peekOpen ? 0 : .5 }}>
     <button type="button" className="csb-hold-peek-x" aria-label="No thanks" onClick={dismiss}><X size={12} strokeWidth={2.2} /></button>
-    <button type="button" className="csb-hold-peek-phone" aria-label={peekOpen ? 'QR code to open this on your phone' : 'Try this on your phone'} aria-expanded={peekOpen} onClick={() => setPeekOpen(o => !o)}>
+    <button type="button" className="csb-hold-peek-phone" onMouseEnter={() => void start()} onFocus={() => void start()} aria-label={peekOpen ? 'QR code to open this on your phone' : 'Try this on your phone'} aria-expanded={peekOpen} onClick={() => setPeekOpen(o => !o)}>
       <span className="csb-hold-peek-island" aria-hidden="true" />
       <span className="csb-hold-peek-screen">
         <small className="is-kicker">On your phone</small>

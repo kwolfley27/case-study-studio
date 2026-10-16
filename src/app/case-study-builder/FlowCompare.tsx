@@ -96,7 +96,7 @@ function Summary({ data }: { data: FlowCompareData }) {
   const fewer = Math.round((1 - ours.steps.length / avg) * 100);
   return <p className="csb-fc-summary">
     <span><strong>{ours.steps.length}</strong> {data.unit || 'steps'} in {ours.name}, against an average of <strong>{avg.toFixed(avg % 1 ? 1 : 0)}</strong>{fewer > 0 ? <> · {fewer}% fewer</> : null}</span>
-    {pains > 0 && <span><i className="csb-fc-stop is-key" aria-hidden="true" /> {pains} friction point{pains === 1 ? '' : 's'} in the alternatives. Hover a step to see why.</span>}
+    {pains > 0 && <span><i className="csb-fc-stop is-key" aria-hidden="true" /> {pains} friction point{pains === 1 ? '' : 's'} in the alternatives. Point at a step, or tap it, to see why.</span>}
   </p>;
 }
 

@@ -220,7 +220,7 @@ export function ScreenFilmstrip({ section }: { section: CaseStudySection }) {
   return <div ref={stripRef} className="csb-sc-strip">
     <div className="csb-sc-strip-main">
       <button type="button" className="csb-sc-nav" aria-label="Previous screen" onClick={e => { e.stopPropagation(); go(i - 1); }}>‹</button>
-      <AnimatePresence mode="wait" initial={false}><motion.div key={i} initial={reduce ? false : { opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
+      <AnimatePresence mode="popLayout" initial={false}><motion.div key={i} initial={reduce ? false : { opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
         <Screen section={section} index={i} spot={spot} side="right" drawing={drawing} outlines={!!edit} onDrawn={box => { addSpot(section, edit, i, box); setDrawing(false); }} />
       </motion.div></AnimatePresence>
       <button type="button" className="csb-sc-nav" aria-label="Next screen" onClick={e => { e.stopPropagation(); go(i + 1); }}>›</button>

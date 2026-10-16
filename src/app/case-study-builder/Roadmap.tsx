@@ -123,7 +123,7 @@ export function Roadmap({ section, editorMode }: { section: CaseStudySection; ed
         return <motion.article key={c.id} className={`csb-rm-card ${g ? 'is-dragging' : ''}`} style={{ gridColumn: `${week + 2} / span ${Math.max(1, Math.min(span, weeks - week))}` }}
           initial={false} animate={{ opacity: on ? 1 : 0, y: on ? 0 : 14 }} transition={{ duration: .55, ease: easeOut }}
           onPointerDown={e => startDrag(e, c, 'move')}>
-          <h4><EditableText field={`deep:roadmap.cards.${ci}.title`} value={c.title} /></h4>
+          <h3 className="csb-rm-card-title"><EditableText field={`deep:roadmap.cards.${ci}.title`} value={c.title} /></h3>
           {c.bullets.length > 0 && <ul>{c.bullets.map((b, bi) => <li key={bi}><EditableText field={`deep:roadmap.cards.${ci}.bullets.${bi}`} value={b} /></li>)}</ul>}
           {editorMode && <span className="csb-rm-span" onPointerDown={e => startDrag(e, c, 'span')} title="Drag to change how many weeks" aria-hidden="true" />}
         </motion.article>;

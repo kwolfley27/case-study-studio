@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --outDir docs"
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.6",
