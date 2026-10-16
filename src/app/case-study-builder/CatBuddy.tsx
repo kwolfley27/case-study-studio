@@ -272,16 +272,21 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     if (/screen ?shot|what i (just )?copied|from my clipboard/i.test(said)) {
       try { for (const it of await navigator.clipboard.read()) { const t = it.types.find(x => x.startsWith('image/')); if (t) { const blob = await it.getType(t); const image = await new Promise<string>(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(blob); }); const c: Clip = { image, name: 'your screenshot', at: Date.now() }; clipRef.current = c; setClip(c); break; } } } catch { /* clipboard not allowed or empty */ }
     }
+    // A question ("how's the title?", "how's the case study overall?"): send the whole case study, not a summary,
+    // so the answer can weigh the title against the problem, the process and the results.
+    const review = /\?|^(hey |so |okay |ok |um |hmm )*(how|what|is|does|do|should|would|could|can|which|why)\b|what do you think|how('s| is| are)|feedback|thoughts|review|critique|evaluate/i.test(said.trim());
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
       ambient, event, plan: plan.current, history: history.current.slice(-16, event ? undefined : -1), studyTitle: a.studyTitle, header: a.header, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
       clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl, site: clipRef.current.site, url: clipRef.current.url, pageTitle: clipRef.current.title, text: clipRef.current.text?.slice(0, 5000) } : null,
       pointingAtSlot: slotHere(),
-      sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, title: cut(x.title, 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, 240), variant: x.variant, items: x.items.slice(0, 12).map((it, k) => ({ i: k, title: cut(it.title, 80), detail: cut(it.detail, 160), hasImage: !!it.image })) })),
+      fullStudy: review,
+      sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, hidden: (x as { hidden?: boolean }).hidden || undefined, title: cut(x.title, review ? 300 : 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, review ? 1500 : 240), variant: x.variant,
+        items: x.items.slice(0, review ? 40 : 12).map((it, k) => ({ i: k, title: cut(it.title, review ? 200 : 80), detail: cut(it.detail, review ? 700 : 160), ...(review && (it as { value?: string }).value ? { value: cut((it as { value?: string }).value, 80) } : {}), hasImage: !!it.image })) })),
       templates: a.templates.map(t => ({ id: t.id, name: t.name, kind: t.kind })),
     };
     busy.current = true; setThinking(true);
-    const asking = /\?|^(how|what|is|does|do|should|would|could|can|which|why)\b|what do you think|how('s| is| are)|feedback|thoughts/i.test(said.trim());
+    const asking = review;
     if (!ambient || asking) setBubble(b => ({ text: asking ? 'Hmm…' : '…', n: (b?.n ?? 0) + 1 }));
     if (asking) setTyping(true);
     if (asking && remote.current) window.postMessage({ source: 'miso-page', type: 'reply', text: 'Hmm…', tone: 'ok', kind: 'think' }, location.origin);
