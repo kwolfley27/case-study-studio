@@ -373,6 +373,7 @@ async function buildSection(anthropicKey: string, image: string, hint: string) {
       title: { type: 'string', description: 'The section heading if the picture has one. Otherwise empty.' },
       body: { type: 'string', description: 'A short intro paragraph under the heading if the picture has one. Otherwise empty.' },
       background: { type: 'string', enum: ['none', 'surface', 'accent', 'accentSoft', 'dark'], description: 'The colour band behind the whole layout.' },
+      backgroundColor: { type: 'string', description: 'The exact colour of that band as #rrggbb, if it is a colour (not white/very light grey).' },
       nodes: { type: 'array', description: 'Every block, parents before children. Top-level blocks have parent "root". Keep it under 60 blocks.', items: { type: 'object', required: ['id', 'parent', 'type'], properties: {
         id: { type: 'string', description: 'Short unique id, e.g. "b1".' },
         parent: { type: 'string', description: 'id of the containing box, or "root".' },
@@ -388,18 +389,29 @@ async function buildSection(anthropicKey: string, image: string, hint: string) {
         justify: { type: 'string', enum: ['start', 'center', 'end', 'between'] },
         width: { type: 'string', enum: ['auto', 'third', 'half', 'twoThirds', 'full'], description: 'Share of the parent row this block takes.' },
         repeat: { type: 'boolean', description: 'box: true when its children are copies of one design (cards, pills, steps), so the user can add or remove one.' },
-        role: { type: 'string', enum: ['eyebrow', 'heading', 'subheading', 'body', 'small', 'stat', 'label', 'quote'], description: 'text: its job and size.' },
+        role: { type: 'string', enum: ['display', 'eyebrow', 'heading', 'subheading', 'body', 'small', 'stat', 'label', 'quote'], description: 'text: its job and size. display = an oversized headline (much bigger than a normal heading, e.g. 80px+), heading = a normal section heading, subheading = a card title or a second headline line.' },
+        color: { type: 'string', description: 'text/chip: its exact colour as #rrggbb when it is not plain white/black/grey (e.g. a brand lime). Sample it from the picture.' },
+        fill: { type: 'string', description: 'box: its exact fill colour as #rrggbb when it is filled with a colour.' },
+        stretch: { type: 'boolean', description: 'chip: true if the pill is as wide as its column (pills in a row of equal widths).' },
+        crop: { type: 'object', description: 'image: where this picture sits in the screenshot, as fractions of the whole screenshot (0–1): x, y = top-left corner, w, h = size. Be precise: it is cut out and reused.', properties: { x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number' }, h: { type: 'number' } } },
         text: { type: 'string', description: 'text/chip: the words as they appear (copy them exactly; keep quotes and numbers). Use a short placeholder only if unreadable.' },
         weight: { type: 'string', enum: ['regular', 'bold'] },
         textAlign: { type: 'string', enum: ['start', 'center', 'end'] },
-        ratio: { type: 'string', enum: ['square', 'landscape', 'portrait', 'wide', 'tall'], description: 'image: its shape.' },
+        ratio: { type: 'string', enum: ['square', 'landscape', 'portrait', 'wide', 'tall', 'fill'], description: 'image: its shape. fill = it fills the height of its row (e.g. a photo running the full height beside text).' },
         alt: { type: 'string', description: 'image: what it shows, a few words.' },
         chipStyle: { type: 'string', enum: ['outline', 'filled', 'soft'] },
         icon: { type: 'string', enum: ['none', 'arrow', 'check', 'dot', 'plus'] },
       } } },
     } },
   };
-  const system = `You rebuild sections of a designer's portfolio case study from a screenshot, using only the section_layout blocks. Match the structure, proportions and hierarchy closely: rows vs columns, how many cards, where pictures sit, which areas are filled with colour, rounded corners, pills. Photos, screenshots, illustrations and charts become image blocks (the designer drops her own pictures in later). Words become text blocks with the right role; copy them exactly. Repeated cards should be identical in structure and sit in a box with repeat=true. Do not invent content that is not in the picture. Always answer by calling section_layout.`;
+  const system = `You rebuild sections of a designer's portfolio case study from a screenshot, using only the section_layout blocks. Match the structure, proportions and hierarchy closely: rows vs columns, how many cards, where pictures sit, which areas are filled with colour, rounded corners, pills. Photos, screenshots, illustrations and charts become image blocks (the designer drops her own pictures in later). Words become text blocks with the right role; copy them exactly. Repeated cards should be identical in structure and sit in a box with repeat=true. Do not invent content that is not in the picture.
+Be faithful to the look:
+- Size: a headline that is huge compared with the body is role "display"; keep the hierarchy of sizes.
+- Colour: give the exact #rrggbb for any coloured words, outlines and fills (sample them). Use the background band for the overall card colour.
+- Alignment: centred labels get textAlign "center"; things pinned to the bottom of a column use a column box with justify "between" (or a spacer layout); equal-width pills use stretch=true inside a grid box.
+- Two-column layouts: a row box with two column boxes, each with a width (half, third, twoThirds); a photo running the full height of its side is ratio "fill".
+- Give every image block a precise crop of where it is in the screenshot.
+Always answer by calling section_layout.`;
   const content: any[] = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } }, { type: 'text', text: `Rebuild this section.${hint ? ` Note from the designer: ${hint}` : ''}` }];
   const result = await askWithTool(anthropicKey, system, tool, content, 8000, 140000);
   if (!result) throw new Error('Claude did not return a layout. Try again.');
