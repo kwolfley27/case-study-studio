@@ -1,7 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Columns3, Crosshair, Eye, EyeOff, MousePointer2, Plus, Trash2 } from 'lucide-react';
-import { HoldIt } from './HoldIt';
+import { HoldIt, type HoldControl, type HoldSession } from './HoldIt';
 import { HeldView } from './HeldView';
 import { EditableText, EditingContext } from './EditableText';
 import { useExpressive } from './MotionKit';
@@ -221,6 +221,8 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
   const [held, setHeldRaw] = useState(false);
   const [heldBox, setHeldBox] = useState<React.CSSProperties | undefined>();
   const [heldPos, setHeldPos] = useState({ f: 0, v: .35 });
+  const [session, setSession] = useState<HoldSession>({ stale: false, presenter: false, task: null, ending: false });
+  const holdCtl = useRef<HoldControl | null>(null);
   // On a phone there's no room for a laptop beside a phone: show the mobile screen on its own, with its notes.
   const narrow = useNarrow(760);
   const chosen = (section.options?.show as 'both' | 'desktop' | 'mobile' | undefined) ?? 'both';
@@ -332,7 +334,9 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
       {(['a', 'b'] as const).map(st => <button key={st} type="button" role="radio" aria-checked={!(both && !narrow) && stage === st} onClick={() => { setBoth(false); setStage(st); }}>{!(both && !narrow) && stage === st && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>{st === 'a' ? nameA : nameB}</span></button>)}
       <button type="button" role="radio" aria-checked={both} onClick={() => setBoth(true)}>{both && <motion.i layoutId={`ss-stage-${section.id}`} className="csb-ss-stages-knob" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}<span>Side by side</span></button>
     </div>}
-    {held ? <HeldView image={mob?.image} stackMob={section.options?.stackMob === true} notes={notesFor('mobile').map(n => ({ title: n.title, detail: n.detail, at: n.at, i: n.i }))} f={heldPos.f} v={heldPos.v}
+    {held ? <HeldView image={mob?.image} stackMob={section.options?.stackMob === true} notes={notesFor('mobile').map(n => ({ title: n.title, detail: n.detail, at: n.at, i: n.i, key: section.items[n.i]?.key === true }))} f={heldPos.f} v={heldPos.v}
+      session={session} taskText={String(section.options?.task ?? '')} onContinue={() => holdCtl.current?.finish()}
+      recap={section.items.slice(base).map((n, k) => ({ title: n.title, detail: n.detail, at: Number(n.point) / 100 || 0, i: k + base, key: n.key === true })).filter(n => n.key)}
       stage={compare ? { names: [nameA, nameB], current: stage } : undefined} onStage={st => { setBoth(false); setStage(st); }} />
     : (compare && both && !narrow) || show === 'both' ? <>
       {show === 'both' && !both && layerToggle && <div className="csb-ss-layerrow">{layerToggle}</div>}
@@ -360,7 +364,7 @@ export function ScrollSite({ section, editorMode }: { section: CaseStudySection;
     </div>
     {centered && <div className="csb-ss-foot">{ticks}{!note && idle}{addBtn}</div>}
     </>}
-    {(held || (section.options?.show ?? 'both') !== 'desktop') && section.options?.hold !== false && <HoldIt held={held} onScroll={(f, v) => setHeldPos(p => ({ f, v: v ?? p.v }))} onLive={on => { if (on !== held) setHeld(on); }} sectionId={section.id} stage={stage} root={wrap} onPick={st => { setBoth(false); setStage(st); }} />}
+    {(held || (section.options?.show ?? 'both') !== 'desktop') && section.options?.hold !== false && <HoldIt held={held} onSession={setSession} control={holdCtl} base={String(section.options?.holdBase ?? '')} after={String(section.options?.after ?? '') || undefined} onScroll={(f, v) => setHeldPos(p => ({ f, v: v ?? p.v }))} onLive={on => { if (on !== held) setHeld(on); }} sectionId={section.id} stage={stage} root={wrap} onPick={st => { setBoth(false); setStage(st); }} />}
   </div>;
 }
 
@@ -388,7 +392,19 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
     {section.options?.hold !== false && <div className="csb-ss-holdctl">
       <span className="csb-sb-label">On their phone</span>
       {(compare ? [['liveA', String(section.options?.stageA ?? 'Wireframe')], ['liveB', String(section.options?.stageB ?? 'High fidelity')]] : [['live', 'Live prototype']]).map(([k, l]) => <label key={k}><small>{compare ? `${l}: live link` : l}</small><input type="url" inputMode="url" placeholder="Figma prototype or web link (optional)" value={String(section.options?.[k] ?? '')} onChange={e => onChange({ options: { ...(section.options ?? {}), [k]: e.target.value.trim() } })} /></label>)}
+      <span className="csb-sb-label" style={{ marginTop: 6 }}>A quick task (optional)</span>
+      <label><small>What should they try to find?</small><input value={String(section.options?.task ?? '')} placeholder="Find a Friday evening class" onChange={e => onChange({ options: { ...(section.options ?? {}), task: e.target.value } })} /></label>
+      {String(section.options?.task ?? '').trim() && (compare ? [['taskA', 'a', String(section.options?.stageA ?? 'Wireframe')], ['taskB', 'b', String(section.options?.stageB ?? 'High fidelity')]] : [['taskA', 'a', 'The page']]).map(([k, st, l]) => {
+        const opts = items.slice(base).map((n, x) => ({ n, i: x + base })).filter(({ n }) => n.value === 'mobile' && (!compare || (n.when === 'a' ? 'a' : n.when === 'both' ? st : 'b') === st));
+        return <label key={k}><small>{compare ? `${l}: where the answer is` : 'Where the answer is'}</small>
+          <select value={String(section.options?.[k] ?? '')} onChange={e => onChange({ options: { ...(section.options ?? {}), [k]: e.target.value } })}>
+            <option value="">{opts.length ? 'Choose the note at that spot…' : 'Add a mobile note at the answer first'}</option>
+            {opts.map(({ n, i }) => <option key={i} value={i}>{n.title}</option>)}
+          </select></label>; })}
+      {String(section.options?.task ?? '').trim() && <p className="csb-field-note">They try it on {compare ? 'each version' : 'the page'} and tap the answer. The laptop shows a running clock, the taps, and the results side by side. A tap counts when it lands on that note’s highlight (or near its spot).</p>}
       <label><small>Real app (TestFlight or App Store)</small><input type="url" inputMode="url" placeholder="https://testflight.apple.com/join/…" value={String(section.options?.appLink ?? '')} onChange={e => onChange({ options: { ...(section.options ?? {}), appLink: e.target.value.trim() } })} /></label>
+      <label><small>Address phones open (optional)</small><input type="url" inputMode="url" placeholder={typeof location !== 'undefined' ? `${location.origin}${location.pathname}` : ''} value={String(section.options?.holdBase ?? '')} onChange={e => onChange({ options: { ...(section.options ?? {}), holdBase: e.target.value.trim() } })} /></label>
+      <p className="csb-field-note">Only if this studio is also served at your own domain (for example a custom domain on GitHub Pages). The QR card shows this address, so people see where it goes.</p>
       <p className="csb-field-note">With a live link, the phone opens your real prototype so people can tap through it, with a switch back to the scrolling screen. {compare ? 'People can swipe left and right on their phone to flip this page between the two stages.' : ''} Native Xcode builds can’t run in a browser: add the TestFlight link and they get a button to install it.</p>
     </div>}
     <label className="csb-check-field"><input type="checkbox" checked={section.options?.stackMob === true} onChange={e => onChange({ options: { ...(section.options ?? {}), stackMob: e.target.checked } })} /> Mobile frame has several screens side by side: stack them into one page</label>
@@ -422,6 +438,7 @@ export function ScrollSiteControls({ section, onChange }: { section: CaseStudySe
         <button type="button" className="csb-quiet-button csb-ss-at" title="Attach this note to the middle of what the screen shows now" onClick={() => { const v = lastView.get(section.id); if (v) setItem(i, { point: String(Math.round(v.center * 1000) / 10), value: v.device }); }}><Crosshair size={12} /> Here</button>
         <button type="button" className="csb-icon-button" aria-label="Remove note" onClick={() => onChange({ items: items.filter((_, x) => x !== i) })}><Trash2 size={13} /></button>
       </div>
+      {section.options?.hold !== false && <label className="csb-ss-key"><input type="checkbox" checked={n.key === true} onChange={e => setItem(i, { key: e.target.checked || undefined })} /> Key decision <small>shown in the recap at the end of “Hold it”</small></label>}
     </div>; })}
     <button type="button" className="csb-quiet-button" onClick={() => onChange({ items: [...items, { title: 'New note', detail: 'What this part of the page does.', point: String(Math.round((lastView.get(section.id)?.center ?? .5) * 1000) / 10), value: lastView.get(section.id)?.device ?? 'desktop' }] })}><Plus size={13} /> Add note</button>
   </div>;
