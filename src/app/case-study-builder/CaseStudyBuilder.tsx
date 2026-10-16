@@ -47,7 +47,6 @@ import { IterationsControls } from "./Iterations";
 import { EndControls } from "./EndMore";
 import { FigJamPull } from "./FigJamPull";
 import { PublishDialog } from "./Publish";
-import { CatBuddy } from "./CatBuddy";
 import { Globe } from "lucide-react";
 import { getStudy } from "./studyLibrary";
 import { FeatureCompareControls, PositioningControls } from "./CompetitorViews";
@@ -439,31 +438,7 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
         <ProjectSettings onPickGradient={() => { setRightOpen(false); setGradPick(true); }} study={study} update={updateStudy} pickBgImage={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.onchange = async () => { const file = input.files?.[0]; if (!file) return; const url = URL.createObjectURL(file); try { const { downloadIntoDraft } = await import("./ImageSlots"); updateStudy({ hero: { style: "immersive", frame: "laptop", ...study.hero!, bg: "image", bgImage: await downloadIntoDraft(url, 700_000, 2200) } }); } finally { URL.revokeObjectURL(url); } }; input.click(); }} />
       </>}</div></aside>
     </div>
-    {!presenting && owner && <CatBuddy actions={{
-      sections: study.sections, selectedId, templates,
-      select: id => { setSelectedId(id); if (view === "canvas") setRightOpen(true); },
-      move: moveSection,
-      remove: id => { setStudy(previous => ({ ...previous, sections: previous.sections.filter(section => section.id !== id) })); if (selectedId === id) setSelectedId(null); },
-      setVariant: (id, variant) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => section.id === id ? { ...section, variant: variant as CaseStudySection["variant"] } : section) })),
-      add: addSection,
-      setMode: m => { if (m === "present") startPresenting(); else if (m === "preview") enterPreview(); else setView(m); },
-      openPublish: () => setShowPublish(true), openResearch: () => setShowResearch(true), openBrand: () => setShowBrand(true),
-      labelOf: s => s.title || navLabelFor(s),
-      mode: presenting ? "present" : view,
-      studyTitle: study.title, heroHasImage: !!study.heroImage,
-      header: { eyebrow: study.client, title: study.title, summary: study.summary, facts: heroFacts(study) },
-      setStudyText: (field, value) => { if (["title", "summary", "client", "heroCaption"].includes(field)) updateStudy({ [field]: value } as Partial<BuilderStudy>); },
-      snapshot: () => studyRef.current, restore: snap => setStudy(snap),
-      setText: (id, field, value) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== id) return section; const m = field.match(/^items\.(\d+)\.(title|detail)$/); if (m) return { ...section, items: section.items.map((item, i) => i === Number(m[1]) ? { ...item, [m[2]]: value } : item) }; return ["title", "eyebrow", "body"].includes(field) ? { ...section, [field]: value } : section; }) })),
-      moveTo: (id, to) => setStudy(previous => { const list = [...previous.sections]; const from = list.findIndex(x => x.id === id); if (from < 0) return previous; const [x] = list.splice(from, 1); list.splice(Math.max(0, Math.min(list.length, to)), 0, x); return { ...previous, sections: list }; }),
-      addAfter: (template, afterId) => { const newId = addSection(template); if (afterId) setStudy(previous => { const list = [...previous.sections]; const added = list.pop(); const at = list.findIndex(x => x.id === afterId); if (!added) return previous; list.splice(at < 0 ? list.length : at + 1, 0, added); return { ...previous, sections: list }; }); return newId; },
-      placeClip: (slot, clip) => {
-        void (async () => {
-          try { const url = await compressIntoDraft(await (await fetch(clip.image)).blob(), 1_600_000, 1600); setSlotImage(slot, url); } catch { setSlotImage(slot, clip.image); }
-          const [sid, idx] = slot.split(":"); if (clip.figmaUrl && /node-id=/.test(clip.figmaUrl) && idx != null) setStudy(previous => ({ ...previous, sections: previous.sections.map(section => section.id !== sid ? section : { ...section, items: section.items.map((item, i) => i === Number(idx) ? { ...item, figmaUrl: clip.figmaUrl } : item) }) }));
-        })();
-      },
-    }} />}
+
     {showPublish && <PublishDialog study={study} onClose={() => setShowPublish(false)} onPublished={at => updateStudy({ publishedAt: at })} />}
     {showBrand && view !== "preview" && <BrandPanel study={study} onChange={updateStudy} onClose={() => setShowBrand(false)} notify={(text, error) => setMessage({ text, error })} />}
     <GradientPicker on={gradPick && view !== "preview"} off={study.gradOffEls ?? []} onChange={gradOffEls => updateStudy({ gradOffEls })} onDone={() => { setGradPick(false); setRightOpen(true); }} />
