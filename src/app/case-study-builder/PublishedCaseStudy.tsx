@@ -7,7 +7,8 @@ import { publishedJsonUrl } from "./Publish";
 import "./case-study-builder.css";
 import "./apple-style.css";
 
-export default function PublishedCaseStudy({ slug }: { slug: string }) {
+// embed: shown inside katelynwolfley.design, which has its own navigation, so the page drops its "← Portfolio" link.
+export default function PublishedCaseStudy({ slug, embed = false }: { slug: string; embed?: boolean }) {
   const [study, setStudy] = useState<BuilderStudy | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [presenting, setPresenting] = useState(false);
@@ -28,5 +29,5 @@ export default function PublishedCaseStudy({ slug }: { slug: string }) {
     return () => controller.abort();
   }, [slug]);
   if (!study) return <main className="csb-app" style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}><div style={{ maxWidth: 480, textAlign: "center" }}><a href="https://katelynwolfley.design" style={{ color: "#497e72", fontSize: 13 }}>← Back to portfolio</a><h1 style={{ fontSize: 28, letterSpacing: "-.04em", margin: "26px 0 10px" }}>{error ? "Case study unavailable" : "Loading case study…"}</h1>{error && <p style={{ color: "#6d7672", lineHeight: 1.55 }}>{error}</p>}</div></main>;
-  return <main className="csb-app csb-published"><a href="#story" className="csb-skip" onClick={e => { e.preventDefault(); const sec = document.querySelector<HTMLElement>('[id^="builder-section-"]'); const h = sec?.querySelector<HTMLElement>("h2") ?? sec; if (!h) return; h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); sec?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Skip to the story</a><div style={{ position: "fixed", zIndex: 20, top: 20, left: 20 }}><a href="https://katelynwolfley.design" className="csb-quiet-button" style={{ textDecoration: "none" }}>← Portfolio</a></div>{!presenting && <button type="button" className="csb-quiet-button csb-present-open" onClick={() => setPresenting(true)}>Present</button>}<CaseStudyCanvas study={study} />{presenting && <PresentMode scroller={() => document.scrollingElement as HTMLElement} onExit={() => setPresenting(false)} />}</main>;
+  return <main className="csb-app csb-published"><a href="#story" className="csb-skip" onClick={e => { e.preventDefault(); const sec = document.querySelector<HTMLElement>('[id^="builder-section-"]'); const h = sec?.querySelector<HTMLElement>("h2") ?? sec; if (!h) return; h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); sec?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Skip to the story</a>{!embed && <div style={{ position: "fixed", zIndex: 20, top: 20, left: 20 }}><a href="https://katelynwolfley.design" className="csb-quiet-button" style={{ textDecoration: "none" }}>← Portfolio</a></div>}{!presenting && <button type="button" className="csb-quiet-button csb-present-open" onClick={() => setPresenting(true)}>Present</button>}<CaseStudyCanvas study={study} />{presenting && <PresentMode scroller={() => document.scrollingElement as HTMLElement} onExit={() => setPresenting(false)} />}</main>;
 }

@@ -439,7 +439,7 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
       </>}</div></aside>
     </div>
 
-    {showPublish && <PublishDialog study={study} onClose={() => setShowPublish(false)} onPublished={at => updateStudy({ publishedAt: at })} />}
+    {showPublish && <PublishDialog study={study} owner={owner} onWebsiteChange={on => updateStudy({ onWebsite: on })} onClose={() => setShowPublish(false)} onPublished={at => updateStudy({ publishedAt: at })} />}
     {showBrand && view !== "preview" && <BrandPanel study={study} onChange={updateStudy} onClose={() => setShowBrand(false)} notify={(text, error) => setMessage({ text, error })} />}
     <GradientPicker on={gradPick && view !== "preview"} off={study.gradOffEls ?? []} onChange={gradOffEls => updateStudy({ gradOffEls })} onDone={() => { setGradPick(false); setRightOpen(true); }} />
     <TextStyleBar accent={study.accent} accent2={study.accent2} enabled={view !== "preview"} styleOf={(sectionId, field) => study.sections.find(section => section.id === sectionId)?.textStyles?.[field]} onStyle={(sectionId, field, patch) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== sectionId) return section; const merged = { ...(section.textStyles?.[field] ?? {}), ...patch }; const clean = Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined)); const textStyles = { ...(section.textStyles ?? {}) }; if (Object.keys(clean).length) textStyles[field] = clean; else delete textStyles[field]; return { ...section, textStyles }; }) }))} />

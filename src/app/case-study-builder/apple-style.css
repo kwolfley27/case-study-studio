@@ -3194,3 +3194,12 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 @keyframes csb-cat-glow{50%{opacity:.45;transform:scale(1.06)}}
 @media (prefers-reduced-motion:reduce){.csb-cat.is-talking .csb-cat-btn:before{animation:none}}
 .csb-cm-seg button{padding:0 6px}
+/* Publish: show on my website */
+.csb-pub-site{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:4px 0 14px;padding:12px 14px;border-radius:14px;background:#f5f3f1;font-size:14px;color:#0f0e0d;cursor:pointer;text-align:left}
+.csb-pub-site small{display:block;margin-top:2px;font-size:12.5px;color:#6f6961;line-height:1.4}
+.csb-pub-site input{position:absolute;opacity:0;width:1px;height:1px}
+.csb-pub-site i{flex:none;width:38px;height:22px;border-radius:999px;background:#d6d1cb;position:relative;transition:background .2s}
+.csb-pub-site i:after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .2s}
+.csb-pub-site input:checked+i{background:#000}
+.csb-pub-site input:checked+i:after{transform:translateX(16px)}
+.csb-pub-site input:focus-visible+i{outline:2px solid #0f0e0d;outline-offset:2px}

@@ -15,8 +15,10 @@ const ENDPOINT = import.meta.env.VITE_STUDIO_UPLOAD_URL || (projectId ? `https:/
 export const publishedJsonUrl = (slug: string) => `https://${projectId}.supabase.co/storage/v1/object/public/case-study-media/published/${slug}.json`;
 export const publicPageUrl = (slug: string) => `${location.origin}${location.pathname}#/p/${slug}`;
 
-async function uploadJson(study: BuilderStudy, passcode: string) {
-  const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ publish: study.slug }) });
+// What your website needs to show a card for this case study (sent with each publish).
+const websiteCard = (s: BuilderStudy) => ({ title: s.title, summary: s.summary, eyebrow: s.client, heroImage: s.heroImage && /^https?:/.test(s.heroImage) ? s.heroImage : undefined, accent: s.accent, role: s.role, timeframe: s.timeframe });
+async function uploadJson(study: BuilderStudy, passcode: string, onWebsite?: boolean) {
+  const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ publish: study.slug, ...(onWebsite === undefined ? {} : { website: onWebsite ? websiteCard(study) : null }) }) });
   const d = await r.json().catch(() => ({}));
   if (r.status === 401) throw new Error('Please sign in again.');
   if (r.status === 409) throw new Error(d.error || 'That page address belongs to someone else. Pick another in Page settings.');
@@ -58,7 +60,8 @@ async function hostImages(study: BuilderStudy, onStage: (s: string, fraction: nu
   return copy;
 }
 
-export function PublishDialog({ study, onClose, onPublished }: { study: BuilderStudy; onClose: () => void; onPublished: (at: string) => void }) {
+export function PublishDialog({ study, onClose, onPublished, owner = false, onWebsiteChange }: { study: BuilderStudy; onClose: () => void; onPublished: (at: string) => void; owner?: boolean; onWebsiteChange?: (on: boolean) => void }) {
+  const [onSite, setOnSite] = useState(!!study.onWebsite);
   const [pass, setPass] = useState(() => { try { return localStorage.getItem(PASSCODE_KEY) || ''; } catch { return ''; } });
   const [busy, setBusy] = useState('');
   const [progress, setProgress] = useState(0);
@@ -75,7 +78,7 @@ export function PublishDialog({ study, onClose, onPublished }: { study: BuilderS
       const hosted = await hostImages(study, (label, f) => { setBusy(label); setProgress(p => Math.max(p, f)); });
       setBusy('Publishing the page'); setProgress(p => Math.max(p, .94));
       const at = new Date().toISOString();
-      await uploadJson({ ...hosted, publishedAt: at }, pass);
+      await uploadJson({ ...hosted, publishedAt: at, onWebsite: owner ? onSite : hosted.onWebsite }, pass, owner ? onSite : undefined);
       setProgress(1); onPublished(at); setDone(true); setJustDone(true); setTimeout(() => setJustDone(false), 1800);
     } catch (e) { setError(e instanceof Error ? e.message : 'Publish failed.'); }
     finally { setBusy(''); }
@@ -91,6 +94,7 @@ export function PublishDialog({ study, onClose, onPublished }: { study: BuilderS
         <button type="button" onClick={() => { void navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }} disabled={!done}><Copy size={13} /> {copied ? 'Copied' : 'Copy'}</button>
         <a href={url} target="_blank" rel="noreferrer" aria-disabled={!done}><ExternalLink size={13} /> Open</a>
       </div>
+      {owner && <label className="csb-pub-site"><span>Show on katelynwolfley.design<small>{onSite ? 'A card appears in your Work section, and the page opens inside your site.' : 'Only people with the link can see it.'}</small></span><input type="checkbox" role="switch" checked={onSite} onChange={e => { setOnSite(e.target.checked); onWebsiteChange?.(e.target.checked); }} /><i aria-hidden="true" /></label>}
       <button type="button" className={`csb-pub-go ${busy ? 'is-busy' : ''} ${justDone ? 'is-done' : ''}`} disabled={!!busy} onClick={() => void run()}
         aria-busy={!!busy} aria-valuenow={busy ? Math.round(progress * 100) : undefined} aria-valuemin={0} aria-valuemax={100} role={busy ? 'progressbar' : undefined} aria-label={busy ? `${busy}, ${Math.round(progress * 100)}%` : undefined}>
         {busy && <i className="csb-pub-fill" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />}

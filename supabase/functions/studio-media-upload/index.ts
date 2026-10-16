@@ -31,7 +31,7 @@ Deno.serve(async (request) => {
   const who = await caller(request);
   if (!who.ok) return reply({ error: who.error, message: who.message }, who.status);
 
-  let body: { name?: string; type?: string; size?: number; study?: string; publish?: string };
+  let body: { name?: string; type?: string; size?: number; study?: string; publish?: string; website?: Record<string, unknown> | null };
   try { body = await request.json(); } catch { return reply({ error: 'Send JSON.' }, 400); }
   const type = String(body.type || '');
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -42,11 +42,24 @@ Deno.serve(async (request) => {
   if (body.publish) {
     const slug = String(body.publish).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
     if (!slug) return reply({ error: 'Give the case study a page address first.' }, 400);
+    if (slug === 'portfolio') return reply({ error: 'That page address is reserved. Pick another in Page settings.' }, 400);
     // A page address belongs to whoever published it first (Katelyn's earlier pages belong to her).
     const { data: taken } = await supabase.from('published_slugs').select('owner').eq('slug', slug).maybeSingle();
     if (taken?.owner && who.userId && taken.owner !== who.userId) return reply({ error: 'That page address is already used by someone else. Pick another in Page settings.' }, 409);
     if (taken && !taken.owner && !who.owner) return reply({ error: 'That page address is already used. Pick another in Page settings.' }, 409);
     await supabase.from('published_slugs').upsert({ slug, owner: who.userId ?? taken?.owner ?? null, updated_at: new Date().toISOString() });
+    // Katelyn's website reads published/portfolio.json: the case studies she switched "Show on katelynwolfley.design" on for.
+    if ('website' in body && who.owner) {
+      const { data: file } = await supabase.storage.from(BUCKET).download('published/portfolio.json');
+      let list: Array<Record<string, unknown>> = [];
+      try { list = file ? JSON.parse(await file.text()) : []; } catch { list = []; }
+      if (!Array.isArray(list)) list = [];
+      const card = body.website as Record<string, unknown> | null;
+      const at = list.findIndex(x => x.slug === slug);
+      if (card) { const entry = { slug, ...card, updatedAt: new Date().toISOString() }; if (at >= 0) list[at] = { ...list[at], ...entry }; else list.push(entry); }
+      else if (at >= 0) list.splice(at, 1);
+      await supabase.storage.from(BUCKET).upload('published/portfolio.json', new Blob([JSON.stringify(list)], { type: 'application/json' }), { upsert: true, contentType: 'application/json', cacheControl: '60' });
+    }
     const path = `published/${slug}.json`;
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path, { upsert: true });
     if (error || !data) return reply({ error: `Storage: ${error?.message || 'could not create an upload link.'}` }, 500);

@@ -92,6 +92,8 @@ export interface BuilderStudy {
   timeframe: string;
   accent: string;
   heroImage?: string;
+  /** Show this case study on katelynwolfley.design when it's published (owner only). */
+  onWebsite?: boolean;
   /** Details under the header (label + value), up to four. Missing = role, team, timeline, status. */
   facts?: Array<{ label: string; value: string }>;
   /** Spotlight: one part of the hero screen shown larger, floating over it. Positions are % of the hero visual. */
