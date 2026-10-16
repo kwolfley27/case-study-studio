@@ -1,4 +1,5 @@
 // Case Study Studio — "Draft with AI"
+// Deployed automatically by .github/workflows/deploy-functions.yml when this folder changes.
 // Reads the linked Notion project page and Figma design page, asks Claude to
 // assemble a case study from the Studio's component library, and returns it.
 //
