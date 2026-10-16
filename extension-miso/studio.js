@@ -2,9 +2,11 @@
 // and passes Miso's answers back to the Figma tab.
 (() => {
   if (window.top !== window) return;
-  const post = (type, extra) => window.postMessage({ source: 'miso-ext', type, version: chrome.runtime.getManifest().version, ...extra }, location.origin);
+  const post = (type, extra) => window.postMessage({ source: 'miso-ext', type, version: chrome.runtime?.id ? chrome.runtime.getManifest().version : '', ...extra }, location.origin);
   window.addEventListener('message', e => {
     if (e.source !== window || e.data?.source !== 'miso-page') return;
+    // After the extension is updated, this old copy can't talk to it any more; stay quiet until the tab is reloaded.
+    if (!chrome.runtime?.id) return;
     if (e.data.type === 'hello') chrome.storage.local.get('clip').then(r => post('clip', { clip: r.clip || null }));
     if (e.data.type === 'clear') chrome.storage.local.remove('clip');
     if (e.data.type === 'state') chrome.storage.local.set({ misoAwake: !!e.data.awake, misoName: e.data.name || 'Miso', misoListen: e.data.listen || 'all' });

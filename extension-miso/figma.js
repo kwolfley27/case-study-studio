@@ -73,6 +73,7 @@
     const hasNode = /[?&]node-id=/.test(location.href);
     const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
     say('Got it…');
+    if (stale()) return;
     requestAnimationFrame(() => requestAnimationFrame(() => chrome.runtime.sendMessage({ type: 'miso-capture', rect, viewport: { w: innerWidth, h: innerHeight }, url: location.href, name: file ? `your ${file} frame` : 'the frame' }, res => {
       if (!res?.ok) { say('I couldn’t take that picture. Try again?'); chirp('hm'); return; }
       chirp(); say(awake ? `Got it! Tell me where it goes (“${name}, make this the hero”).` : (hasNode ? 'Got it! In the studio, point and say “put it here”.' : 'Got the picture. Tip: click the frame first, so I bring its link too.'));
@@ -89,10 +90,13 @@
   /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, follow = 0, buf = [], bt = 0;
-  const send = () => { const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
+  const send = () => { if (stale()) return; const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // After the extension is updated, this old copy can't reach it; say so instead of failing silently.
+  const stale = () => { if (chrome.runtime?.id) return false; try { rec?.abort(); } catch { /* ignore */ } rec = null; say('Miso was updated. Reload this tab to bring me back.'); return true; };
   let blocked = false;
   const listen = () => {
+    if (stale()) return;
     const want = awake && !document.hidden && !!SR;
     if (!want) { try { rec?.abort(); } catch { /* ignore */ } rec = null; cat.classList.remove('is-hearing'); return; }
     if (rec) return; blocked = false;
