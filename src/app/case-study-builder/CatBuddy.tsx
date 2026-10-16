@@ -33,7 +33,7 @@ export type CatActions = {
   // For requests Claude handles:
   setText: (sectionId: string, field: string, value: string) => void;
   moveTo: (sectionId: string, toIndex: number) => void;
-  addAfter: (t: ComponentTemplate, afterId?: string) => void;
+  addAfter: (t: ComponentTemplate, afterId?: string) => string | void;
   placeClip: (slot: string, clip: Clip) => void;
   snapshot: () => BuilderStudy;
   restore: (s: BuilderStudy) => void;
@@ -209,6 +209,8 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const k = sec.items.findIndex(it => !it.image); return `${sec.id}:${k >= 0 ? k : 0}`;
   };
 
+  // A smaller copy of the frame for Claude to look at (keeps each request light).
+  const small = async (src: string) => { const im = new Image(); im.src = src; await im.decode(); const k = Math.min(1, 1100 / im.naturalWidth, 2200 / im.naturalHeight); const cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k); cv.getContext('2d')!.drawImage(im, 0, 0, cv.width, cv.height); return cv.toDataURL('image/jpeg', .82); };
   /* Anything I don't understand myself goes to Claude, with a compact picture of the case study. */
   const askClaude = async (said: string, ambient = false, event = '') => {
     const a = act.current;
@@ -225,7 +227,9 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     };
     busy.current = true; setThinking(true); if (!ambient) setBubble(b => ({ text: '…', n: (b?.n ?? 0) + 1 }));
     try {
-      const r = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': pass }, body: JSON.stringify({ task: 'assistant', said, context }), signal: AbortSignal.timeout(35000) });
+      const c = clipRef.current; const fresh = !!c && Date.now() - (c.at ?? 0) < 20 * 60 * 1000;
+      const image = fresh && (event || remote.current || /\b(this|it|that|frame|screen|build|make|use|put|fill|add)\b/i.test(said)) ? await small(c!.image).catch(() => '') : '';
+      const r = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': pass }, body: JSON.stringify({ task: 'assistant', said, context, image }), signal: AbortSignal.timeout(35000) });
       const d = await r.json().catch(() => ({}));
       if (r.status === 401) { say('That passcode didn’t work.', 'hm'); return; }
       if (!r.ok || !d || !Array.isArray(d.actions)) { say(/Notion research link/.test(d?.error || '') ? 'My brain needs the latest AI update deployed.' : 'Hmm, that didn’t work. Try again?', 'hm'); return; }
@@ -234,15 +238,19 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       const risky = acts.some(x => x.type === 'delete_section');
       const apply = () => {
         if (acts.length) undo.current.push(a.snapshot());
-        for (const x of acts) {
-          const sec = a.sections.find(y => y.id === x.sectionId);
+        // Sections added in this reply are called "new1", "new2"… so later actions can fill them in.
+        const made: string[] = []; const idOf = (v: unknown) => { const m = String(v ?? '').match(/^new(\d*)$/); return m ? made[(Number(m[1]) || made.length) - 1] : String(v ?? ''); };
+        for (const x0 of acts) {
+          const x = { ...x0, sectionId: idOf(x0.sectionId), afterId: x0.afterId ? idOf(x0.afterId) : undefined };
+          const isNew = made.includes(x.sectionId);
+          const sec = a.sections.find(y => y.id === x.sectionId) ?? (isNew ? { id: x.sectionId, items: [] as Array<{ image?: string }> } as unknown as typeof a.sections[number] : undefined);
           if (x.type === 'set_text' && sec && typeof x.field === 'string' && typeof x.value === 'string') a.setText(sec.id, x.field, x.value);
-          if (x.type === 'add_section') { const t = a.templates.find(y => y.id === x.templateId); if (t) a.addAfter(t, x.afterId); }
+          if (x.type === 'add_section') { const t = a.templates.find(y => y.id === x.templateId); if (t) { const id = a.addAfter(t, x.afterId); if (id) made.push(id); } }
           if (x.type === 'move_section' && sec && Number.isFinite(x.toIndex)) a.moveTo(sec.id, Number(x.toIndex));
           if (x.type === 'delete_section' && sec) a.remove(sec.id);
           if (x.type === 'set_variant' && sec && x.variant) a.setVariant(sec.id, x.variant);
           if (x.type === 'select' && sec) { target.current = sec.id; a.select(sec.id); document.getElementById(`builder-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-          if (x.type === 'place_clip' && clipRef.current) { const sl = x.sectionId === 'hero' ? 'hero' : sec ? `${sec.id}:${Number.isFinite(x.itemIndex) ? x.itemIndex : Math.max(0, sec.items.findIndex(it => !it.image))}` : slotHere(); if (sl) a.placeClip(sl, clipRef.current); }
+          if (x.type === 'place_clip' && clipRef.current) { const sl = x.sectionId === 'hero' ? 'hero' : sec ? `${sec.id}:${Number.isFinite(x.itemIndex) ? x.itemIndex : Math.max(0, sec.items.findIndex(it => !it.image))}` : slotHere(); if (sl) a.placeClip(isNew && !Number.isFinite(x.itemIndex) ? `${x.sectionId}:0` : sl, clipRef.current); }
           if (x.type === 'set_mode' && x.mode) a.setMode(x.mode);
         }
       };

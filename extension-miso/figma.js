@@ -96,16 +96,51 @@
     setTimeout(() => {
       const node = nodeOf(location.href); if (!node || node === d[2] || node === lastPick || stale()) return;
       lastPick = node; const cr = d[3].getBoundingClientRect();
-      const sel = document.querySelector('[class*="layer_row"][class*="selected"] [class*="name"], [aria-selected="true"] [class*="layer_name"]');
-      const nm = (sel?.textContent || '').trim(); const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
+      void copyAsPng(node, cr);
+    }, 450);
+  }, true);
+
+  /* Figma's Copy as PNG, done for you: the real export at full quality, not a screenshot. */
+  const frameName = () => { const sel = document.querySelector('[class*="layer_row"][class*="selected"] [class*="name"], [aria-selected="true"] [class*="layer_name"]'); return (sel?.textContent || '').trim(); };
+  const readPng = async (ms, notBefore) => {
+    const end = Date.now() + ms;
+    while (Date.now() < end) {
+      try { for (const it of await navigator.clipboard.read()) { const t = it.types.find(x => x.startsWith('image/')); if (t) return await it.getType(t); } } catch { /* not allowed yet or not focused */ }
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return null;
+  };
+  const keepPng = async (blob, name) => {
+    const bmp = await createImageBitmap(blob); const k = Math.min(1, 2000 / bmp.width, 6000 / bmp.height);
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const image = c.toDataURL('image/webp', .92);
+    await chrome.storage.local.set({ clip: { image, figmaUrl: location.href, name, at: Date.now(), picked: true, png: true } });
+  };
+  let copying = false;
+  const copyAsPng = async (node, cr) => {
+    if (copying) return; copying = true; const nm = frameName();
+    try {
+      try { await navigator.clipboard.writeText(' '); } catch { /* fine */ }   // so I know the picture is new
+      const res = await chrome.runtime.sendMessage({ type: 'miso-copy-png', mac: /Mac/.test(navigator.platform) });
+      const blob = res?.ok ? await readPng(3000) : null;
+      if (blob) { await keepPng(blob, nm || 'that frame'); chirp(); say(`Holding ${nm || 'that frame'}. Tell me what to make with it.`); return; }
+      shoot(node, cr, nm);   // backup: a picture of the frame on screen
+    } finally { copying = false; }
+  };
+  // Pressing ⌘⇧C yourself works too.
+  addEventListener('keydown', e => { if (!awake || copying || !(e.metaKey || e.ctrlKey) || !e.shiftKey || e.code !== 'KeyC') return; copying = true; setTimeout(async () => { try { const b = await readPng(2500); if (b) { const nm = frameName(); await keepPng(b, nm || 'that frame'); chirp(); say(`Holding ${nm || 'that frame'}. Tell me what to make with it.`); } } finally { copying = false; } }, 400); }, true);
+
+  const shoot = (node, cr, nm) => {
+      {
+      const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
       cat.style.visibility = 'hidden'; toast.style.visibility = 'hidden'; carry.style.visibility = 'hidden';
       requestAnimationFrame(() => requestAnimationFrame(() => chrome.runtime.sendMessage({ type: 'miso-capture', selection: true, rect: { x: cr.left, y: cr.top, w: cr.width, h: cr.height }, viewport: { w: innerWidth, h: innerHeight }, url: location.href, name: nm || (file ? `a frame from ${file}` : 'the frame') }, res => {
         cat.style.visibility = ''; toast.style.visibility = ''; carry.style.visibility = '';
         if (!res?.ok) { lastPick = ''; if (res?.error === 'no-outline') say('I couldn’t see that frame. Hold Option and circle it instead.'); return; }
-        chirp(); say(`Holding ${nm || 'that frame'}.`);
+        chirp(); say(`Holding ${nm || 'that frame'}. Tell me what to make with it.`);
       })));
-    }, 450);
-  }, true);
+      }
+  };
 
   /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;

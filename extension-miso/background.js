@@ -36,6 +36,23 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     })();
     return true;
   }
+  // Press Figma's own Copy as PNG (⌘⇧C) for you. Only real key presses work, so this goes through Chrome's debugger
+  // for a moment (Chrome shows a "started debugging" bar while it's attached).
+  if (msg?.type === 'miso-copy-png' && sender.tab) {
+    (async () => {
+      const target = { tabId: sender.tab.id };
+      try {
+        await chrome.debugger.attach(target, '1.3');
+        const mac = msg.mac !== false; const mods = (mac ? 4 : 2) | 8; // ⌘ or Ctrl, plus Shift
+        const key = { modifiers: mods, key: 'C', code: 'KeyC', windowsVirtualKeyCode: 67, nativeVirtualKeyCode: 67 };
+        await chrome.debugger.sendCommand(target, 'Input.dispatchKeyEvent', { type: 'rawKeyDown', ...key });
+        await chrome.debugger.sendCommand(target, 'Input.dispatchKeyEvent', { type: 'keyUp', ...key });
+        reply({ ok: true });
+      } catch (e) { reply({ ok: false, error: String(e?.message || e) }); }
+      setTimeout(() => chrome.debugger.detach(target).catch(() => {}), 1200);
+    })();
+    return true;
+  }
   if (msg?.type === 'miso-command' && sender.tab) {
     (async () => {
       const tabs = await chrome.tabs.query({ url: STUDIO });

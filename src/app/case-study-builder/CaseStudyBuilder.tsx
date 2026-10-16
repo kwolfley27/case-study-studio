@@ -255,6 +255,7 @@ export default function CaseStudyBuilder() {
     setSelectedId(section.id);
     setAddedComponentName(template.name);
     setShowAdd(false);
+    return section.id;
   };
 
   const importJson = async (file?: File) => {
@@ -448,7 +449,7 @@ export default function CaseStudyBuilder() {
       snapshot: () => studyRef.current, restore: snap => setStudy(snap),
       setText: (id, field, value) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== id) return section; const m = field.match(/^items\.(\d+)\.(title|detail)$/); if (m) return { ...section, items: section.items.map((item, i) => i === Number(m[1]) ? { ...item, [m[2]]: value } : item) }; return ["title", "eyebrow", "body"].includes(field) ? { ...section, [field]: value } : section; }) })),
       moveTo: (id, to) => setStudy(previous => { const list = [...previous.sections]; const from = list.findIndex(x => x.id === id); if (from < 0) return previous; const [x] = list.splice(from, 1); list.splice(Math.max(0, Math.min(list.length, to)), 0, x); return { ...previous, sections: list }; }),
-      addAfter: (template, afterId) => { addSection(template); if (afterId) setStudy(previous => { const list = [...previous.sections]; const added = list.pop(); const at = list.findIndex(x => x.id === afterId); if (!added) return previous; list.splice(at < 0 ? list.length : at + 1, 0, added); return { ...previous, sections: list }; }); },
+      addAfter: (template, afterId) => { const newId = addSection(template); if (afterId) setStudy(previous => { const list = [...previous.sections]; const added = list.pop(); const at = list.findIndex(x => x.id === afterId); if (!added) return previous; list.splice(at < 0 ? list.length : at + 1, 0, added); return { ...previous, sections: list }; }); return newId; },
       placeClip: (slot, clip) => {
         void (async () => {
           try { const url = await compressIntoDraft(await (await fetch(clip.image)).blob(), 1_600_000, 1600); setSlotImage(slot, url); } catch { setSlotImage(slot, clip.image); }
