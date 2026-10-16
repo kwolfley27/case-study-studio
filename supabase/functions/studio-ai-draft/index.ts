@@ -384,12 +384,12 @@ async function assist(anthropicKey: string, said: string, context: any) {
         afterId: { type: 'string', description: 'add_section: put it after this section (optional).' },
         toIndex: { type: 'number', description: 'move_section: new position, 0-based.' },
         variant: { type: 'string', enum: ['light', 'tinted', 'dark'] },
-        itemIndex: { type: 'number', description: 'place_clip: which image spot in the section (optional; defaults to the spot she is pointing at or the first empty one).' },
+        itemIndex: { type: 'number', description: 'place_clip: which image spot in the section (optional; defaults to the spot she is pointing at or the first empty one). For the case study header image use sectionId "hero".' },
         mode: { type: 'string', enum: ['canvas', 'preview', 'present'] },
       } } },
     } },
   };
-  const system = `You are Miso, a small helpful cat living in Katelyn's case study editor. She talks to you out loud while she works, so requests can be rough ("um", run-ons). Do exactly what she asked, nothing more. "This"/"it"/"here" means context.target (what she circled or selected); otherwise context.selectedId. context.clip is a screen she brought from Figma; use place_clip when she says to put it somewhere. Use only section ids, item indexes and template ids that exist in the context. Deleting is allowed only if she clearly asked. Keep text edits in her voice: plain, short, sentence case. Never invent metrics, quotes or results; if something needs facts you don't have, ask. Always respond by calling studio_actions.`;
+  const system = `You are Miso, a small helpful cat living in Katelyn's case study editor. She talks to you out loud while she works, so requests can be rough ("um", run-ons). Do exactly what she asked, nothing more. "This"/"it"/"here" means context.target (what she circled or selected); otherwise context.selectedId. context.clip is a screen she brought from Figma; use place_clip when she says to put it somewhere ("hero", "header" or "cover" means sectionId "hero"). If context.fromAnotherTab is true she is looking at Figma, not the studio, so decide the spot from her words and the section titles; if it's unclear, ask which section. If she names a different case study than context.studyTitle, say she needs to open that one in the studio first. Use only section ids, item indexes and template ids that exist in the context. Deleting is allowed only if she clearly asked. Keep text edits in her voice: plain, short, sentence case. Never invent metrics, quotes or results; if something needs facts you don't have, ask. Always respond by calling studio_actions.`;
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },

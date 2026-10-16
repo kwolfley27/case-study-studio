@@ -38,6 +38,8 @@ export type CatActions = {
   snapshot: () => BuilderStudy;
   restore: (s: BuilderStudy) => void;
   mode: string;
+  studyTitle: string;
+  heroHasImage: boolean;
 };
 export type Clip = { image: string; figmaUrl?: string; name?: string; at?: number };
 type Reply = 'chirp' | 'voice' | 'silent';
@@ -123,7 +125,9 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const replyRef = useRef(replyMode); replyRef.current = replyMode;
   const supported = typeof window !== 'undefined' && !!getSR();
 
+  const remote = useRef(false); // the current request came from the Figma tab: answer there too
   const say = (text: string, tone: 'ok' | 'hm' = 'ok') => {
+    if (remote.current) { window.postMessage({ source: 'miso-page', type: 'reply', text, tone }, location.origin); }
     setBubble(b => ({ text, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 8000;
     if (replyRef.current === 'chirp') { chirp(tone); return; }
     if (replyRef.current !== 'voice' || !('speechSynthesis' in window)) return;
@@ -137,12 +141,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   useEffect(() => { if (!bubble) return; const t = setTimeout(() => setBubble(null), 4200); return () => clearTimeout(t); }, [bubble?.n]);
 
   /* ---------- understanding a command (all local) ---------- */
-  const run = (raw: string) => {
+  const run = (raw: string): Promise<void> | void => {
     const a = act.current; const s = norm(raw);
     const cur = target.current ?? a.selectedId; const curSec = a.sections.find(x => x.id === cur);
     if (pending.current) { if (/^(yes|yeah|yep|do it|sure|ok|okay)\b/.test(s)) { const f = pending.current; pending.current = null; f(); return; } pending.current = null; if (/^(no|nope|cancel|never mind)\b/.test(s)) { say('Okay, I left it.'); return; } }
     if (/^(undo|undo that|take that back|go back)\b/.test(s)) { const prev = undo.current.pop(); if (!prev) { say('Nothing to undo.', 'hm'); return; } a.restore(prev); say('Undone.'); return; }
-    if (/\b(put|place|drop|paste|add) (it|this|that|the frame|the screen)( here| there| in here)?\b/.test(s) && clipRef.current) { const slot = slotHere(); if (!slot) { say('Point at the spot first, then say put it here.', 'hm'); return; } undo.current.push(a.snapshot()); a.placeClip(slot, clipRef.current); say(`Placed ${clipRef.current.name || 'it'}.`); return; }
+    if (/\b(put|place|drop|paste|add) (it|this|that|the frame|the screen)( here| there| in here)?\b/.test(s) && clipRef.current && !remote.current) { const slot = slotHere(); if (!slot) { say('Point at the spot first, then say put it here.', 'hm'); return; } undo.current.push(a.snapshot()); a.placeClip(slot, clipRef.current); say(`Placed ${clipRef.current.name || 'it'}.`); return; }
     if (/\b(sleep|go to sleep|stop listening|that s all|bye)\b/.test(s)) { say('Napping. Click me when you need me.'); setTimeout(() => sleep(), 900); return; }
     if (/\b(thank|thanks|good (cat|kitty|job))\b/.test(s)) { say('Purr.'); return; }
     if (/\b(what can (i|you) (say|do)|help)\b/.test(s)) { say('Try preview, edit, present, publish, go to a section, add a section, move this up, or make this dark.'); setMenu(true); return; }
@@ -161,7 +165,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     if (add) { const t = bestMatch(add[1], a.templates, t => [t.name, t.kind, t.tags]); if (!t) { say(`I couldn’t find “${add[1]}”.`); return; } a.add(t); say(`Added ${t.name}.`); return; }
     const go = s.match(/\b(?:go to|show me|show|open|select|jump to|scroll to) (?:the )?(.+)$/);
     if (go) { const sec = bestMatch(go[1], a.sections, x => [a.labelOf(x), x.title, x.eyebrow, x.navLabel ?? '', x.kind]); if (!sec) { say(`I couldn’t find “${go[1]}”.`); return; } target.current = sec.id; a.select(sec.id); document.getElementById(`builder-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); say(a.labelOf(sec) + '.'); return; }
-    void askClaude(raw);
+    return askClaude(raw);
   };
 
   /* Where "here" is: the image spot under the mouse, else the first empty spot in the circled/selected section. */
@@ -180,7 +184,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     if (!pass) { say('I need your Studio passcode first. Add it in Draft with AI.', 'hm'); return; }
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
-      mode: a.mode, selectedId: a.selectedId, target: target.current,
+      studyTitle: a.studyTitle, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
       clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl } : null,
       pointingAtSlot: slotHere(),
       sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, title: cut(x.title, 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, 240), variant: x.variant, items: x.items.slice(0, 12).map((it, k) => ({ i: k, title: cut(it.title, 80), detail: cut(it.detail, 160), hasImage: !!it.image })) })),
@@ -204,7 +208,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           if (x.type === 'delete_section' && sec) a.remove(sec.id);
           if (x.type === 'set_variant' && sec && x.variant) a.setVariant(sec.id, x.variant);
           if (x.type === 'select' && sec) { target.current = sec.id; a.select(sec.id); document.getElementById(`builder-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-          if (x.type === 'place_clip' && clipRef.current) { const sl = sec ? `${sec.id}:${Number.isFinite(x.itemIndex) ? x.itemIndex : Math.max(0, sec.items.findIndex(it => !it.image))}` : slotHere(); if (sl) a.placeClip(sl, clipRef.current); }
+          if (x.type === 'place_clip' && clipRef.current) { const sl = x.sectionId === 'hero' ? 'hero' : sec ? `${sec.id}:${Number.isFinite(x.itemIndex) ? x.itemIndex : Math.max(0, sec.items.findIndex(it => !it.image))}` : slotHere(); if (sl) a.placeClip(sl, clipRef.current); }
           if (x.type === 'set_mode' && x.mode) a.setMode(x.mode);
         }
       };
@@ -217,7 +221,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   /* A screen brought over from Figma by the Miso extension. */
   useEffect(() => {
     const on = (e: MessageEvent) => {
-      if (e.source !== window || e.data?.source !== 'miso-ext' || e.data.type !== 'clip') return;
+      if (e.source !== window || e.data?.source !== 'miso-ext' || (e.data.type !== 'clip' && e.data.type !== 'command')) return;
+      if (e.data.type === 'command') {
+        if (e.data.clip) { setClip(e.data.clip); clipRef.current = e.data.clip; }
+        remote.current = true; Promise.resolve(run(String(e.data.said || ''))).finally(() => { remote.current = false; });
+        return;
+      }
       const c = e.data.clip as Clip | null; setClip(c);
       if (c && Date.now() - (c.at ?? 0) < 10 * 60 * 1000) { setBubble(b => ({ text: `Got ${c.name || 'a frame'} from Figma. Point and say “put it here”.`, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 12000; chirp(); }
     };
@@ -248,12 +257,18 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     r.onresult = (e: any) => { for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
     r.onerror = (e: any) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setError('I need the microphone. Allow it in the address bar, then click me.'); sleep(); } };
     // Browsers stop listening after a while; quietly start again while I'm awake.
-    r.onend = () => { sr.current = null; if (store.get('csb-cat-on', '0') === '1') setTimeout(() => { if (store.get('csb-cat-on', '0') === '1') start(); }, 300); };
+    r.onend = () => { sr.current = null; if (store.get('csb-cat-on', '0') === '1' && !document.hidden) setTimeout(() => { if (store.get('csb-cat-on', '0') === '1' && !document.hidden) start(); }, 300); };
     try { r.start(); sr.current = r; setError(''); } catch { /* already running */ }
   };
   const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
   const wake = () => { store.set('csb-cat-on', '1'); setAwake(true); start(); setHello(true); setTimeout(() => setHello(false), 2600); };
   useEffect(() => { if (awake) start(); return () => { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; }; }, []);
+  useEffect(() => { window.postMessage({ source: 'miso-page', type: 'state', awake, name }, location.origin); }, [awake, name]);
+  // While you're on another tab, the Miso extension listens there instead (so I never hear you twice).
+  useEffect(() => {
+    const vis = () => { if (document.hidden) { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; } else if (store.get('csb-cat-on', '0') === '1') start(); };
+    document.addEventListener('visibilitychange', vis); return () => document.removeEventListener('visibilitychange', vis);
+  }, []);
 
   /* Microphone loudness, so you can see I'm hearing you. */
   useEffect(() => {

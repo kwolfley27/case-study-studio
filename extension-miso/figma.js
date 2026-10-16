@@ -1,27 +1,34 @@
-// Miso on Figma: hold Option (Alt) and draw around a frame. Miso takes a picture of it, plus the link to
-// the frame you have selected, and carries it over to Case Study Studio.
+// Miso on Figma.
+// - Point (while Miso is awake): hold Option and move the mouse in a loop around a frame, then let go of Option.
+//   No clicking. Miso takes a picture of it, plus the link to the frame you have selected.
+// - Talk: while Miso is awake in the studio, it listens here too. Say "Miso, make this the hero" and the studio
+//   (open in another tab, even in the background) does it. The answer appears here.
 (() => {
   if (window.top !== window || window.__miso) return; window.__miso = true;
   const css = `
-  .miso-cat{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:74px;height:96px;image-rendering:pixelated;pointer-events:auto;cursor:grab;touch-action:none;filter:drop-shadow(0 6px 10px rgba(40,30,20,.25));transition:opacity .3s,transform .3s}
-  .miso-cat.is-hidden{opacity:0;transform:translateY(12px)}
+  .miso-cat{position:fixed;z-index:2147483646;width:74px;height:96px;image-rendering:pixelated;pointer-events:auto;cursor:grab;touch-action:none;filter:drop-shadow(0 6px 10px rgba(40,30,20,.25))}
+  .miso-cat.is-hearing{animation:miso-bop .5s ease-in-out infinite}
+  @keyframes miso-bop{50%{transform:translateY(-2px)}}
   .miso-carry{position:fixed;z-index:2147483647;width:34px;height:26px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 2px #fdfcfc,0 4px 8px -2px rgba(0,0,0,.35);transform:rotate(-8deg);pointer-events:none}
-  .miso-toast{position:fixed;z-index:2147483647;max-width:260px;padding:9px 13px;border-radius:16px 16px 4px 16px;background:#fdfcfc;color:#000;font:13px/1.35 Inter,system-ui,-apple-system,sans-serif;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 10px 24px -12px rgba(0,0,0,.3);pointer-events:none;transition:opacity .25s}
+  .miso-toast{position:fixed;z-index:2147483647;max-width:280px;padding:9px 13px;border-radius:16px;background:#fdfcfc;color:#000;font:13px/1.35 Inter,system-ui,-apple-system,sans-serif;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 10px 24px -12px rgba(0,0,0,.3);pointer-events:none;transition:opacity .25s}
+  .miso-toast.is-heard{color:#67615a;font-style:italic}
   .miso-lasso{position:fixed;inset:0;z-index:2147483645;width:100vw;height:100vh;pointer-events:none}
-  .miso-lasso polyline{fill:rgba(200,85,61,.08);stroke:#c8553d;stroke-width:2.5;stroke-dasharray:6 6;stroke-linecap:round;stroke-linejoin:round}`;
+  .miso-lasso polyline{fill:rgba(200,85,61,.08);stroke:#c8553d;stroke-width:2.5;stroke-dasharray:6 6;stroke-linecap:round;stroke-linejoin:round}
+  @media (prefers-reduced-motion:reduce){.miso-cat{animation:none!important}}`;
   const style = document.createElement('style'); style.textContent = css; document.documentElement.appendChild(style);
-  const cat = document.createElement('img'); cat.className = 'miso-cat'; cat.src = chrome.runtime.getURL('cat.png'); cat.alt = ''; document.documentElement.appendChild(cat);
+  const cat = document.createElement('img'); cat.className = 'miso-cat'; cat.alt = ''; document.documentElement.appendChild(cat);
   const carry = document.createElement('img'); carry.className = 'miso-carry'; carry.alt = ''; carry.style.display = 'none'; document.documentElement.appendChild(carry);
   const toast = document.createElement('div'); toast.className = 'miso-toast'; toast.style.opacity = '0'; document.documentElement.appendChild(toast);
-  let tt = 0; const say = t => { toast.textContent = t; toast.style.opacity = '1'; clearTimeout(tt); tt = setTimeout(() => { toast.style.opacity = '0'; }, 3600); };
-  const show = clip => { if (clip?.image) { carry.src = clip.image; carry.style.display = ''; } else { carry.style.display = 'none'; } };
-  // Drag Miso anywhere; the picture and the speech bubble follow. The spot is remembered.
+  let tt = 0; const say = (t, heard) => { toast.textContent = t; toast.classList.toggle('is-heard', !!heard); toast.style.opacity = '1'; clearTimeout(tt); tt = setTimeout(() => { toast.style.opacity = '0'; }, heard ? 2500 : 4200); };
+  const chirp = (kind = 'ok') => { try { const ctx = new AudioContext(); const notes = kind === 'ok' ? [[740, 0], [1110, .09]] : [[880, 0], [700, .1]]; for (const [f, t] of notes) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, ctx.currentTime + t); g.gain.linearRampToValueAtTime(.07, ctx.currentTime + t + .015); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + t + .16); o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .18); } setTimeout(() => ctx.close(), 600); } catch { /* no audio */ } };
+
+  /* ---- where Miso sits (drag to move; remembered) ---- */
   let pos = null;
   const place = () => {
     const x = pos ? pos[0] * innerWidth : innerWidth - 90, y = pos ? pos[1] * innerHeight : innerHeight - 112;
-    Object.assign(cat.style, { left: x + 'px', top: y + 'px', right: 'auto', bottom: 'auto' });
+    Object.assign(cat.style, { left: x + 'px', top: y + 'px' });
     Object.assign(carry.style, { left: x + 6 + 'px', top: y + 66 + 'px' });
-    const right = x > innerWidth / 2; Object.assign(toast.style, right ? { right: innerWidth - x + 6 + 'px', left: 'auto' } : { left: x + 80 + 'px', right: 'auto' }, { top: Math.max(8, y + 6) + 'px', bottom: 'auto' });
+    const right = x > innerWidth / 2; Object.assign(toast.style, right ? { right: innerWidth - x + 6 + 'px', left: 'auto' } : { left: x + 80 + 'px', right: 'auto' }, { top: Math.max(8, y + 6) + 'px' });
   };
   chrome.storage.local.get('misoPos').then(r => { pos = r.misoPos || null; place(); }); addEventListener('resize', place);
   cat.addEventListener('pointerdown', e => {
@@ -30,30 +37,72 @@
     const up = () => { removeEventListener('pointermove', mv, true); removeEventListener('pointerup', up, true); chrome.storage.local.set({ misoPos: pos }); };
     addEventListener('pointermove', mv, true); addEventListener('pointerup', up, true);
   });
-  chrome.storage.local.get('clip').then(r => show(r.clip)); chrome.storage.onChanged.addListener(ch => { if (ch.clip) show(ch.clip.newValue); });
 
+  /* ---- awake / asleep follows the studio ---- */
+  let awake = false, name = 'Miso';
+  const showCat = () => { cat.src = chrome.runtime.getURL(awake ? 'cat.png' : 'cat-sleep.png'); cat.title = awake ? `${name} is listening` : `${name} is asleep (wake ${name} in the studio)`; };
+  const showClip = clip => { if (clip?.image) { carry.src = clip.image; carry.style.display = ''; } else carry.style.display = 'none'; };
+  chrome.storage.local.get(['clip', 'misoAwake', 'misoName']).then(r => { showClip(r.clip); awake = !!r.misoAwake; name = r.misoName || 'Miso'; showCat(); listen(); });
+  chrome.storage.onChanged.addListener(ch => {
+    if (ch.clip) showClip(ch.clip.newValue);
+    if (ch.misoAwake || ch.misoName) { if (ch.misoAwake) awake = !!ch.misoAwake.newValue; if (ch.misoName) name = ch.misoName.newValue || 'Miso'; showCat(); listen(); }
+  });
+
+  /* ---- pointing: hold Option and circle (no click), or Option-drag ---- */
   const svgNS = 'http://www.w3.org/2000/svg';
   let pts = null, svg = null, line = null;
-  const block = e => { e.preventDefault(); e.stopImmediatePropagation(); };
-  window.addEventListener('pointerdown', e => {
-    if (!e.altKey || e.button !== 0) return; block(e);
-    pts = [[e.clientX, e.clientY]];
-    svg = document.createElementNS(svgNS, 'svg'); svg.setAttribute('class', 'miso-lasso'); line = document.createElementNS(svgNS, 'polyline'); svg.appendChild(line); document.documentElement.appendChild(svg);
-  }, true);
-  window.addEventListener('pointermove', e => { if (!pts) return; block(e); pts.push([e.clientX, e.clientY]); line.setAttribute('points', pts.map(p => p.join(',')).join(' ')); }, true);
-  window.addEventListener('pointerup', e => {
-    if (!pts) return; block(e); const p = pts; pts = null; svg?.remove();
-    if (p.length < 4) return;
+  const begin = (x, y) => { pts = x == null ? [] : [[x, y]]; svg = document.createElementNS(svgNS, 'svg'); svg.setAttribute('class', 'miso-lasso'); line = document.createElementNS(svgNS, 'polyline'); svg.appendChild(line); document.documentElement.appendChild(svg); };
+  const add = (x, y) => { if (!pts) return; const l = pts[pts.length - 1]; if (l && Math.hypot(x - l[0], y - l[1]) < 3) return; pts.push([x, y]); line.setAttribute('points', pts.map(p => p.join(',')).join(' ')); };
+  const finish = () => {
+    if (!pts) return; const p = pts; pts = null; svg?.remove(); svg = null;
+    if (p.length < 8) return;
     const xs = p.map(q => q[0]), ys = p.map(q => q[1]);
     const rect = { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
-    if (rect.w < 20 || rect.h < 20) return;
+    if (rect.w < 60 || rect.h < 60) return;
+    // A loop: the path comes back near where it started.
+    const close = Math.hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]) < Math.max(rect.w, rect.h) * .45;
+    if (!close) return;
     const hasNode = /[?&]node-id=/.test(location.href);
     const file = document.title.replace(/\s*[–-]\s*Figma\s*$/, '').trim();
     say('Got it…');
-    // Wait a frame so the lasso line isn't in the picture.
     requestAnimationFrame(() => requestAnimationFrame(() => chrome.runtime.sendMessage({ type: 'miso-capture', rect, viewport: { w: innerWidth, h: innerHeight }, url: location.href, name: file ? `your ${file} frame` : 'the frame' }, res => {
-      if (!res?.ok) { console.warn('Miso:', res?.error); say('I couldn’t take that picture. Try again?'); return; }
-      say(hasNode ? 'Got it! Go to the studio and say “put it here”.' : 'Got the picture. Tip: click the frame first, so I bring its link too.');
+      if (!res?.ok) { say('I couldn’t take that picture. Try again?'); chirp('hm'); return; }
+      chirp(); say(awake ? `Got it! Tell me where it goes (“${name}, make this the hero”).` : (hasNode ? 'Got it! In the studio, point and say “put it here”.' : 'Got the picture. Tip: click the frame first, so I bring its link too.'));
     })));
-  }, true);
+  };
+    // Only while Miso is awake, and only without clicking, so Figma's own Option-drag (duplicate) keeps working.
+  addEventListener('keydown', e => { if (e.key === 'Alt' && awake && !e.repeat && !pts && !/input|textarea/i.test(document.activeElement?.tagName || '')) begin(); }, true);
+  addEventListener('keyup', e => { if (e.key === 'Alt') finish(); }, true);
+  addEventListener('blur', () => { if (pts) { pts = null; svg?.remove(); svg = null; } });
+  addEventListener('pointermove', e => { if (pts) add(e.clientX, e.clientY); }, true);
+  // Pressing the mouse while holding Option is Figma's (duplicate, measure): drop the loop.
+  addEventListener('pointerdown', () => { if (pts) { pts = null; svg?.remove(); svg = null; } }, true);
+
+  /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, follow = 0;
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const listen = () => {
+    const want = awake && !document.hidden && !!SR;
+    if (!want) { try { rec?.abort(); } catch { /* ignore */ } rec = null; cat.classList.remove('is-hearing'); return; }
+    if (rec) return;
+    const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
+    r.onresult = e => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const s = norm(e.results[i][0].transcript), nm = norm(name); const at = (' ' + s + ' ').indexOf(' ' + nm + ' ');
+        const addressed = at >= 0 || Date.now() < follow; if (!addressed) continue;
+        const cmd = at >= 0 ? s.slice(at + nm.length).trim() : s;
+        cat.classList.add('is-hearing'); if (cmd) say(`“${cmd}”`, true);
+        if (e.results[i].isFinal && cmd) {
+          cat.classList.remove('is-hearing'); say('…');
+          chrome.runtime.sendMessage({ type: 'miso-command', said: cmd }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } });
+        }
+      }
+    };
+    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') say('To hear you on Figma, allow the microphone for figma.com (address bar).'); };
+    r.onend = () => { rec = null; setTimeout(listen, 400); };
+    try { r.start(); rec = r; } catch { /* already running */ }
+  };
+  document.addEventListener('visibilitychange', listen);
+  chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-reply') { say(msg.text); chirp(msg.tone || 'ok'); follow = Date.now() + 8000; } });
 })();
