@@ -3047,7 +3047,7 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-hero-visual{position:relative}
 .csb-spot{position:absolute;inset:0;pointer-events:none;z-index:3}
 .csb-spot-dim{position:absolute;inset:0;border-radius:inherit;background:rgba(15,14,13,.16);pointer-events:none}
-.csb-spot-card{position:absolute;left:var(--sx);top:var(--sy);width:var(--sw);translate:-50% -50%;border-radius:14px;background:#fdfcfc;overflow:hidden;box-shadow:0 0 0 1px rgba(15,14,13,.08),0 2px 6px rgba(15,14,13,.06),0 30px 60px -24px rgba(15,14,13,.34);pointer-events:auto}
+.csb-spot-card{position:absolute;left:var(--sx);top:var(--sy);width:var(--sw);translate:calc(-50% + var(--spot-fx,0px)) -50%;border-radius:14px;background:#fdfcfc;overflow:hidden;box-shadow:0 0 0 1px rgba(15,14,13,.08),0 2px 6px rgba(15,14,13,.06),0 30px 60px -24px rgba(15,14,13,.34);pointer-events:auto}
 .csb-spot-card img{display:block;width:100%;height:auto;user-select:none}
 .csb-spot-empty{display:grid;gap:4px;padding:22px 20px;font-size:13px;line-height:1.4;color:#6f6961;text-align:left;border:1px dashed #d6d1cb;border-radius:14px}
 .csb-spot-empty strong{font-weight:500;color:#0f0e0d;font-size:14px}
@@ -3084,3 +3084,5 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-spot-card:not(.has-image){background:#fdfcfc;border-radius:14px}
 .csb-cover-device,.csb-cover-media{position:relative}
 .csb-hx-media>.csb-spot,.csb-cover-device>.csb-spot{z-index:3}
+/* A little more room to grab editable text, without moving the layout */
+.csb-canvas-editable .csb-editable-text{padding:2px 3px;margin:-2px -3px;border-radius:4px}

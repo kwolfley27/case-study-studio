@@ -64,6 +64,20 @@ export function HeroSpot({ spot }: { spot: Spot }) {
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
   };
 
+  // The card may hang off the mockup, but never off the page (it would be cut off, or scroll sideways).
+  const cardRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const c = cardRef.current, page = c?.closest('.csb-canvas, .csb-hx, .csb-cover') as HTMLElement | null; if (!c || !page) return;
+      c.style.setProperty('--spot-fx', '0px'); c.style.setProperty('--spot-fy', '0px');
+      const r = c.getBoundingClientRect(), P = page.getBoundingClientRect(), g = 12;
+      const fx = r.right > P.right - g ? P.right - g - r.right : r.left < P.left + g ? P.left + g - r.left : 0;
+      const k = r.width ? c.offsetWidth / r.width : 1;   // the editor preview is scaled down
+      c.style.setProperty('--spot-fx', `${fx * k}px`);
+    };
+    fit(); const t = setInterval(fit, 500); window.addEventListener('resize', fit);
+    return () => { clearInterval(t); window.removeEventListener('resize', fit); };
+  });
   const vars = { '--sx': `${s.x}%`, '--sy': `${s.y}%`, '--sw': `${s.w}%`, '--rx': `${s.rx}%`, '--ry': `${s.ry}%`, '--rw': `${s.rw}%`, '--rh': `${s.rh}%` } as React.CSSProperties;
   const enter = (delay: number, y = 18) => reduce
     ? { initial: { opacity: 0 }, whileInView: { opacity: 1 }, transition: { duration: .4, delay } }
@@ -79,8 +93,8 @@ export function HeroSpot({ spot }: { spot: Spot }) {
         {edit && <b className="csb-spot-handle" onPointerDown={e => drag(e, (dx, dy) => ({ rw: clamp(s.rw + dx, 4, 100 - s.rx), rh: clamp(s.rh + dy, 4, 100 - s.ry) }))} />}
       </motion.div>
     </>}
-    <motion.div className={`csb-spot-card ${s.image ? 'has-image' : ''} ${s.round ? 'is-round' : ''}`} data-image-slot="heroSpot" {...enter(.55)} viewport={view}
-      onPointerDown={e => drag(e, (dx, dy) => ({ x: clamp(s.x + dx, 5, 95), y: clamp(s.y + dy, 5, 95) }))}>
+    <motion.div ref={cardRef} className={`csb-spot-card ${s.image ? 'has-image' : ''} ${s.round ? 'is-round' : ''}`} data-image-slot="heroSpot" {...enter(.55)} viewport={view}
+      onPointerDown={e => drag(e, (dx, dy) => ({ x: clamp(s.x + dx, -15, 115), y: clamp(s.y + dy, -15, 115) }))}>
       {s.image ? <img src={s.image} alt={s.alt || 'Highlighted part of the screen'} draggable={false} /> : edit ? <span className="csb-spot-empty"><strong>Spotlight</strong>Click to add the part you want to highlight. Paste a Figma frame or upload an image.</span> : null}
       {edit && <b className="csb-spot-handle" data-no-slot onPointerDown={e => drag(e, dx => ({ w: clamp(s.w + dx * 2, 12, 80) }))} />}
     </motion.div>
