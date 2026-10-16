@@ -1,3 +1,4 @@
+import { HeroSpot, type Spot } from './HeroSpot';
 import { useEffect, useRef, useState } from 'react';
 import { Media } from './Media';
 import { FileUp } from 'lucide-react';
@@ -17,11 +18,11 @@ import { DeviceFrame, HeroFramePicker, type Frame } from './DeviceFrame';
 type ViewProps = {
   label: string; title: string; body: string; image?: string; caption?: string; alt: string;
   fields: { label: string; title: string; body: string; caption: string };
-  slot: string; frame: Frame; editorMode: boolean; onFile?: (file: File) => void; picker?: boolean;
+  slot: string; frame: Frame; editorMode: boolean; onFile?: (file: File) => void; picker?: boolean; spot?: Spot;
 };
 
 /* The title-reveal layout itself, used by the header (study fields) and by legacy sections. */
-export function CoverHeroView({ label, title, body, image, caption, alt, fields, slot, frame, editorMode, onFile, picker }: ViewProps) {
+export function CoverHeroView({ label, title, body, image, caption, alt, fields, slot, frame, editorMode, onFile, picker, spot }: ViewProps) {
   const reduce = useReducedMotion();
   const [dragging, setDragging] = useState(false);
   // A device mockup is narrower than the title, so the title would show around it.
@@ -64,7 +65,7 @@ export function CoverHeroView({ label, title, body, image, caption, alt, fields,
     </motion.div>
     {picker && <div className="csb-cover-picker"><HeroFramePicker value={frame} /></div>}
     {frame !== 'none' && <div ref={deviceTop} aria-hidden="true" />}
-    {frame !== 'none' ? <motion.div className={`csb-cover-device is-${frame}`} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}><DeviceFrame frame={frame} image={image} alt={alt} slot={slot} hint={editorMode ? 'Click to add your screen' : undefined} /></motion.div> :
+    {frame !== 'none' ? <motion.div className={`csb-cover-device is-${frame}`} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}><DeviceFrame frame={frame} image={image} alt={alt} slot={slot} hint={editorMode ? 'Click to add your screen' : undefined} />{spot?.on && <HeroSpot spot={spot} />}</motion.div> :
     <motion.figure data-image-slot={slot} className={`csb-cover-media ${dragging ? 'is-dragging' : ''}`} {...drop} initial={reduce ? false : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [0.22, 1, 0.36, 1] }}>
       {image
         ? <Media src={image} alt={alt} />
@@ -72,6 +73,7 @@ export function CoverHeroView({ label, title, body, image, caption, alt, fields,
           ? <div className="csb-cover-empty"><FileUp size={26} strokeWidth={1.4} /><strong>Add your hero image or GIF</strong><span>click for files or a Figma link · it scrolls up over the title</span></div>
           : <div className="csb-cover-empty" aria-hidden="true" />}
       {editorMode && image && <span className="csb-cover-replace">Click or drop to replace</span>}
+      {spot?.on && <HeroSpot spot={spot} />}
     </motion.figure>}
     {(editorMode || caption) && <p className="csb-cover-caption"><EditableText field={fields.caption} value={caption || ''} /></p>}
   </div>;
@@ -79,7 +81,7 @@ export function CoverHeroView({ label, title, body, image, caption, alt, fields,
 
 /* Title reveal as the page header (Page settings › Header › Title reveal). */
 export function RevealHeader({ study, editorMode }: { study: BuilderStudy; editorMode: boolean }) {
-  return <header className="csb-reveal-header"><CoverHeroView label={study.client} title={study.title} body={study.summary} image={study.heroImage} caption={study.heroCaption} alt={`${study.title} hero visual`} fields={{ label: 'client', title: 'title', body: 'summary', caption: 'heroCaption' }} slot="hero" frame={(study.hero?.frame as Frame | undefined) ?? 'none'} editorMode={editorMode} picker /></header>;
+  return <header className="csb-reveal-header"><CoverHeroView label={study.client} title={study.title} body={study.summary} image={study.heroImage} caption={study.heroCaption} alt={`${study.title} hero visual`} fields={{ label: 'client', title: 'title', body: 'summary', caption: 'heroCaption' }} slot="hero" frame={(study.hero?.frame as Frame | undefined) ?? 'none'} editorMode={editorMode} picker spot={study.heroSpot} /></header>;
 }
 
 /* Legacy: a Title reveal hero added as a section (still renders older case studies). */

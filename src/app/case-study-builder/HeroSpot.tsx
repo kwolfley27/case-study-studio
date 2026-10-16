@@ -27,10 +27,20 @@ export function HeroSpot({ spot }: { spot: Spot }) {
     const measure = () => {
       const scr = host.querySelector<HTMLElement>('[data-image-slot="hero"]'); if (!scr) { setArea(null); return; }
       const a = host.getBoundingClientRect(), b = scr.getBoundingClientRect();
-      setArea({ left: b.left - a.left, top: b.top - a.top, width: b.width, height: b.height, radius: getComputedStyle(scr).borderRadius });
+      const k = a.width ? host.offsetWidth / a.width : 1;   // undo any scale on the host itself
+      const next = { left: (b.left - a.left) * k, top: (b.top - a.top) * k, width: b.width * k, height: b.height * k, radius: getComputedStyle(scr).borderRadius };
+      setArea(prev => prev && Math.abs(prev.left - next.left) < .5 && Math.abs(prev.top - next.top) < .5 && Math.abs(prev.width - next.width) < .5 && Math.abs(prev.height - next.height) < .5 ? prev : next);
     };
-    measure(); const ro = new ResizeObserver(measure); ro.observe(host); const scr = host.querySelector('[data-image-slot="hero"]'); if (scr) ro.observe(scr);
-    return () => ro.disconnect();
+    // Headers animate and scale their device in, which a ResizeObserver can't see: re-measure every frame
+    // for the first few seconds, then whenever the page scrolls or resizes.
+    let raf = 0, until = performance.now() + 3500, queued = 0;
+    const loop = () => { measure(); if (performance.now() < until) raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    const soon = () => { if (!queued) queued = requestAnimationFrame(() => { queued = 0; measure(); }); };
+    const ro = new ResizeObserver(soon); ro.observe(host); const scr = host.querySelector('[data-image-slot="hero"]'); if (scr) ro.observe(scr);
+    document.addEventListener('scroll', soon, { capture: true, passive: true }); window.addEventListener('resize', soon);
+    host.addEventListener('load', () => { until = performance.now() + 800; raf = requestAnimationFrame(loop); }, true);
+    return () => { cancelAnimationFrame(raf); cancelAnimationFrame(queued); ro.disconnect(); document.removeEventListener('scroll', soon, true); window.removeEventListener('resize', soon); };
   }, []);
   const s = { ...SPOT_DEFAULT, ...spot };
   const save = (p: Partial<Spot>) => edit?.('json:heroSpot', JSON.stringify({ ...s, ...p }));
@@ -69,7 +79,7 @@ export function HeroSpot({ spot }: { spot: Spot }) {
         {edit && <b className="csb-spot-handle" onPointerDown={e => drag(e, (dx, dy) => ({ rw: clamp(s.rw + dx, 4, 100 - s.rx), rh: clamp(s.rh + dy, 4, 100 - s.ry) }))} />}
       </motion.div>
     </>}
-    <motion.div className={`csb-spot-card ${s.image ? 'has-image' : ''}`} data-image-slot="heroSpot" {...enter(.55)} viewport={view}
+    <motion.div className={`csb-spot-card ${s.image ? 'has-image' : ''} ${s.round ? 'is-round' : ''}`} data-image-slot="heroSpot" {...enter(.55)} viewport={view}
       onPointerDown={e => drag(e, (dx, dy) => ({ x: clamp(s.x + dx, 5, 95), y: clamp(s.y + dy, 5, 95) }))}>
       {s.image ? <img src={s.image} alt={s.alt || 'Highlighted part of the screen'} draggable={false} /> : edit ? <span className="csb-spot-empty"><strong>Spotlight</strong>Click to add the part you want to highlight. Paste a Figma frame or upload an image.</span> : null}
       {edit && <b className="csb-spot-handle" data-no-slot onPointerDown={e => drag(e, dx => ({ w: clamp(s.w + dx * 2, 12, 80) }))} />}

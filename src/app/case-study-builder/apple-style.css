@@ -3078,3 +3078,9 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-ps-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .csb-ps-chips button{height:28px;padding:0 11px;border-radius:999px;border:1px solid #e3dfda;background:#fdfcfc;font:inherit;font-size:12.5px;color:#44403b;cursor:pointer}
 .csb-ps-chips button:hover{background:#f5f3f1;color:#0f0e0d}
+/* Spotlight keeps the image exactly as exported (square corners, transparency); rounding is an option. */
+.csb-spot-card{border-radius:0;background:none;overflow:visible;box-shadow:none;filter:drop-shadow(0 1px 2px rgba(15,14,13,.10)) drop-shadow(0 22px 34px rgba(15,14,13,.22))}
+.csb-spot-card.is-round{border-radius:14px;overflow:hidden;background:#fdfcfc;filter:none;box-shadow:0 0 0 1px rgba(15,14,13,.08),0 2px 6px rgba(15,14,13,.06),0 30px 60px -24px rgba(15,14,13,.34)}
+.csb-spot-card:not(.has-image){background:#fdfcfc;border-radius:14px}
+.csb-cover-device,.csb-cover-media{position:relative}
+.csb-hx-media>.csb-spot,.csb-cover-device>.csb-spot{z-index:3}

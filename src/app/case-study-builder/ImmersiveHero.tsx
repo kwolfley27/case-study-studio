@@ -1,3 +1,4 @@
+import { HeroSpot } from './HeroSpot';
 import { useRef } from 'react';
 import { motion, useTransform } from 'motion/react';
 import { EditableText } from './EditableText';
@@ -30,6 +31,7 @@ export function ImmersiveHero({ study, editorMode }: { study: BuilderStudy; edit
     <motion.div ref={media} className="csb-hx-media" initial={reduce ? false : { opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: .2, ease: [0.22, 1, 0.36, 1] }}>
       <HeroFramePicker value={hero.frame} />
       <DeviceFrame frame={hero.frame} image={study.heroImage} alt={`${study.title} hero visual`} slot="hero" hint={editorMode ? (hero.frame === 'none' ? 'Click to add a transparent PNG or image' : 'Click to add your screen') : undefined} />
+      {study.heroSpot?.on && <HeroSpot spot={study.heroSpot} />}
     </motion.div>
   </header>;
 }

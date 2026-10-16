@@ -95,7 +95,7 @@ export interface BuilderStudy {
   /** Details under the header (label + value), up to four. Missing = role, team, timeline, status. */
   facts?: Array<{ label: string; value: string }>;
   /** Spotlight: one part of the hero screen shown larger, floating over it. Positions are % of the hero visual. */
-  heroSpot?: { on: boolean; image?: string; alt?: string; x: number; y: number; w: number; dim?: boolean; ring?: boolean; rx: number; ry: number; rw: number; rh: number };
+  heroSpot?: { on: boolean; image?: string; alt?: string; x: number; y: number; w: number; dim?: boolean; ring?: boolean; round?: boolean; rx: number; ry: number; rw: number; rh: number };
   /** Figma frame the hero image is pulled from. */
   heroFigmaUrl?: string;
   /** When this case study was last published (public page at #/p/<slug>). */
