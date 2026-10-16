@@ -28,7 +28,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       if (!tabs.length) { reply({ ok: false, error: 'Open Case Study Studio in another tab first (it can stay in the background).' }); return; }
       const { clip } = await chrome.storage.local.get('clip');
       askedFrom = sender.tab.id;
-      for (const t of tabs) chrome.tabs.sendMessage(t.id, { type: 'miso-command', said: msg.said, clip: clip || null }).catch(() => {});
+      for (const t of tabs) chrome.tabs.sendMessage(t.id, { type: 'miso-command', said: msg.said, ambient: !!msg.ambient, clip: clip || null }).catch(() => {});
       reply({ ok: true });
     })();
     return true;

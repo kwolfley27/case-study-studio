@@ -39,12 +39,13 @@
   });
 
   /* ---- awake / asleep follows the studio ---- */
-  let awake = false, name = 'Miso';
+  let awake = false, name = 'Miso', mode = 'all';
   const showCat = () => { cat.src = chrome.runtime.getURL(awake ? 'cat.png' : 'cat-sleep.png'); cat.title = awake ? `${name} is listening` : `${name} is asleep (wake ${name} in the studio)`; };
   const showClip = clip => { if (clip?.image) { carry.src = clip.image; carry.style.display = ''; } else carry.style.display = 'none'; };
-  chrome.storage.local.get(['clip', 'misoAwake', 'misoName']).then(r => { showClip(r.clip); awake = !!r.misoAwake; name = r.misoName || 'Miso'; showCat(); listen(); });
+  chrome.storage.local.get(['clip', 'misoAwake', 'misoName', 'misoListen']).then(r => { showClip(r.clip); awake = !!r.misoAwake; name = r.misoName || 'Miso'; mode = r.misoListen || 'all'; showCat(); listen(); });
   chrome.storage.onChanged.addListener(ch => {
     if (ch.clip) showClip(ch.clip.newValue);
+    if (ch.misoListen) mode = ch.misoListen.newValue || 'all';
     if (ch.misoAwake || ch.misoName) { if (ch.misoAwake) awake = !!ch.misoAwake.newValue; if (ch.misoName) name = ch.misoName.newValue || 'Miso'; showCat(); listen(); }
   });
 
@@ -80,7 +81,8 @@
 
   /* ---- listening here while Miso is awake (the studio tab pauses itself while you're away) ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null, follow = 0;
+  let rec = null, follow = 0, buf = [], bt = 0;
+  const send = () => { const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
   const listen = () => {
     const want = awake && !document.hidden && !!SR;
@@ -90,6 +92,13 @@
     r.onresult = e => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const s = norm(e.results[i][0].transcript), nm = norm(name); const at = (' ' + s + ' ').indexOf(' ' + nm + ' ');
+        const raw = e.results[i][0].transcript.trim();
+        if (mode === 'all') {
+          // Everything mode: show what I hear, and pass it on after you pause; the studio decides if it's for me.
+          cat.classList.add('is-hearing'); say(`“${raw.slice(-110)}”`, true);
+          if (e.results[i].isFinal) { cat.classList.remove('is-hearing'); buf.push(raw); clearTimeout(bt); bt = setTimeout(send, 1100); }
+          continue;
+        }
         const addressed = at >= 0 || Date.now() < follow; if (!addressed) continue;
         const cmd = at >= 0 ? s.slice(at + nm.length).trim() : s;
         cat.classList.add('is-hearing'); if (cmd) say(`“${cmd}”`, true);
@@ -104,5 +113,5 @@
     try { r.start(); rec = r; } catch { /* already running */ }
   };
   document.addEventListener('visibilitychange', listen);
-  chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-reply') { say(msg.text); chirp(msg.tone || 'ok'); follow = Date.now() + 8000; } });
+  chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-reply' && msg.text) { say(msg.text); chirp(msg.tone || 'ok'); follow = Date.now() + 8000; } });
 })();

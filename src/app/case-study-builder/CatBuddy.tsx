@@ -88,6 +88,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const [name, setName] = useState(() => store.get('csb-cat-name', 'Miso'));
   const [replyMode, setReplyMode] = useState<Reply>(() => (store.get('csb-cat-reply', 'chirp') as Reply));
   const [thinking, setThinking] = useState(false);
+  // 'all': everything you say goes to Claude (smart, follows the conversation). 'name': only after "Miso".
+  const [listenMode, setListenMode] = useState<'all' | 'name'>(() => (store.get('csb-cat-listen', 'all') === 'name' ? 'name' : 'all'));
+  const listenRef = useRef(listenMode); listenRef.current = listenMode;
+  const history = useRef<Array<{ who: 'katelyn' | 'miso'; text: string }>>([]);
+  const remember = (who: 'katelyn' | 'miso', text: string) => { if (!text) return; history.current = [...history.current, { who, text: text.slice(0, 300) }].slice(-14); };
+  const buffer = useRef<string[]>([]); const bufTimer = useRef(0); const busy = useRef(false);
   const [clip, setClip] = useState<Clip | null>(null);
   const clipRef = useRef<Clip | null>(null); clipRef.current = clip;
   const undo = useRef<BuilderStudy[]>([]);
@@ -128,6 +134,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const remote = useRef(false); // the current request came from the Figma tab: answer there too
   const say = (text: string, tone: 'ok' | 'hm' = 'ok') => {
     if (remote.current) { window.postMessage({ source: 'miso-page', type: 'reply', text, tone }, location.origin); }
+    if (text && text !== '…') remember('miso', text);
     setBubble(b => ({ text, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 8000;
     if (replyRef.current === 'chirp') { chirp(tone); return; }
     if (replyRef.current !== 'voice' || !('speechSynthesis' in window)) return;
@@ -177,20 +184,20 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   };
 
   /* Anything I don't understand myself goes to Claude, with a compact picture of the case study. */
-  const askClaude = async (said: string) => {
+  const askClaude = async (said: string, ambient = false) => {
     const a = act.current;
     let pass = ''; try { pass = localStorage.getItem('csb-ai-passcode') || ''; } catch { /* ignore */ }
     if (!AI_URL) { say('I can only do the basics here.', 'hm'); return; }
     if (!pass) { say('I need your Studio passcode first. Add it in Draft with AI.', 'hm'); return; }
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
-      studyTitle: a.studyTitle, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
+      ambient, history: history.current.slice(-12, -1), studyTitle: a.studyTitle, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
       clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl } : null,
       pointingAtSlot: slotHere(),
       sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, title: cut(x.title, 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, 240), variant: x.variant, items: x.items.slice(0, 12).map((it, k) => ({ i: k, title: cut(it.title, 80), detail: cut(it.detail, 160), hasImage: !!it.image })) })),
       templates: a.templates.map(t => ({ id: t.id, name: t.name, kind: t.kind })),
     };
-    setThinking(true); setBubble(b => ({ text: '…', n: (b?.n ?? 0) + 1 }));
+    busy.current = true; setThinking(true); if (!ambient) setBubble(b => ({ text: '…', n: (b?.n ?? 0) + 1 }));
     try {
       const r = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}`, apikey: publicAnonKey, 'X-Studio-Passcode': pass }, body: JSON.stringify({ task: 'assistant', said, context }), signal: AbortSignal.timeout(35000) });
       const d = await r.json().catch(() => ({}));
@@ -213,9 +220,11 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         }
       };
       if (risky) { pending.current = () => { apply(); say('Done.'); }; say(`${String(d.say || 'Delete it?')} Say yes to go ahead.`, 'hm'); return; }
-      apply(); say(String(d.say || 'Done.'), acts.length ? 'ok' : 'hm');
+      apply();
+      const line = String(d.say ?? '').trim();
+      if (line) say(line, acts.length ? 'ok' : 'hm'); else if (acts.length) say('Done.'); else if (!ambient) say('Okay.', 'hm');
     } catch { say('I couldn’t reach my brain. Try again?', 'hm'); }
-    finally { setThinking(false); }
+    finally { setThinking(false); busy.current = false; }
   };
 
   /* A screen brought over from Figma by the Miso extension. */
@@ -224,7 +233,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       if (e.source !== window || e.data?.source !== 'miso-ext' || (e.data.type !== 'clip' && e.data.type !== 'command')) return;
       if (e.data.type === 'command') {
         if (e.data.clip) { setClip(e.data.clip); clipRef.current = e.data.clip; }
-        remote.current = true; Promise.resolve(run(String(e.data.said || ''))).finally(() => { remote.current = false; });
+        remote.current = true; const said = String(e.data.said || ''); remember('katelyn', said); Promise.resolve(e.data.ambient ? askClaude(said, true) : run(said)).finally(() => { remote.current = false; });
         return;
       }
       const c = e.data.clip as Clip | null; setClip(c);
@@ -243,19 +252,39 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     if (speaking.current) return;                     // don't hear myself
     const s = norm(text); const nm = norm(nameRef.current);
     const idx = (' ' + s + ' ').indexOf(' ' + nm + ' ');
-    const addressed = idx >= 0 || /\bhey (cat|kitty)\b/.test(s) || Date.now() < follow.current || !!pending.current;
-    if (!addressed) { setHeard(''); return; }
+    const named = idx >= 0 || /\bhey (cat|kitty)\b/.test(s);
     const cmd = idx >= 0 ? s.slice(idx + nm.length).trim() : s.replace(/\bhey (cat|kitty)\b/, '').trim();
+    if (listenRef.current === 'all') {
+      // Show what I'm hearing, always, so you can see I'm listening.
+      setHeard(text.trim().slice(-120) || '…');
+      if (!final) return;
+      setTimeout(() => setHeard(h => (h === text.trim().slice(-120) ? '' : h)), 1600);
+      if (pending.current || (named && cmd && quick(cmd))) { remember('katelyn', text.trim()); void run(cmd || s); return; }
+      // Everything else: gather what you say until you pause, then ask Claude what (if anything) to do.
+      buffer.current.push(text.trim()); clearTimeout(bufTimer.current);
+      bufTimer.current = window.setTimeout(flush, 1100);
+      return;
+    }
+    const addressed = named || Date.now() < follow.current || !!pending.current;
+    if (!addressed) { setHeard(''); return; }
     setHeard(cmd || '…');
-    if (final && cmd) { setHeard(''); run(cmd); }
+    if (final && cmd) { setHeard(''); remember('katelyn', cmd); void run(cmd); }
     else if (final && !cmd) { say('Mrrp?'); }
   };
+  /* Commands I can do instantly, without Claude (only when you say my name, so passing remarks never trigger them). */
+  const quick = (c: string) => /^(preview|edit|present|publish|undo|sleep|help|(open|go to|show) (research|brand)|move (it|this|that)? ?(up|down)|(make|set|turn) (it|this|that)? ?(dark|black|tinted|grey|gray|light|white)|add (a|an|another) .+)$/.test(norm(c));
+  const flush = () => {
+    if (busy.current) { clearTimeout(bufTimer.current); bufTimer.current = window.setTimeout(flush, 700); return; }
+    const said = buffer.current.join(' ').trim(); buffer.current = []; if (!said) return;
+    remember('katelyn', said); void askClaude(said, true);
+  };
+
   const start = () => {
     const C = getSR(); if (!C) { setError('Talking to me works in Chrome or Safari.'); return; }
     if (sr.current) return;
     const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
-    r.onresult = (e: any) => { for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
-    r.onerror = (e: any) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setError('I need the microphone. Allow it in the address bar, then click me.'); sleep(); } };
+    r.onresult = (e: any) => { setError(''); for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
+    r.onerror = (e: any) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setError('I need the microphone. Allow it in the address bar, then click me.'); sleep(); } else if (e.error === 'network') setError('Chrome’s speech service isn’t reachable right now. I’ll keep trying.'); else if (e.error === 'audio-capture') setError('I can’t find a microphone.'); };
     // Browsers stop listening after a while; quietly start again while I'm awake.
     r.onend = () => { sr.current = null; if (store.get('csb-cat-on', '0') === '1' && !document.hidden) setTimeout(() => { if (store.get('csb-cat-on', '0') === '1' && !document.hidden) start(); }, 300); };
     try { r.start(); sr.current = r; setError(''); } catch { /* already running */ }
@@ -263,7 +292,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
   const wake = () => { store.set('csb-cat-on', '1'); setAwake(true); start(); setHello(true); setTimeout(() => setHello(false), 2600); };
   useEffect(() => { if (awake) start(); return () => { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; }; }, []);
-  useEffect(() => { window.postMessage({ source: 'miso-page', type: 'state', awake, name }, location.origin); }, [awake, name]);
+  useEffect(() => { window.postMessage({ source: 'miso-page', type: 'state', awake, name, listen: listenMode }, location.origin); }, [awake, name, listenMode]);
   // While you're on another tab, the Miso extension listens there instead (so I never hear you twice).
   useEffect(() => {
     const vis = () => { if (document.hidden) { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; } else if (store.get('csb-cat-on', '0') === '1') start(); };
@@ -325,6 +354,10 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       </AnimatePresence>
       {menu && <div className="csb-cat-menu" role="dialog" aria-label={`${name} settings`}>
         <label><span>Name</span><input value={name} onChange={e => { setName(e.target.value); store.set('csb-cat-name', e.target.value); }} /></label>
+        <div className="csb-cat-reply" role="radiogroup" aria-label="What I listen for"><span>What I listen for</span>
+          <div>{([['all', 'Everything you say'], ['name', 'Only after “' + name + '”']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={listenMode === v} onClick={() => { setListenMode(v); store.set('csb-cat-listen', v); }}>{l}</button>)}</div>
+          <small className="csb-cat-hint">{listenMode === 'all' ? 'Smartest: I follow along and only act or answer when you want something. Each pause sends what you said to Claude, so it costs a little while you talk.' : 'Cheapest: I ignore everything until you say my name.'}</small>
+        </div>
         <div className="csb-cat-reply" role="radiogroup" aria-label="How I answer"><span>How I answer</span>
           <div>{([['chirp', 'Little chirp'], ['voice', 'Voice'], ['silent', 'Silent']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={replyMode === v} onClick={() => { setReplyMode(v); store.set('csb-cat-reply', v); if (v === 'chirp') chirp(); if (v === 'voice' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance('Hi, I’m ' + name + '.'); const vv = niceVoice(); if (vv) u.voice = vv; speechSynthesis.speak(u); } }}>{l}</button>)}</div>
         </div>
@@ -332,7 +365,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         <p>Say “{name}”, then:</p>
         <div className="csb-cat-cmds">{['preview', 'edit', 'present', 'publish', 'open research', 'go to the persona', 'add a bar chart', 'move this up', 'make this dark', 'delete this section', 'sleep'].map(c => <i key={c}>{c}</i>)}</div>
         <p>Hold <kbd>⌥ Option</kbd> and draw around something to point at it.</p>
-        <p className="is-note">Listening happens in your browser and costs nothing. The basics above are understood right here; anything else (like “make this caption shorter”) is sent to Claude, a small cost each time. “Undo” takes back my last change.</p>
+        <p className="is-note">Hearing you happens in your browser. What you say goes to Claude to understand it (in “Everything” mode, after each pause). “Undo” takes back my last change.</p>
         <p className="is-note">Drag me anywhere on the screen. Double-click me to send me back to my corner.</p>
         <p className="is-note"><a href={`${import.meta.env.BASE_URL}miso-extension.zip`} download>Get the Chrome extension</a> to bring frames over from Figma.</p>
         <button type="button" onClick={() => setMenu(false)}>Done</button>

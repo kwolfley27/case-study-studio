@@ -3021,3 +3021,4 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-cat.is-right .csb-cat-bubble{left:auto;right:8px;border-radius:16px 16px 4px 16px}
 .csb-cat.is-right.is-high .csb-cat-bubble{border-radius:16px 4px 16px 16px}
 .csb-cat.is-right .csb-cat-menu{left:auto;right:0}
+.csb-cat-hint{display:block;font-size:11.5px;line-height:1.4;color:#67615a;max-width:250px}
