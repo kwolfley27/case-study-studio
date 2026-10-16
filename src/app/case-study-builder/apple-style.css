@@ -2866,3 +2866,13 @@ html.csb-holding{overflow:hidden}
 .csb-trio-dots button{width:7px;height:7px;padding:0;border:0;border-radius:9999px;background:#00000022;cursor:pointer;transition:width .3s,background .3s}
 .csb-trio-dots button[aria-selected=true]{width:20px;background:#000}
 .csb-trio.is-dark .csb-trio-dots button{background:#ffffff33}.csb-trio.is-dark .csb-trio-dots button[aria-selected=true]{background:#fdfcfc}
+/* Publish button: progress fills the button itself */
+.csb-pub-go{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;isolation:isolate}
+.csb-pub-go.is-busy{opacity:1;background:#a59f97;cursor:progress}
+.csb-pub-go.is-busy:disabled{opacity:1}
+.csb-pub-fill{position:absolute;inset:0;z-index:-1;background:#000;transform-origin:left;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.csb-pub-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);animation:csb-pub-sheen 1.6s ease-in-out infinite}
+@keyframes csb-pub-sheen{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.csb-pub-fill{transition:none}.csb-pub-fill::after{display:none}}
+.csb-pub-go b{font-weight:400;font-variant-numeric:tabular-nums;opacity:.75}
+.csb-pub-go.is-done{background:#000}

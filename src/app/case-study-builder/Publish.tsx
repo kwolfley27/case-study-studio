@@ -23,7 +23,7 @@ async function uploadJson(study: BuilderStudy, passcode: string) {
   if (!put.ok) throw new Error(`Publish failed (${put.status}).`);
 }
 
-async function hostImages(study: BuilderStudy, onStage: (s: string) => void): Promise<BuilderStudy> {
+async function hostImages(study: BuilderStudy, onStage: (s: string, fraction: number) => void): Promise<BuilderStudy> {
   const copy: BuilderStudy = structuredClone(study);
   const slots: Array<{ get: () => string | undefined; set: (v: string) => void }> = [];
   if (copy.heroImage) slots.push({ get: () => copy.heroImage, set: v => { copy.heroImage = v; } });
@@ -35,12 +35,21 @@ async function hostImages(study: BuilderStudy, onStage: (s: string) => void): Pr
   });
   const local = slots.filter(x => x.get()?.startsWith('data:') || x.get()?.startsWith('blob:'));
   const done = new Map<string, string>();
-  for (let i = 0; i < local.length; i++) {
+  // Progress by bytes, so one big video counts for more than a small icon. Uploads are 92% of the bar; saving the page is the rest.
+  const uniq = [...new Set(local.map(x => x.get()!))];
+  const blobs = new Map<string, Blob>();
+  for (const src of uniq) blobs.set(src, await (await fetch(src)).blob());
+  const total = [...blobs.values()].reduce((n, b) => n + b.size, 0) || 1;
+  let sent = 0;
+  for (let i = 0, n = 0; i < local.length; i++) {
     const src = local[i].get()!;
     if (!done.has(src)) {
-      onStage(`Uploading images… ${i + 1} of ${local.length}`);
-      const blob = await (await fetch(src)).blob();
-      done.set(src, await uploadToStudio(blob, copy.slug || 'case-study', () => undefined));
+      n++;
+      const blob = blobs.get(src)!;
+      const label = `Uploading ${n} of ${uniq.length}`;
+      onStage(label, sent / total * .92);
+      done.set(src, await uploadToStudio(blob, copy.slug || 'case-study', f => onStage(label, (sent + f * blob.size) / total * .92)));
+      sent += blob.size;
     }
     local[i].set(done.get(src)!);
   }
@@ -50,6 +59,8 @@ async function hostImages(study: BuilderStudy, onStage: (s: string) => void): Pr
 export function PublishDialog({ study, onClose, onPublished }: { study: BuilderStudy; onClose: () => void; onPublished: (at: string) => void }) {
   const [pass, setPass] = useState(() => { try { return localStorage.getItem(PASSCODE_KEY) || ''; } catch { return ''; } });
   const [busy, setBusy] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [justDone, setJustDone] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(!!study.publishedAt);
   const [copied, setCopied] = useState(false);
@@ -58,11 +69,12 @@ export function PublishDialog({ study, onClose, onPublished }: { study: BuilderS
   const run = async () => {
     setError(''); try { localStorage.setItem(PASSCODE_KEY, pass); } catch { /* ignore */ }
     try {
-      const hosted = await hostImages(study, setBusy);
-      setBusy('Publishing the page…');
+      setProgress(0); setBusy('Getting ready');
+      const hosted = await hostImages(study, (label, f) => { setBusy(label); setProgress(p => Math.max(p, f)); });
+      setBusy('Publishing the page'); setProgress(p => Math.max(p, .94));
       const at = new Date().toISOString();
       await uploadJson({ ...hosted, publishedAt: at }, pass);
-      onPublished(at); setDone(true);
+      setProgress(1); onPublished(at); setDone(true); setJustDone(true); setTimeout(() => setJustDone(false), 1800);
     } catch (e) { setError(e instanceof Error ? e.message : 'Publish failed.'); }
     finally { setBusy(''); }
   };
@@ -78,7 +90,12 @@ export function PublishDialog({ study, onClose, onPublished }: { study: BuilderS
         <a href={url} target="_blank" rel="noreferrer" aria-disabled={!done}><ExternalLink size={13} /> Open</a>
       </div>
       {!pass && <input type="password" placeholder="Studio passcode" value={pass} onChange={e => setPass(e.target.value)} aria-label="Studio passcode" />}
-      <button type="button" className="csb-pub-go" disabled={!!busy || !pass} onClick={() => void run()}>{busy || (done ? 'Publish changes' : 'Publish')}</button>
+      <button type="button" className={`csb-pub-go ${busy ? 'is-busy' : ''} ${justDone ? 'is-done' : ''}`} disabled={!!busy || !pass} onClick={() => void run()}
+        aria-busy={!!busy} aria-valuenow={busy ? Math.round(progress * 100) : undefined} aria-valuemin={0} aria-valuemax={100} role={busy ? 'progressbar' : undefined} aria-label={busy ? `${busy}, ${Math.round(progress * 100)}%` : undefined}>
+        {busy && <i className="csb-pub-fill" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />}
+        <span>{busy ? busy : justDone ? 'Published' : done ? 'Publish changes' : 'Publish'}</span>
+        {busy && <b>{Math.round(progress * 100)}%</b>}
+      </button>
       {error && <p className="csb-pub-error" role="alert">{error}</p>}
       {study.publishedAt && <small>Last published {new Date(study.publishedAt).toLocaleString()}</small>}
     </div>
