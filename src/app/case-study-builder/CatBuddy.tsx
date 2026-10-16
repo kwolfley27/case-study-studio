@@ -123,11 +123,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const startRef = useRef<() => void>(() => {}); const fails = useRef(0); const lastWords = useRef(0); const lastPicked = useRef<number | undefined>(0); const figmaAt = useRef(0); const bornAt = useRef(0);
   const figmaHas = useRef(false);               // the Figma tab is listening right now (only one tab can at a time)
   const [onFigma, setOnFigma] = useState(false);
+  const hearRef = useRef<(said: string, fromFigma: boolean) => boolean>(() => false); const startBriefRef = useRef<(f: boolean) => void>(() => {});
   const wakeRef = useRef<(on: boolean) => void>(() => {});
   const [ext, setExt] = useState('');               // extension version, once it answers
   const [level, setLevel] = useState(0);              // mic loudness 0–1
   const [heard, setHeard] = useState('');             // live caption
-  const [bubble, setBubble] = useState<{ text: string; n: number } | null>(null);
+  const [bubble, setBubble] = useState<{ text: string; n: number; stay?: boolean } | null>(null);
   const [error, setError] = useState('');
   const [menu, setMenu] = useState(false);
   const [hello, setHello] = useState(false);
@@ -158,8 +159,8 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const supported = typeof window !== 'undefined' && !!getSR();
 
   const remote = useRef(false); // the current request came from the Figma tab: answer there too
-  const say = (text: string, tone: 'ok' | 'hm' = 'ok') => {
-    if (remote.current) { window.postMessage({ source: 'miso-page', type: 'reply', text, tone }, location.origin); }
+  const say = (text: string, tone: 'ok' | 'hm' = 'ok', kind = '') => {
+    if (remote.current) { window.postMessage({ source: 'miso-page', type: 'reply', text, tone, kind }, location.origin); }
     if (text && text !== '…') remember('miso', text);
     setBubble(b => ({ text, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 8000;
     if (replyRef.current === 'chirp') { chirp(tone); return; }
@@ -171,7 +172,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       speechSynthesis.speak(u);
     } catch { /* ignore */ }
   };
-  useEffect(() => { if (!bubble) return; const t = setTimeout(() => setBubble(null), 4200); return () => clearTimeout(t); }, [bubble?.n]);
+  useEffect(() => { if (!bubble || bubble.stay) return; const t = setTimeout(() => setBubble(null), 4200); return () => clearTimeout(t); }, [bubble?.n]);
 
   /* ---------- understanding a command (all local) ---------- */
   const run = (raw: string): Promise<void> | void => {
@@ -209,10 +210,41 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const k = sec.items.findIndex(it => !it.image); return `${sec.id}:${k >= 0 ? k : 0}`;
   };
 
+  /* ---------- talking about a frame ----------
+     After you pick a frame I just take notes while you talk about it. When you pause (or say "that's it"),
+     I nod, tell you what I'd make (or ask one question), and only build it once you say okay. */
+  const brief = useRef<{ words: string[]; phase: 'notes' | 'asking' | 'proposed'; fromFigma: boolean; timer: number } | null>(null);
+  const [notes, setNotes] = useState<{ words: string; phase: string } | null>(null);
+  const [nod, setNod] = useState(0);
+  const showNotes = () => { const b = brief.current; setNotes(b ? { words: b.words.join(' '), phase: b.phase } : null); if (b && b.fromFigma) window.postMessage({ source: 'miso-page', type: 'reply', text: b.words.length ? b.words.join(' ') : 'Tell me about it. I’m taking notes.', tone: 'ok', kind: 'note' }, location.origin); };
+  const startBrief = (fromFigma: boolean) => { clearTimeout(brief.current?.timer); pending.current = null; brief.current = { words: [], phase: 'notes', fromFigma, timer: 0 }; showNotes(); };
+  const endBrief = () => { clearTimeout(brief.current?.timer); brief.current = null; setNotes(null); setBubble(bb => (bb?.stay ? null : bb)); };
+  const propose = () => {
+    const b = brief.current; if (!b || !b.words.length) { endBrief(); return; }
+    clearTimeout(b.timer); setNod(n => n + 1); chirp();
+    if (b.fromFigma) window.postMessage({ source: 'miso-page', type: 'reply', text: 'Got it. Thinking…', tone: 'ok', kind: 'nod' }, location.origin);
+    b.phase = 'proposed'; showNotes(); remote.current = b.fromFigma;
+    Promise.resolve(askClaude(b.words.join(' '), false, 'frame_brief', true)).finally(() => { remote.current = false; });
+  };
+  const DONE_TALKING = /\b(that'?s (it|all)|i'?m done|go ahead|what do you think|okay go|ok go|make it|build it)\W*$/i;
+  // Every finished phrase goes through here first.
+  const hear = (said: string, fromFigma: boolean): boolean => {
+    const b = brief.current; if (!b) return false; const s = norm(said);
+    if (/^(never mind|cancel|forget it|stop)\b/.test(s)) { endBrief(); pending.current = null; remote.current = fromFigma; say('Okay, dropped it.'); remote.current = false; return true; }
+    if (b.phase === 'proposed') {
+      if (pending.current && /^(yes|yeah|yep|yup|do it|sure|ok|okay|sounds good|perfect|great|go for it)\b/.test(s)) { const f = pending.current; pending.current = null; remote.current = fromFigma; f(); remote.current = false; endBrief(); return true; }
+      // Anything else is a change or an answer: add it to the notes and think again.
+      pending.current = null; b.words.push(`(then she said:) ${said}`); b.fromFigma = fromFigma; propose(); return true;
+    }
+    b.words.push(said); b.fromFigma = fromFigma; showNotes(); clearTimeout(b.timer);
+    if (DONE_TALKING.test(said.trim())) { propose(); return true; }
+    b.timer = window.setTimeout(propose, 4500);      // a real pause means you're finished
+    return true;
+  };
   // A smaller copy of the frame for Claude to look at (keeps each request light).
   const small = async (src: string) => { const im = new Image(); im.src = src; await im.decode(); const k = Math.min(1, 1100 / im.naturalWidth, 2200 / im.naturalHeight); const cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k); cv.getContext('2d')!.drawImage(im, 0, 0, cv.width, cv.height); return cv.toDataURL('image/jpeg', .82); };
   /* Anything I don't understand myself goes to Claude, with a compact picture of the case study. */
-  const askClaude = async (said: string, ambient = false, event = '') => {
+  const askClaude = async (said: string, ambient = false, event = '', hold = false) => {
     const a = act.current;
     let pass = ''; try { pass = localStorage.getItem('csb-ai-passcode') || ''; } catch { /* ignore */ }
     if (!AI_URL) { say('I can only do the basics here.', 'hm'); return; }
@@ -254,6 +286,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           if (x.type === 'set_mode' && x.mode) a.setMode(x.mode);
         }
       };
+      if (hold) {
+        // Talking about a frame: show the plan (or the question) and wait for okay.
+        const line = String(d.say ?? '').trim() || (acts.length ? 'Here’s my plan. Okay?' : 'What should I make with it?');
+        if (acts.length) pending.current = () => { apply(); say(String(d.done || 'Done. It’s in.')); };
+        say(line, 'hm', 'plan'); setBubble(bb => ({ text: line, n: (bb?.n ?? 0) + 1, stay: true })); return;
+      }
       if (risky) { pending.current = () => { apply(); say('Done.'); }; say(`${String(d.say || 'Delete it?')} Say yes to go ahead.`, 'hm'); return; }
       apply();
       const line = String(d.say ?? '').trim();
@@ -272,13 +310,15 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       if (e.data.type !== 'clip' && e.data.type !== 'command') return;
       if (e.data.type === 'command') {
         if (e.data.clip) { setClip(e.data.clip); clipRef.current = e.data.clip; }
-        remote.current = true; const said = String(e.data.said || ''); remember('katelyn', said); Promise.resolve(e.data.ambient ? askClaude(said, true) : run(said)).finally(() => { remote.current = false; });
+        const said = String(e.data.said || ''); remember('katelyn', said);
+        if (e.data.ambient && hearRef.current(said, true)) return;
+        remote.current = true; Promise.resolve(e.data.ambient ? askClaude(said, true) : run(said)).finally(() => { remote.current = false; });
         return;
       }
       const c = e.data.clip as Clip | null; setClip(c);
       clipRef.current = c;
       // Picked by clicking in Figma while we have a plan (like filling this case study): let Claude place it.
-      if (c?.picked && plan.current && Date.now() - (c.at ?? 0) < 60 * 1000 && c.at !== lastPicked.current) { lastPicked.current = c.at; remote.current = true; Promise.resolve(askClaude(`(I clicked “${c.name || 'a frame'}” in Figma)`, true, 'figma_pick')).finally(() => { remote.current = false; }); return; }
+      if (c?.picked && Date.now() - (c.at ?? 0) < 60 * 1000 && c.at !== lastPicked.current) { lastPicked.current = c.at; startBriefRef.current(true); return; }
       if (c && Date.now() - (c.at ?? 0) < 10 * 60 * 1000) { setBubble(b => ({ text: `Got ${c.name || 'a frame'} from Figma. Point and say “put it here”.`, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 12000; chirp(); }
     };
     window.addEventListener('message', on);
@@ -301,12 +341,14 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       setHeard(text.trim().slice(-120) || '…');
       if (!final) return;
       setTimeout(() => setHeard(h => (h === text.trim().slice(-120) ? '' : h)), 1600);
+      if (brief.current) { remember('katelyn', text.trim()); hear(text.trim(), false); return; }
       if (pending.current || (named && cmd && quick(cmd))) { remember('katelyn', text.trim()); void run(cmd || s); return; }
       // Everything else: gather what you say until you pause, then ask Claude what (if anything) to do.
       buffer.current.push(text.trim()); clearTimeout(bufTimer.current);
       bufTimer.current = window.setTimeout(flush, 1100);
       return;
     }
+    if (brief.current) { setHeard(final ? '' : text.trim().slice(-120)); if (final) { remember('katelyn', text.trim()); hear(text.trim(), false); } return; }
     const addressed = named || Date.now() < follow.current || !!pending.current;
     if (!addressed) { setHeard(''); return; }
     setHeard(cmd || '…');
@@ -339,7 +381,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     r.onend = () => { if (sr.current === r) sr.current = null; setSound(false); if (store.get('csb-cat-on', '0') === '1') setTimeout(() => startRef.current(), fails.current > 3 ? 2500 : 250); };
     try { r.start(); sr.current = r; bornAt.current = Date.now(); } catch { sr.current = null; fails.current++; }
   };
-  startRef.current = start;
+  startRef.current = start; hearRef.current = hear; startBriefRef.current = startBrief;
   // Watchdog: if Chrome dropped listening without telling me, start again.
   useEffect(() => {
     const t = setInterval(() => { if (figmaHas.current && Date.now() - figmaAt.current > 15000) { figmaHas.current = false; setOnFigma(false); } if (sr.current && Date.now() - Math.max(bornAt.current, lastWords.current) > 50000) { try { sr.current.abort(); } catch { /* ignore */ } } if (store.get('csb-cat-on', '0') === '1' && !sr.current && !document.hidden && (!figmaHas.current || document.hasFocus())) startRef.current(); }, 2000);
@@ -411,9 +453,14 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     <div className={`csb-cat ${awake ? 'is-awake' : 'is-asleep'} ${hearing ? 'is-hearing' : ''} ${thinking ? 'is-thinking' : ''} ${clip ? 'has-clip' : ''} ${spot ? 'is-placed' : ''} ${spot && spot[1] < .35 ? 'is-high' : ''} ${spot && spot[0] > .6 ? 'is-right' : ''}`}
       style={spot ? { left: spot[0] * innerWidth, top: spot[1] * innerHeight, bottom: 'auto' } : undefined}>
       <AnimatePresence>
-        {(bubble || heard || error || hello) && <motion.div key={error ? 'err' : heard ? 'heard' : hello && !bubble ? 'hello' : `b${bubble?.n}`} className={`csb-cat-bubble ${heard ? 'is-heard' : ''}`}
+        {notes && notes.phase !== 'proposed' && !error && <motion.div key="notes" className="csb-cat-notes" role="status"
+          initial={{ opacity: 0, y: 6, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .2 }}>
+          <span>{notes.words ? 'Taking notes' : `Tell me about ${clip?.name || 'this frame'}`}</span>
+          <p>{notes.words ? notes.words.replace(/\(then she said:\) /g, '').slice(-320) : 'I’ll listen until you pause, then tell you what I’d make.'}{heard ? <i> {heard}</i> : null}</p>
+        </motion.div>}
+        {!(notes && notes.phase !== 'proposed' && !error) && (bubble || heard || error || hello || notes) && <motion.div key={error ? 'err' : heard ? 'heard' : hello && !bubble ? 'hello' : `b${bubble?.n}`} className={`csb-cat-bubble ${heard ? 'is-heard' : ''}`}
           initial={{ opacity: 0, y: 6, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .2 }} role="status">
-          {error || (heard ? `“${heard}”` : bubble?.text ?? `Hi! Say “${name}” and then what you need.`)}
+          {error || (heard ? `“${heard}”` : bubble?.text ?? (notes ? 'Got it. Thinking…' : `Hi! Say “${name}” and then what you need.`))}
         </motion.div>}
       </AnimatePresence>
       {menu && <div className="csb-cat-menu" role="dialog" aria-label={`${name} settings`}>
@@ -444,7 +491,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       <button type="button" className="csb-cat-btn" aria-pressed={awake} aria-label={awake ? `${name} is listening. Click to put ${name} to sleep.` : `Wake ${name} up to talk`}
         onPointerDown={startDrag} onDoubleClick={() => { setSpot(null); try { localStorage.removeItem('csb-cat-spot'); } catch { /* ignore */ } }}
         onClick={() => { if (dragged.current) { dragged.current = false; return; } if (awake) sleep(); else wake(); }} onContextMenu={e => { e.preventDefault(); setMenu(m => !m); }}>
-        <span className="csb-cat-sprite" style={{ width: W * SCALE, height: H * SCALE, backgroundImage: `url(${sprite})`, backgroundSize: `${W * 3 * SCALE}px ${H * SCALE}px`, backgroundPosition: `${-frame * W * SCALE}px 0` }} />
+        <span key={nod} className={`csb-cat-sprite ${nod ? 'is-nod' : ''}`} style={{ width: W * SCALE, height: H * SCALE, backgroundImage: `url(${sprite})`, backgroundSize: `${W * 3 * SCALE}px ${H * SCALE}px`, backgroundPosition: `${-frame * W * SCALE}px 0` }} />
         {!awake && <span className="csb-cat-z" aria-hidden="true">z<b>z</b></span>}
         {clip && <img className="csb-cat-carry" src={clip.image} alt="" aria-hidden="true" />}
         {awake && <span className="csb-cat-bars" aria-hidden="true">{bars.map((b, i) => <i key={i} style={{ transform: `scaleY(${b})` }} />)}</span>}

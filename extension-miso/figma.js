@@ -12,6 +12,11 @@
   .miso-carry{position:fixed;z-index:2147483647;width:34px;height:26px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 2px #fdfcfc,0 4px 8px -2px rgba(0,0,0,.35);transform:rotate(-8deg);pointer-events:none}
   .miso-toast{position:fixed;z-index:2147483647;max-width:280px;padding:9px 13px;border-radius:16px;background:#fdfcfc;color:#000;font:13px/1.35 Inter,system-ui,-apple-system,sans-serif;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 10px 24px -12px rgba(0,0,0,.3);pointer-events:none;transition:opacity .25s}
   .miso-toast.is-heard{color:#67615a;font-style:italic}
+  .miso-toast b{display:block;font-weight:500;font-size:12px;color:#6f6961;margin-bottom:3px;font-style:normal}
+  .miso-toast i{color:#6f6961}
+  .miso-toast.is-notes{max-width:300px;font-size:14px;line-height:1.45}
+  .miso-cat.is-nod{animation:miso-nod .9s cubic-bezier(.3,.7,.3,1)}
+  @keyframes miso-nod{0%,100%{transform:none}25%{transform:translateY(4px) rotate(-2deg)}50%{transform:none}70%{transform:translateY(3px)}}
   .miso-lasso{position:fixed;inset:0;z-index:2147483645;width:100vw;height:100vh;pointer-events:none}
   .miso-lasso polyline{fill:rgba(200,85,61,.08);stroke:#c8553d;stroke-width:2.5;stroke-dasharray:6 6;stroke-linecap:round;stroke-linejoin:round}
   @media (prefers-reduced-motion:reduce){.miso-cat{animation:none!important}}`;
@@ -19,7 +24,10 @@
   const cat = document.createElement('img'); cat.className = 'miso-cat'; cat.alt = ''; document.documentElement.appendChild(cat);
   const carry = document.createElement('img'); carry.className = 'miso-carry'; carry.alt = ''; carry.style.display = 'none'; document.documentElement.appendChild(carry);
   const toast = document.createElement('div'); toast.className = 'miso-toast'; toast.style.opacity = '0'; document.documentElement.appendChild(toast);
-  let tt = 0; const say = (t, heard) => { toast.textContent = t; toast.classList.toggle('is-heard', !!heard); toast.style.opacity = '1'; clearTimeout(tt); tt = setTimeout(() => { toast.style.opacity = '0'; }, heard ? 2500 : 4200); };
+  let tt = 0; const say = (t, heard, stay) => { noteText = ''; toast.classList.remove('is-notes'); toast.textContent = t; toast.classList.toggle('is-heard', !!heard); toast.style.opacity = '1'; clearTimeout(tt); if (!stay) tt = setTimeout(() => { toast.style.opacity = '0'; }, heard ? 2500 : 4200); };
+  // While I'm taking notes about a frame, the toast shows everything you've said about it so far.
+  let noteText = ''; const esc = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const showNotes = (interim = '') => { clearTimeout(tt); toast.classList.remove('is-heard'); toast.classList.add('is-notes'); toast.innerHTML = `<b>${noteText === '…' ? 'Tell me about it. I’m taking notes.' : 'Taking notes'}</b>${noteText === '…' ? '' : esc(noteText.replace(/\(then she said:\) /g, '').slice(-320))}${interim ? ` <i>${esc(interim)}</i>` : ''}`; toast.style.opacity = '1'; };
   const chirp = (kind = 'ok') => { try { const ctx = new AudioContext(); const notes = kind === 'ok' ? [[740, 0], [1110, .09]] : [[880, 0], [700, .1]]; for (const [f, t] of notes) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, ctx.currentTime + t); g.gain.linearRampToValueAtTime(.07, ctx.currentTime + t + .015); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + t + .16); o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .18); } setTimeout(() => ctx.close(), 600); } catch { /* no audio */ } };
 
   /* ---- where Miso sits (drag to move; remembered) ---- */
@@ -123,7 +131,7 @@
       try { await navigator.clipboard.writeText(' '); } catch { /* fine */ }   // so I know the picture is new
       const res = await chrome.runtime.sendMessage({ type: 'miso-copy-png', mac: /Mac/.test(navigator.platform) });
       const blob = res?.ok ? await readPng(3000) : null;
-      if (blob) { await keepPng(blob, nm || 'that frame'); chirp(); say(`Holding ${nm || 'that frame'}. Tell me what to make with it.`); return; }
+      if (blob) { await keepPng(blob, nm || 'that frame'); chirp(); say(`Holding ${nm || 'that frame'}.`); return; }
       shoot(node, cr, nm);   // backup: a picture of the frame on screen
     } finally { copying = false; }
   };
@@ -165,7 +173,7 @@
         const raw = e.results[i][0].transcript.trim();
         if (mode === 'all') {
           // Everything mode: show what I hear, and pass it on after you pause; the studio decides if it's for me.
-          cat.classList.add('is-hearing'); say(`“${raw.slice(-110)}”`, true);
+          cat.classList.add('is-hearing'); if (noteText) showNotes(e.results[i].isFinal ? raw : raw.slice(-110)); else say(`“${raw.slice(-110)}”`, true);
           if (e.results[i].isFinal) { cat.classList.remove('is-hearing'); buf.push(raw); clearTimeout(bt); bt = setTimeout(send, 1100); }
           continue;
         }
@@ -187,5 +195,10 @@
   document.addEventListener('visibilitychange', listen); addEventListener('focus', listen); addEventListener('blur', listen);
   let quietSince = Date.now();
   setInterval(() => { if (rec) chrome.storage.local.set({ misoFigma: Date.now() }).catch(() => {}); if (rec && Date.now() - quietSince > 50000) { quietSince = Date.now(); try { rec.abort(); } catch { /* ignore */ } } }, 5000);
-  chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-reply' && msg.text) { say(msg.text); chirp(msg.tone || 'ok'); follow = Date.now() + 8000; } });
+  chrome.runtime.onMessage.addListener(msg => {
+    if (msg?.type !== 'miso-reply' || !msg.text) return;
+    if (msg.kind === 'note') { noteText = /taking notes/.test(msg.text) ? '…' : msg.text; showNotes(); return; }
+    if (msg.kind === 'nod') { cat.classList.remove('is-nod'); void cat.offsetWidth; cat.classList.add('is-nod'); say(msg.text); return; }
+    say(msg.text, false, msg.kind === 'plan'); chirp(msg.tone || 'ok'); follow = Date.now() + 8000;
+  });
 })();

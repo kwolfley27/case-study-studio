@@ -65,6 +65,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if (msg?.type === 'miso-reply' && askedFrom != null) {
-    chrome.tabs.sendMessage(askedFrom, { type: 'miso-reply', text: msg.text, tone: msg.tone }).catch(() => {});
+    chrome.tabs.sendMessage(askedFrom, { type: 'miso-reply', text: msg.text, tone: msg.tone, kind: msg.kind || '' }).catch(() => {});
   }
 });

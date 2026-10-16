@@ -10,7 +10,7 @@
     if (e.data.type === 'hello') chrome.storage.local.get(['clip', 'misoFigma']).then(r => { post('clip', { clip: r.clip || null }); post('figma', { on: !!r.misoFigma && Date.now() - r.misoFigma < 15000 }); });
     if (e.data.type === 'clear') chrome.storage.local.remove('clip');
     if (e.data.type === 'state') chrome.storage.local.set({ misoAwake: !!e.data.awake, misoName: e.data.name || 'Miso', misoListen: e.data.listen || 'all' });
-    if (e.data.type === 'reply') chrome.runtime.sendMessage({ type: 'miso-reply', text: e.data.text, tone: e.data.tone }).catch(() => {});
+    if (e.data.type === 'reply') chrome.runtime.sendMessage({ type: 'miso-reply', text: e.data.text, tone: e.data.tone, kind: e.data.kind || '' }).catch(() => {});
   });
   chrome.storage.onChanged.addListener(ch => { if (ch.clip) post('clip', { clip: ch.clip.newValue || null }); if (ch.misoAwake) post('wake', { awake: !!ch.misoAwake.newValue }); if (ch.misoFigma) post('figma', { on: !!ch.misoFigma.newValue }); });
   chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-command') post('command', { said: msg.said, clip: msg.clip, ambient: !!msg.ambient }); });

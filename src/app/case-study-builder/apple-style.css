@@ -3032,3 +3032,13 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-cat-meter{display:block;height:6px;border-radius:9999px;background:#e7e5e4;overflow:hidden}
 .csb-cat-meter em{display:block;height:100%;background:#2f7d4f;transform-origin:left;transition:transform .08s linear}
 .csb-cat-link{border:0;background:none;padding:0;font:inherit;color:#000;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* Miso taking notes about a frame, and nodding when he's got it */
+.csb-cat-notes{position:absolute;bottom:calc(100% + 10px);right:0;width:min(300px,calc(100vw - 32px));padding:12px 14px 13px;border-radius:18px;background:#fdfcfc;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 30px -14px rgba(0,0,0,.28)}
+.csb-cat.is-right .csb-cat-notes{right:0}.csb-cat:not(.is-right).is-placed .csb-cat-notes{left:0;right:auto}
+.csb-cat.is-high .csb-cat-notes{bottom:auto;top:calc(100% + 10px)}
+.csb-cat-notes span{display:block;font:500 12px/1.3 Inter,system-ui,sans-serif;color:#6f6961;margin-bottom:4px}
+.csb-cat-notes p{margin:0;font:14px/1.45 Inter,system-ui,sans-serif;color:#0f0e0d;max-height:9.5em;overflow:hidden}
+.csb-cat-notes p i{color:#6f6961}
+.csb-cat-sprite.is-nod{animation:csb-cat-nod .9s cubic-bezier(.3,.7,.3,1)}
+@keyframes csb-cat-nod{0%,100%{transform:none}25%{transform:translateY(4px) rotate(-2deg)}50%{transform:none}70%{transform:translateY(3px)}}
+@media (prefers-reduced-motion:reduce){.csb-cat-sprite.is-nod{animation:none}}
