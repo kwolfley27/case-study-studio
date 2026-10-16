@@ -3031,3 +3031,4 @@ html.csb-presenting .csb-hold-peek{display:none}
 .csb-cat-check-panel i.is-bad{color:#b42318}
 .csb-cat-meter{display:block;height:6px;border-radius:9999px;background:#e7e5e4;overflow:hidden}
 .csb-cat-meter em{display:block;height:100%;background:#2f7d4f;transform-origin:left;transition:transform .08s linear}
+.csb-cat-link{border:0;background:none;padding:0;font:inherit;color:#000;text-decoration:underline;text-underline-offset:2px;cursor:pointer}

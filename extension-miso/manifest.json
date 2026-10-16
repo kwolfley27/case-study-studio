@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Miso for Case Study Studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Circle a frame in Figma (hold Option and draw), then tell Miso in Case Study Studio to put it where you're pointing. Chrome needs permission to take a picture of the tab you circle in; Miso only runs on Figma and the studio.",
   "permissions": [
     "storage"
@@ -25,14 +25,16 @@
         "cat-sleep.png"
       ],
       "matches": [
-        "https://www.figma.com/*"
+        "https://www.figma.com/*",
+        "https://figma.com/*"
       ]
     }
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://www.figma.com/*"
+        "https://www.figma.com/*",
+        "https://figma.com/*"
       ],
       "js": [
         "figma.js"

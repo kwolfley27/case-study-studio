@@ -2,7 +2,7 @@
 // and passes Miso's answers back to the Figma tab.
 (() => {
   if (window.top !== window) return;
-  const post = (type, extra) => window.postMessage({ source: 'miso-ext', type, ...extra }, location.origin);
+  const post = (type, extra) => window.postMessage({ source: 'miso-ext', type, version: chrome.runtime.getManifest().version, ...extra }, location.origin);
   window.addEventListener('message', e => {
     if (e.source !== window || e.data?.source !== 'miso-page') return;
     if (e.data.type === 'hello') chrome.storage.local.get('clip').then(r => post('clip', { clip: r.clip || null }));
@@ -10,6 +10,6 @@
     if (e.data.type === 'state') chrome.storage.local.set({ misoAwake: !!e.data.awake, misoName: e.data.name || 'Miso', misoListen: e.data.listen || 'all' });
     if (e.data.type === 'reply') chrome.runtime.sendMessage({ type: 'miso-reply', text: e.data.text, tone: e.data.tone }).catch(() => {});
   });
-  chrome.storage.onChanged.addListener(ch => { if (ch.clip) post('clip', { clip: ch.clip.newValue || null }); });
+  chrome.storage.onChanged.addListener(ch => { if (ch.clip) post('clip', { clip: ch.clip.newValue || null }); if (ch.misoAwake) post('wake', { awake: !!ch.misoAwake.newValue }); });
   chrome.runtime.onMessage.addListener(msg => { if (msg?.type === 'miso-command') post('command', { said: msg.said, clip: msg.clip, ambient: !!msg.ambient }); });
 })();

@@ -33,8 +33,15 @@
   chrome.storage.local.get('misoPos').then(r => { pos = r.misoPos || null; place(); }); addEventListener('resize', place);
   cat.addEventListener('pointerdown', e => {
     e.preventDefault(); e.stopImmediatePropagation(); const r = cat.getBoundingClientRect(); const ox = e.clientX - r.left, oy = e.clientY - r.top;
-    const mv = ev => { pos = [Math.min(innerWidth - 78, Math.max(4, ev.clientX - ox)) / innerWidth, Math.min(innerHeight - 100, Math.max(4, ev.clientY - oy)) / innerHeight]; place(); };
-    const up = () => { removeEventListener('pointermove', mv, true); removeEventListener('pointerup', up, true); chrome.storage.local.set({ misoPos: pos }); };
+    const sx = e.clientX, sy = e.clientY; let moved = false;
+    const mv = ev => { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) moved = true; pos = [Math.min(innerWidth - 78, Math.max(4, ev.clientX - ox)) / innerWidth, Math.min(innerHeight - 100, Math.max(4, ev.clientY - oy)) / innerHeight]; place(); };
+    const up = () => {
+      removeEventListener('pointermove', mv, true); removeEventListener('pointerup', up, true);
+      if (moved) { chrome.storage.local.set({ misoPos: pos }); return; }
+      // A click (no drag) wakes me up or puts me to sleep, here and in the studio.
+      awake = !awake; chrome.storage.local.set({ misoAwake: awake });
+      showCat(); listen(); chirp(awake ? 'ok' : 'hm'); say(awake ? `I’m listening here too. Talk away.` : 'Going to sleep.');
+    };
     addEventListener('pointermove', mv, true); addEventListener('pointerup', up, true);
   });
 
@@ -84,10 +91,11 @@
   let rec = null, follow = 0, buf = [], bt = 0;
   const send = () => { const said = buf.join(' ').trim(); buf = []; if (!said) return; chrome.runtime.sendMessage({ type: 'miso-command', said, ambient: true }, res => { if (!res?.ok) { say(res?.error || 'I couldn’t reach the studio.'); chirp('hm'); } }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  let blocked = false;
   const listen = () => {
     const want = awake && !document.hidden && !!SR;
     if (!want) { try { rec?.abort(); } catch { /* ignore */ } rec = null; cat.classList.remove('is-hearing'); return; }
-    if (rec) return;
+    if (rec) return; blocked = false;
     const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
     r.onresult = e => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -108,8 +116,10 @@
         }
       }
     };
-    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') say('To hear you on Figma, allow the microphone for figma.com (address bar).'); };
-    r.onend = () => { rec = null; setTimeout(listen, 400); };
+    r.onsoundstart = () => cat.classList.add('is-hearing');
+    r.onsoundend = () => cat.classList.remove('is-hearing');
+    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { blocked = true; say('To hear you on Figma, allow the microphone for figma.com: click the icon at the left of the address bar.'); } };
+    r.onend = () => { rec = null; setTimeout(listen, blocked ? 5000 : 400); };
     try { r.start(); rec = r; } catch { /* already running */ }
   };
   document.addEventListener('visibilitychange', listen);

@@ -117,6 +117,8 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const undo = useRef<BuilderStudy[]>([]);
   const pointer = useRef<[number, number] | null>(null);
   const [frame, setFrame] = useState(0);              // 0 idle, 1 blink, 2 ears up
+  const wakeRef = useRef<(on: boolean) => void>(() => {});
+  const [ext, setExt] = useState('');               // extension version, once it answers
   const [level, setLevel] = useState(0);              // mic loudness 0–1
   const [heard, setHeard] = useState('');             // live caption
   const [bubble, setBubble] = useState<{ text: string; n: number } | null>(null);
@@ -248,7 +250,10 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   /* A screen brought over from Figma by the Miso extension. */
   useEffect(() => {
     const on = (e: MessageEvent) => {
-      if (e.source !== window || e.data?.source !== 'miso-ext' || (e.data.type !== 'clip' && e.data.type !== 'command')) return;
+      if (e.source !== window || e.data?.source !== 'miso-ext') return;
+      setExt(String(e.data.version || 'yes'));
+      if (e.data.type === 'wake') { const want = !!e.data.awake; if (want !== (store.get('csb-cat-on', '0') === '1')) wakeRef.current(want); return; }
+      if (e.data.type !== 'clip' && e.data.type !== 'command') return;
       if (e.data.type === 'command') {
         if (e.data.clip) { setClip(e.data.clip); clipRef.current = e.data.clip; }
         remote.current = true; const said = String(e.data.said || ''); remember('katelyn', said); Promise.resolve(e.data.ambient ? askClaude(said, true) : run(said)).finally(() => { remote.current = false; });
@@ -302,6 +307,10 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     if (sr.current) return;
     const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US'; setStatus('starting');
     (r as any).onstart = () => setStatus(st => st === 'words' ? st : 'listening');
+    (r as any).onsoundstart = () => setSound(true);
+    (r as any).onsoundend = () => setSound(false);
+    // Heard speech but no words a while later: usually Chrome is listening to a different microphone than you think.
+    (r as any).onspeechstart = () => { const before = gotWords.current; setTimeout(() => { if (!before && !gotWords.current && store.get('csb-cat-on', '0') === '1') setError('I hear speech but get no words. Check your Mac’s input (System Settings → Sound → Input) matches the microphone you’re using, then click me twice.'); }, 7000); };
     r.onresult = (e: any) => { setError(''); gotWords.current = true; setStatus('words'); for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
     r.onerror = (e: any) => { if (e.error !== 'no-speech' && e.error !== 'aborted') setStatus('error: ' + e.error); if (e.error === 'not-allowed') { setError('I need the microphone. Click the icon at the left of the address bar, allow the microphone, then click me.'); sleep(); } else if (e.error === 'service-not-allowed') { setError(browser === 'Safari' ? 'Safari needs dictation turned on: System Settings → Keyboard → Dictation. Or use Google Chrome.' : 'Speech-to-text is switched off in this browser. Use Google Chrome.'); sleep(); } else if (e.error === 'network') setError('Chrome’s speech service isn’t reachable right now. I’ll keep trying.'); else if (e.error === 'audio-capture') setError('I can’t find a microphone.'); };
     // Browsers stop listening after a while; quietly start again while I'm awake.
@@ -309,31 +318,39 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     try { r.start(); sr.current = r; setError(''); } catch { /* already running */ }
   };
   const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); setStatus('off'); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
+  wakeRef.current = on => { if (on) wake(); else sleep(); };
   const wake = () => { store.set('csb-cat-on', '1'); setAwake(true); start(); setHello(true); setTimeout(() => setHello(false), 2600); };
   useEffect(() => { if (awake) start(); return () => { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; }; }, []);
-  useEffect(() => { window.postMessage({ source: 'miso-page', type: 'state', awake, name, listen: listenMode }, location.origin); }, [awake, name, listenMode]);
+  useEffect(() => { window.postMessage({ source: 'miso-page', type: 'state', awake, name, listen: listenMode }, location.origin); }, [awake, name, listenMode, ext]);
   // While you're on another tab, the Miso extension listens there instead (so I never hear you twice).
   useEffect(() => {
     const vis = () => { if (document.hidden) { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; } else if (store.get('csb-cat-on', '0') === '1') start(); };
     document.addEventListener('visibilitychange', vis); return () => document.removeEventListener('visibilitychange', vis);
   }, []);
 
-  /* Microphone loudness, so you can see I'm hearing you. */
+  /* Feedback while you talk comes from the speech recogniser itself. (Opening a second microphone stream
+     alongside it can leave Chrome's recogniser with no audio, which is how words went missing.) */
+  const [sound, setSound] = useState(false);
   useEffect(() => {
-    if (!awake) { setLevel(0); return; }
-    let stream: MediaStream | null = null, ctx: AudioContext | null = null, raf = 0, dead = false;
-    navigator.mediaDevices?.getUserMedia({ audio: true }).then(st => {
-      if (dead) { st.getTracks().forEach(t => t.stop()); return; }
-      stream = st; ctx = new AudioContext(); const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(st).connect(an);
-      const buf = new Uint8Array(an.fftSize); let last = 0;
-      const loop = (t: number) => { raf = requestAnimationFrame(loop); if (t - last < 80) return; last = t; an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += (v - 128) ** 2; const lv = Math.min(1, Math.sqrt(sum / buf.length) / 22); setLevel(lv); if (lv > .25 && !gotWords.current) { loudFor.current += 80; if (loudFor.current > 4000) { loudFor.current = -60000; setError(`I can hear sound, but ${browser} isn’t turning it into words. Try Google Chrome, and check the right microphone is chosen (address bar → microphone icon).`); } } };
-      raf = requestAnimationFrame(loop);
-    }).catch(() => setError('I need the microphone. Allow it in the address bar, then click me.'));
-    return () => { dead = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()); void ctx?.close(); };
-  }, [awake]);
+    if (!sound) { setLevel(0); return; }
+    const t = setInterval(() => setLevel(.35 + Math.random() * .6), 120); return () => clearInterval(t);
+  }, [sound]);
+  /* "Test microphone" in the Check box: a short, separate level test with listening paused. */
+  const [testing, setTesting] = useState(false);
+  const testMic = async () => {
+    setTesting(true); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null;
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const ctx = new AudioContext(); const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(st).connect(an);
+      const buf = new Uint8Array(an.fftSize); const end = Date.now() + 3500;
+      await new Promise<void>(res => { const loop = () => { an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += (v - 128) ** 2; setLevel(Math.min(1, Math.sqrt(sum / buf.length) / 22)); if (Date.now() < end) requestAnimationFrame(loop); else res(); }; loop(); });
+      st.getTracks().forEach(t => t.stop()); void ctx.close();
+    } catch { setError('I need the microphone. Click the icon at the left of the address bar and allow it.'); }
+    setLevel(0); setTesting(false); if (store.get('csb-cat-on', '0') === '1') start();
+  };
 
   /* Blink now and then; perk the ears while you're talking. */
-  const hearing = awake && level > .18;
+  const hearing = awake && (sound || level > .18);
   useEffect(() => {
     if (!awake) { setFrame(1); return; }
     if (hearing) { setFrame(2); return; }
@@ -376,7 +393,8 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         <div className="csb-cat-check-panel" aria-live="polite">
           <span>Check</span>
           <div><b>Browser</b><i className={SPEECH_BAD.includes(browser) ? 'is-bad' : 'is-ok'}>{browser}{SPEECH_BAD.includes(browser) ? ' (can’t do speech; use Chrome)' : ''}</i></div>
-          <div><b>Microphone</b><i className={awake ? (level > .05 ? 'is-ok' : '') : ''}>{awake ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : 'wake me to test'}</i></div>
+          <div><b>Figma extension</b><i className={ext ? 'is-ok' : ''}>{ext ? `connected${ext !== 'yes' ? ' · v' + ext : ''}` : 'not found here'}</i></div>
+          <div><b>Microphone</b><i className={sound || level > .05 ? 'is-ok' : ''}>{testing ? <span className="csb-cat-meter"><em style={{ transform: `scaleX(${Math.max(.03, level)})` }} /></span> : <>{sound ? 'hearing sound' : awake ? 'quiet' : 'asleep'} · <button type="button" className="csb-cat-link" onClick={() => void testMic()}>Test it</button></>}</i></div>
           <div><b>Hearing words</b><i className={status === 'words' ? 'is-ok' : /error|unsupported/.test(status) ? 'is-bad' : ''}>{status === 'words' ? 'yes' : status === 'listening' ? 'listening… say something' : status === 'starting' ? 'starting…' : status === 'off' ? 'asleep' : status}</i></div>
         </div>
         <div className="csb-cat-reply" role="radiogroup" aria-label="What I listen for"><span>What I listen for</span>
