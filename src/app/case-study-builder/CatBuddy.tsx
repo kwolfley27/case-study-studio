@@ -104,6 +104,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const [name, setName] = useState(() => store.get('csb-cat-name', 'Miso'));
   const [replyMode, setReplyMode] = useState<Reply>(() => (store.get('csb-cat-reply', 'chirp') as Reply));
   const [thinking, setThinking] = useState(false);
+  const [typing, setTyping] = useState(false);       // pretending to type an answer on my little laptop
   // What's going on with hearing, so problems are visible instead of silent.
   const [status, setStatus] = useState<'off' | 'starting' | 'listening' | 'words' | string>('off');
   const gotWords = useRef(false); const loudFor = useRef(0);
@@ -113,7 +114,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const listenRef = useRef(listenMode); listenRef.current = listenMode;
   // What we've said lately and what we're working on, kept through reloads (this tab only for the talk, a few hours for the plan).
   const history = useRef<Array<{ who: 'katelyn' | 'miso'; text: string }>>((() => { try { return JSON.parse(sessionStorage.getItem('csb-cat-talk') || '[]'); } catch { return []; } })());
-  const remember = (who: 'katelyn' | 'miso', text: string) => { if (!text) return; history.current = [...history.current, { who, text: text.slice(0, 300) }].slice(-20); try { sessionStorage.setItem('csb-cat-talk', JSON.stringify(history.current)); } catch { /* ignore */ } };
+  const remember = (who: 'katelyn' | 'miso', text: string) => { if (!text) return; history.current = [...history.current, { who, text: text.slice(0, who === 'miso' ? 900 : 300) }].slice(-20); try { sessionStorage.setItem('csb-cat-talk', JSON.stringify(history.current)); } catch { /* ignore */ } };
   const plan = useRef<string>((() => { try { const p = JSON.parse(localStorage.getItem('csb-cat-plan') || 'null'); return p && Date.now() - p.at < 6 * 3600e3 ? String(p.text) : ''; } catch { return ''; } })());
   const setPlan = (t: string) => { plan.current = t.slice(0, 200); try { localStorage.setItem('csb-cat-plan', JSON.stringify({ text: plan.current, at: Date.now() })); } catch { /* ignore */ } };
   const buffer = useRef<string[]>([]); const bufTimer = useRef(0); const busy = useRef(false);
@@ -278,6 +279,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     busy.current = true; setThinking(true);
     const asking = /\?|^(how|what|is|does|do|should|would|could|can|which|why)\b|what do you think|how('s| is| are)|feedback|thoughts/i.test(said.trim());
     if (!ambient || asking) setBubble(b => ({ text: asking ? 'Hmm…' : '…', n: (b?.n ?? 0) + 1 }));
+    if (asking) setTyping(true);
     if (asking && remote.current) window.postMessage({ source: 'miso-page', type: 'reply', text: 'Hmm…', tone: 'ok', kind: 'think' }, location.origin);
     try {
       const c = clipRef.current; const fresh = !!c && Date.now() - (c.at ?? 0) < 20 * 60 * 1000;
@@ -314,7 +316,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         apply();
         const ans = d.answer.trim(); setChat(c => ({ open: true, items: [...c.items, { who: 'katelyn' as const, text: said }, { who: 'miso' as const, text: ans }].slice(-30) }));
         if (remote.current) window.postMessage({ source: 'miso-page', type: 'reply', text: ans, tone: 'ok', kind: 'chat' }, location.origin);
-        remember('miso', ans.slice(0, 300)); setBubble(null); chirp(); return;
+        remember('miso', ans); setBubble(null); chirp(); return;
       }
       if (hold) {
         // Talking about a frame: show the plan (or the question) and wait for okay.
@@ -327,7 +329,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       const line = String(d.say ?? '').trim();
       if (line) say(line, acts.length ? 'ok' : 'hm'); else if (acts.length) say('Done.'); else if (!ambient) say('Okay.', 'hm');
     } catch { say('I couldn’t reach my brain. Try again?', 'hm'); }
-    finally { setThinking(false); busy.current = false; }
+    finally { setThinking(false); setTyping(false); busy.current = false; }
   };
 
   /* A screen brought over from Figma by the Miso extension. */
@@ -485,7 +487,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
   const bars = [0, 1, 2].map(i => Math.max(.15, Math.min(1, level * (1.4 - i * .3) + (hearing ? .1 : 0))));
   return <>
     {lasso && <svg className="csb-cat-lasso" aria-hidden="true"><polyline points={lasso.map(p => p.join(',')).join(' ')} /></svg>}
-    <div className={`csb-cat ${awake ? 'is-awake' : 'is-asleep'} ${hearing ? 'is-hearing' : ''} ${thinking ? 'is-thinking' : ''} ${clip ? 'has-clip' : ''} ${spot ? 'is-placed' : ''} ${spot && spot[1] < .35 ? 'is-high' : ''} ${spot && spot[0] > .6 ? 'is-right' : ''}`}
+    <div className={`csb-cat ${typing ? 'is-typing' : ''} ${awake ? 'is-awake' : 'is-asleep'} ${hearing ? 'is-hearing' : ''} ${thinking ? 'is-thinking' : ''} ${clip ? 'has-clip' : ''} ${spot ? 'is-placed' : ''} ${spot && spot[1] < .35 ? 'is-high' : ''} ${spot && spot[0] > .6 ? 'is-right' : ''}`}
       style={spot ? { left: spot[0] * innerWidth, top: spot[1] * innerHeight, bottom: 'auto' } : undefined}>
       <AnimatePresence>
         {chat.open && <motion.div key="chat" className="csb-cat-chat" role="dialog" aria-label={`Chat with ${name}`}
@@ -540,10 +542,28 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         onClick={e => { if (dragged.current) { dragged.current = false; return; } if ((e.target as HTMLElement).classList.contains('csb-cat-carry')) { dropClip(); return; } if (awake) sleep(); else wake(); }} onContextMenu={e => { e.preventDefault(); setMenu(m => !m); }}>
         <span key={nod} className={`csb-cat-sprite ${nod ? 'is-nod' : ''}`} style={{ width: W * SCALE, height: H * SCALE, backgroundImage: `url(${sprite})`, backgroundSize: `${W * 3 * SCALE}px ${H * SCALE}px`, backgroundPosition: `${-frame * W * SCALE}px 0` }} />
         {!awake && <span className="csb-cat-z" aria-hidden="true">z<b>z</b></span>}
-        {clip && <img className="csb-cat-carry" src={clip.image} alt="" title="Click to drop this frame" />}
+        <AnimatePresence>{typing && <motion.span key="laptop" className="csb-cat-laptop" aria-hidden="true" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: .2 }}><PixelLaptop /></motion.span>}</AnimatePresence>
+        {clip && !typing && <img className="csb-cat-carry" src={clip.image} alt="" title="Click to drop this frame" />}
         {awake && <span className="csb-cat-bars" aria-hidden="true">{bars.map((b, i) => <i key={i} style={{ transform: `scaleY(${b})` }} />)}</span>}
       </button>
       <button type="button" className="csb-cat-gear" aria-label={`${name} settings`} onClick={() => setMenu(m => !m)}>⋯</button>
     </div>
   </>;
+}
+
+/* A tiny pixel laptop for Miso to "type" on while he thinks. We see the back of the lid; his paws tap the keys. */
+function PixelLaptop() {
+  const ink = '#3b332c';
+  return <svg viewBox="0 0 24 16" width={48} height={32} shapeRendering="crispEdges">
+    {/* lid (back), with a little paw on it */}
+    <rect x="3" y="0" width="18" height="12" fill={ink} /><rect x="4" y="1" width="16" height="10" fill="#e6e0d8" />
+    <rect x="11" y="5" width="2" height="2" fill="#c8553d" /><rect x="10" y="4" width="1" height="1" fill="#c8553d" /><rect x="13" y="4" width="1" height="1" fill="#c8553d" /><rect x="11" y="3" width="1" height="1" fill="#c8553d" /><rect x="12" y="3" width="1" height="1" fill="#c8553d" />
+    {/* base */}
+    <rect x="0" y="12" width="24" height="3" fill={ink} /><rect x="1" y="12" width="22" height="2" fill="#cfc8bf" />
+    {/* paws, tapping in turn */}
+    <g className="csb-cat-paw is-l"><rect x="5" y="9" width="5" height="4" fill={ink} /><rect x="6" y="10" width="3" height="2" fill="#f3e7d6" /></g>
+    <g className="csb-cat-paw is-r"><rect x="14" y="9" width="5" height="4" fill={ink} /><rect x="15" y="10" width="3" height="2" fill="#f3e7d6" /></g>
+    {/* key clicks */}
+    <rect className="csb-cat-click is-l" x="7" y="7" width="1" height="1" fill={ink} /><rect className="csb-cat-click is-r" x="16" y="7" width="1" height="1" fill={ink} />
+  </svg>;
 }

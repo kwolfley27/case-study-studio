@@ -18,6 +18,11 @@
   .miso-chat>div{padding:2px 16px 14px}.miso-chat p{margin:0 0 6px}.miso-chat p.is-point{position:relative;padding-left:14px}
   .miso-chat p.is-point:before{content:'';position:absolute;left:2px;top:.62em;width:4px;height:4px;border-radius:50%;background:#a59f97}
   .miso-carry{cursor:pointer;pointer-events:auto}
+  .miso-laptop{position:fixed;z-index:2147483647;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(40,30,20,.22))}
+  .miso-laptop svg{display:block}.miso-paw{animation:miso-tap .32s steps(1) infinite}.miso-paw.is-r{animation-delay:.16s}
+  @keyframes miso-tap{0%{transform:translateY(0)}50%{transform:translateY(1px)}}
+  .miso-chat:after{content:'';position:absolute;bottom:-7px;right:30px;width:14px;height:14px;background:#fdfcfc;transform:rotate(45deg);border-radius:0 0 3px 0}
+  .miso-chat{overflow:visible}.miso-chat>div{max-height:52vh;overflow:auto}
   .miso-toast b{display:block;font-weight:500;font-size:12px;color:#6f6961;margin-bottom:3px;font-style:normal}
   .miso-toast i{color:#6f6961}
   .miso-toast.is-notes{max-width:300px;font-size:14px;line-height:1.45}
@@ -204,6 +209,17 @@
   document.addEventListener('visibilitychange', listen); addEventListener('focus', listen); addEventListener('blur', listen);
   let quietSince = Date.now();
   setInterval(() => { if (rec) chrome.storage.local.set({ misoFigma: Date.now() }).catch(() => {}); if (rec && Date.now() - quietSince > 50000) { quietSince = Date.now(); try { rec.abort(); } catch { /* ignore */ } } }, 5000);
+  /* While I think about your question I "type" on a tiny laptop. */
+  const ink = '#3b332c';
+  const laptop = document.createElement('div'); laptop.className = 'miso-laptop'; laptop.style.display = 'none';
+  laptop.innerHTML = `<svg viewBox="0 0 24 16" width="48" height="32" shape-rendering="crispEdges"><rect x="3" y="0" width="18" height="12" fill="${ink}"/><rect x="4" y="1" width="16" height="10" fill="#e6e0d8"/><rect x="11" y="5" width="2" height="2" fill="#c8553d"/><rect x="10" y="4" width="1" height="1" fill="#c8553d"/><rect x="13" y="4" width="1" height="1" fill="#c8553d"/><rect x="11" y="3" width="2" height="1" fill="#c8553d"/><rect x="0" y="12" width="24" height="3" fill="${ink}"/><rect x="1" y="12" width="22" height="2" fill="#cfc8bf"/><g class="miso-paw"><rect x="5" y="9" width="5" height="4" fill="${ink}"/><rect x="6" y="10" width="3" height="2" fill="#f3e7d6"/></g><g class="miso-paw is-r"><rect x="14" y="9" width="5" height="4" fill="${ink}"/><rect x="15" y="10" width="3" height="2" fill="#f3e7d6"/></g></svg>`;
+  document.documentElement.appendChild(laptop);
+  let typingUntil = 0;
+  const typing = on => {
+    if (!on) { laptop.style.display = 'none'; return; }
+    const r = cat.getBoundingClientRect(); Object.assign(laptop.style, { display: '', left: r.left + r.width / 2 - 24 + 'px', top: r.bottom - 32 + 'px' });
+    typingUntil = Date.now() + 30000; setTimeout(() => { if (Date.now() >= typingUntil) typing(false); }, 30500);
+  };
   /* Answers to your questions show in a small chat card here too. */
   const chatBox = document.createElement('div'); chatBox.className = 'miso-chat'; chatBox.style.display = 'none'; document.documentElement.appendChild(chatBox);
   const showChat = text => {
@@ -215,6 +231,7 @@
   };
   chrome.runtime.onMessage.addListener(msg => {
     if (msg?.type !== 'miso-reply' || !msg.text) return;
+    typing(msg.kind === 'think');
     if (msg.kind === 'chat') { showChat(msg.text); chirp(); follow = Date.now() + 15000; return; }
     if (msg.kind === 'think') { say('Hmm…', false, true); return; }
     if (msg.kind === 'note') { noteText = /taking notes/.test(msg.text) ? '…' : msg.text; showNotes(); return; }

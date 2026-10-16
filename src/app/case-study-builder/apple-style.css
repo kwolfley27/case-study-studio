@@ -3118,3 +3118,23 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-cat-chat form button{height:36px;padding:0 14px;border:0;border-radius:999px;background:#000;color:#fff;font:500 13px Inter,system-ui,sans-serif;cursor:pointer}
 .csb-cat-chat form button:disabled{opacity:.35;cursor:default}
 .csb-cat-carry{cursor:pointer;pointer-events:auto}
+/* Miso typing on his little laptop while he thinks */
+.csb-cat-laptop{position:absolute;left:50%;bottom:-2px;translate:-50% 0;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(40,30,20,.22));image-rendering:pixelated}
+.csb-cat-laptop svg{display:block}
+.csb-cat-paw{animation:csb-cat-tap .32s steps(1) infinite}
+.csb-cat-paw.is-r{animation-delay:.16s}
+.csb-cat-click{opacity:0;animation:csb-cat-clk .32s steps(1) infinite}
+.csb-cat-click.is-r{animation-delay:.16s}
+@keyframes csb-cat-tap{0%{transform:translateY(0)}50%{transform:translateY(1px)}}
+@keyframes csb-cat-clk{0%{opacity:0}50%{opacity:.8;transform:translateY(-1px)}}
+.csb-cat.is-typing .csb-cat-sprite{animation:csb-cat-lean 1.6s ease-in-out infinite}
+@keyframes csb-cat-lean{50%{transform:translateY(1px)}}
+@media (prefers-reduced-motion:reduce){.csb-cat-paw,.csb-cat-click,.csb-cat.is-typing .csb-cat-sprite{animation:none}}
+/* The answer is a speech bubble from Miso */
+.csb-cat-chat{overflow:visible}
+.csb-cat-chat:after{content:'';position:absolute;right:30px;bottom:-7px;width:14px;height:14px;background:#fdfcfc;transform:rotate(45deg);box-shadow:3px 3px 4px -2px rgba(0,0,0,.08);border-radius:0 0 3px 0}
+.csb-cat:not(.is-right).is-placed .csb-cat-chat:after{right:auto;left:30px}
+.csb-cat.is-high .csb-cat-chat:after{bottom:auto;top:-7px;border-radius:3px 0 0 0;box-shadow:-2px -2px 4px -2px rgba(0,0,0,.06)}
+.csb-cat-chat header{border-radius:20px 20px 0 0}
+.csb-cat-chat form{border-radius:0 0 20px 20px;background:#fdfcfc}
+.csb-cat-chat-list{border-radius:0}
