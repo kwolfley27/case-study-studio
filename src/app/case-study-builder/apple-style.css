@@ -3309,3 +3309,9 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-b-text.t-display{font-size:clamp(44px,8cqw,120px);line-height:.95;font-weight:680;letter-spacing:-.045em}
 .csb-b-image.ratio-fill{aspect-ratio:auto;align-self:stretch;flex:1 1 0;min-height:240px}
 .csb-b-box.d-column>.csb-b-image.ratio-fill{min-height:280px}
+
+/* Long story text reads at body size (big statement type is for one short idea). */
+.csb-editorial-statement.is-reading{text-align:left;max-width:680px}
+.csb-editorial-statement.is-reading p{white-space:pre-line}
+.csb-editorial-statement.is-reading .csb-editorial-glyph{display:none}
+.csb-doc-main .csb-editorial-statement.is-reading p,.csb-editorial-statement.is-reading p{font-size:clamp(17px,1.45cqw,19px)!important;line-height:1.65;letter-spacing:-.005em!important;font-weight:400!important;font-family:inherit!important;color:var(--t-body,#57524c)}

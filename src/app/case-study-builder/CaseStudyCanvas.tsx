@@ -185,7 +185,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "comparison": return <Comparison section={section} />;
     case "gallery": return <Gallery section={section} />;
     case "built": return <BuiltView section={section} editorMode={editorMode} />;
-    default: return <Enter className="csb-editorial-statement"><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
+    default: return <Enter className={`csb-editorial-statement ${(section.body || "").length > 240 ? "is-reading" : ""}`}><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
   }
 }
 

@@ -30,8 +30,9 @@ function toStudy(p: Plan): BuilderStudy {
     sec.eyebrow = s.eyebrow || sec.eyebrow;
     sec.title = s.title || sec.title;
     if (s.body !== undefined) sec.body = s.body;
-    if (s.items?.length) sec.items = s.items.map(it => ({ ...(sec.items[0] ?? {}), title: it.title ?? '', detail: it.detail ?? '', ...(it.value !== undefined ? { value: it.value } : {}), ...(it.image ? { image: abs(it.image) } : {}) }));
-    if (['narrative', 'gallery'].includes(s.kind)) sec.variant = 'tinted';
+    if (s.items?.length) sec.items = s.items.map(it => ({ ...(sec.items[0] ?? {}), title: /^(Image|Slide) \d+$/.test(it.title ?? '') ? '' : it.title ?? '', detail: it.detail ?? '', ...(it.value !== undefined ? { value: it.value } : {}), ...(it.image ? { image: abs(it.image) } : {}) }));
+    sec.variant = 'light';
+    if (s.kind !== 'narrative' && s.body === undefined) { sec.body = ''; sec.options = { ...(sec.options ?? {}), hideBody: true }; }
     // name it after the old chapter so the section list reads like the old page
     const short = (t?: string) => t && t.length <= 30 ? t : undefined;
     sec.navLabel = s.kind === 'narrative' ? short(s.eyebrow) || short(s.title) : short(s.title !== s.eyebrow ? s.title : undefined) || (s.eyebrow ? `${s.eyebrow} visuals`.slice(0, 30) : undefined);
@@ -49,7 +50,7 @@ function toStudy(p: Plan): BuilderStudy {
     accent: /^#[0-9a-f]{6}$/i.test(p.accent || '') ? p.accent! : base.accent,
     heroImage: abs(p.hero), hero: { style: 'standard', bg: 'accent', frame: 'none' },
     sections, moreStudies: [], publishedAt: undefined, onWebsite: false,
-    replaces: p.replaces,
+    replaces: p.replaces, importTidy: 2,
     assets: p.assets.map(a => ({ ...a, src: abs(a.src)! })),
     notes: p.notes.map(n => ({ ...n, images: n.images.map(i => abs(i)!) })),
   };

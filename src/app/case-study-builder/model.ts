@@ -100,6 +100,7 @@ export interface BuilderStudy {
   onWebsite?: boolean;
   /** The hand-built website case study this one replaces (its card hides once this is on the site). */
   replaces?: string;
+  importTidy?: number;
   /** Every picture and video brought in from the old version, to drag into image spots. */
   assets?: Array<{ src: string; kind: 'image' | 'video'; from: string }>;
   /** Words that lived inside the old version's hand-built visuals, kept for reference. */
@@ -519,7 +520,15 @@ export function isBuilderStudy(value: unknown): value is BuilderStudy {
 }
 
 /** One opening per case study: a Title reveal hero added as the first section becomes the header. */
-export function migrateStudy(study: BuilderStudy): BuilderStudy {
+/* Drafts brought in from the website (before Oct 16): one plain width all the way down, and no starter hint text on picture sections. */
+const HINTS = /^(Add the key idea you want a reader to remember|Add a short introduction, or leave this blank)/;
+function tidyImported(study: BuilderStudy): BuilderStudy {
+  const s = study as BuilderStudy & { replaces?: string; importTidy?: number };
+  if (!s.replaces || !s.assets || (s.importTidy ?? 0) >= 2) return study;
+  return { ...s, importTidy: 2, sections: s.sections.map(sec => ({ ...sec, items: sec.items.map(it => /^(Image|Slide) \d+$/.test(it.title || "") ? { ...it, title: "" } : it), variant: sec.variant === "tinted" ? "light" : sec.variant, ...(sec.kind !== "narrative" && HINTS.test(sec.body || "") ? { body: "", options: { ...(sec.options ?? {}), hideBody: true } } : {}) })) } as BuilderStudy;
+}
+export function migrateStudy(input: BuilderStudy): BuilderStudy {
+  const study = tidyImported(input);
   const first = study.sections[0];
   if (!first || first.kind !== "coverHero") return study;
   const media = first.items[0];
