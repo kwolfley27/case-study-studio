@@ -27,6 +27,7 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   const [stage, setStage] = useState<string>('a');
   const [linked, setLinked] = useState(false);
   const ch = useRef<HoldChannel | null>(null);
+  const readyRef = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
   const frame = useRef(0);
 
@@ -42,9 +43,9 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   useEffect(() => {
     let alive = true;
     const onMsg = (m: HoldMsg) => { if (m.t === 'hi') { setLinked(true); if (m.stage) setStage(m.stage); } if (m.t === 'stage') setStageFrom(m.stage); };
-    void openHold(code, onMsg).then(c => { if (!alive) { c.close(); return; } ch.current = c; c.send({ t: 'hello', ua: navigator.userAgent.slice(0, 60) }); });
+    void openHold(code, onMsg).then(c => { if (!alive) { c.close(); return; } ch.current = c; c.send({ t: 'hello', ua: navigator.userAgent.slice(0, 60), ready: readyRef.current }); });
     // Say hello again a few times in case the laptop joined late.
-    const again = setInterval(() => ch.current?.send({ t: 'hello' }), 1500);
+    const again = setInterval(() => ch.current?.send({ t: 'hello', ready: readyRef.current }), 1500);
     const bye = () => ch.current?.send({ t: 'bye' });
     window.addEventListener('pagehide', bye);
     return () => { alive = false; clearInterval(again); window.removeEventListener('pagehide', bye); bye(); ch.current?.close(); };
@@ -64,6 +65,7 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   const [coach, setCoach] = useState(true);
   const [hud, setHud] = useState(0);
   const reduce = useReducedMotion();
+  // The laptop waits until they've finished the how-to before it goes full screen.
   const [dir, setDir] = useState(1);
   useEffect(() => { ch.current?.send({ t: 'mode', live: live && !!liveSrc }); }, [live, liveSrc]);
   // Keep the place on the page when the screen swaps.
@@ -79,6 +81,8 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
   const lastSent = useRef(0);
   const report = () => { const el0 = scroller.current; if (el0) { const m = el0.scrollHeight - el0.clientHeight; if (m > 0) frac.current = el0.scrollTop / m; } if (frame.current) return; const wait = Math.max(0, 50 - (Date.now() - lastSent.current)); frame.current = window.setTimeout(() => { frame.current = 0; lastSent.current = Date.now(); const el = scroller.current; if (!el) return; const max = el.scrollHeight - el.clientHeight; ch.current?.send({ t: 'scroll', f: max > 0 ? Math.round(el.scrollTop / max * 1000) / 1000 : 0, v: el.scrollHeight ? Math.round(el.clientHeight / el.scrollHeight * 1000) / 1000 : 1 }); }, wait); };
 
+  const ready = !!section && (!coach || !mob?.image || (live && !!liveSrc));
+  useEffect(() => { readyRef.current = ready; if (ready) ch.current?.send({ t: 'ready' }); }, [ready]);
   if (error) return <div className="hold-msg"><h1>Hmm</h1><p>{error}</p></div>;
   if (!section) return <div className="hold-msg"><p>Loading…</p></div>;
   const image = mob?.image;
@@ -107,7 +111,7 @@ export default function HoldPage({ slug, sectionId, code }: { slug: string; sect
       {showLive && <a className="hold-btn is-ghost" href={liveRaw} target="_blank" rel="noopener">Open full screen</a>}
       {appLink && <a className="hold-btn is-ghost" href={appLink} target="_blank" rel="noopener">Get the app</a>}
     </div>
-    <AnimatePresence>{hud > 0 && <motion.div key={hud} className="hold-hud" initial={{ opacity: 0, scale: .92 }} animate={{ opacity: [0, 1, 1, 0], scale: [.92, 1, 1, .98] }} transition={{ duration: 1.3, times: [0, .15, .75, 1] }} aria-live="polite">
+    <AnimatePresence>{hud > 0 && <motion.div key={hud} className="hold-hud" initial={{ opacity: 0, y: -14 }} animate={{ opacity: [0, 1, 1, 0], y: [-14, 0, 0, -8] }} transition={{ duration: 1.3, times: [0, .15, .75, 1] }} aria-live="polite">
       <small>{stage === 'b' ? '→' : '←'}</small>{stage === 'b' ? nameB : nameA}
     </motion.div>}</AnimatePresence>
     <AnimatePresence>{coach && !showLive && image && <HoldCoach key="coach" versions={compare ? [nameA, nameB] : undefined} reduce={reduce} onDone={() => setCoach(false)} />}</AnimatePresence>

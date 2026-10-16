@@ -8,7 +8,8 @@ import { projectId, publicAnonKey } from '../../utils/supabase/info';
   Transport: Supabase Realtime broadcast (across devices) plus BroadcastChannel (two tabs on one computer).
 */
 export type HoldMsg =
-  | { t: 'hello'; ua?: string }          // phone joined
+  | { t: 'hello'; ua?: string; ready?: boolean } // phone joined (ready = finished the how-to)
+  | { t: 'ready' }                       // phone finished the how-to: the laptop can go full screen
   | { t: 'hi'; stage?: string }          // laptop answered
   | { t: 'scroll'; f: number; v?: number } // phone scroll position 0–1, and how much of the page fits on its screen
   | { t: 'stage'; stage: string }        // laptop switched wireframe / high fidelity

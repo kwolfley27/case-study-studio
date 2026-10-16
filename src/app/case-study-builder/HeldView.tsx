@@ -63,8 +63,18 @@ export function HeldView({ image, stackMob, notes, f, v, stage, onStage }: {
   useEffect(() => { const t = setTimeout(() => setIntro(false), 2600); return () => clearTimeout(t); }, []);
   const seen = useRef(new Set<number>()); if (active) seen.current.add(active.i);
   const words = (s: string) => s.split(/(\s+)/).filter(Boolean);
+  // When the version flips, a wash of colour sweeps across the screen in the direction they swiped.
+  const prevStage = useRef(stage?.current);
+  const [sweep, setSweep] = useState<{ n: number; to: 'a' | 'b' } | null>(null);
+  useEffect(() => { if (!stage) return; if (prevStage.current && prevStage.current !== stage.current) setSweep(sw => ({ n: (sw?.n ?? 0) + 1, to: stage.current })); prevStage.current = stage.current; }, [stage?.current]);
 
-  return <div className="csb-held">
+  return <div className={`csb-held ${stage ? `is-v-${stage.current}` : ''}`}>
+    <AnimatePresence>{sweep && stage && <motion.div key={sweep.n} className={`csb-held-sweep is-${sweep.to}`} aria-hidden="true"
+      initial={{ x: sweep.to === 'b' ? '100%' : '-100%', opacity: 1 }} animate={{ x: sweep.to === 'b' ? '-100%' : '100%' }} exit={{ opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 1.1, ease: [0.45, 0, 0.2, 1] }} onAnimationComplete={() => setSweep(null)} />}</AnimatePresence>
+    <AnimatePresence>{sweep && stage && <motion.div key={`l${sweep.n}`} className={`csb-held-flip is-${sweep.to}`} aria-live="polite"
+      initial={{ opacity: 0, scale: .94, filter: 'blur(8px)' }} animate={{ opacity: [0, 1, 1, 0], scale: [.94, 1, 1, 1.02], filter: ['blur(8px)', 'blur(0px)', 'blur(0px)', 'blur(4px)'] }}
+      transition={{ duration: 1.4, times: [0, .2, .75, 1] }}>{sweep.to === 'b' ? stage.names[1] : stage.names[0]}</motion.div>}</AnimatePresence>
     <div className="csb-held-glow" style={glow ? { backgroundColor: glow } : undefined} aria-hidden="true" />
     <div className="csb-held-glow is-b" style={glow ? { backgroundColor: glow } : undefined} aria-hidden="true" />
 
@@ -74,6 +84,7 @@ export function HeldView({ image, stackMob, notes, f, v, stage, onStage }: {
     </div>}
 
     <div className="csb-held-main">
+      <span className="csb-held-spacer" aria-hidden="true" />
       <div className="csb-held-map" aria-hidden="true">
         <div className="csb-held-page">
           {image && (segs ? <div className="csb-held-stack">{segs.list.map((sg, k) => <div key={k} style={{ aspectRatio: `${sg.w} / ${sg.h}`, backgroundImage: `url("${image}")`, backgroundSize: `${(segs.W / sg.w) * 100}% auto`, backgroundPosition: `${segs.W === sg.w ? 0 : (sg.x / (segs.W - sg.w)) * 100}% ${segs.H === sg.h ? 0 : (sg.y / (segs.H - sg.h)) * 100}%` }} />)}</div>
@@ -92,7 +103,7 @@ export function HeldView({ image, stackMob, notes, f, v, stage, onStage }: {
           </motion.div>
           : active ? <motion.div key={active.i} className="csb-held-note" exit={{ opacity: 0, y: -10, filter: 'blur(6px)' }} transition={{ duration: .3 }}>
             <motion.small initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }}>{notes.findIndex(n => n.i === active.i) + 1} of {notes.length}</motion.small>
-            <h3>{words(active.title).map((w, k) => <motion.span key={k} initial={reduce ? false : { opacity: 0, y: 12, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: .55, delay: k * .045, ease: [0.22, 1, 0.36, 1] }}>{w}</motion.span>)}</h3>
+            <h3>{words(active.title).map((w, k) => /^\s+$/.test(w) ? ' ' : <motion.span key={k} initial={reduce ? false : { opacity: 0, y: 12, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: .55, delay: k * .045, ease: [0.22, 1, 0.36, 1] }}>{w}</motion.span>)}</h3>
             {active.detail && <motion.p initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, delay: .25 + words(active.title).length * .03 }}>{active.detail}</motion.p>}
           </motion.div>
           : <motion.div key="idle" className="csb-held-note is-idle" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .4 }}>

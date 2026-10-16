@@ -35,3 +35,7 @@
 .hold-coach-dots i{width:6px;height:6px;border-radius:50%;background:#d6d3d1;transition:background .3s,width .3s}
 .hold-coach-dots i.is-on{width:18px;border-radius:9999px;background:#000}
 .hold-coach-go{height:44px;padding:0 30px;border:0;border-radius:9999px;background:#000;color:#fdfcfc;font:inherit;font-size:15px;font-weight:500}
+
+/* The version label sits at the top like a notification, out of the way of the screen */
+.hold-hud{top:max(14px,calc(env(safe-area-inset-top) + 6px));translate:-50% 0;display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:9999px;font-size:15px;font-weight:400}
+.hold-hud small{font-size:13px}

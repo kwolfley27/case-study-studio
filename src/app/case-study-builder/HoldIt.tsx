@@ -17,6 +17,7 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held, onScroll 
   const [qr, setQr] = useState('');
   const [state, setState] = useState<'idle' | 'waiting' | 'live'>('idle');
   const [proto, setProto] = useState(false);
+  const [ready, setReady] = useState(false);
   const pickRef = useRef(onPick); pickRef.current = onPick;
   const liveRef = useRef(onLive); liveRef.current = onLive;
   const scrollCb = useRef(onScroll); scrollCb.current = onScroll;
@@ -39,17 +40,18 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held, onScroll 
   };
   const onMsg = (m: HoldMsg) => {
     lastSeen.current = Date.now();
+    if (m.t === 'ready' || (m.t === 'hello' && m.ready)) setReady(true);
     if (m.t === 'hello') { ch.current?.send({ t: 'hi', stage: stageRef.current }); setState(s => { if (s !== 'live') { throwPhone(); setOpen(false); } return 'live'; }); }
     if (m.t === 'scroll') { scrollCb.current?.(m.f, m.v); const el = phoneScroller(); if (el) el.scrollTop = m.f * (el.scrollHeight - el.clientHeight); }
     if (m.t === 'pick' && (m.stage === 'a' || m.stage === 'b')) { stageRef.current = m.stage; pickRef.current?.(m.stage); }
     if (m.t === 'mode') setProto(m.live);
-    if (m.t === 'bye') { setState('waiting'); setProto(false); }
+    if (m.t === 'bye') { setState('waiting'); setProto(false); setReady(false); }
   };
   const start = async () => { if (ch.current) return; setState('waiting'); ch.current = await openHold(code.current, onMsg); };
   useEffect(() => { const el = root.current; if (!el) return; const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: .3 }); io.observe(el); return () => io.disconnect(); }, []);
   const peeking = inView && !dismissed && state !== 'live' && !open;
   // Let the phone fly off the page first, then dim the screen.
-  useEffect(() => { if (state !== 'live') { liveRef.current?.(false); return; } const t = setTimeout(() => liveRef.current?.(true), 950); return () => clearTimeout(t); }, [state]);
+  useEffect(() => { if (state !== 'live' || !ready) { liveRef.current?.(false); return; } const t = setTimeout(() => liveRef.current?.(true), 500); return () => clearTimeout(t); }, [state, ready]);
   useEffect(() => { if (!held) return; const k = (e: KeyboardEvent) => { if (e.key === 'Escape') liveRef.current?.(false); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [held]);
   // Draw the code as soon as the little phone peeks; only open the live connection once someone shows interest.
   useEffect(() => { if ((open || peeking) && link && !qr) QRCode.toString(link, { type: 'svg', margin: 0, color: { dark: '#000000', light: '#00000000' } }).then(setQr, () => setQr('')); }, [open, peeking, link]);
@@ -80,7 +82,7 @@ export function HoldIt({ sectionId, stage, root, onPick, onLive, held, onScroll 
     {held && proto && <span className="csb-hold-live"><i /> They’re tapping through the prototype</span>}
     {held && <button type="button" className="csb-hold-exit" onClick={() => liveRef.current?.(false)}><Minimize2 size={14} /> Back to the page</button>}
     {state === 'live'
-      ? held ? null : <span className="csb-hold-live"><i /> {proto ? 'They’re trying the prototype on their phone' : 'Live from their phone'}</span>
+      ? held ? null : <span className="csb-hold-live"><i /> {!ready ? 'Getting started on their phone…' : proto ? 'They’re trying the prototype on their phone' : 'Live from their phone'}</span>
       : peeking ? null : <button type="button" className="csb-hold-btn" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}><Smartphone size={14} strokeWidth={1.8} /> Hold it on your phone</button>}
     {open && <div className="csb-hold-card" role="dialog" aria-label="Open this screen on your phone" data-link={link} onClick={e => e.stopPropagation()}>
       <button type="button" className="csb-hold-x" aria-label="Close" onClick={() => setOpen(false)}><X size={14} /></button>
