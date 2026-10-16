@@ -1,0 +1,207 @@
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import sprite from './assets/cat-sprite.png';
+import type { CaseStudySection } from './model';
+import type { ComponentTemplate } from './library';
+
+/*
+  Miso: a little Siamese cat in the corner of the studio that you can talk to.
+  - Click the cat to wake it up or put it to sleep. It stays awake (even after a reload) until you say "Miso, sleep" or click it.
+  - It listens with the browser's own speech recognition, so listening costs nothing and nothing is sent to Claude.
+  - It only acts when you say its name first ("Miso, preview"), or within a few seconds of its last answer.
+  - Commands are understood right here, by simple matching. No tokens.
+  - Hold Option (Alt) and draw around something on the page to point at it ("this").
+*/
+const W = 37, H = 48, SCALE = 2;
+type Mode = 'canvas' | 'framed' | 'preview';
+export type CatActions = {
+  sections: CaseStudySection[];
+  selectedId: string | null;
+  select: (id: string) => void;
+  move: (id: string, dir: -1 | 1) => void;
+  remove: (id: string) => void;
+  setVariant: (id: string, variant: string) => void;
+  templates: ComponentTemplate[];
+  add: (t: ComponentTemplate) => void;
+  setMode: (m: Mode | 'present') => void;
+  openPublish: () => void;
+  openResearch: () => void;
+  openBrand: () => void;
+  labelOf: (s: CaseStudySection) => string;
+};
+
+type SR = { continuous: boolean; interimResults: boolean; lang: string; start: () => void; stop: () => void; abort: () => void; onresult: ((e: any) => void) | null; onend: (() => void) | null; onerror: ((e: any) => void) | null };
+const getSR = (): (new () => SR) | null => (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+const store = { get: (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+/* Pick the best match for spoken words among names (simple word overlap, good enough for section names). */
+function bestMatch<T>(said: string, list: T[], names: (t: T) => string[]): T | null {
+  const w = norm(said).split(' ').filter(x => x.length > 2 && !['the', 'section', 'part', 'one', 'and'].includes(x));
+  if (!w.length) return null;
+  let best: T | null = null, score = 0;
+  for (const t of list) {
+    const text = norm(names(t).join(' '));
+    let s = 0; for (const x of w) if (text.includes(x)) s += x.length;
+    if (norm(names(t)[0] ?? '') === norm(said)) s += 50;
+    if (s > score) { score = s; best = t; }
+  }
+  return score >= 4 ? best : null;
+}
+
+export function CatBuddy({ actions }: { actions: CatActions }) {
+  const [awake, setAwake] = useState(() => store.get('csb-cat-on', '0') === '1');
+  const [name, setName] = useState(() => store.get('csb-cat-name', 'Miso'));
+  const [talk, setTalk] = useState(() => store.get('csb-cat-talk', '1') === '1');
+  const [frame, setFrame] = useState(0);              // 0 idle, 1 blink, 2 ears up
+  const [level, setLevel] = useState(0);              // mic loudness 0–1
+  const [heard, setHeard] = useState('');             // live caption
+  const [bubble, setBubble] = useState<{ text: string; n: number } | null>(null);
+  const [error, setError] = useState('');
+  const [menu, setMenu] = useState(false);
+  const [hello, setHello] = useState(false);
+  const act = useRef(actions); act.current = actions;
+  const follow = useRef(0);                           // until when a follow-up needs no name
+  const pending = useRef<null | (() => void)>(null);  // waiting for "yes"
+  const target = useRef<string | null>(null);         // what was circled
+  const speaking = useRef(false);
+  const sr = useRef<SR | null>(null);
+  const nameRef = useRef(name); nameRef.current = name;
+  const talkRef = useRef(talk); talkRef.current = talk;
+  const supported = typeof window !== 'undefined' && !!getSR();
+
+  const say = (text: string) => {
+    setBubble(b => ({ text, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 8000;
+    if (!talkRef.current || !('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text); u.rate = 1.08; u.pitch = 1.25;
+      u.onstart = () => { speaking.current = true; }; u.onend = () => { speaking.current = false; follow.current = Date.now() + 8000; };
+      speechSynthesis.speak(u);
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { if (!bubble) return; const t = setTimeout(() => setBubble(null), 4200); return () => clearTimeout(t); }, [bubble?.n]);
+
+  /* ---------- understanding a command (all local) ---------- */
+  const run = (raw: string) => {
+    const a = act.current; const s = norm(raw);
+    const cur = target.current ?? a.selectedId; const curSec = a.sections.find(x => x.id === cur);
+    if (pending.current) { if (/^(yes|yeah|yep|do it|sure|ok|okay)\b/.test(s)) { const f = pending.current; pending.current = null; f(); return; } pending.current = null; if (/^(no|nope|cancel|never mind)\b/.test(s)) { say('Okay, I left it.'); return; } }
+    if (/\b(sleep|go to sleep|stop listening|that s all|bye)\b/.test(s)) { say('Napping. Click me when you need me.'); setTimeout(() => sleep(), 900); return; }
+    if (/\b(thank|thanks|good (cat|kitty|job))\b/.test(s)) { say('Purr.'); return; }
+    if (/\b(what can (i|you) (say|do)|help)\b/.test(s)) { say('Try preview, edit, present, publish, go to a section, add a section, move this up, or make this dark.'); setMenu(true); return; }
+    if (/\bpresent\b/.test(s)) { a.setMode('present'); say('Presenting.'); return; }
+    if (/\bpreview\b/.test(s)) { a.setMode('preview'); say('Preview.'); return; }
+    if (/\b(edit|editing|back to edit)\b/.test(s) && !/\bedit (the|this) /.test(s)) { a.setMode('canvas'); say('Back to editing.'); return; }
+    if (/\bpublish\b/.test(s)) { a.openPublish(); say('Here’s publish.'); return; }
+    if (/\bresearch\b/.test(s) && /\b(open|go|show)\b/.test(s)) { a.openResearch(); say('Opening research.'); return; }
+    if (/\b(brand|fonts|logo)\b/.test(s) && /\b(open|go|show)\b/.test(s)) { a.openBrand(); say('Brand settings.'); return; }
+    const mv = s.match(/\bmove (?:it|this|that|the section)? ?(up|down)\b/);
+    if (mv) { if (!curSec) { say('Which one? Click it or circle it first.'); return; } a.move(curSec.id, mv[1] === 'up' ? -1 : 1); say(mv[1] === 'up' ? 'Moved up.' : 'Moved down.'); return; }
+    const vr = s.match(/\b(?:make|set|turn) (?:it|this|that|the background)? ?(dark|black|tinted|grey|gray|light|white)\b/);
+    if (vr) { if (!curSec) { say('Which section? Click or circle it first.'); return; } const v = /dark|black/.test(vr[1]) ? 'dark' : /tint|gr[ae]y/.test(vr[1]) ? 'tinted' : 'light'; a.setVariant(curSec.id, v); say(v === 'dark' ? 'Dark it is.' : v === 'tinted' ? 'Tinted.' : 'Light.'); return; }
+    if (/\b(delete|remove) (this|that|the) section\b/.test(s)) { if (!curSec) { say('Which section? Click or circle it first.'); return; } pending.current = () => { a.remove(curSec.id); target.current = null; say('Deleted.'); }; say(`Delete ${a.labelOf(curSec)}? Say yes.`); return; }
+    const add = s.match(/\badd (?:a |an |another |the )?(.+?)(?: section| component)?$/);
+    if (add) { const t = bestMatch(add[1], a.templates, t => [t.name, t.kind, t.tags]); if (!t) { say(`I couldn’t find “${add[1]}”.`); return; } a.add(t); say(`Added ${t.name}.`); return; }
+    const go = s.match(/\b(?:go to|show me|show|open|select|jump to|scroll to) (?:the )?(.+)$/);
+    if (go) { const sec = bestMatch(go[1], a.sections, x => [a.labelOf(x), x.title, x.eyebrow, x.navLabel ?? '', x.kind]); if (!sec) { say(`I couldn’t find “${go[1]}”.`); return; } target.current = sec.id; a.select(sec.id); document.getElementById(`builder-section-${sec.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); say(a.labelOf(sec) + '.'); return; }
+    say('I can’t do that one yet. Say “help” for what I know.');
+  };
+
+  /* ---------- listening ---------- */
+  const handle = (text: string, final: boolean) => {
+    if (speaking.current) return;                     // don't hear myself
+    const s = norm(text); const nm = norm(nameRef.current);
+    const idx = (' ' + s + ' ').indexOf(' ' + nm + ' ');
+    const addressed = idx >= 0 || /\bhey (cat|kitty)\b/.test(s) || Date.now() < follow.current || !!pending.current;
+    if (!addressed) { setHeard(''); return; }
+    const cmd = idx >= 0 ? s.slice(idx + nm.length).trim() : s.replace(/\bhey (cat|kitty)\b/, '').trim();
+    setHeard(cmd || '…');
+    if (final && cmd) { setHeard(''); run(cmd); }
+    else if (final && !cmd) { say('Mrrp?'); }
+  };
+  const start = () => {
+    const C = getSR(); if (!C) { setError('Talking to me works in Chrome or Safari.'); return; }
+    if (sr.current) return;
+    const r = new C(); r.continuous = true; r.interimResults = true; r.lang = 'en-US';
+    r.onresult = (e: any) => { for (let i = e.resultIndex; i < e.results.length; i++) handle(e.results[i][0].transcript, e.results[i].isFinal); };
+    r.onerror = (e: any) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setError('I need the microphone. Allow it in the address bar, then click me.'); sleep(); } };
+    // Browsers stop listening after a while; quietly start again while I'm awake.
+    r.onend = () => { sr.current = null; if (store.get('csb-cat-on', '0') === '1') setTimeout(() => { if (store.get('csb-cat-on', '0') === '1') start(); }, 300); };
+    try { r.start(); sr.current = r; setError(''); } catch { /* already running */ }
+  };
+  const sleep = () => { store.set('csb-cat-on', '0'); setAwake(false); try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; setHeard(''); };
+  const wake = () => { store.set('csb-cat-on', '1'); setAwake(true); start(); setHello(true); setTimeout(() => setHello(false), 2600); };
+  useEffect(() => { if (awake) start(); return () => { try { sr.current?.abort(); } catch { /* ignore */ } sr.current = null; }; }, []);
+
+  /* Microphone loudness, so you can see I'm hearing you. */
+  useEffect(() => {
+    if (!awake) { setLevel(0); return; }
+    let stream: MediaStream | null = null, ctx: AudioContext | null = null, raf = 0, dead = false;
+    navigator.mediaDevices?.getUserMedia({ audio: true }).then(st => {
+      if (dead) { st.getTracks().forEach(t => t.stop()); return; }
+      stream = st; ctx = new AudioContext(); const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(st).connect(an);
+      const buf = new Uint8Array(an.fftSize); let last = 0;
+      const loop = (t: number) => { raf = requestAnimationFrame(loop); if (t - last < 80) return; last = t; an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf) sum += (v - 128) ** 2; setLevel(Math.min(1, Math.sqrt(sum / buf.length) / 22)); };
+      raf = requestAnimationFrame(loop);
+    }).catch(() => setError('I need the microphone. Allow it in the address bar, then click me.'));
+    return () => { dead = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()); void ctx?.close(); };
+  }, [awake]);
+
+  /* Blink now and then; perk the ears while you're talking. */
+  const hearing = awake && level > .18;
+  useEffect(() => {
+    if (!awake) { setFrame(1); return; }
+    if (hearing) { setFrame(2); return; }
+    setFrame(0);
+    let t = 0; const blink = () => { setFrame(1); setTimeout(() => setFrame(0), 140); t = window.setTimeout(blink, 2500 + Math.random() * 3500); };
+    t = window.setTimeout(blink, 1800); return () => clearTimeout(t);
+  }, [awake, hearing]);
+
+  /* Hold Option and draw around something to point at it. */
+  const [lasso, setLasso] = useState<Array<[number, number]> | null>(null);
+  useEffect(() => {
+    let pts: Array<[number, number]> | null = null;
+    const down = (e: PointerEvent) => { if (!e.altKey || e.button !== 0) return; const t = e.target as Element; if (!t.closest('.csb-preview-viewport')) return; e.preventDefault(); e.stopPropagation(); pts = [[e.clientX, e.clientY]]; setLasso(pts); };
+    const move = (e: PointerEvent) => { if (!pts) return; pts = [...pts, [e.clientX, e.clientY]]; setLasso(pts); };
+    const up = () => {
+      if (!pts) return; const p = pts; pts = null; setLasso(null); if (p.length < 4) return;
+      const cx = p.reduce((s, q) => s + q[0], 0) / p.length, cy = p.reduce((s, q) => s + q[1], 0) / p.length;
+      const sec = document.elementsFromPoint(cx, cy).map(el => el.closest('[id^="builder-section-"]')).find(Boolean) as HTMLElement | undefined;
+      if (!sec) return; const id = sec.id.replace('builder-section-', ''); target.current = id; act.current.select(id);
+      const s = act.current.sections.find(x => x.id === id); setBubble(b => ({ text: `Got it: ${s ? act.current.labelOf(s) : 'this'}.`, n: (b?.n ?? 0) + 1 })); follow.current = Date.now() + 10000;
+    };
+    window.addEventListener('pointerdown', down, true); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    return () => { window.removeEventListener('pointerdown', down, true); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  }, []);
+
+  if (!supported && !awake) { /* still show the cat; clicking explains */ }
+  const bars = [0, 1, 2].map(i => Math.max(.15, Math.min(1, level * (1.4 - i * .3) + (hearing ? .1 : 0))));
+  return <>
+    {lasso && <svg className="csb-cat-lasso" aria-hidden="true"><polyline points={lasso.map(p => p.join(',')).join(' ')} /></svg>}
+    <div className={`csb-cat ${awake ? 'is-awake' : 'is-asleep'} ${hearing ? 'is-hearing' : ''}`}>
+      <AnimatePresence>
+        {(bubble || heard || error || hello) && <motion.div key={error ? 'err' : heard ? 'heard' : hello && !bubble ? 'hello' : `b${bubble?.n}`} className={`csb-cat-bubble ${heard ? 'is-heard' : ''}`}
+          initial={{ opacity: 0, y: 6, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .2 }} role="status">
+          {error || (heard ? `“${heard}”` : bubble?.text ?? `Hi! Say “${name}” and then what you need.`)}
+        </motion.div>}
+      </AnimatePresence>
+      {menu && <div className="csb-cat-menu" role="dialog" aria-label={`${name} settings`}>
+        <label><span>Name</span><input value={name} onChange={e => { setName(e.target.value); store.set('csb-cat-name', e.target.value); }} /></label>
+        <label className="csb-cat-check"><input type="checkbox" checked={talk} onChange={e => { setTalk(e.target.checked); store.set('csb-cat-talk', e.target.checked ? '1' : '0'); }} /> Talk back out loud</label>
+        <p>Say “{name}”, then:</p>
+        <div className="csb-cat-cmds">{['preview', 'edit', 'present', 'publish', 'open research', 'go to the persona', 'add a bar chart', 'move this up', 'make this dark', 'delete this section', 'sleep'].map(c => <i key={c}>{c}</i>)}</div>
+        <p>Hold <kbd>⌥ Option</kbd> and draw around something to point at it.</p>
+        <p className="is-note">Listening happens in your browser. Nothing is sent to Claude, so it costs no tokens.</p>
+        <button type="button" onClick={() => setMenu(false)}>Done</button>
+      </div>}
+      <button type="button" className="csb-cat-btn" aria-pressed={awake} aria-label={awake ? `${name} is listening. Click to put ${name} to sleep.` : `Wake ${name} up to talk`}
+        onClick={() => (awake ? sleep() : wake())} onContextMenu={e => { e.preventDefault(); setMenu(m => !m); }}>
+        <span className="csb-cat-sprite" style={{ width: W * SCALE, height: H * SCALE, backgroundImage: `url(${sprite})`, backgroundSize: `${W * 3 * SCALE}px ${H * SCALE}px`, backgroundPosition: `${-frame * W * SCALE}px 0` }} />
+        {!awake && <span className="csb-cat-z" aria-hidden="true">z<b>z</b></span>}
+        {awake && <span className="csb-cat-bars" aria-hidden="true">{bars.map((b, i) => <i key={i} style={{ transform: `scaleY(${b})` }} />)}</span>}
+      </button>
+      <button type="button" className="csb-cat-gear" aria-label={`${name} settings`} onClick={() => setMenu(m => !m)}>⋯</button>
+    </div>
+  </>;
+}

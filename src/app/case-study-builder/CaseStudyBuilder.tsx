@@ -45,6 +45,7 @@ import { EndControls } from "./EndMore";
 import { FigJamPull } from "./FigJamPull";
 import { FigmaPullBar } from "./FigmaPull";
 import { PublishDialog } from "./Publish";
+import { CatBuddy } from "./CatBuddy";
 import { Globe } from "lucide-react";
 import { getStudy } from "./studyLibrary";
 import { FeatureCompareControls, PositioningControls } from "./CompetitorViews";
@@ -431,6 +432,17 @@ export default function CaseStudyBuilder() {
         <ProjectSettings onPickGradient={() => { setRightOpen(false); setGradPick(true); }} study={study} update={updateStudy} pickBgImage={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.onchange = async () => { const file = input.files?.[0]; if (!file) return; const url = URL.createObjectURL(file); try { const { downloadIntoDraft } = await import("./ImageSlots"); updateStudy({ hero: { style: "immersive", frame: "laptop", ...study.hero!, bg: "image", bgImage: await downloadIntoDraft(url, 700_000, 2200) } }); } finally { URL.revokeObjectURL(url); } }; input.click(); }} />
       </>}</div></aside>
     </div>
+    {!presenting && <CatBuddy actions={{
+      sections: study.sections, selectedId, templates,
+      select: id => { setSelectedId(id); if (view === "canvas") setRightOpen(true); },
+      move: moveSection,
+      remove: id => { setStudy(previous => ({ ...previous, sections: previous.sections.filter(section => section.id !== id) })); if (selectedId === id) setSelectedId(null); },
+      setVariant: (id, variant) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => section.id === id ? { ...section, variant: variant as CaseStudySection["variant"] } : section) })),
+      add: addSection,
+      setMode: m => { if (m === "present") startPresenting(); else if (m === "preview") enterPreview(); else setView(m); },
+      openPublish: () => setShowPublish(true), openResearch: () => setShowResearch(true), openBrand: () => setShowBrand(true),
+      labelOf: s => s.title || navLabelFor(s),
+    }} />}
     {showPublish && <PublishDialog study={study} onClose={() => setShowPublish(false)} onPublished={at => updateStudy({ publishedAt: at })} />}
     {showBrand && view !== "preview" && <BrandPanel study={study} onChange={updateStudy} onClose={() => setShowBrand(false)} notify={(text, error) => setMessage({ text, error })} />}
     <GradientPicker on={gradPick && view !== "preview"} off={study.gradOffEls ?? []} onChange={gradOffEls => updateStudy({ gradOffEls })} onDone={() => { setGradPick(false); setRightOpen(true); }} />
