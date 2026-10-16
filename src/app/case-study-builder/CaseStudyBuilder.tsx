@@ -448,6 +448,8 @@ export default function CaseStudyBuilder() {
       labelOf: s => s.title || navLabelFor(s),
       mode: presenting ? "present" : view,
       studyTitle: study.title, heroHasImage: !!study.heroImage,
+      header: { eyebrow: study.client, title: study.title, summary: study.summary, facts: heroFacts(study) },
+      setStudyText: (field, value) => { if (["title", "summary", "client", "heroCaption"].includes(field)) updateStudy({ [field]: value } as Partial<BuilderStudy>); },
       snapshot: () => studyRef.current, restore: snap => setStudy(snap),
       setText: (id, field, value) => setStudy(previous => ({ ...previous, sections: previous.sections.map(section => { if (section.id !== id) return section; const m = field.match(/^items\.(\d+)\.(title|detail)$/); if (m) return { ...section, items: section.items.map((item, i) => i === Number(m[1]) ? { ...item, [m[2]]: value } : item) }; return ["title", "eyebrow", "body"].includes(field) ? { ...section, [field]: value } : section; }) })),
       moveTo: (id, to) => setStudy(previous => { const list = [...previous.sections]; const from = list.findIndex(x => x.id === id); if (from < 0) return previous; const [x] = list.splice(from, 1); list.splice(Math.max(0, Math.min(list.length, to)), 0, x); return { ...previous, sections: list }; }),

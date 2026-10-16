@@ -68,3 +68,10 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     chrome.tabs.sendMessage(askedFrom, { type: 'miso-reply', text: msg.text, tone: msg.tone, kind: msg.kind || '' }).catch(() => {});
   }
 });
+
+// ⌃M anywhere in Chrome: turn Miso's listening on or off (the studio and Figma tabs follow).
+chrome.commands.onCommand.addListener(async cmd => {
+  if (cmd !== 'toggle-listening') return;
+  const { misoAwake } = await chrome.storage.local.get('misoAwake');
+  await chrome.storage.local.set({ misoAwake: !misoAwake });
+});

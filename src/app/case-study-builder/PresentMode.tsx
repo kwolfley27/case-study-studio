@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
   (scroller = the window).
 */
 
-const SLIDES = '.csb-doc-main > .csb-hero, .csb-doc-main > .csb-story-section, .csb-doc-main .csb-phase-step > .csb-story-section, .csb-doc-main > .csb-canvas-end';
+const SLIDES = '.csb-canvas > .csb-hx, .csb-doc-main > .csb-reveal-header, .csb-doc-main > .csb-hero, .csb-doc-main > .csb-story-section, .csb-doc-main .csb-phase-step > .csb-story-section, .csb-doc-main > .csb-canvas-end';
 
 export function PresentMode({ scroller, onExit }: { scroller: () => HTMLElement | null; onExit: () => void }) {
   const [index, setIndex] = useState(0);
@@ -23,7 +23,21 @@ export function PresentMode({ scroller, onExit }: { scroller: () => HTMLElement 
     document.documentElement.classList.add('csb-presenting');
     // Scale the page up to fill the screen: the content column (about 1100px) grows to ~92% of the width, capped so a section still fits the height.
     const fit = () => { const z = Math.max(1, Math.min(window.innerWidth * .92 / 1100, window.innerHeight / 700, 2.4)); document.documentElement.style.setProperty('--present-zoom', z.toFixed(3)); const canvas = (scroller() ?? document).querySelector('.csb-canvas'); const bg = canvas ? getComputedStyle(canvas).backgroundColor : ''; if (bg && bg !== 'rgba(0, 0, 0, 0)') document.documentElement.style.setProperty('--present-bg', bg); };
-    fit(); window.addEventListener('resize', fit);
+    // The header is one screen in Present mode: shrink its mockup until the title, image and details all fit.
+    const fitHeader = () => {
+      const root = scroller() ?? document; const view = (scroller() && scroller() !== document.scrollingElement ? scroller()!.clientHeight : window.innerHeight);
+      for (const [hSel, vSel] of [['.csb-doc-main > .csb-hero', '.csb-hero-visual'], ['.csb-canvas > .csb-hx', '.csb-hx-media']] as const) {
+        const header = root.querySelector<HTMLElement>(hSel); const visual = header?.querySelector<HTMLElement>(vSel); if (!header || !visual) continue;
+        visual.style.zoom = ''; header.style.justifyContent = '';
+        const over = header.scrollHeight * (header.getBoundingClientRect().height / (header.offsetHeight || 1)) - view;
+        if (over <= 0) continue;
+        const vh = visual.getBoundingClientRect().height; if (!vh) continue;
+        visual.style.zoom = String(Math.max(.4, (vh - over - view * .05) / vh).toFixed(3));
+      }
+    };
+    const fitAll = () => { fit(); fitHeader(); };
+    fitAll(); window.addEventListener('resize', fitAll);
+    const later = [250, 900, 2000].map(ms => window.setTimeout(fitHeader, ms));
     void document.documentElement.requestFullscreen?.().catch(() => undefined);
     const list = slides(); setCount(list.length);
     const io = new IntersectionObserver(entries => {
@@ -51,7 +65,7 @@ export function PresentMode({ scroller, onExit }: { scroller: () => HTMLElement 
     window.setTimeout(() => go(0), 50);
     return () => {
       document.documentElement.classList.remove('csb-presenting');
-      window.removeEventListener('resize', fit); document.documentElement.style.removeProperty('--present-zoom'); document.documentElement.style.removeProperty('--present-bg');
+      window.removeEventListener('resize', fitAll); later.forEach(clearTimeout); (scroller() ?? document).querySelectorAll<HTMLElement>('.csb-hero-visual, .csb-hx-media').forEach(el => { el.style.zoom = ''; }); document.documentElement.style.removeProperty('--present-zoom'); document.documentElement.style.removeProperty('--present-bg');
       io.disconnect();
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('mousemove', wake);

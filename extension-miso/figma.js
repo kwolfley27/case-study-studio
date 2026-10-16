@@ -12,6 +12,12 @@
   .miso-carry{position:fixed;z-index:2147483647;width:34px;height:26px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 2px #fdfcfc,0 4px 8px -2px rgba(0,0,0,.35);transform:rotate(-8deg);pointer-events:none}
   .miso-toast{position:fixed;z-index:2147483647;max-width:280px;padding:9px 13px;border-radius:16px;background:#fdfcfc;color:#000;font:13px/1.35 Inter,system-ui,-apple-system,sans-serif;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 10px 24px -12px rgba(0,0,0,.3);pointer-events:none;transition:opacity .25s}
   .miso-toast.is-heard{color:#67615a;font-style:italic}
+  .miso-chat{position:fixed;z-index:2147483647;width:320px;max-height:60vh;overflow:auto;border-radius:20px;background:#fdfcfc;color:#0f0e0d;font:14px/1.5 Inter,system-ui,-apple-system,sans-serif;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 18px 40px -16px rgba(0,0,0,.3)}
+  .miso-chat header{display:flex;align-items:center;justify-content:space-between;padding:10px 10px 4px 16px;font-weight:500;font-size:13px}
+  .miso-chat header button{width:28px;height:28px;border:0;border-radius:999px;background:none;color:#6f6961;font-size:18px;cursor:pointer}
+  .miso-chat>div{padding:2px 16px 14px}.miso-chat p{margin:0 0 6px}.miso-chat p.is-point{position:relative;padding-left:14px}
+  .miso-chat p.is-point:before{content:'';position:absolute;left:2px;top:.62em;width:4px;height:4px;border-radius:50%;background:#a59f97}
+  .miso-carry{cursor:pointer;pointer-events:auto}
   .miso-toast b{display:block;font-weight:500;font-size:12px;color:#6f6961;margin-bottom:3px;font-style:normal}
   .miso-toast i{color:#6f6961}
   .miso-toast.is-notes{max-width:300px;font-size:14px;line-height:1.45}
@@ -22,7 +28,8 @@
   @media (prefers-reduced-motion:reduce){.miso-cat{animation:none!important}}`;
   const style = document.createElement('style'); style.textContent = css; document.documentElement.appendChild(style);
   const cat = document.createElement('img'); cat.className = 'miso-cat'; cat.alt = ''; document.documentElement.appendChild(cat);
-  const carry = document.createElement('img'); carry.className = 'miso-carry'; carry.alt = ''; carry.style.display = 'none'; document.documentElement.appendChild(carry);
+  const carry = document.createElement('img'); carry.className = 'miso-carry'; carry.alt = ''; carry.title = 'Click to drop this frame'; carry.style.display = 'none'; document.documentElement.appendChild(carry);
+  carry.addEventListener('click', e => { e.stopPropagation(); chrome.storage.local.remove('clip'); lastPick = ''; say('Dropped it.'); });
   const toast = document.createElement('div'); toast.className = 'miso-toast'; toast.style.opacity = '0'; document.documentElement.appendChild(toast);
   let tt = 0; const say = (t, heard, stay) => { noteText = ''; toast.classList.remove('is-notes'); toast.textContent = t; toast.classList.toggle('is-heard', !!heard); toast.style.opacity = '1'; clearTimeout(tt); if (!stay) tt = setTimeout(() => { toast.style.opacity = '0'; }, heard ? 2500 : 4200); };
   // While I'm taking notes about a frame, the toast shows everything you've said about it so far.
@@ -61,6 +68,7 @@
   chrome.storage.onChanged.addListener(ch => {
     if (ch.clip) showClip(ch.clip.newValue);
     if (ch.misoListen) mode = ch.misoListen.newValue || 'all';
+    if (ch.misoAwake && !document.hidden) { say(ch.misoAwake.newValue ? 'Listening.' : 'Stopped listening.'); chirp(ch.misoAwake.newValue ? 'ok' : 'hm'); }
     if (ch.misoAwake || ch.misoName) { if (ch.misoAwake) awake = !!ch.misoAwake.newValue; if (ch.misoName) name = ch.misoName.newValue || 'Miso'; showCat(); listen(); }
   });
 
@@ -192,11 +200,23 @@
     r.onend = () => { rec = null; setTimeout(listen, blocked ? 5000 : 400); };
     try { r.start(); rec = r; quietSince = Date.now(); } catch { /* already running */ }
   };
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyM' && !stale()) { e.preventDefault(); e.stopPropagation(); chrome.storage.local.set({ misoAwake: !awake }); } }, true);
   document.addEventListener('visibilitychange', listen); addEventListener('focus', listen); addEventListener('blur', listen);
   let quietSince = Date.now();
   setInterval(() => { if (rec) chrome.storage.local.set({ misoFigma: Date.now() }).catch(() => {}); if (rec && Date.now() - quietSince > 50000) { quietSince = Date.now(); try { rec.abort(); } catch { /* ignore */ } } }, 5000);
+  /* Answers to your questions show in a small chat card here too. */
+  const chatBox = document.createElement('div'); chatBox.className = 'miso-chat'; chatBox.style.display = 'none'; document.documentElement.appendChild(chatBox);
+  const showChat = text => {
+    chatBox.innerHTML = `<header><span>${esc(name)}</span><button type="button" aria-label="Close">×</button></header><div>${text.split('\n').filter(l => l.trim()).map(l => /^\s*[-•]\s+/.test(l) ? `<p class="is-point">${esc(l.replace(/^\s*[-•]\s+/, ''))}</p>` : `<p>${esc(l)}</p>`).join('')}</div>`;
+    chatBox.querySelector('button').onclick = () => { chatBox.style.display = 'none'; };
+    const r = cat.getBoundingClientRect(); const right = r.left > innerWidth / 2;
+    Object.assign(chatBox.style, { display: '', bottom: Math.max(8, innerHeight - r.top + 10) + 'px', top: 'auto', ...(right ? { right: Math.max(8, innerWidth - r.right) + 'px', left: 'auto' } : { left: Math.max(8, r.left) + 'px', right: 'auto' }) });
+    toast.style.opacity = '0';
+  };
   chrome.runtime.onMessage.addListener(msg => {
     if (msg?.type !== 'miso-reply' || !msg.text) return;
+    if (msg.kind === 'chat') { showChat(msg.text); chirp(); follow = Date.now() + 15000; return; }
+    if (msg.kind === 'think') { say('Hmm…', false, true); return; }
     if (msg.kind === 'note') { noteText = /taking notes/.test(msg.text) ? '…' : msg.text; showNotes(); return; }
     if (msg.kind === 'nod') { cat.classList.remove('is-nod'); void cat.offsetWidth; cat.classList.add('is-nod'); say(msg.text); return; }
     say(msg.text, false, msg.kind === 'plan'); chirp(msg.tone || 'ok'); follow = Date.now() + 8000;

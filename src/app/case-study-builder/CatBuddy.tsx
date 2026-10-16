@@ -40,6 +40,8 @@ export type CatActions = {
   mode: string;
   studyTitle: string;
   heroHasImage: boolean;
+  header: { eyebrow: string; title: string; summary: string; facts: Array<{ label: string; value: string }> };
+  setStudyText: (field: string, value: string) => void;
 };
 export type Clip = { image: string; figmaUrl?: string; name?: string; at?: number; picked?: boolean };
 type Reply = 'chirp' | 'voice' | 'silent';
@@ -179,8 +181,9 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const a = act.current; const s = norm(raw);
     const cur = target.current ?? a.selectedId; const curSec = a.sections.find(x => x.id === cur);
     if (pending.current) { if (/^(yes|yeah|yep|do it|sure|ok|okay)\b/.test(s)) { const f = pending.current; pending.current = null; f(); return; } pending.current = null; if (/^(no|nope|cancel|never mind)\b/.test(s)) { say('Okay, I left it.'); return; } }
+    if (/^(drop|let go of|put down|forget|let go) (it|that|this|the frame|the screen|the picture)( now)?$|^(let it go|let go|drop|put it down)$/.test(s)) { dropClip(); return; }
     if (/^(undo|undo that|take that back|go back)\b/.test(s)) { const prev = undo.current.pop(); if (!prev) { say('Nothing to undo.', 'hm'); return; } a.restore(prev); say('Undone.'); return; }
-    if (/\b(put|place|drop|paste|add) (it|this|that|the frame|the screen)( here| there| in here)?\b/.test(s) && clipRef.current && !remote.current) { const slot = slotHere(); if (!slot) { say('Point at the spot first, then say put it here.', 'hm'); return; } undo.current.push(a.snapshot()); a.placeClip(slot, clipRef.current); say(`Placed ${clipRef.current.name || 'it'}.`); return; }
+    if (/\b(put|place|drop|paste|add) (it|this|that|the frame|the screen)( here| there| in here)?\b/.test(s) && clipRef.current && !remote.current) { const slot = slotHere(); if (!slot) { say('Point at the spot first, then say put it here.', 'hm'); return; } undo.current.push(a.snapshot()); const nm = clipRef.current.name || 'it'; a.placeClip(slot, clipRef.current); dropClip(true); say(`Placed ${nm}.`); return; }
     if (/\b(sleep|go to sleep|stop listening|that s all|bye)\b/.test(s)) { say('Napping. Click me when you need me.'); setTimeout(() => sleep(), 900); return; }
     if (/\b(thank|thanks|good (cat|kitty|job))\b/.test(s)) { say('Purr.'); return; }
     if (/\b(what can (i|you) (say|do)|help)\b/.test(s)) { say('Try preview, edit, present, publish, go to a section, add a section, move this up, or make this dark.'); setMenu(true); return; }
@@ -209,6 +212,21 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     const id = target.current ?? a.selectedId; const sec = a.sections.find(x => x.id === id); if (!sec) return null;
     const k = sec.items.findIndex(it => !it.image); return `${sec.id}:${k >= 0 ? k : 0}`;
   };
+
+  /* Let go of the frame I'm carrying (say "drop it", click the frame, or it happens once it's placed). */
+  const dropClip = (quiet = false) => {
+    if (!clipRef.current) { if (!quiet) say('I’m not holding anything.', 'hm'); return; }
+    clipRef.current = null; setClip(null); window.postMessage({ source: 'miso-page', type: 'clear' }, location.origin);
+    if (brief.current) endBrief();
+    if (!quiet) say('Dropped it.');
+  };
+  /* The little chat, for questions and feedback ("how's the title looking?"). */
+  const [chat, setChat] = useState<{ open: boolean; items: Array<{ who: 'katelyn' | 'miso'; text: string }> }>({ open: false, items: [] });
+  const [draft, setDraft] = useState('');
+  const chatEnd = useRef<HTMLDivElement>(null);
+  useEffect(() => { chatEnd.current?.scrollIntoView({ block: 'end' }); }, [chat.items.length, chat.open]);
+  const sendDraft = () => { const t = draft.trim(); if (!t) return; setDraft(''); remember('katelyn', t); typedRef.current = t; void askClaude(t, false); };
+  const typedRef = useRef('');
 
   /* ---------- talking about a frame ----------
      After you pick a frame I just take notes while you talk about it. When you pause (or say "that's it"),
@@ -251,13 +269,16 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     if (!pass) { say('I need your Studio passcode first. Add it in Draft with AI.', 'hm'); return; }
     const cut = (t?: string, n = 160) => (t ?? '').replace(/\s+/g, ' ').slice(0, n);
     const context = {
-      ambient, event, plan: plan.current, history: history.current.slice(-16, event ? undefined : -1), studyTitle: a.studyTitle, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
+      ambient, event, plan: plan.current, history: history.current.slice(-16, event ? undefined : -1), studyTitle: a.studyTitle, header: a.header, heroHasImage: a.heroHasImage, mode: a.mode, selectedId: a.selectedId, target: target.current, fromAnotherTab: remote.current,
       clip: clipRef.current ? { name: clipRef.current.name, figmaUrl: clipRef.current.figmaUrl } : null,
       pointingAtSlot: slotHere(),
       sections: a.sections.map((x, i) => ({ index: i, id: x.id, kind: x.kind, title: cut(x.title, 120), eyebrow: cut(x.eyebrow, 60), body: cut(x.body, 240), variant: x.variant, items: x.items.slice(0, 12).map((it, k) => ({ i: k, title: cut(it.title, 80), detail: cut(it.detail, 160), hasImage: !!it.image })) })),
       templates: a.templates.map(t => ({ id: t.id, name: t.name, kind: t.kind })),
     };
-    busy.current = true; setThinking(true); if (!ambient) setBubble(b => ({ text: '…', n: (b?.n ?? 0) + 1 }));
+    busy.current = true; setThinking(true);
+    const asking = /\?|^(how|what|is|does|do|should|would|could|can|which|why)\b|what do you think|how('s| is| are)|feedback|thoughts/i.test(said.trim());
+    if (!ambient || asking) setBubble(b => ({ text: asking ? 'Hmm…' : '…', n: (b?.n ?? 0) + 1 }));
+    if (asking && remote.current) window.postMessage({ source: 'miso-page', type: 'reply', text: 'Hmm…', tone: 'ok', kind: 'think' }, location.origin);
     try {
       const c = clipRef.current; const fresh = !!c && Date.now() - (c.at ?? 0) < 20 * 60 * 1000;
       const image = fresh && (event || remote.current || /\b(this|it|that|frame|screen|build|make|use|put|fill|add)\b/i.test(said)) ? await small(c!.image).catch(() => '') : '';
@@ -276,7 +297,8 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           const x = { ...x0, sectionId: idOf(x0.sectionId), afterId: x0.afterId ? idOf(x0.afterId) : undefined };
           const isNew = made.includes(x.sectionId);
           const sec = a.sections.find(y => y.id === x.sectionId) ?? (isNew ? { id: x.sectionId, items: [] as Array<{ image?: string }> } as unknown as typeof a.sections[number] : undefined);
-          if (x.type === 'set_text' && sec && typeof x.field === 'string' && typeof x.value === 'string') a.setText(sec.id, x.field, x.value);
+          if (x.type === 'set_text' && x.sectionId === 'hero' && typeof x.field === 'string' && typeof x.value === 'string') a.setStudyText(x.field === 'eyebrow' ? 'client' : x.field, x.value);
+          else if (x.type === 'set_text' && sec && typeof x.field === 'string' && typeof x.value === 'string') a.setText(sec.id, x.field, x.value);
           if (x.type === 'add_section') { const t = a.templates.find(y => y.id === x.templateId); if (t) { const id = a.addAfter(t, x.afterId); if (id) made.push(id); } }
           if (x.type === 'move_section' && sec && Number.isFinite(x.toIndex)) a.moveTo(sec.id, Number(x.toIndex));
           if (x.type === 'delete_section' && sec) a.remove(sec.id);
@@ -285,7 +307,15 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
           if (x.type === 'place_clip' && clipRef.current) { const sl = x.sectionId === 'hero' ? 'hero' : sec ? `${sec.id}:${Number.isFinite(x.itemIndex) ? x.itemIndex : Math.max(0, sec.items.findIndex(it => !it.image))}` : slotHere(); if (sl) a.placeClip(isNew && !Number.isFinite(x.itemIndex) ? `${x.sectionId}:0` : sl, clipRef.current); }
           if (x.type === 'set_mode' && x.mode) a.setMode(x.mode);
         }
+        if (acts.some(x => x.type === 'place_clip')) setTimeout(() => dropClip(true), 400);   // it's placed: I let go of it
       };
+      if (typeof d.answer === 'string' && d.answer.trim()) {
+        // A question or a request for feedback: answer in the chat.
+        apply();
+        const ans = d.answer.trim(); setChat(c => ({ open: true, items: [...c.items, { who: 'katelyn' as const, text: said }, { who: 'miso' as const, text: ans }].slice(-30) }));
+        if (remote.current) window.postMessage({ source: 'miso-page', type: 'reply', text: ans, tone: 'ok', kind: 'chat' }, location.origin);
+        remember('miso', ans.slice(0, 300)); setBubble(null); chirp(); return;
+      }
       if (hold) {
         // Talking about a frame: show the plan (or the question) and wait for okay.
         const line = String(d.say ?? '').trim() || (acts.length ? 'Here’s my plan. Okay?' : 'What should I make with it?');
@@ -356,7 +386,7 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     else if (final && !cmd) { say('Mrrp?'); }
   };
   /* Commands I can do instantly, without Claude (only when you say my name, so passing remarks never trigger them). */
-  const quick = (c: string) => /^(preview|edit|present|publish|undo|sleep|help|(open|go to|show) (research|brand)|move (it|this|that)? ?(up|down)|(make|set|turn) (it|this|that)? ?(dark|black|tinted|grey|gray|light|white)|add (a|an|another) .+)$/.test(norm(c));
+  const quick = (c: string) => /^(drop it|let go|let it go|drop (the|this|that) (frame|screen)|preview|edit|present|publish|undo|sleep|help|(open|go to|show) (research|brand)|move (it|this|that)? ?(up|down)|(make|set|turn) (it|this|that)? ?(dark|black|tinted|grey|gray|light|white)|add (a|an|another) .+)$/.test(norm(c));
   const flush = () => {
     if (busy.current) { clearTimeout(bufTimer.current); bufTimer.current = window.setTimeout(flush, 700); return; }
     const said = buffer.current.join(' ').trim(); buffer.current = []; if (!said) return;
@@ -381,6 +411,11 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     r.onend = () => { if (sr.current === r) sr.current = null; setSound(false); if (store.get('csb-cat-on', '0') === '1') setTimeout(() => startRef.current(), fails.current > 3 ? 2500 : 250); };
     try { r.start(); sr.current = r; bornAt.current = Date.now(); } catch { sr.current = null; fails.current++; }
   };
+  // ⌃M turns listening on and off (the extension handles it on every tab; this covers the studio without it).
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyM') { e.preventDefault(); if (store.get('csb-cat-on', '0') === '1') { sleep(); chirp('hm'); } else { wake(); chirp(); } } };
+    window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
+  }, []);
   startRef.current = start; hearRef.current = hear; startBriefRef.current = startBrief;
   // Watchdog: if Chrome dropped listening without telling me, start again.
   useEffect(() => {
@@ -453,6 +488,16 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
     <div className={`csb-cat ${awake ? 'is-awake' : 'is-asleep'} ${hearing ? 'is-hearing' : ''} ${thinking ? 'is-thinking' : ''} ${clip ? 'has-clip' : ''} ${spot ? 'is-placed' : ''} ${spot && spot[1] < .35 ? 'is-high' : ''} ${spot && spot[0] > .6 ? 'is-right' : ''}`}
       style={spot ? { left: spot[0] * innerWidth, top: spot[1] * innerHeight, bottom: 'auto' } : undefined}>
       <AnimatePresence>
+        {chat.open && <motion.div key="chat" className="csb-cat-chat" role="dialog" aria-label={`Chat with ${name}`}
+          initial={{ opacity: 0, y: 8, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: .22 }}>
+          <header><span>{name}</span><button type="button" aria-label="Close chat" onClick={() => setChat(c => ({ ...c, open: false }))}>×</button></header>
+          <div className="csb-cat-chat-list">
+            {chat.items.map((m, i) => <div key={i} className={`csb-cat-msg is-${m.who}`}>{m.text.split('\n').map((line, k) => /^\s*[-•]\s+/.test(line) ? <p key={k} className="is-point">{line.replace(/^\s*[-•]\s+/, '')}</p> : line.trim() ? <p key={k}>{line}</p> : null)}</div>)}
+            {thinking && <div className="csb-cat-msg is-miso is-thinking"><p>Hmm…</p></div>}
+            <div ref={chatEnd} />
+          </div>
+          <form onSubmit={e => { e.preventDefault(); sendDraft(); }}><input value={draft} onChange={e => setDraft(e.target.value)} placeholder={`Ask ${name}…`} aria-label={`Message ${name}`} /><button type="submit" disabled={!draft.trim()}>Send</button></form>
+        </motion.div>}
         {notes && notes.phase !== 'proposed' && !error && <motion.div key="notes" className="csb-cat-notes" role="status"
           initial={{ opacity: 0, y: 6, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: .2 }}>
           <span>{notes.words ? 'Taking notes' : `Tell me about ${clip?.name || 'this frame'}`}</span>
@@ -479,10 +524,12 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
         <div className="csb-cat-reply" role="radiogroup" aria-label="How I answer"><span>How I answer</span>
           <div>{([['chirp', 'Little chirp'], ['voice', 'Voice'], ['silent', 'Silent']] as const).map(([v, l]) => <button key={v} type="button" role="radio" aria-checked={replyMode === v} onClick={() => { setReplyMode(v); store.set('csb-cat-reply', v); if (v === 'chirp') chirp(); if (v === 'voice' && 'speechSynthesis' in window) { const u = new SpeechSynthesisUtterance('Hi, I’m ' + name + '.'); const vv = niceVoice(); if (vv) u.voice = vv; speechSynthesis.speak(u); } }}>{l}</button>)}</div>
         </div>
-        {clip && <div className="csb-cat-clip"><img src={clip.image} alt="" /><span>From Figma: <b>{clip.name || 'a frame'}</b><small>Point at a spot and say “put it here”.</small></span><button type="button" aria-label="Forget this frame" onClick={() => { setClip(null); window.postMessage({ source: 'miso-page', type: 'clear' }, location.origin); }}>×</button></div>}
+        {clip && <div className="csb-cat-clip"><img src={clip.image} alt="" /><span>From Figma: <b>{clip.name || 'a frame'}</b><small>Point at a spot and say “put it here”. Say “drop it” or click it on me to let go.</small></span><button type="button" aria-label="Drop this frame" onClick={() => dropClip(true)}>×</button></div>}
         <p>Say “{name}”, then:</p>
         <div className="csb-cat-cmds">{['preview', 'edit', 'present', 'publish', 'open research', 'go to the persona', 'add a bar chart', 'move this up', 'make this dark', 'delete this section', 'sleep'].map(c => <i key={c}>{c}</i>)}</div>
         <p>Hold <kbd>⌥ Option</kbd> and draw around something to point at it.</p>
+        <p>Press <kbd>⌃ Control</kbd> <kbd>M</kbd> to turn my listening on and off, on any tab.</p>
+        <p>Ask me things like “how’s the title looking?” and I’ll answer in a little chat.</p>
         <p className="is-note">Hearing you happens in your browser. What you say goes to Claude to understand it (in “Everything” mode, after each pause). “Undo” takes back my last change.</p>
         <p className="is-note">Drag me anywhere on the screen. Double-click me to send me back to my corner.</p>
         <p className="is-note"><a href={`${import.meta.env.BASE_URL}miso-extension.zip`} download>Get the Chrome extension</a> to bring frames over from Figma.</p>
@@ -490,10 +537,10 @@ export function CatBuddy({ actions }: { actions: CatActions }) {
       </div>}
       <button type="button" className="csb-cat-btn" aria-pressed={awake} aria-label={awake ? `${name} is listening. Click to put ${name} to sleep.` : `Wake ${name} up to talk`}
         onPointerDown={startDrag} onDoubleClick={() => { setSpot(null); try { localStorage.removeItem('csb-cat-spot'); } catch { /* ignore */ } }}
-        onClick={() => { if (dragged.current) { dragged.current = false; return; } if (awake) sleep(); else wake(); }} onContextMenu={e => { e.preventDefault(); setMenu(m => !m); }}>
+        onClick={e => { if (dragged.current) { dragged.current = false; return; } if ((e.target as HTMLElement).classList.contains('csb-cat-carry')) { dropClip(); return; } if (awake) sleep(); else wake(); }} onContextMenu={e => { e.preventDefault(); setMenu(m => !m); }}>
         <span key={nod} className={`csb-cat-sprite ${nod ? 'is-nod' : ''}`} style={{ width: W * SCALE, height: H * SCALE, backgroundImage: `url(${sprite})`, backgroundSize: `${W * 3 * SCALE}px ${H * SCALE}px`, backgroundPosition: `${-frame * W * SCALE}px 0` }} />
         {!awake && <span className="csb-cat-z" aria-hidden="true">z<b>z</b></span>}
-        {clip && <img className="csb-cat-carry" src={clip.image} alt="" aria-hidden="true" />}
+        {clip && <img className="csb-cat-carry" src={clip.image} alt="" title="Click to drop this frame" />}
         {awake && <span className="csb-cat-bars" aria-hidden="true">{bars.map((b, i) => <i key={i} style={{ transform: `scaleY(${b})` }} />)}</span>}
       </button>
       <button type="button" className="csb-cat-gear" aria-label={`${name} settings`} onClick={() => setMenu(m => !m)}>⋯</button>

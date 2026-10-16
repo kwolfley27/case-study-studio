@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Miso for Case Study Studio",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Click a frame in Figma and Miso copies it as PNG; tell Miso what to build with it and it does it in Case Study Studio. Chrome briefly shows \u201cstarted debugging this browser\u201d while Miso presses Copy as PNG for you.",
   "permissions": [
     "storage",
@@ -55,5 +55,14 @@
       ],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "commands": {
+    "toggle-listening": {
+      "suggested_key": {
+        "default": "Ctrl+M",
+        "mac": "MacCtrl+M"
+      },
+      "description": "Turn Miso's listening on or off"
+    }
+  }
 }
