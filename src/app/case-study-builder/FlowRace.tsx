@@ -27,7 +27,8 @@ const APPS = ['Competitor 1', 'Competitor 2', 'Competitor 3'];
 export const defaultFlowRace = (): FlowRaceData => ({ flows: [{ id: rid(), name: 'Log a meal', apps: [...APPS.map(name => ({ id: rid(), name })), { id: rid(), name: 'Our design', ours: true }] }] });
 export const flowsOf = (d?: FlowRaceData): RaceFlow[] => d?.flows?.length ? d.flows : [{ id: 'f1', name: d?.task || 'Log a meal', apps: d?.apps?.length ? d.apps : defaultFlowRace().flows![0].apps }];
 const fmt = (s?: number) => s === undefined || !isFinite(s) ? '–' : s < 60 ? `${s < 10 ? s.toFixed(1) : Math.round(s)}s` : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-const LIMIT = 50e6;
+const LIMIT = 50e6; // the storage plan's limit per file
+const SHRINK_OVER = 12e6;
 const stepAt = (steps: RaceStep[] | undefined, ms: number) => { if (!steps?.length) return -1; let k = 0; for (let i = 0; i < steps.length; i++) if (steps[i].at <= ms + 60) k = i; return k; };
 
 type Status = { text: string; error?: boolean };
@@ -99,12 +100,19 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
     const clear = () => setStatus(s => { const n = { ...s }; delete n[app.id]; return n; });
     if (/\.gif$/i.test(file.name) || file.type === 'image/gif') { say('Use the screen recording itself (MP4 or MOV). It plays like a GIF on the page, and the studio can find and save each screen.', true); return; }
     if (!/^video\//.test(file.type) && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) { say('That isn’t a video. Use an MP4 or MOV screen recording.', true); return; }
-    if (file.size > LIMIT) { say(`That recording is ${(file.size / 1e6).toFixed(0)} MB; the limit is 50 MB. Trim it to just the task first (Photos → Edit).`, true); return; }
-    say('Uploading…');
     try {
       const { uploadToStudio } = await import('./media');
       const durationP = new Promise<number>(res => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => res(v.duration); v.onerror = () => res(NaN); v.src = URL.createObjectURL(file); });
-      const url = await uploadToStudio(file, slug || 'flows', p => say(`Uploading… ${Math.round(p * 100)}%`));
+      // Big or HEVC recordings are shrunk to a light, plays-everywhere MP4 first (the original is used to find the screens).
+      let web: File = file;
+      if (file.size > SHRINK_OVER || /quicktime|hevc/i.test(file.type) || /\.mov$/i.test(file.name)) {
+        say('Shrinking for the web… keep this tab open');
+        try { const { shrinkVideo } = await import('./shrinkVideo'); const small = await shrinkVideo(file, p => say(`Shrinking for the web… ${Math.round(p * 100)}% · keep this tab open`)); if (small.size < file.size) web = small; }
+        catch (e) { if (file.size > LIMIT) throw e; }
+      }
+      if (web.size > LIMIT) { say(`Even shrunk, that recording is ${(web.size / 1e6).toFixed(0)} MB (the limit is 50 MB). Trim it to just the task first (Photos → Edit).`, true); return; }
+      say('Uploading…');
+      const url = await uploadToStudio(web, slug || 'flows', p => say(`Uploading… ${Math.round(p * 100)}%`));
       const duration = await durationP;
       putApp(flowId, app.id, { video: url, duration: isFinite(duration) ? duration : undefined, steps: [] });
       const ok = await analyse(flowId, { ...app, steps: [] }, file, say);
@@ -182,7 +190,7 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
           return <figure key={app.id} className={`csb-race-app ${app.ours ? 'is-ours' : ''} ${finished !== undefined ? 'is-done' : ''} ${held ? 'is-held' : ''}`}>
             <div className="csb-race-phone" data-no-slot onDragOver={editorMode ? e => e.preventDefault() : undefined} onDrop={editorMode ? e => { e.preventDefault(); e.stopPropagation(); const fl = e.dataTransfer.files[0]; if (fl) void upload(app, fl); } : undefined}>
               {app.video ? <video ref={el => { if (el) vids.current.set(app.id, el); else vids.current.delete(app.id); }} src={app.video} muted playsInline preload="metadata" aria-label={`${app.name}: ${flow.name}`} />
-                : editorMode ? <label className="csb-race-drop"><Upload size={18} strokeWidth={1.6} /><b>Drop a screen recording</b><span>MP4 or MOV, up to 50 MB</span><input type="file" accept="video/*" hidden onChange={e => { const fl = e.target.files?.[0]; e.target.value = ''; if (fl) void upload(app, fl); }} /></label>
+                : editorMode ? <label className="csb-race-drop"><Upload size={18} strokeWidth={1.6} /><b>Drop a screen recording</b><span>MP4 or MOV · big files are shrunk for the web</span><input type="file" accept="video/*" hidden onChange={e => { const fl = e.target.files?.[0]; e.target.value = ''; if (fl) void upload(app, fl); }} /></label>
                 : <span className="csb-race-empty" />}
               {app.video && step && <div className={`csb-race-pins ${editorMode && held ? 'is-adding' : ''}`} onClick={editorMode && held ? e => addPin(app, k, e) : undefined} title={editorMode && held ? 'Click to add a note on this screen' : undefined}>
                 {(step.pins ?? []).map((p, n) => <span key={p.id} className="csb-race-pin" style={{ left: `${p.x}%`, top: `${p.y}%` }} onPointerDown={e => dragPin(app, k, p, e)} onClick={e => e.stopPropagation()}>
