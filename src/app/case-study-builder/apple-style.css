@@ -3315,3 +3315,23 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-editorial-statement.is-reading p{white-space:pre-line}
 .csb-editorial-statement.is-reading .csb-editorial-glyph{display:none}
 .csb-doc-main .csb-editorial-statement.is-reading p,.csb-editorial-statement.is-reading p{font-size:clamp(17px,1.45cqw,19px)!important;line-height:1.65;letter-spacing:-.005em!important;font-weight:400!important;font-family:inherit!important;color:var(--t-body,#57524c)}
+
+/* ---------- Project overview: full width, spec-sheet hierarchy ---------- */
+.csb-doc-main section.csb-kind-details{padding-inline:0!important}
+.csb-canvas .csb-kind-details .csb-section-intro{text-align:left!important;margin:0 0 clamp(26px,3cqw,44px)!important;max-width:none!important}
+.csb-canvas .csb-kind-details .csb-section-intro .csb-section-index{display:none}
+.csb-canvas .csb-kind-details .csb-section-intro h2{font-size:clamp(28px,3cqw,40px)!important;line-height:1.1!important;font-weight:600!important;letter-spacing:-.03em!important;margin:0!important;text-align:left!important}
+.csb-canvas .csb-kind-details .csb-section-intro .csb-eyebrow{text-align:left!important;margin-bottom:10px!important}
+.csb-canvas .csb-kind-details .csb-section-intro .csb-section-body{margin:14px 0 0!important;text-align:left!important;max-width:640px}
+.csb-canvas .csb-kind-details .csb-details{display:grid!important;grid-template-columns:repeat(var(--details-n,4),minmax(0,1fr))!important;gap:clamp(28px,3cqw,40px) clamp(20px,2.6cqw,40px)!important;border:0!important;margin:0!important;padding:0!important}
+.csb-canvas .csb-kind-details .csb-detail{min-width:0;padding:18px 0 0!important;margin:0!important;border:0!important;border-top:1px solid color-mix(in srgb,var(--t-ink,#1c1917) 14%,transparent)!important;grid-column:auto!important}
+.csb-canvas .csb-kind-details .csb-detail dt{margin:0 0 8px!important;font-family:inherit!important;font-size:13px!important;font-weight:600!important;line-height:1.3!important;letter-spacing:0!important;text-transform:none!important;color:var(--t-muted,#6f6961)!important}
+.csb-canvas .csb-kind-details .csb-detail dd{margin:0!important;font-size:clamp(18px,1.75cqw,22px)!important;font-weight:550!important;line-height:1.28!important;letter-spacing:-.015em!important;color:var(--t-ink,#1c1917)!important;overflow-wrap:break-word}
+.csb-canvas .csb-kind-details .csb-detail.is-long dd,.csb-canvas .csb-kind-details .csb-detail.is-team dd{font-size:clamp(15px,1.3cqw,17px)!important;font-weight:400!important;line-height:1.5!important;letter-spacing:0!important}
+.csb-canvas .csb-kind-details.csb-variant-dark .csb-detail{border-top-color:rgba(255,255,255,.18)!important}
+.csb-canvas .csb-kind-details.csb-variant-dark .csb-detail dd{color:#fff!important}
+.csb-canvas .csb-kind-details.csb-variant-dark :is(.csb-detail dt,.csb-section-intro h2){color:rgba(255,255,255,.66)!important}
+.csb-canvas .csb-kind-details.csb-variant-dark .csb-section-intro h2{color:#fff!important}
+@container (max-width:760px){.csb-canvas .csb-kind-details .csb-details{grid-template-columns:repeat(min(2,var(--details-n,2)),minmax(0,1fr))!important}}
+@container (max-width:440px){.csb-canvas .csb-kind-details .csb-details{grid-template-columns:1fr!important;gap:22px!important}}
+.csb-canvas .csb-kind-details .csb-detail-faces{margin-left:0!important;padding-left:2px}.csb-canvas .csb-kind-details .csb-detail-faces i:first-child{margin-left:0!important}

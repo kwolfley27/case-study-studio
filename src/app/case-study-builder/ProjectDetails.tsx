@@ -33,13 +33,16 @@ export function ProjectDetails({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const { edit } = useContext(EditingContext);
   const shown = section.items.map((item, index) => ({ item, index })).filter(({ item }) => !item.hidden);
-  return <dl className="csb-details">
+  const cols = shown.length <= 5 ? shown.length : shown.length === 6 ? 3 : 4;
+  return <dl className="csb-details" style={{ '--details-n': Math.max(1, cols) } as React.CSSProperties}>
     {shown.map(({ item, index }, k) => {
       const team = isTeam(item);
-      const solo = team && item.value === 'solo';
+      // A sentence ("I led research…") rather than a list of names reads as plain text.
+      const sentence = team && !item.detail.includes('\n') && !/\s[—–-]\s/.test(item.detail) && item.detail.trim().split(/\s+/).length > 3;
+      const solo = team && (item.value === 'solo' || sentence);
       const raw = team && !solo ? item.detail.split('\n').map(line => line.trim()) : [];
       const people = raw.filter(Boolean).map(line => { const [name, role] = line.split(/\s+[—–-]\s+/); return { name: name.trim(), role: role?.trim() }; });
-      return <motion.div key={index} className={`csb-detail ${team ? 'is-team' : ''}`} initial={reduce ? false : { opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .5, delay: k * .05, ease: [0.22, 1, 0.36, 1] }}>
+      return <motion.div key={index} className={`csb-detail ${team ? 'is-team' : ''} ${!team && (item.detail || '').length > 34 ? 'is-long' : ''}`} initial={reduce ? false : { opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .5, delay: k * .05, ease: [0.22, 1, 0.36, 1] }}>
         <dt><EditableText field={`items.${index}.title`} value={item.title} /></dt>
         <dd>
           {solo ? <EditableText field={`items.${index}.detail`} value={item.detail || 'Solo project'} />
