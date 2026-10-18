@@ -3461,3 +3461,7 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 }
 .csb-race .csb-race-step>span{flex:1 1 auto;min-width:0}
 .csb-race-app figcaption strong>.csb-editable-text,.csb-race-task .csb-editable-text{flex:0 1 auto}
+/* My sections cards: no browser button chrome */
+.csb-template-mine .csb-template-hit{appearance:none;border:0;background:transparent;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;border-radius:inherit}
+.csb-template-mine .csb-template-remove{appearance:none;border:0;padding:0;cursor:pointer}
+.csb-template-mine{background:#fff}
