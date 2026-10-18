@@ -3467,3 +3467,9 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-template-mine{background:#fff}
 .csb-race-shot-img{display:block;width:100%;height:100%;border-radius:calc(clamp(20px,3.2cqw,36px) - 5px);object-fit:cover;object-position:top;background:var(--t-surface,#f2f1ef);animation:csb-shot-in .35s ease}
 @keyframes csb-shot-in{from{opacity:.4}}
+.csb-race-nav{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:rgba(20,20,20,.72);color:#fff;backdrop-filter:blur(8px);z-index:3}
+.csb-race-nav button{width:26px;height:26px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#fff;cursor:pointer}
+.csb-race-nav button:disabled{opacity:.35;cursor:default}
+.csb-race-nav button:not(:disabled):hover{background:rgba(255,255,255,.16)}
+.csb-race-nav em{font-style:normal;font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;padding:0 4px}
+.csb-race-shot-img{animation:none}

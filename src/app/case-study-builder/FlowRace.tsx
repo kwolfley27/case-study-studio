@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Download, Film, Images, LayoutGrid, Pause, Play, Plus, RefreshCw, RotateCcw, Star, Trash2, Upload, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Film, Images, LayoutGrid, Pause, Play, Plus, RefreshCw, RotateCcw, Star, Trash2, Upload, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import { StudyMeta } from './StudyMeta';
@@ -27,7 +27,7 @@ const APPS = ['Competitor 1', 'Competitor 2', 'Competitor 3'];
 export const defaultFlowRace = (): FlowRaceData => ({ flows: [{ id: rid(), name: 'Log a meal', apps: [...APPS.map(name => ({ id: rid(), name })), { id: rid(), name: 'Our design', ours: true }] }] });
 export const flowsOf = (d?: FlowRaceData): RaceFlow[] => d?.flows?.length ? d.flows : [{ id: 'f1', name: d?.task || 'Log a meal', apps: d?.apps?.length ? d.apps : defaultFlowRace().flows![0].apps }];
 const fmt = (s?: number) => s === undefined || !isFinite(s) ? '–' : s < 60 ? `${s < 10 ? s.toFixed(1) : Math.round(s)}s` : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-const DWELL = 1600; // ms per screenshot when screenshots play like a GIF
+const DWELL = 1600; // spacing used for screenshot steps (they don't play; visitors step through them)
 const shotsOf = (a: RaceApp) => !a.video && !!a.steps?.some(s => s.thumb);
 const LIMIT = 50e6; // the storage plan's limit per file
 const SHRINK_OVER = 12e6;
@@ -63,10 +63,6 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   const [times, setTimes] = useState<Record<string, number>>({});           // current time (ms) per app, for notes
   const [paused, setPaused] = useState<Record<string, number>>({});         // apps held on one screen (its index)
   const [screensFlow, setScreensFlow] = useState<'all' | number>('all');
-  const [clock, setClock] = useState(() => performance.now());
-  const loopBase = useRef(performance.now());
-  const hasShots = flow.apps.some(shotsOf);
-  useEffect(() => { if (!hasShots || view !== 'play') return; const t = setInterval(() => setClock(performance.now()), 200); return () => clearInterval(t); }, [hasShots, view]);
 
   useEffect(() => { const el = box.current; if (!el) return; const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: .2 }); io.observe(el); return () => io.disconnect(); }, []);
   // Like a GIF: loop quietly while on screen (not with reduced motion). Held apps stay put.
@@ -76,14 +72,12 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   useEffect(() => { setRacing(null); setDone({}); setPaused({}); }, [f]);
 
   const race = () => {
-    const list = [...vids.current.entries()].filter(([, v]) => v.src); if (!list.length && !hasShots) return;
+    const list = [...vids.current.entries()].filter(([, v]) => v.src); if (!list.length) return;
     setDone({}); setPaused({}); setRacing(performance.now());
     list.forEach(([id, v]) => { v.loop = false; v.currentTime = 0; v.onended = () => setDone(d => ({ ...d, [id]: v.duration })); void v.play().catch(() => undefined); });
   };
   const stop = () => { setRacing(null); vids.current.forEach(v => { v.onended = null; }); };
-  const withVideo = flow.apps.filter(a => a.video || shotsOf(a));
-  // Screenshot apps finish when their last screen has had its turn.
-  useEffect(() => { if (racing === null) return; flow.apps.filter(shotsOf).forEach(a => { const d = (a.steps!.length * DWELL); if (clock - racing >= d && done[a.id] === undefined) setDone(x => ({ ...x, [a.id]: d / 1000 })); }); }, [clock, racing]);
+  const withVideo = flow.apps.filter(a => a.video);
   useEffect(() => { if (racing === null || !withVideo.length) return; if (withVideo.every(a => done[a.id] !== undefined)) { const t = setTimeout(stop, 2400); return () => clearTimeout(t); } }, [done, racing]);
   const hold = (id: string, k: number, at: number) => { const v = vids.current.get(id); if (!v) { setPaused(p => ({ ...p, [id]: k })); return; } stop(); v.pause(); v.currentTime = at / 1000 + .05; setPaused(p => ({ ...p, [id]: k })); };
   const resume = (id: string) => { setPaused(p => { const n = { ...p }; delete n[id]; return n; }); };
@@ -231,22 +225,23 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
         {flow.apps.map((app, i) => {
           const st = status[app.id]; const finished = done[app.id];
           const shots = shotsOf(app); const n = app.steps?.length ?? 0;
-          const shotsDur = n * DWELL / 1000;
-          const t = racing !== null && (app.video || shots) ? Math.min(now, finished ?? (shots ? shotsDur : app.duration) ?? now) : null;
-          const held = paused[app.id] !== undefined;
-          const shotMs = racing !== null ? clock - racing : inView && !reduce ? (clock - loopBase.current) % (n * DWELL || 1) : 0;
-          const k = held ? paused[app.id] : shots ? Math.min(n - 1, Math.floor(Math.max(0, shotMs) / DWELL)) : stepAt(app.steps, times[app.id] ?? 0); const step = k >= 0 ? app.steps?.[k] : undefined;
+          const t = racing !== null && app.video ? Math.min(now, finished ?? app.duration ?? now) : null;
+          const held = !shots && paused[app.id] !== undefined;
+          const k = shots ? Math.min(n - 1, paused[app.id] ?? 0) : held ? paused[app.id] : stepAt(app.steps, times[app.id] ?? 0); const step = k >= 0 ? app.steps?.[k] : undefined;
+          const go = (d: number) => setPaused(p => ({ ...p, [app.id]: Math.max(0, Math.min(n - 1, k + d)) }));
+          const adding = editorMode && (held || shots);
           return <figure key={app.id} className={`csb-race-app ${app.ours ? 'is-ours' : ''} ${finished !== undefined ? 'is-done' : ''} ${held ? 'is-held' : ''}`}>
             <div className="csb-race-phone" data-no-slot onDragOver={editorMode ? e => e.preventDefault() : undefined} onDrop={editorMode ? e => { e.preventDefault(); e.stopPropagation(); take(app, e.dataTransfer.files); } : undefined}>
               {app.video ? <video ref={el => { if (el) vids.current.set(app.id, el); else vids.current.delete(app.id); }} src={app.video} muted playsInline preload="metadata" aria-label={`${app.name}: ${flow.name}`} />
                 : shots && step?.thumb ? <img className="csb-race-shot-img" src={step.thumb} alt={`${app.name}: ${step.label}`} key={k} />
                 : editorMode ? <label className="csb-race-drop"><Upload size={18} strokeWidth={1.6} /><b>Drop screenshots or a recording</b><span>One screenshot per step, or an MP4 / MOV</span><input type="file" accept="image/*,video/*" multiple hidden onChange={e => { const fl = e.target.files; take(app, fl ? [...fl] : []); e.target.value = ''; }} /></label>
                 : <span className="csb-race-empty" />}
-              {(app.video || shots) && step && <div className={`csb-race-pins ${editorMode && held ? 'is-adding' : ''}`} onClick={editorMode && held ? e => addPin(app, k, e) : undefined} title={editorMode && held ? 'Click to add a note on this screen' : undefined}>
+              {(app.video || shots) && step && <div className={`csb-race-pins ${adding ? 'is-adding' : ''}`} onClick={adding ? e => addPin(app, k, e) : undefined} title={adding ? 'Click to add a note on this screen' : undefined}>
                 {(step.pins ?? []).map((p, n) => <span key={p.id} className="csb-race-pin" style={{ left: `${p.x}%`, top: `${p.y}%` }} onPointerDown={e => dragPin(app, k, p, e)} onClick={e => e.stopPropagation()}>
                   <b>{n + 1}</b><span className={`csb-race-pin-note ${p.x > 55 ? 'is-left' : ''}`}><EditableText field={`${base}.apps.${i}.steps.${k}.pins.${n}.text`} value={p.text} />{editorMode && <button type="button" aria-label="Remove note" onClick={() => dropPin(app, k, p.id)}><X size={10} /></button>}</span>
                 </span>)}
               </div>}
+              {shots && n > 1 && <span className="csb-race-nav"><button type="button" aria-label="Previous screen" disabled={k <= 0} onClick={() => go(-1)}><ChevronLeft size={14} /></button><em>{k + 1} / {n}</em><button type="button" aria-label="Next screen" disabled={k >= n - 1} onClick={() => go(1)}><ChevronRight size={14} /></button></span>}
               {held && <button type="button" className="csb-race-resume" onClick={() => resume(app.id)}><Play size={11} fill="currentColor" />{editorMode ? 'Click the screen to add a note · Resume' : 'Resume'}</button>}
               {t !== null && <span className="csb-race-clock">{finished !== undefined ? `Done · ${fmt(finished)}` : fmt(t)}</span>}
               {st && <span className={`csb-race-status ${st.error ? 'is-error' : ''}`} role="status">{st.text}</span>}
@@ -255,7 +250,7 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
               <strong><EditableText field={`${base}.apps.${i}.name`} value={app.name} />{app.ours && <i>Ours</i>}</strong>
               <span className="csb-race-stats">{app.video ? <>{fmt(app.duration)}{app.steps?.length ? ` · ${app.steps.length} screens` : ''}</> : shots ? `${n} screens` : editorMode ? 'Nothing added yet' : ''}</span>
               {!!app.steps?.length && <ol className="csb-race-steps">{app.steps.map((s, j) => <li key={j} className={`${s.pain ? 'is-pain' : ''} ${j === k && (app.video || shots) ? 'is-now' : ''}`}>
-                <button type="button" className="csb-race-step" onClick={() => hold(app.id, j, s.at)} title={editorMode ? 'Hold this screen (then click it to add a note)' : 'Show this screen'}><em>{j + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${j}.label`} value={s.label} />{!!s.pins?.length && <sup>{s.pins.length}</sup>}</span></button>
+                <button type="button" className="csb-race-step" onClick={() => hold(app.id, j, s.at)} title={editorMode ? (shots ? 'Show this screen (then click it to add a note)' : 'Hold this screen (then click it to add a note)') : 'Show this screen'}><em>{j + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${j}.label`} value={s.label} />{!!s.pins?.length && <sup>{s.pins.length}</sup>}</span></button>
                 {editorMode && <button type="button" className="csb-race-pain" aria-pressed={!!s.pain} title={s.pain ? 'Friction point (click to clear)' : 'Mark as a friction point'} onClick={() => putApp(flow.id, app.id, a => ({ steps: a.steps!.map((x, y) => y === j ? { ...x, pain: !x.pain } : x) }))} />}
                 {s.pain && (editorMode || s.note) && <small><EditableText field={`${base}.apps.${i}.steps.${j}.note`} value={s.note || ''} /></small>}
               </li>)}</ol>}
