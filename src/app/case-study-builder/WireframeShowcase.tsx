@@ -1,3 +1,4 @@
+import { IPhone } from './IPhone';
 import { useState } from 'react';
 import { Media } from './Media';
 import { motion } from 'motion/react';
@@ -24,7 +25,7 @@ export function WireframeShowcase({ section }: { section: CaseStudySection }) {
   return <div className="csb-wireframes" data-count={screens.length}>
     <div className="csb-phone-stage" style={{ "--csb-phone-width": `${285 * (section.layout?.scale ?? 100) / 100}px` } as React.CSSProperties}>{screens.map((item, i) => <motion.figure className="csb-phone-figure" key={item.frameId || i} initial={reduce ? false : { opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .5, delay: reduce ? 0 : i * .09 }}>
       <button className="csb-phone-open" type="button" disabled={!item.image} onClick={event => { event.stopPropagation(); openScreen(i); }} aria-label={`View ${item.title} up close`}>
-        <div className="csb-phone-shell" data-image-slot={`${section.id}:${i}`}><div className="csb-phone-screen">{item.image ? <Media src={item.image} alt="" style={{ objectFit: section.fit || 'contain' }} loading="lazy" /> : <div className="csb-phone-empty"><span>DESIGNED MEDIA</span><small>Click to add a screen</small></div>}</div>{!item.image && <><span className="csb-phone-island" /><span className="csb-phone-home" /></>}</div>
+        <IPhone className="csb-phone-shell" data-image-slot={`${section.id}:${i}`}><div className="csb-phone-screen">{item.image ? <Media src={item.image} alt="" style={{ objectFit: section.fit || 'contain' }} loading="lazy" /> : <div className="csb-phone-empty"><span>DESIGNED MEDIA</span><small>Click to add a screen</small></div>}</div></IPhone>
         {item.image && <span className="csb-phone-open-hint"><Maximize2 size={13} /> View up close</span>}
       </button>
       <figcaption><strong><EditableText field={`items.${i}.title`} value={item.title} /></strong><span><EditableText field={`items.${i}.detail`} value={item.detail} /></span></figcaption>

@@ -3473,3 +3473,31 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-race-nav button:not(:disabled):hover{background:rgba(255,255,255,.16)}
 .csb-race-nav em{font-style:normal;font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;padding:0 4px}
 .csb-race-shot-img{animation:none}
+
+/* ---------- iPhone mockup (shared) ---------- */
+.csb-iphone{position:relative;aspect-ratio:1776/3646;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;transform:none}
+.csb-iphone-screen{position:absolute;left:4.39%;right:4.39%;top:1.89%;bottom:1.84%;border-radius:16% / 7.4%;overflow:hidden;background:var(--t-surface,#f2f1ef);aspect-ratio:auto!important;height:auto!important;padding:0!important}
+.csb-iphone-screen>:is(img,video){display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.csb-iphone-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;z-index:2;filter:drop-shadow(0 22px 34px rgba(0,0,0,.14))}
+.csb-iphone-screen>*{position:relative}
+.csb-iphone-screen>:is(img,video,.csb-dev-sample,.csb-hx-screen,.csb-gallery-phone-screen,.csb-phone-screen,.csb-race-drop,.csb-race-empty,.csb-race-shot-img){position:absolute;inset:0;width:100%;height:100%;border-radius:0!important;margin:0}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) .csb-iphone-frame{display:none}
+:is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) .csb-iphone-screen{inset:0;border-radius:14% / 6.6%;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 22px 40px -20px rgba(0,0,0,.25)}
+/* Recorded flows on the mockup */
+.csb-race-phone.csb-iphone{overflow:visible}
+.csb-race-phone.csb-iphone :is(.csb-race-pins){inset:0;border-radius:0}
+.csb-race-phone.csb-iphone :is(.csb-race-pins,.csb-race-nav,.csb-race-clock,.csb-race-status,.csb-race-resume){position:absolute;z-index:3}
+.csb-race-phone.csb-iphone .csb-race-resume{top:9%}
+.csb-race-app.is-ours .csb-race-phone.csb-iphone,.csb-race-app.is-held .csb-race-phone.csb-iphone{box-shadow:none!important}
+.csb-race-app.is-ours .csb-iphone-frame{filter:drop-shadow(0 0 1.5px var(--csb-accent)) drop-shadow(0 0 10px color-mix(in srgb,var(--csb-accent) 45%,transparent)) drop-shadow(0 22px 34px rgba(0,0,0,.14))}
+.csb-race-app.is-held .csb-iphone-frame{filter:drop-shadow(0 0 1.5px var(--flow)) drop-shadow(0 0 10px color-mix(in srgb,var(--flow) 45%,transparent)) drop-shadow(0 22px 34px rgba(0,0,0,.14))}
+.csb-race-add{aspect-ratio:1776/3646}
+/* Header iPhone frame */
+.csb-hx-phone.csb-iphone{width:min(320px,70%)}
+/* Gallery iPhone mockups */
+.csb-gallery-phone.csb-iphone{height:100%;max-height:430px;width:auto;margin:auto;transform:scale(var(--csb-gallery-scale,1))}
+/* Wireframe showcase */
+.csb-phone-shell.csb-iphone{aspect-ratio:1776/3646}
+.csb-race-nav{white-space:nowrap}
+.csb-hx-phone.csb-iphone{width:320px;max-width:100%;flex:none}
+@container (max-width:700px){.csb-hx-phone.csb-iphone{width:240px}}

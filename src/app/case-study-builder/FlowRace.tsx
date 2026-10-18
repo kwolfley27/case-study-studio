@@ -1,3 +1,4 @@
+import { IPhone } from './IPhone';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, Film, Images, LayoutGrid, Pause, Play, Plus, RefreshCw, RotateCcw, Star, Trash2, Upload, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
@@ -231,7 +232,7 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
           const go = (d: number) => setPaused(p => ({ ...p, [app.id]: Math.max(0, Math.min(n - 1, k + d)) }));
           const adding = editorMode && (held || shots);
           return <figure key={app.id} className={`csb-race-app ${app.ours ? 'is-ours' : ''} ${finished !== undefined ? 'is-done' : ''} ${held ? 'is-held' : ''}`}>
-            <div className="csb-race-phone" data-no-slot onDragOver={editorMode ? e => e.preventDefault() : undefined} onDrop={editorMode ? e => { e.preventDefault(); e.stopPropagation(); take(app, e.dataTransfer.files); } : undefined}>
+            <IPhone className="csb-race-phone" data-no-slot onDragOver={editorMode ? e => e.preventDefault() : undefined} onDrop={editorMode ? e => { e.preventDefault(); e.stopPropagation(); take(app, e.dataTransfer.files); } : undefined}>
               {app.video ? <video ref={el => { if (el) vids.current.set(app.id, el); else vids.current.delete(app.id); }} src={app.video} muted playsInline preload="metadata" aria-label={`${app.name}: ${flow.name}`} />
                 : shots && step?.thumb ? <img className="csb-race-shot-img" src={step.thumb} alt={`${app.name}: ${step.label}`} key={k} />
                 : editorMode ? <label className="csb-race-drop"><Upload size={18} strokeWidth={1.6} /><b>Drop screenshots or a recording</b><span>One screenshot per step, or an MP4 / MOV</span><input type="file" accept="image/*,video/*" multiple hidden onChange={e => { const fl = e.target.files; take(app, fl ? [...fl] : []); e.target.value = ''; }} /></label>
@@ -245,7 +246,7 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
               {held && <button type="button" className="csb-race-resume" onClick={() => resume(app.id)}><Play size={11} fill="currentColor" />{editorMode ? 'Click the screen to add a note · Resume' : 'Resume'}</button>}
               {t !== null && <span className="csb-race-clock">{finished !== undefined ? `Done · ${fmt(finished)}` : fmt(t)}</span>}
               {st && <span className={`csb-race-status ${st.error ? 'is-error' : ''}`} role="status">{st.text}</span>}
-            </div>
+            </IPhone>
             <figcaption>
               <strong><EditableText field={`${base}.apps.${i}.name`} value={app.name} />{app.ours && <i>Ours</i>}</strong>
               <span className="csb-race-stats">{app.video ? <>{fmt(app.duration)}{app.steps?.length ? ` · ${app.steps.length} screens` : ''}</> : shots ? `${n} screens` : editorMode ? 'Nothing added yet' : ''}</span>
