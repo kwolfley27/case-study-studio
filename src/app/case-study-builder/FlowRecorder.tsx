@@ -61,7 +61,7 @@ export async function framesFromVideo(file: File, onProgress: (p: number) => voi
   await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('This browser can’t read that video. On iPhone, set Camera → Formats → Most Compatible, or try Safari.')); });
   const dur = v.duration; if (!isFinite(dur) || dur <= 0) throw new Error('Could not read the video length.');
   const tiny = document.createElement('canvas'); tiny.width = 24; tiny.height = 48; const tc = tiny.getContext('2d', { willReadFrequently: true })!;
-  const big = document.createElement('canvas'); const bw = 300; big.width = bw; big.height = Math.round(v.videoHeight * bw / v.videoWidth); const bc = big.getContext('2d')!;
+  const big = document.createElement('canvas'); const bw = 600; big.width = bw; big.height = Math.round(v.videoHeight * bw / v.videoWidth); const bc = big.getContext('2d')!;
   const seek = (t: number) => new Promise<void>(res => { const on = () => { v.removeEventListener('seeked', on); res(); }; v.addEventListener('seeked', on); v.currentTime = Math.min(dur - .05, t); });
   const sample = () => { tc.drawImage(v, 0, 0, 24, 48); const d = tc.getImageData(0, 0, 24, 48).data; const g = new Float32Array(24 * 48); for (let i = 0; i < g.length; i++) g[i] = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3; return g; };
   const diff = (a: Float32Array, b: Float32Array) => { let s = 0; for (let i = 2 * 24; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / (a.length - 48); }; // ignore the status bar rows
@@ -74,7 +74,7 @@ export async function framesFromVideo(file: File, onProgress: (p: number) => voi
     // A settled frame that looks different from the last screen we kept is a new screen.
     if (!lastKept || (changing && diff(g, lastKept) > 14) || diff(g, lastKept) > 26) {
       bc.drawImage(v, 0, 0, big.width, big.height);
-      out.push({ label: `Screen ${out.length + 1}`, image: big.toDataURL('image/jpeg', .62), at: Math.round(t * 1000) });
+      out.push({ label: `Screen ${out.length + 1}`, image: big.toDataURL('image/jpeg', .72), at: Math.round(t * 1000) });
       lastKept = g; if (out.length >= 24) break;
     }
     changing = false;

@@ -3465,3 +3465,5 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-template-mine .csb-template-hit{appearance:none;border:0;background:transparent;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;border-radius:inherit}
 .csb-template-mine .csb-template-remove{appearance:none;border:0;padding:0;cursor:pointer}
 .csb-template-mine{background:#fff}
+.csb-race-shot-img{display:block;width:100%;height:100%;border-radius:calc(clamp(20px,3.2cqw,36px) - 5px);object-fit:cover;object-position:top;background:var(--t-surface,#f2f1ef);animation:csb-shot-in .35s ease}
+@keyframes csb-shot-in{from{opacity:.4}}

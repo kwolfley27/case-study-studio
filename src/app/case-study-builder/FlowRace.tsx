@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Film, LayoutGrid, Pause, Play, Plus, RefreshCw, RotateCcw, Star, Trash2, Upload, X } from 'lucide-react';
+import { Download, Film, Images, LayoutGrid, Pause, Play, Plus, RefreshCw, RotateCcw, Star, Trash2, Upload, X } from 'lucide-react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import { StudyMeta } from './StudyMeta';
@@ -27,6 +27,8 @@ const APPS = ['Competitor 1', 'Competitor 2', 'Competitor 3'];
 export const defaultFlowRace = (): FlowRaceData => ({ flows: [{ id: rid(), name: 'Log a meal', apps: [...APPS.map(name => ({ id: rid(), name })), { id: rid(), name: 'Our design', ours: true }] }] });
 export const flowsOf = (d?: FlowRaceData): RaceFlow[] => d?.flows?.length ? d.flows : [{ id: 'f1', name: d?.task || 'Log a meal', apps: d?.apps?.length ? d.apps : defaultFlowRace().flows![0].apps }];
 const fmt = (s?: number) => s === undefined || !isFinite(s) ? '–' : s < 60 ? `${s < 10 ? s.toFixed(1) : Math.round(s)}s` : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const DWELL = 1600; // ms per screenshot when screenshots play like a GIF
+const shotsOf = (a: RaceApp) => !a.video && !!a.steps?.some(s => s.thumb);
 const LIMIT = 50e6; // the storage plan's limit per file
 const SHRINK_OVER = 12e6;
 const stepAt = (steps: RaceStep[] | undefined, ms: number) => { if (!steps?.length) return -1; let k = 0; for (let i = 0; i < steps.length; i++) if (steps[i].at <= ms + 60) k = i; return k; };
@@ -61,6 +63,10 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   const [times, setTimes] = useState<Record<string, number>>({});           // current time (ms) per app, for notes
   const [paused, setPaused] = useState<Record<string, number>>({});         // apps held on one screen (its index)
   const [screensFlow, setScreensFlow] = useState<'all' | number>('all');
+  const [clock, setClock] = useState(() => performance.now());
+  const loopBase = useRef(performance.now());
+  const hasShots = flow.apps.some(shotsOf);
+  useEffect(() => { if (!hasShots || view !== 'play') return; const t = setInterval(() => setClock(performance.now()), 200); return () => clearInterval(t); }, [hasShots, view]);
 
   useEffect(() => { const el = box.current; if (!el) return; const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: .2 }); io.observe(el); return () => io.disconnect(); }, []);
   // Like a GIF: loop quietly while on screen (not with reduced motion). Held apps stay put.
@@ -70,14 +76,16 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   useEffect(() => { setRacing(null); setDone({}); setPaused({}); }, [f]);
 
   const race = () => {
-    const list = [...vids.current.entries()].filter(([, v]) => v.src); if (!list.length) return;
+    const list = [...vids.current.entries()].filter(([, v]) => v.src); if (!list.length && !hasShots) return;
     setDone({}); setPaused({}); setRacing(performance.now());
     list.forEach(([id, v]) => { v.loop = false; v.currentTime = 0; v.onended = () => setDone(d => ({ ...d, [id]: v.duration })); void v.play().catch(() => undefined); });
   };
   const stop = () => { setRacing(null); vids.current.forEach(v => { v.onended = null; }); };
-  const withVideo = flow.apps.filter(a => a.video);
+  const withVideo = flow.apps.filter(a => a.video || shotsOf(a));
+  // Screenshot apps finish when their last screen has had its turn.
+  useEffect(() => { if (racing === null) return; flow.apps.filter(shotsOf).forEach(a => { const d = (a.steps!.length * DWELL); if (clock - racing >= d && done[a.id] === undefined) setDone(x => ({ ...x, [a.id]: d / 1000 })); }); }, [clock, racing]);
   useEffect(() => { if (racing === null || !withVideo.length) return; if (withVideo.every(a => done[a.id] !== undefined)) { const t = setTimeout(stop, 2400); return () => clearTimeout(t); } }, [done, racing]);
-  const hold = (id: string, k: number, at: number) => { const v = vids.current.get(id); if (!v) return; stop(); v.pause(); v.currentTime = at / 1000 + .05; setPaused(p => ({ ...p, [id]: k })); };
+  const hold = (id: string, k: number, at: number) => { const v = vids.current.get(id); if (!v) { setPaused(p => ({ ...p, [id]: k })); return; } stop(); v.pause(); v.currentTime = at / 1000 + .05; setPaused(p => ({ ...p, [id]: k })); };
   const resume = (id: string) => { setPaused(p => { const n = { ...p }; delete n[id]; return n; }); };
 
   /* Screens: find each new screen in the video, keep its picture, and let AI name them. */
@@ -93,6 +101,40 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
     const named = await rec.nameScreensAI(frames.map(fr => fr.image!).filter(Boolean), `${app.name} · ${flowName}`);
     if (named) { steps = steps.map((s, i) => ({ s, a: named[i] })).filter(x => x.a?.keep !== false).map(({ s, a }) => ({ ...s, label: a?.label || s.label })); putApp(flowId, app.id, { steps }); }
     return !!named;
+  };
+  /* Screenshots, one per step: they become the steps, in order, and play through like a GIF. */
+  const uploadShots = async (app: RaceApp, files: File[]) => {
+    const flowId = flow.id;
+    const say = (text: string, error = false) => setStatus(s => ({ ...s, [app.id]: { text, error } }));
+    try {
+      const [{ compressIntoDraft }, { toJpeg }, rec] = await Promise.all([import('./ImageSlots'), import('./Built'), import('./FlowRecorder')]);
+      const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }) || a.lastModified - b.lastModified);
+      const thumbs: string[] = [];
+      for (let n = 0; n < sorted.length; n++) { say(`Adding screenshots… ${n + 1} of ${sorted.length}`); thumbs.push(await compressIntoDraft(sorted[n], 600_000, 900)); }
+      let steps: RaceStep[] = thumbs.map((thumb, n) => ({ label: `Screen ${n + 1}`, at: n * DWELL, thumb }));
+      putApp(flowId, app.id, { video: undefined, duration: undefined, steps });
+      say('Naming the screens…');
+      const small = await Promise.all(thumbs.map(t => toJpeg(t, 560)));
+      const named = await rec.nameScreensAI(small, `${app.name} · ${latest.current.find(x => x.id === flowId)?.name ?? ''}`);
+      if (named) { steps = steps.map((st, n) => ({ ...st, label: named[n]?.label || st.label })); putApp(flowId, app.id, { steps }); }
+      setStatus(s => { const n = { ...s }; delete n[app.id]; return n; });
+    } catch (e) { say(e instanceof Error ? e.message : 'Couldn’t add those screenshots.', true); }
+  };
+  const take = (app: RaceApp, list: FileList | File[] | null | undefined) => {
+    const files = [...(list ?? [])]; if (!files.length) return;
+    const images = files.filter(fl => /^image\//.test(fl.type) && !/gif/.test(fl.type));
+    if (images.length === files.length) { void uploadShots(app, images); return; }
+    void upload(app, files.find(fl => /^video\//.test(fl.type) || /\.(mp4|mov|m4v|webm)$/i.test(fl.name)) ?? files[0]);
+  };
+  const gif = async (app: RaceApp) => {
+    const say = (text: string, error = false) => setStatus(s => ({ ...s, [app.id]: { text, error } }));
+    try {
+      say('Making the GIF…');
+      const { screensToGif } = await import('./gif');
+      const blob = await screensToGif(app.steps!.filter(st => st.thumb).map(st => ({ src: st.thumb!, pins: st.pins })), { color });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${app.name} - ${flow.name}.gif`.replace(/[\\/:*?"<>|]+/g, ''); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      setStatus(s => { const n = { ...s }; delete n[app.id]; return n; });
+    } catch (e) { say(e instanceof Error ? e.message : 'Couldn’t make the GIF.', true); }
   };
   const upload = async (app: RaceApp, file: File) => {
     const flowId = flow.id;
@@ -143,7 +185,9 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   };
 
   // Summary under the row.
-  const timed = flow.apps.filter(a => a.video && a.duration);
+  const counted = flow.apps.filter(a => (a.video || shotsOf(a)) && a.steps?.length);
+  const byScreens = flow.apps.some(shotsOf);
+  const timed = byScreens ? [] : flow.apps.filter(a => a.video && a.duration);
   const ours = timed.find(a => a.ours); const others = timed.filter(a => !a.ours);
   const avg = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / (xs.length || 1);
   const summary = ours && others.length ? (() => {
@@ -151,6 +195,8 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
     const faster = Math.round((1 - ours.duration! / t) * 100);
     return <><b>{ours.name}</b> takes <b>{fmt(ours.duration)}</b>{ours.steps?.length ? <> and <b>{ours.steps.length}</b> screens</> : null}, against an average of <b>{fmt(t)}</b>{n ? <> and <b>{Number.isInteger(n) ? n : n.toFixed(1)}</b> screens</> : null}{faster > 0 ? <> · {faster}% faster</> : null}</>;
   })() : timed.length > 1 ? (() => { const s = [...timed].sort((a, b) => a.duration! - b.duration!); return <>Fastest: <b>{s[0].name}</b>, {fmt(s[0].duration)}. Slowest: <b>{s[s.length - 1].name}</b>, {fmt(s[s.length - 1].duration)}.</>; })() : null;
+  const oursN = counted.find(a => a.ours); const othersN = counted.filter(a => !a.ours);
+  const screensSummary = byScreens && oursN && othersN.length ? (() => { const m = avg(othersN.map(a => a.steps!.length)); const fewer = Math.round((1 - oursN.steps!.length / m) * 100); return <><b>{oursN.name}</b> takes <b>{oursN.steps!.length}</b> screens, against an average of <b>{Number.isInteger(m) ? m : m.toFixed(1)}</b>{fewer > 0 ? <> · {fewer}% fewer</> : null}</>; })() : null;
   const pains = flow.apps.reduce((n, a) => n + (a.steps?.filter(s => s.pain).length ?? 0), 0);
 
   const tabs = <div className="csb-race-tabs" role="tablist" aria-label="Flows">
@@ -184,15 +230,19 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
       <div className="csb-race-row" key={flow.id}>
         {flow.apps.map((app, i) => {
           const st = status[app.id]; const finished = done[app.id];
-          const t = racing !== null && app.video ? Math.min(now, finished ?? app.duration ?? now) : null;
+          const shots = shotsOf(app); const n = app.steps?.length ?? 0;
+          const shotsDur = n * DWELL / 1000;
+          const t = racing !== null && (app.video || shots) ? Math.min(now, finished ?? (shots ? shotsDur : app.duration) ?? now) : null;
           const held = paused[app.id] !== undefined;
-          const k = held ? paused[app.id] : stepAt(app.steps, times[app.id] ?? 0); const step = k >= 0 ? app.steps?.[k] : undefined;
+          const shotMs = racing !== null ? clock - racing : inView && !reduce ? (clock - loopBase.current) % (n * DWELL || 1) : 0;
+          const k = held ? paused[app.id] : shots ? Math.min(n - 1, Math.floor(Math.max(0, shotMs) / DWELL)) : stepAt(app.steps, times[app.id] ?? 0); const step = k >= 0 ? app.steps?.[k] : undefined;
           return <figure key={app.id} className={`csb-race-app ${app.ours ? 'is-ours' : ''} ${finished !== undefined ? 'is-done' : ''} ${held ? 'is-held' : ''}`}>
-            <div className="csb-race-phone" data-no-slot onDragOver={editorMode ? e => e.preventDefault() : undefined} onDrop={editorMode ? e => { e.preventDefault(); e.stopPropagation(); const fl = e.dataTransfer.files[0]; if (fl) void upload(app, fl); } : undefined}>
+            <div className="csb-race-phone" data-no-slot onDragOver={editorMode ? e => e.preventDefault() : undefined} onDrop={editorMode ? e => { e.preventDefault(); e.stopPropagation(); take(app, e.dataTransfer.files); } : undefined}>
               {app.video ? <video ref={el => { if (el) vids.current.set(app.id, el); else vids.current.delete(app.id); }} src={app.video} muted playsInline preload="metadata" aria-label={`${app.name}: ${flow.name}`} />
-                : editorMode ? <label className="csb-race-drop"><Upload size={18} strokeWidth={1.6} /><b>Drop a screen recording</b><span>MP4 or MOV · big files are shrunk for the web</span><input type="file" accept="video/*" hidden onChange={e => { const fl = e.target.files?.[0]; e.target.value = ''; if (fl) void upload(app, fl); }} /></label>
+                : shots && step?.thumb ? <img className="csb-race-shot-img" src={step.thumb} alt={`${app.name}: ${step.label}`} key={k} />
+                : editorMode ? <label className="csb-race-drop"><Upload size={18} strokeWidth={1.6} /><b>Drop screenshots or a recording</b><span>One screenshot per step, or an MP4 / MOV</span><input type="file" accept="image/*,video/*" multiple hidden onChange={e => { const fl = e.target.files; take(app, fl ? [...fl] : []); e.target.value = ''; }} /></label>
                 : <span className="csb-race-empty" />}
-              {app.video && step && <div className={`csb-race-pins ${editorMode && held ? 'is-adding' : ''}`} onClick={editorMode && held ? e => addPin(app, k, e) : undefined} title={editorMode && held ? 'Click to add a note on this screen' : undefined}>
+              {(app.video || shots) && step && <div className={`csb-race-pins ${editorMode && held ? 'is-adding' : ''}`} onClick={editorMode && held ? e => addPin(app, k, e) : undefined} title={editorMode && held ? 'Click to add a note on this screen' : undefined}>
                 {(step.pins ?? []).map((p, n) => <span key={p.id} className="csb-race-pin" style={{ left: `${p.x}%`, top: `${p.y}%` }} onPointerDown={e => dragPin(app, k, p, e)} onClick={e => e.stopPropagation()}>
                   <b>{n + 1}</b><span className={`csb-race-pin-note ${p.x > 55 ? 'is-left' : ''}`}><EditableText field={`${base}.apps.${i}.steps.${k}.pins.${n}.text`} value={p.text} />{editorMode && <button type="button" aria-label="Remove note" onClick={() => dropPin(app, k, p.id)}><X size={10} /></button>}</span>
                 </span>)}
@@ -203,14 +253,16 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
             </div>
             <figcaption>
               <strong><EditableText field={`${base}.apps.${i}.name`} value={app.name} />{app.ours && <i>Ours</i>}</strong>
-              <span className="csb-race-stats">{app.video ? <>{fmt(app.duration)}{app.steps?.length ? ` · ${app.steps.length} screens` : ''}</> : editorMode ? 'No recording yet' : ''}</span>
-              {!!app.steps?.length && <ol className="csb-race-steps">{app.steps.map((s, j) => <li key={j} className={`${s.pain ? 'is-pain' : ''} ${j === k && app.video ? 'is-now' : ''}`}>
+              <span className="csb-race-stats">{app.video ? <>{fmt(app.duration)}{app.steps?.length ? ` · ${app.steps.length} screens` : ''}</> : shots ? `${n} screens` : editorMode ? 'Nothing added yet' : ''}</span>
+              {!!app.steps?.length && <ol className="csb-race-steps">{app.steps.map((s, j) => <li key={j} className={`${s.pain ? 'is-pain' : ''} ${j === k && (app.video || shots) ? 'is-now' : ''}`}>
                 <button type="button" className="csb-race-step" onClick={() => hold(app.id, j, s.at)} title={editorMode ? 'Hold this screen (then click it to add a note)' : 'Show this screen'}><em>{j + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${j}.label`} value={s.label} />{!!s.pins?.length && <sup>{s.pins.length}</sup>}</span></button>
                 {editorMode && <button type="button" className="csb-race-pain" aria-pressed={!!s.pain} title={s.pain ? 'Friction point (click to clear)' : 'Mark as a friction point'} onClick={() => putApp(flow.id, app.id, a => ({ steps: a.steps!.map((x, y) => y === j ? { ...x, pain: !x.pain } : x) }))} />}
                 {s.pain && (editorMode || s.note) && <small><EditableText field={`${base}.apps.${i}.steps.${j}.note`} value={s.note || ''} /></small>}
               </li>)}</ol>}
               {editorMode && <span className="csb-race-tools">
-                {app.video && <label title="Replace the recording"><RotateCcw size={13} /><input type="file" accept="video/*" hidden onChange={e => { const fl = e.target.files?.[0]; e.target.value = ''; if (fl) void upload(app, fl); }} /></label>}
+                {(app.video || shots) && <label title="Replace with new screenshots or a recording"><RotateCcw size={13} /><input type="file" accept="image/*,video/*" multiple hidden onChange={e => { const fl = e.target.files; take(app, fl ? [...fl] : []); e.target.value = ''; }} /></label>}
+                {shots && <label title="Add more screenshots at the end"><Images size={13} /><input type="file" accept="image/*" multiple hidden onChange={e => { const fl = [...(e.target.files ?? [])]; e.target.value = ''; if (fl.length) void (async () => { const { compressIntoDraft } = await import('./ImageSlots'); const add: RaceStep[] = []; for (const x of fl.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) add.push({ label: `Screen ${n + add.length + 1}`, at: 0, thumb: await compressIntoDraft(x, 600_000, 900) }); putApp(flow.id, app.id, a => ({ steps: [...(a.steps ?? []), ...add].map((st, y) => ({ ...st, at: y * DWELL })) })); })(); }} /></label>}
+                {!!app.steps?.some(st => st.thumb) && <button type="button" title="Download these screens as a GIF" onClick={() => void gif(app)}><Download size={13} /></button>}
                 {app.video && <button type="button" title="Find the screens again" onClick={() => void reanalyse(app)}><RefreshCw size={13} /></button>}
                 <button type="button" aria-pressed={!!app.ours} title={app.ours ? 'This is your design' : 'Mark as your design'} onClick={() => save(flows.map(fl => fl.id !== flow.id ? fl : { ...fl, apps: fl.apps.map(a => ({ ...a, ours: a.id === app.id ? !a.ours : false })) }))}><Star size={13} /></button>
                 {flow.apps.length > 2 && <button type="button" title="Remove this app" onClick={() => save(flows.map(fl => fl.id !== flow.id ? fl : { ...fl, apps: fl.apps.filter(a => a.id !== app.id) }))}><Trash2 size={13} /></button>}
@@ -221,9 +273,9 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
         {editorMode && flow.apps.length < 5 && <button type="button" className="csb-race-add" onClick={() => save(flows.map(fl => fl.id !== flow.id ? fl : { ...fl, apps: [...fl.apps, { id: rid(), name: `Competitor ${fl.apps.length}` }] }))}><Plus size={16} />Add an app</button>}
       </div>
       {(summary || pains > 0 || editorMode) && <div className="csb-race-sum">
-        {summary && <p>{summary}</p>}
+        {(screensSummary || summary) && <p>{screensSummary || summary}</p>}
         {pains > 0 && <p className="csb-race-sum-pain"><i aria-hidden="true" />{pains} friction {pains === 1 ? 'point' : 'points'} marked. Click a screen name to hold it.</p>}
-        {editorMode && !summary && <p className="csb-race-hint">Record the same task in each app (iPhone: Control Center → Screen Recording), trim it to just the task, and drop it on its phone. Click a screen name to hold it, then click the screen to add a note. Star your own design.</p>}
+        {editorMode && !summary && !screensSummary && <p className="csb-race-hint">Do the same task in each app and drop its screenshots (one per step) or a screen recording on its phone. Click a screen name to hold it, then click the screen to add a note. Star your own design.</p>}
       </div>}
     </> : <Screens flows={flows} only={screensFlow} />}
   </div>;
