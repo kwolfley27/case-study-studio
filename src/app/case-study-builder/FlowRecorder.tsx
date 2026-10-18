@@ -55,7 +55,7 @@ export function recordingToFlow(r: Recording, keep?: UserFlowData): UserFlowData
 }
 
 /* ---------- phone screen recording → screens ---------- */
-async function framesFromVideo(file: File, onProgress: (p: number) => void): Promise<RecStep[]> {
+export async function framesFromVideo(file: File, onProgress: (p: number) => void): Promise<RecStep[]> {
   const url = URL.createObjectURL(file);
   const v = document.createElement('video'); v.src = url; v.muted = true; v.playsInline = true; v.preload = 'auto';
   await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('This browser can’t read that video. On iPhone, set Camera → Formats → Most Compatible, or try Safari.')); });
@@ -81,6 +81,16 @@ async function framesFromVideo(file: File, onProgress: (p: number) => void): Pro
   }
   URL.revokeObjectURL(url);
   return out;
+}
+
+/** AI names each screen (owner only). Returns null when AI isn't available, so callers keep their own labels. */
+export async function nameScreensAI(images: string[], context: string): Promise<Array<{ label?: string; action?: string; keep?: boolean }> | null> {
+  try {
+    const passcode = (() => { try { return localStorage.getItem(PASS) || ''; } catch { return ''; } })();
+    const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': passcode }, body: JSON.stringify({ task: 'flowFromScreens', images: images.slice(0, 20).map(i => i.split(',')[1]), context }) });
+    const data = await res.json().catch(() => ({}));
+    return res.ok && Array.isArray(data.steps) ? data.steps : null;
+  } catch { return null; }
 }
 
 async function nameWithAI(r: Recording): Promise<Recording> {

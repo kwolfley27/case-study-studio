@@ -9,6 +9,7 @@ import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, 
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 const ICONS: Record<SectionKind, Icon> = {
   built: Sparkles,
+  flowRace: Video,
   coverHero: LayoutTemplate, details: Info, timeline: CalendarRange, empathy: Brain, persona: UserRound, journey: Route, problem: Target,
   findings: ListOrdered, methods: FlaskConical, interviews: MessagesSquare, quotes: Quote, survey: BarChart3, metrics: Hash, affinity: StickyNote,
   aeiou: Eye, abtest: Columns2, taskSuccess: CircleCheck, roadmap: CalendarRange, flowCompare: GitCompare, userFlow: Workflow, jtbd: Target, scrollSite: Laptop, barChart: BarChart3, typeSpec: Type, insights: Lightbulb, screenGroups: GalleryVerticalEnd, isoShowcase: Layers, gifBoard: Clapperboard, screenTrio: GalleryHorizontal, floatDevices: Tablet, interviewQs: MessagesSquare, iterations: History, flowDiff: GitCompare, featureCompare: ListChecks, positioning: Grid2x2, prototype: MousePointerClick, screenRecording: Video, wireframes: Frame, fullMedia: Image,

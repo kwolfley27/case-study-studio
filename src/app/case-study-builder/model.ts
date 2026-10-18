@@ -1,4 +1,4 @@
-export type SectionKind = "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "flowRace" | "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "flowRace" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -44,6 +44,8 @@ export interface CaseStudySection {
   hideFromNav?: boolean;
   /** Built from a picture: its blocks (see Built.tsx). */
   built?: import("./Built").BuiltData;
+  /** Recorded flows: one screen recording per app, side by side. */
+  flowRace?: import("./FlowRace").FlowRaceData;
   /** Keep the section but leave it off the page. */
   hidden?: boolean;
   layout?: {
@@ -149,6 +151,7 @@ export interface BuilderStudy {
 
 export const componentNames: Record<SectionKind, string> = {
   built: "Built from a picture",
+  flowRace: "Recorded flows",
   coverHero: "Title reveal hero",
   abtest: "A/B test",
   taskSuccess: "Task success",
@@ -203,6 +206,7 @@ export const componentNames: Record<SectionKind, string> = {
 
 export const componentDescriptions: Record<SectionKind, string> = {
   built: "A layout rebuilt from a picture you dropped in, using your colours and type.",
+  flowRace: "The same task recorded in each app, playing side by side, with time and screen counts.",
   showcase: "A bento of soft panels, each showing one designed component at its real size. Pull them straight from Figma.",
   screenFocus: "Screens slide past as you scroll; each one comes to the centre big enough to read, with optional spotlights.",
   screenStory: "A big screen stays pinned while short steps scroll beside it and swap what it shows.",
@@ -256,6 +260,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
 
 export const navDefaults: Record<SectionKind, string> = {
   built: "Section",
+  flowRace: "Recorded flows",
   showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", isoShowcase: "Showcase", gifBoard: "Inspiration", screenTrio: "Screens", floatDevices: "Devices", interviewQs: "Questions", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
   wireframes: "Wireframes", fullMedia: "Visuals", survey: "Survey", persona: "Persona", journey: "Journey", issueFlow: "Task analysis",
   annotated: "The design", methods: "Research", columns: "Highlights", problem: "The problem", competitors: "Competitors", gap: "The gap",
@@ -269,6 +274,7 @@ import { defaultRoadmap as defaultRoadmapData } from "./Roadmap";
 import { defaultFlowCompare } from "./FlowCompare";
 import { defaultFlowDiff, defaultUserFlow } from "./UserFlow";
 import { defaultJTBD } from "./JobsToBeDone";
+import { defaultFlowRace } from "./FlowRace";
 import { defaultFeatureCompare, defaultPositioning } from "./CompetitorViews";
 export const createSection = (kind: SectionKind): CaseStudySection => ({
   id: crypto.randomUUID(),
@@ -276,6 +282,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   eyebrow: componentNames[kind],
   title: {
     built: "",
+    flowRace: "Same task, recorded in every app",
     coverHero: "Making access feel obvious, not accidental.",
     timeline: "How the work unfolded",
     details: "Project overview",
@@ -331,6 +338,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
   variant: "light",
   items: {
     built: [],
+    flowRace: [],
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
     affinity: [],
     showcase: [{ title: "Task details", detail: "", image: "", tileSize: "standard" }, { title: "Filter menu", detail: "", image: "", tileSize: "standard" }, { title: "Calendar view", detail: "", image: "", tileSize: "wide" }],
@@ -448,6 +456,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     wireframes: { layout: { count: 4, scale: 100 } },
     roadmap: { roadmap: defaultRoadmapData() },
     flowCompare: { flowCompare: defaultFlowCompare() },
+    flowRace: { flowRace: defaultFlowRace() },
     userFlow: { userFlow: defaultUserFlow() },
     jtbd: { jtbd: defaultJTBD() },
     flowDiff: { flowDiff: defaultFlowDiff() },
@@ -549,7 +558,8 @@ export function introHidden(section: Pick<CaseStudySection, "kind" | "options">)
   const o = section.options ?? {};
   const statement = section.kind === "problem" && o.layout !== "rows";
   const pick = (key: string, fallback: boolean) => o[key] === undefined ? fallback : !!o[key];
-  return { eyebrow: pick("hideEyebrow", false), title: pick("hideTitle", statement), body: pick("hideBody", statement) };
+  const quiet = section.kind === "details"; // the overview just lists the facts; its title is optional
+  return { eyebrow: pick("hideEyebrow", quiet), title: pick("hideTitle", statement || quiet), body: pick("hideBody", statement || quiet) };
 }
 
 /** The details shown under the header. */
