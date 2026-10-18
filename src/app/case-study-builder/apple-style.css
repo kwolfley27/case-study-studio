@@ -3402,3 +3402,62 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-race .csb-race-add{border:1.5px dashed color-mix(in srgb,var(--t-ink,#1c1917) 18%,transparent)}
 .csb-race .csb-race-step{width:100%}
 .csb-race .csb-editable-text{overflow-wrap:break-word}
+/* Recorded flows v2: flow tabs, notes, screens */
+.csb-race-bar{align-items:center;flex-wrap:wrap}
+.csb-race-tabs{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.csb-race-tabs button{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:0;background:transparent;color:var(--t-muted,#6f6961);font:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,color .15s}
+.csb-race-tabs button:hover{color:var(--t-ink,#1c1917)}
+.csb-race-tabs button[aria-selected=true]{background:color-mix(in srgb,var(--t-ink,#1c1917) 7%,transparent);color:var(--t-ink,#1c1917)}
+.csb-race-tabs button i{width:8px;height:8px;border-radius:50%;background:var(--flow,#999)}
+.csb-race-tabs .csb-race-tab-x{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;margin-right:-6px;color:var(--t-muted,#6f6961)}
+.csb-race-tabs .csb-race-tab-x:hover{background:rgba(0,0,0,.08)}
+.csb-race-tabs .csb-race-tab-add{color:var(--t-muted,#6f6961);font-size:13px}
+.csb-race-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.csb-race-view{display:inline-flex;padding:3px;border-radius:999px;background:color-mix(in srgb,var(--t-ink,#1c1917) 6%,transparent)}
+.csb-race-view button{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:0;border-radius:999px;background:transparent;color:var(--t-muted,#6f6961);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.csb-race-view button[aria-pressed=true]{background:var(--t-paper,#fff);color:var(--t-ink,#1c1917);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.csb-race-row{animation:csb-race-in .35s ease}
+@keyframes csb-race-in{from{opacity:0;transform:translateY(6px)}}
+.csb-race-phone{border-top:3px solid var(--flow)}
+.csb-race-phone{border-top:0}
+.csb-race-app.is-held .csb-race-phone{box-shadow:0 0 0 2px var(--t-paper,#fff),0 0 0 4px var(--flow),0 18px 40px rgba(0,0,0,.12)}
+.csb-race-pins{position:absolute;inset:5px;border-radius:calc(clamp(20px,3.2cqw,36px) - 5px);pointer-events:none}
+.csb-race-pins.is-adding{pointer-events:auto;cursor:crosshair}
+.csb-race-pin{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;z-index:2}
+.csb-race-pin>b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--flow);color:#fff;font-size:11px;font-weight:600;box-shadow:0 0 0 2px #fff,0 3px 10px rgba(0,0,0,.25);cursor:default;animation:csb-pin-in .3s cubic-bezier(.2,1.4,.4,1)}
+.csb-race.is-play .csb-race-pin>b{cursor:grab}
+@keyframes csb-pin-in{from{transform:scale(.3);opacity:0}}
+.csb-race-pin-note{position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);width:max-content;max-width:150px;padding:6px 9px;border-radius:9px;background:rgba(20,20,20,.88);color:#fff;font-size:11.5px;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.2);backdrop-filter:blur(6px)}
+.csb-race-pin-note.is-left{left:auto;right:calc(100% + 6px)}
+.csb-race-pin-note button{position:absolute;top:-7px;right:-7px;width:16px;height:16px;display:none;place-items:center;border-radius:50%;border:0;background:#fff;color:#222;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+.csb-race-pin:hover .csb-race-pin-note button{display:grid}
+.csb-race-resume{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 20px);padding:5px 10px;border:0;border-radius:999px;background:rgba(20,20,20,.8);color:#fff;font:inherit;font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;z-index:3}
+.csb-race-steps li.is-now .csb-race-step span{color:var(--t-ink,#1c1917)}
+.csb-race-steps li.is-now .csb-race-step em{color:var(--flow)}
+.csb-race-step sup{margin-left:4px;font-size:10px;color:var(--flow);font-weight:600}
+/* screens: contact sheet */
+.csb-race-sheet{display:grid;gap:28px}
+.csb-race-sheet-app>strong{display:block;margin-bottom:12px;font-size:15px;font-weight:500;color:var(--t-ink,#1c1917)}
+.csb-race-sheet-strip{display:flex;gap:22px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}
+.csb-race-sheet-flow{flex:none;display:grid;gap:10px;padding-top:10px;border-top:2px solid var(--flow);scroll-snap-align:start}
+.csb-race-sheet-tag{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--t-ink,#1c1917)}
+.csb-race-sheet-tag i{width:7px;height:7px;border-radius:50%;background:var(--flow)}
+.csb-race-sheet-tag em{font-style:normal;color:var(--t-muted,#6f6961);font-variant-numeric:tabular-nums}
+.csb-race-sheet-shots{display:flex;gap:12px}
+.csb-race-sheet-shots figure{margin:0;width:112px;display:grid;gap:6px;align-content:start}
+.csb-race-shot{position:relative;aspect-ratio:9/19.5;border-radius:14px;overflow:hidden;background:var(--t-surface,#f2f1ef);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.csb-race-shot img{width:100%;height:100%;object-fit:cover;display:block}
+.csb-race-shot b{position:absolute;transform:translate(-50%,-50%);width:16px;height:16px;display:grid;place-items:center;border-radius:50%;background:var(--flow);color:#fff;font-size:9px;font-weight:600;box-shadow:0 0 0 1.5px #fff}
+.csb-race-sheet-shots figure.is-pain .csb-race-shot{box-shadow:0 0 0 2px #e4572e}
+.csb-race-sheet-shots figcaption{display:flex;gap:6px;font-size:12px;line-height:1.35;color:var(--t-body,#57524c)}
+.csb-race-sheet-shots figcaption em{font-style:normal;color:var(--t-muted,#6f6961);font-variant-numeric:tabular-nums}
+.csb-race-sheet-shots ol{margin:0;padding-left:16px;font-size:11.5px;line-height:1.4;color:var(--t-muted,#6f6961)}
+.csb-race-sheet-empty{padding:40px 0;text-align:center}
+/* phones: swipe between apps */
+@container (max-width:720px){
+  .csb-race-row,.csb-race-row:has(.csb-race-add){display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding-bottom:6px;margin-inline:-4px;padding-inline:4px}
+  .csb-race-row>*{flex:0 0 62%;scroll-snap-align:center}
+  .csb-race-actions{margin-left:0}
+}
+.csb-race .csb-race-step>span{flex:1 1 auto;min-width:0}
+.csb-race-app figcaption strong>.csb-editable-text,.csb-race-task .csb-editable-text{flex:0 1 auto}

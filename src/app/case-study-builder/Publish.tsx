@@ -36,6 +36,8 @@ async function hostImages(study: BuilderStudy, onStage: (s: string, fraction: nu
   copy.sections.forEach(s => {
     s.items.forEach(it => { if (it.image) slots.push({ get: () => it.image, set: v => { it.image = v; } }); });
     if (s.recording?.src) slots.push({ get: () => s.recording!.src, set: v => { s.recording!.src = v; } });
+    s.built?.nodes.forEach(n => { if (n.src) slots.push({ get: () => n.src, set: v => { n.src = v; } }); });
+    (s.flowRace?.flows ?? []).forEach(f => f.apps.forEach(app => app.steps?.forEach(st => { if (st.thumb) slots.push({ get: () => st.thumb, set: v => { st.thumb = v; } }); })));
   });
   const local = slots.filter(x => x.get()?.startsWith('data:') || x.get()?.startsWith('blob:'));
   const done = new Map<string, string>();
