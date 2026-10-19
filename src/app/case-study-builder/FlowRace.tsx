@@ -294,12 +294,11 @@ function Screens({ flows, only, rename }: { flows: RaceFlow[]; only: 'all' | num
       {!shown.some(({ fl }) => fl.apps.find(a => a.name === name)?.steps?.some(st => st.thumb)) ? <p className="csb-race-sheet-none">No screens yet</p> : <div className="csb-race-sheet-strip">
         {shown.map(({ fl, i }) => { const app = fl.apps.find(a => a.name === name); const steps = app?.steps?.filter(s => s.thumb) ?? []; if (!steps.length) return null; const c = FLOW_COLORS[i % FLOW_COLORS.length];
           return <div className="csb-race-sheet-flow" key={fl.id} style={{ '--flow': c } as React.CSSProperties}>
-            <span className="csb-race-sheet-tag"><i />{fl.name}<em>{steps.length}</em></span>
-            <div className="csb-race-sheet-shots">{steps.map((s, j) => <figure key={j} className={s.pain ? 'is-pain' : ''}>
+            <Pager label={fl.name} count={steps.length}>{steps.map((s, j) => <figure key={j} className={s.pain ? 'is-pain' : ''}>
               <div className="csb-race-shot"><img src={s.thumb} alt={`${name}, ${fl.name}: ${s.label}`} loading="lazy" />{(s.pins ?? []).map((p, n) => <b key={p.id} style={{ left: `${p.x}%`, top: `${p.y}%` }} title={p.text}>{n + 1}</b>)}</div>
               <figcaption><em>{j + 1}</em>{s.label}</figcaption>
               {!!s.pins?.length && <ol>{s.pins.map(p => <li key={p.id}>{p.text}</li>)}</ol>}
-            </figure>)}</div>
+            </figure>)}</Pager>
           </div>; })}
       </div>}
     </div>)}
@@ -313,4 +312,23 @@ function Name({ value, editable, onRename }: { value: string; editable: boolean;
     onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
     onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); if (e.key === 'Escape') e.currentTarget.textContent = value; e.currentTarget.blur(); } }}
     onBlur={e => { const v = (e.currentTarget.textContent || '').replace(/\s+/g, ' ').trim(); if (v && v !== value) onRename(v.slice(0, 40)); else e.currentTarget.textContent = value; }}>{value}</span>;
+}
+
+/* Four screens at a time, big enough to read; arrows page through the rest. */
+function Pager({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const per = () => { const el = ref.current; const first = el?.firstElementChild as HTMLElement | null; return el && first ? Math.max(1, Math.round(el.clientWidth / (first.offsetWidth + 16))) : 4; };
+  const onScroll = () => { const el = ref.current; const first = el?.firstElementChild as HTMLElement | null; if (el && first) setAt(Math.round(el.scrollLeft / (first.offsetWidth + 16))); };
+  const go = (d: number) => { const el = ref.current; if (el) el.scrollBy({ left: d * el.clientWidth, behavior: 'smooth' }); };
+  const n = per(); const end = Math.min(count, at + n);
+  return <div className="csb-race-pager">
+    <div className="csb-race-pager-bar">
+      <span className="csb-race-sheet-tag">{label}</span>
+      {count > n && <span className="csb-race-pager-nav"><em>{at + 1}–{end} of {count}</em>
+        <button type="button" className="csb-race-arrow" aria-label="Previous screens" disabled={at <= 0} onClick={() => go(-1)}><ChevronLeft size={14} /></button>
+        <button type="button" className="csb-race-arrow" aria-label="Next screens" disabled={end >= count} onClick={() => go(1)}><ChevronRight size={14} /></button></span>}
+    </div>
+    <div className="csb-race-sheet-shots" ref={ref} onScroll={onScroll}>{children}</div>
+  </div>;
 }
