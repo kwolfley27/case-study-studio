@@ -742,3 +742,7 @@ body.csb-resizing .csb-panel{transition:none!important}
 .csb-view-canvas .csb-panel-tab{top:76px!important}
 @media (max-width:1100px){.csb-hdr-btn span{display:none}.csb-header-project{display:none}}
 @media (max-width:760px){.csb-hdr-modes{position:static;transform:none}}
+/* Empty settings boxes take no space (some sections have no section-specific settings) */
+.csb-insp>:empty:not(.csb-inspector-divider){display:none!important}
+.csb-insp>.csb-inspector-divider{display:none!important}
+.csb-insp:not(:has(>:not(.csb-insp-basics,.csb-insp-content,.csb-inspector-divider,.csb-ai-brief,.csb-inspector-actions,:empty)))>.csb-insp-basics{margin-top:0!important;padding-top:0!important;border-top:0!important}
