@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'motion/react';
 import { EditableText } from './EditableText';
 import { useReducedMotion } from './MotionKit';
@@ -85,8 +85,12 @@ function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, suc
   const bubbleY = useTransform(p, [.32, .62], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
   const hint = useTransform(p, [0, .04, .1], [1, 1, 0]);
+  // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [autoInk, setAutoInk] = useState('#fdfcfc');
+  useLayoutEffect(() => { const el = bubbleRef.current; if (!el || !bubbleBg) return; const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g); if (!m) return; const [r, g, b] = m.slice(0, 3).map(v => { const c = +v / 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }); setAutoInk(.2126 * r + .7152 * g + .0722 * b > .5 ? '#141414' : '#fdfcfc'); }, [bubbleBg]);
   const back = <div className="csb-psf-hmw">
-    <motion.div className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || "#fdfcfc" } : {}), ...(reduce ? {} : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
+    <motion.div ref={bubbleRef} className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || autoInk } : {}), ...(reduce ? {} : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
       <span className="csb-psf-ask"><EditableText field="items.3.title" value={/\?$/.test(hmwTitle.trim()) ? hmwTitle : hmwTitle.replace(/[.…]*$/, '…')} /></span>
       <p><EditableText field="items.3.detail" value={hmwDetail} /></p>
     </motion.div>

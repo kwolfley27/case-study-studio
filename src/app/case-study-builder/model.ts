@@ -33,7 +33,7 @@ export interface CaseStudySection {
   /** Screen recording settings: video, background, frame, cursor, click moments, crop. */
   recording?: { src: string; background: "accent" | "sunset" | "ocean" | "aurora" | "paper" | "night" | "image" | "none"; bgImage?: string; frame: "none" | "browser" | "mac" | "laptop" | "phone"; padding: number; radius: number; cursor: "halo" | "arrow" | "dot" | "none"; zoom: number; clicks: Array<{ t: number; x: number; y: number; zoom?: number; hold?: number }>; track?: Array<{ t: number; x: number; y: number }>; analyzed?: boolean; loop?: boolean; controls?: boolean; speed?: number; crop?: { x: number; y: number; w: number; h: number } };
   /** Token text styles per field, e.g. { title: { tone: "accent", size: "l" } }. */
-  textStyles?: Record<string, { tone?: "ink" | "muted" | "accent" | "accent2"; size?: "s" | "l" | "xl"; weight?: "light" | "regular" | "bold" }>;
+  textStyles?: Record<string, { tone?: "ink" | "muted" | "paper" | "accent" | "accent2"; size?: "s" | "l" | "xl"; weight?: "light" | "regular" | "bold" }>;
   /** Work timeline phases (bars under the weeks). detail = one note per line. */
   phases?: Array<{ title: string; detail: string }>;
   /** Work timeline column label, e.g. Week, Day, Sprint. */

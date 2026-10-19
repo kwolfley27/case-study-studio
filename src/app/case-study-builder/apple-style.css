@@ -3617,3 +3617,9 @@ html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] 
 .csb-race-note-list p{margin:4px 0 0;font-size:14px;line-height:1.5;color:var(--t-muted,#6f6961)}
 .csb-race-note-list .csb-race-note-x{position:absolute;right:0;top:0}
 .csb-race-focus-lines{z-index:3}
+
+/* White text option, and bubble text always takes the bubble's own text colour */
+.csb-canvas :is(.csb-ts,.csb-editable-text)[data-tone=paper]{color:#fff!important}
+.csb-psf-bubble :is(p,.csb-psf-ask,.csb-psf-ask *,p *){color:inherit}
+.csb-psf-bubble .csb-psf-ask{opacity:.72}
+html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]){color:inherit!important}

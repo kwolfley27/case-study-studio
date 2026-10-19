@@ -52,6 +52,7 @@ export function TextStyleBar({ accent, accent2, enabled, styleOf, onStyle, color
       { value: '', label: 'Default', color: 'linear-gradient(135deg,#f5f5f7 50%,#86868b 50%)' },
       { value: 'ink', label: 'Black', color: swatch.ink },
       { value: 'muted', label: 'Grey', color: swatch.muted },
+      { value: 'paper', label: 'White', color: '#ffffff' },
       { value: 'accent', label: 'Accent', color: accent || swatch.accent },
       ...(accent2 ? [{ value: 'accent2', label: 'Accent 2', color: accent2 }] : []),
     ]} /></div>
