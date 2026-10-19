@@ -23,7 +23,8 @@ export type RaceFlow = { id: string; name: string; apps: RaceApp[] };
 export type FlowRaceData = { flows?: RaceFlow[]; view?: 'play' | 'screens'; /** older single-flow shape */ task?: string; apps?: RaceApp[] };
 
 const rid = () => crypto.randomUUID().slice(0, 8);
-export const FLOW_COLORS = ['#3a6ff0', '#e4572e', '#1f9d6b', '#8b5cf6', '#d1921a', '#d6457a'];
+/* Every flow uses the case study's accent colour (no rainbow of flow colours). */
+export const FLOW_COLORS = ['var(--csb-accent)'];
 const APPS = ['Competitor 1', 'Competitor 2', 'Competitor 3'];
 export const defaultFlowRace = (): FlowRaceData => ({ flows: [{ id: rid(), name: 'Log a meal', apps: [...APPS.map(name => ({ id: rid(), name })), { id: rid(), name: 'Our design', ours: true }] }] });
 export const flowsOf = (d?: FlowRaceData): RaceFlow[] => d?.flows?.length ? d.flows : [{ id: 'f1', name: d?.task || 'Log a meal', apps: d?.apps?.length ? d.apps : defaultFlowRace().flows![0].apps }];
@@ -129,7 +130,7 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
     try {
       say('Making the GIF…');
       const { screensToGif } = await import('./gif');
-      const blob = await screensToGif(app.steps!.filter(st => st.thumb).map(st => ({ src: st.thumb!, pins: st.pins })), { color });
+      const blob = await screensToGif(app.steps!.filter(st => st.thumb).map(st => ({ src: st.thumb!, pins: st.pins })), { color: (box.current && getComputedStyle(box.current).getPropertyValue('--csb-accent').trim()) || '#1c1917' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${app.name} - ${flow.name}.gif`.replace(/[\\/:*?"<>|]+/g, ''); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       setStatus(s => { const n = { ...s }; delete n[app.id]; return n; });
     } catch (e) { say(e instanceof Error ? e.message : 'Couldn’t make the GIF.', true); }
@@ -200,7 +201,7 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   const tabs = <div className="csb-race-tabs" role="tablist" aria-label="Flows">
     {view === 'screens' && flows.length > 1 && <button type="button" role="tab" aria-selected={screensFlow === 'all'} onClick={() => setScreensFlow('all')}>All flows</button>}
     {flows.map((fl, i) => <button key={fl.id} type="button" role="tab" aria-selected={view === 'screens' ? screensFlow === i : i === f} onClick={() => { setFi(i); setScreensFlow(i); }} style={{ '--flow': FLOW_COLORS[i % FLOW_COLORS.length] } as React.CSSProperties}>
-      <i aria-hidden="true" />{i === f && editorMode && view === 'play' ? <EditableText field={`deep:flowRace.flows.${i}.name`} value={fl.name} /> : fl.name}
+      {i === f && editorMode && view === 'play' ? <EditableText field={`deep:flowRace.flows.${i}.name`} value={fl.name} /> : fl.name}
       {editorMode && flows.length > 1 && i === f && view === 'play' && <span className="csb-race-tab-x" role="button" tabIndex={0} aria-label={`Remove ${fl.name}`} onClick={e => { e.stopPropagation(); if (confirm(`Remove the “${fl.name}” flow and its recordings?`)) { save(flows.filter(x => x.id !== fl.id)); setFi(0); } }}><X size={11} /></span>}
     </button>)}
     {editorMode && view === 'play' && flows.length < 6 && <button type="button" className="csb-race-tab-add" onClick={() => { save([...flows, { id: rid(), name: 'New flow', apps: flow.apps.map(a => ({ id: rid(), name: a.name, ours: a.ours })) }]); setFi(flows.length); }}><Plus size={13} />Add a flow</button>}
@@ -245,20 +246,20 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
                   <b>{n + 1}</b><span className={`csb-race-pin-note ${p.x > 55 ? 'is-left' : ''}`}><EditableText field={`${base}.apps.${i}.steps.${k}.pins.${n}.text`} value={p.text} />{editorMode && <button type="button" aria-label="Remove note" onClick={() => dropPin(app, k, p.id)}><X size={10} /></button>}</span>
                 </span>)}
               </div>}
-              {shots && n > 1 && <span className="csb-race-nav"><button type="button" aria-label="Previous screen" disabled={k <= 0} onClick={() => go(-1)}><ChevronLeft size={14} /></button><em>{k + 1} / {n}</em><button type="button" aria-label="Next screen" disabled={k >= n - 1} onClick={() => go(1)}><ChevronRight size={14} /></button></span>}
+              
               {held && <button type="button" className="csb-race-resume" onClick={() => resume(app.id)}><Play size={11} fill="currentColor" />{editorMode ? 'Click the screen to add a note · Resume' : 'Resume'}</button>}
               {t !== null && <span className="csb-race-clock">{finished !== undefined ? `Done · ${fmt(finished)}` : fmt(t)}</span>}
               {st && <span className={`csb-race-status ${st.error ? 'is-error' : ''}`} role="status">{st.text}</span>}
             </IPhone>
             <figcaption>
               <strong><Name value={app.name} editable={editorMode && !!edit} onRename={v => rename(app.id, app.name, v)} />{app.ours && <i>Ours</i>}</strong>
-              <span className="csb-race-stats">{app.video ? <>{fmt(app.duration)}{app.steps?.length ? ` · ${app.steps.length} screens` : ''}</> : shots ? `${n} screens` : editorMode ? 'Nothing added yet' : ''}</span>
+              <span className="csb-race-stats">{app.video ? fmt(app.duration) : !shots && editorMode ? 'Nothing added yet' : ''}</span>
               {step && <div className={`csb-race-cur ${step.pain ? 'is-pain' : ''}`}>
-                <em>{k + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${k}.label`} value={step.label} /></span>
+                {n > 1 && <button type="button" className="csb-race-arrow" aria-label="Previous screen" disabled={k <= 0} onClick={() => hold(app.id, k - 1, app.steps![k - 1].at)}><ChevronLeft size={14} /></button>}<em>{k + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${k}.label`} value={step.label} /></span>{n > 1 && <button type="button" className="csb-race-arrow" aria-label="Next screen" disabled={k >= n - 1} onClick={() => hold(app.id, k + 1, app.steps![k + 1].at)}><ChevronRight size={14} /></button>}
                 {editorMode && <button type="button" className="csb-race-pain" aria-pressed={!!step.pain} title={step.pain ? 'Friction point (click to clear)' : 'Mark this screen as a friction point'} onClick={() => putApp(flow.id, app.id, a => ({ steps: a.steps!.map((x, y) => y === k ? { ...x, pain: !x.pain } : x) }))} />}
               </div>}
               {step?.pain && (editorMode || step.note) && <small className="csb-race-cur-note"><EditableText field={`${base}.apps.${i}.steps.${k}.note`} value={step.note || ''} /></small>}
-              {n > 1 && <div className="csb-race-dots" role="group" aria-label={`${app.name} screens`}>{app.steps!.map((s, j) => <button key={j} type="button" className={`${j === k ? 'is-now' : ''} ${s.pain ? 'is-pain' : ''} ${s.pins?.length ? 'has-notes' : ''}`} aria-label={`Screen ${j + 1}: ${s.label}`} aria-current={j === k ? 'true' : undefined} title={`${j + 1}. ${s.label}${s.pins?.length ? ` · ${s.pins.length} note${s.pins.length > 1 ? 's' : ''}` : ''}`} onClick={() => hold(app.id, j, s.at)}>{j + 1}</button>)}</div>}
+              {n > 1 && <div className="csb-race-strip" role="group" aria-label={`${app.name} screens`} ref={el => { const cur = el?.querySelector('[aria-current]') as HTMLElement | null; if (el && cur) { const l = cur.offsetLeft - el.offsetLeft; if (l < el.scrollLeft || l + cur.offsetWidth > el.scrollLeft + el.clientWidth) el.scrollTo({ left: l - el.clientWidth / 2 + cur.offsetWidth / 2, behavior: 'smooth' }); } }}>{app.steps!.map((s, j) => <button key={j} type="button" className={`${s.pain ? 'is-pain' : ''} ${s.pins?.length ? 'has-notes' : ''}`} aria-label={`Screen ${j + 1}: ${s.label}`} aria-current={j === k ? 'true' : undefined} title={`${j + 1}. ${s.label}`} onClick={() => hold(app.id, j, s.at)}>{s.thumb ? <img src={s.thumb} alt="" loading="lazy" draggable={false} /> : <span>{j + 1}</span>}</button>)}</div>}
               {editorMode && <span className="csb-race-tools">
                 {(app.video || shots) && <label title="Replace with new screenshots or a recording"><RotateCcw size={13} /><input type="file" accept="image/*,video/*" multiple hidden onChange={e => { const fl = e.target.files; take(app, fl ? [...fl] : []); e.target.value = ''; }} /></label>}
                 {shots && <label title="Add more screenshots at the end"><Images size={13} /><input type="file" accept="image/*" multiple hidden onChange={e => { const fl = [...(e.target.files ?? [])]; e.target.value = ''; if (fl.length) void (async () => { const { compressIntoDraft } = await import('./ImageSlots'); const add: RaceStep[] = []; for (const x of fl.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) add.push({ label: `Screen ${n + add.length + 1}`, at: 0, thumb: await compressIntoDraft(x, 600_000, 900) }); putApp(flow.id, app.id, a => ({ steps: [...(a.steps ?? []), ...add].map((st, y) => ({ ...st, at: y * DWELL })) })); })(); }} /></label>}

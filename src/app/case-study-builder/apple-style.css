@@ -3547,3 +3547,19 @@ html body :is(.csb-fd-dev.is-phone .csb-fd-screen,.csb-ss-phone>.csb-ss-screen){
 html body :is(.csb-rec-frame-phone .csb-rec-viewport,.csb-proto-phone .csb-proto-screen){margin:3.88% 4.39% 3.78%!important;width:auto!important}
 html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-fd-dev.is-phone .csb-fd-screen,.csb-ss-phone>.csb-ss-screen){inset:0}
 html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-rec-frame-phone .csb-rec-viewport,.csb-proto-phone .csb-proto-screen){margin:0!important}
+.csb-race-tabs button i,.csb-race-sheet-tag i{display:none}
+.csb-race-sheet-flow{border-top-color:color-mix(in srgb,var(--t-ink,#1c1917) 14%,transparent)}
+/* Screen picker: arrows by the name, thumbnail strip */
+.csb-race-cur{align-items:center}
+.csb-race-arrow{flex:none;width:24px;height:24px;display:grid;place-items:center;border:0;border-radius:50%;background:color-mix(in srgb,var(--t-ink,#1c1917) 6%,transparent);color:var(--t-ink,#1c1917);cursor:pointer;padding:0}
+.csb-race-arrow:hover:not(:disabled){background:color-mix(in srgb,var(--t-ink,#1c1917) 12%,transparent)}
+.csb-race-arrow:disabled{opacity:.3;cursor:default}
+.csb-race-cur em{color:var(--t-muted,#6f6961)}
+.csb-race-strip{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding:3px 2px 6px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.csb-race-strip button{position:relative;flex:none;width:34px;aspect-ratio:9/19.5;padding:0;border:0;border-radius:6px;overflow:hidden;background:var(--t-surface,#f2f1ef);box-shadow:0 0 0 1px rgba(0,0,0,.08);cursor:pointer;opacity:.7;transition:opacity .15s,box-shadow .15s;scroll-snap-align:center}
+.csb-race-strip button:hover{opacity:1}
+.csb-race-strip button[aria-current]{opacity:1;box-shadow:0 0 0 2px var(--csb-accent)}
+.csb-race-strip button.is-pain:not([aria-current]){box-shadow:0 0 0 1.5px #e4572e}
+.csb-race-strip button.has-notes:after{content:'';position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--csb-accent);box-shadow:0 0 0 1.5px #fff}
+.csb-race-strip img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.csb-race-strip span{display:grid;place-items:center;height:100%;font-size:10px;color:var(--t-muted,#6f6961)}
