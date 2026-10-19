@@ -53,6 +53,9 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
   useEffect(() => { if (edit && !section.flowRace?.flows?.length) save(flows); }, []);
   const putApp = (flowId: string, appId: string, patch: Partial<RaceApp> | ((a: RaceApp) => Partial<RaceApp>)) => save(latest.current.map(fl => fl.id !== flowId ? fl : { ...fl, apps: fl.apps.map(a => a.id === appId ? { ...a, ...(typeof patch === 'function' ? patch(a) : patch) } : a) }));
   const base = `deep:flowRace.flows.${f}`;
+  // Renaming an app renames it in every flow (it's the same app).
+  const renameAll = (from: string, to: string) => save(latest.current.map(fl => ({ ...fl, apps: fl.apps.map(a => a.name === from ? { ...a, name: to } : a) })));
+  const rename = (id: string, from: string, to: string) => save(latest.current.map(fl => ({ ...fl, apps: fl.apps.map(a => a.id === id || a.name === from ? { ...a, name: to } : a) })));
 
   const vids = useRef(new Map<string, HTMLVideoElement>());
   const box = useRef<HTMLDivElement>(null);
@@ -248,13 +251,14 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
               {st && <span className={`csb-race-status ${st.error ? 'is-error' : ''}`} role="status">{st.text}</span>}
             </IPhone>
             <figcaption>
-              <strong><EditableText field={`${base}.apps.${i}.name`} value={app.name} />{app.ours && <i>Ours</i>}</strong>
+              <strong><Name value={app.name} editable={editorMode && !!edit} onRename={v => rename(app.id, app.name, v)} />{app.ours && <i>Ours</i>}</strong>
               <span className="csb-race-stats">{app.video ? <>{fmt(app.duration)}{app.steps?.length ? ` · ${app.steps.length} screens` : ''}</> : shots ? `${n} screens` : editorMode ? 'Nothing added yet' : ''}</span>
-              {!!app.steps?.length && <ol className="csb-race-steps">{app.steps.map((s, j) => <li key={j} className={`${s.pain ? 'is-pain' : ''} ${j === k && (app.video || shots) ? 'is-now' : ''}`}>
-                <button type="button" className="csb-race-step" onClick={() => hold(app.id, j, s.at)} title={editorMode ? (shots ? 'Show this screen (then click it to add a note)' : 'Hold this screen (then click it to add a note)') : 'Show this screen'}><em>{j + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${j}.label`} value={s.label} />{!!s.pins?.length && <sup>{s.pins.length}</sup>}</span></button>
-                {editorMode && <button type="button" className="csb-race-pain" aria-pressed={!!s.pain} title={s.pain ? 'Friction point (click to clear)' : 'Mark as a friction point'} onClick={() => putApp(flow.id, app.id, a => ({ steps: a.steps!.map((x, y) => y === j ? { ...x, pain: !x.pain } : x) }))} />}
-                {s.pain && (editorMode || s.note) && <small><EditableText field={`${base}.apps.${i}.steps.${j}.note`} value={s.note || ''} /></small>}
-              </li>)}</ol>}
+              {step && <div className={`csb-race-cur ${step.pain ? 'is-pain' : ''}`}>
+                <em>{k + 1}</em><span><EditableText field={`${base}.apps.${i}.steps.${k}.label`} value={step.label} /></span>
+                {editorMode && <button type="button" className="csb-race-pain" aria-pressed={!!step.pain} title={step.pain ? 'Friction point (click to clear)' : 'Mark this screen as a friction point'} onClick={() => putApp(flow.id, app.id, a => ({ steps: a.steps!.map((x, y) => y === k ? { ...x, pain: !x.pain } : x) }))} />}
+              </div>}
+              {step?.pain && (editorMode || step.note) && <small className="csb-race-cur-note"><EditableText field={`${base}.apps.${i}.steps.${k}.note`} value={step.note || ''} /></small>}
+              {n > 1 && <div className="csb-race-dots" role="group" aria-label={`${app.name} screens`}>{app.steps!.map((s, j) => <button key={j} type="button" className={`${j === k ? 'is-now' : ''} ${s.pain ? 'is-pain' : ''} ${s.pins?.length ? 'has-notes' : ''}`} aria-label={`Screen ${j + 1}: ${s.label}`} aria-current={j === k ? 'true' : undefined} title={`${j + 1}. ${s.label}${s.pins?.length ? ` · ${s.pins.length} note${s.pins.length > 1 ? 's' : ''}` : ''}`} onClick={() => hold(app.id, j, s.at)}>{j + 1}</button>)}</div>}
               {editorMode && <span className="csb-race-tools">
                 {(app.video || shots) && <label title="Replace with new screenshots or a recording"><RotateCcw size={13} /><input type="file" accept="image/*,video/*" multiple hidden onChange={e => { const fl = e.target.files; take(app, fl ? [...fl] : []); e.target.value = ''; }} /></label>}
                 {shots && <label title="Add more screenshots at the end"><Images size={13} /><input type="file" accept="image/*" multiple hidden onChange={e => { const fl = [...(e.target.files ?? [])]; e.target.value = ''; if (fl.length) void (async () => { const { compressIntoDraft } = await import('./ImageSlots'); const add: RaceStep[] = []; for (const x of fl.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) add.push({ label: `Screen ${n + add.length + 1}`, at: 0, thumb: await compressIntoDraft(x, 600_000, 900) }); putApp(flow.id, app.id, a => ({ steps: [...(a.steps ?? []), ...add].map((st, y) => ({ ...st, at: y * DWELL })) })); })(); }} /></label>}
@@ -273,20 +277,20 @@ export function FlowRace({ section, editorMode }: { section: CaseStudySection; e
         {pains > 0 && <p className="csb-race-sum-pain"><i aria-hidden="true" />{pains} friction {pains === 1 ? 'point' : 'points'} marked. Click a screen name to hold it.</p>}
         {editorMode && !summary && !screensSummary && <p className="csb-race-hint">Do the same task in each app and drop its screenshots (one per step) or a screen recording on its phone. Click a screen name to hold it, then click the screen to add a note. Star your own design.</p>}
       </div>}
-    </> : <Screens flows={flows} only={screensFlow} />}
+    </> : <Screens flows={flows} only={screensFlow} rename={editorMode && edit ? (from, to) => renameAll(from, to) : undefined} />}
   </div>;
 }
 
 /* Contact sheet: every saved screen, per app, tagged with its flow's colour. */
-function Screens({ flows, only }: { flows: RaceFlow[]; only: 'all' | number }) {
+function Screens({ flows, only, rename }: { flows: RaceFlow[]; only: 'all' | number; rename?: (from: string, to: string) => void }) {
   const shown = flows.map((fl, i) => ({ fl, i })).filter(({ i }) => only === 'all' || only === i);
   const names = [...new Set(shown.flatMap(({ fl }) => fl.apps.map(a => a.name)))];
   const any = shown.some(({ fl }) => fl.apps.some(a => a.steps?.some(s => s.thumb)));
   if (!any) return <p className="csb-race-hint csb-race-sheet-empty">Screens appear here once recordings are added. Each one is saved as a picture, tagged with its flow.</p>;
   return <div className="csb-race-sheet">
     {names.map(name => <div className="csb-race-sheet-app" key={name}>
-      <strong>{name}</strong>
-      <div className="csb-race-sheet-strip">
+      <strong><Name value={name} editable={!!rename} onRename={v => rename?.(name, v)} /></strong>
+      {!shown.some(({ fl }) => fl.apps.find(a => a.name === name)?.steps?.some(st => st.thumb)) ? <p className="csb-race-sheet-none">No screens yet</p> : <div className="csb-race-sheet-strip">
         {shown.map(({ fl, i }) => { const app = fl.apps.find(a => a.name === name); const steps = app?.steps?.filter(s => s.thumb) ?? []; if (!steps.length) return null; const c = FLOW_COLORS[i % FLOW_COLORS.length];
           return <div className="csb-race-sheet-flow" key={fl.id} style={{ '--flow': c } as React.CSSProperties}>
             <span className="csb-race-sheet-tag"><i />{fl.name}<em>{steps.length}</em></span>
@@ -296,7 +300,16 @@ function Screens({ flows, only }: { flows: RaceFlow[]; only: 'all' | number }) {
               {!!s.pins?.length && <ol>{s.pins.map(p => <li key={p.id}>{p.text}</li>)}</ol>}
             </figure>)}</div>
           </div>; })}
-      </div>
+      </div>}
     </div>)}
   </div>;
+}
+
+/* A plain editable name (Enter or click away to save). */
+function Name({ value, editable, onRename }: { value: string; editable: boolean; onRename: (v: string) => void }) {
+  if (!editable) return <>{value}</>;
+  return <span className="csb-race-name" contentEditable suppressContentEditableWarning role="textbox" aria-label="App name" spellCheck={false}
+    onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
+    onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); if (e.key === 'Escape') e.currentTarget.textContent = value; e.currentTarget.blur(); } }}
+    onBlur={e => { const v = (e.currentTarget.textContent || '').replace(/\s+/g, ' ').trim(); if (v && v !== value) onRename(v.slice(0, 40)); else e.currentTarget.textContent = value; }}>{value}</span>;
 }

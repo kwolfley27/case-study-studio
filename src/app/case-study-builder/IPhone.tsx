@@ -5,7 +5,8 @@ import type { HTMLAttributes } from 'react';
   The screen sits under the frame, so screenshots and recordings show through it like a real phone.
   Frameless device mode hides the frame and keeps just the rounded screen.
 */
-export const IPHONE_FRAME = `${import.meta.env.BASE_URL}mockups/iphone-18.webp`;
+import frame from './assets/iphone-18.webp';
+export const IPHONE_FRAME = frame;
 
 export function IPhone({ children, className = '', ...rest }: HTMLAttributes<HTMLDivElement>) {
   return <div className={`csb-iphone ${className}`} {...rest}>

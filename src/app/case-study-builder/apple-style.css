@@ -3501,3 +3501,49 @@ html.csb-presenting .csb-doc-main>.csb-hero .csb-eyebrow{margin-bottom:calc(1.2v
 .csb-race-nav{white-space:nowrap}
 .csb-hx-phone.csb-iphone{width:320px;max-width:100%;flex:none}
 @container (max-width:700px){.csb-hx-phone.csb-iphone{width:240px}}
+
+/* ---------- iPhone 18 skin for sections that draw their own phone ----------
+   Floating devices, Scroll site, Screen recording and Prototype keep their own layout and behaviour;
+   the old bezel is hidden, the screen moves to where the mockup's screen sits, and the frame is laid on top.
+   Padding is a share of the width: 4.39% sides, 3.88% top, 3.78% bottom (from the mockup image). */
+html body :is(.csb-fd-dev.is-phone .csb-fd-face,.csb-ss-phone,.csb-rec-frame-phone .csb-rec-device,.csb-proto-phone .csb-proto-device){background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:3.88% 4.39% 3.78%!important;overflow:visible!important}
+html body :is(.csb-rec-frame-phone .csb-rec-device,.csb-proto-phone .csb-proto-device){position:relative}
+html body :is(.csb-fd-dev.is-phone .csb-fd-face,.csb-ss-phone,.csb-rec-frame-phone .csb-rec-device,.csb-proto-phone .csb-proto-device)::after{content:'';position:absolute;inset:0;background:url('./assets/iphone-18.webp') center/100% 100% no-repeat;pointer-events:none;z-index:6;filter:drop-shadow(0 22px 34px rgba(0,0,0,.14))}
+html body :is(.csb-fd-dev.is-phone .csb-fd-screen,.csb-ss-phone .csb-ss-screen,.csb-rec-frame-phone .csb-rec-viewport,.csb-proto-phone .csb-proto-screen){border-radius:16% / 7.4%!important;overflow:hidden}
+html body :is(.csb-fd-dev.is-phone .csb-fd-island,.csb-ss-island,.csb-rec-frame-phone .csb-rec-island,.csb-proto-phone .csb-proto-island,.csb-fd-dev.is-phone .csb-fd-layer,.csb-fd-dev.is-phone .csb-fd-glare){display:none!important}
+html body .csb-fd-dev.is-phone,html body .csb-ss-phone{aspect-ratio:1776/3646}
+html body .csb-rec-frame-phone .csb-rec-viewport{aspect-ratio:1170/2535!important}
+/* frameless device mode: no frame, just the rounded screen */
+html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-fd-dev.is-phone .csb-fd-face,.csb-ss-phone,.csb-rec-frame-phone .csb-rec-device,.csb-proto-phone .csb-proto-device){padding:0!important}
+html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-fd-dev.is-phone .csb-fd-face,.csb-ss-phone,.csb-rec-frame-phone .csb-rec-device,.csb-proto-phone .csb-proto-device)::after{display:none}
+/* Labels and titles never split inside a word (some browsers size the label before its text is measured) */
+html body :is(.csb-section-intro,.csb-hero-copy,.csb-side-nav) :is(.csb-eyebrow,h1,h2,.csb-eyebrow *,h1 *,h2 *,a,a *){overflow-wrap:normal!important;word-break:normal!important;hyphens:none}
+html body .csb-section-intro .csb-eyebrow{width:auto!important;max-width:100%;white-space:nowrap}
+html body .csb-section-intro .csb-eyebrow .csb-editable-text{white-space:nowrap!important}
+/* Recorded flows: stay inside the section; compact screen picker */
+.csb-race,.csb-race-sheet{grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
+.csb-race-sheet-app,.csb-race-sheet-strip{min-width:0;max-width:100%}
+.csb-race-row{min-width:0;max-width:100%}
+.csb-race-name{outline:none;border-radius:4px;cursor:text;padding:0 2px;margin:0 -2px}
+.csb-race-name:hover{background:color-mix(in srgb,var(--t-ink,#1c1917) 6%,transparent)}
+.csb-race-name:focus{background:color-mix(in srgb,var(--csb-accent) 10%,transparent);box-shadow:0 0 0 1.5px color-mix(in srgb,var(--csb-accent) 60%,transparent)}
+.csb-race-cur{display:flex;align-items:baseline;gap:8px;margin-top:8px;min-width:0;font-size:13px;line-height:1.35;color:var(--t-ink,#1c1917)}
+.csb-race-cur em{flex:none;font-style:normal;font-size:11px;font-weight:600;color:var(--flow);font-variant-numeric:tabular-nums}
+.csb-race-cur>span{flex:1 1 auto;min-width:0}
+.csb-race-cur .csb-race-pain{flex:none;align-self:center;opacity:1}
+.csb-race-cur.is-pain em{color:#e4572e}
+.csb-race-cur-note{display:block;padding-left:20px;font-size:12px;line-height:1.4;color:#b2442a}
+.csb-race-dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.csb-race-dots button{position:relative;width:20px;height:20px;display:grid;place-items:center;border:0;border-radius:50%;background:color-mix(in srgb,var(--t-ink,#1c1917) 7%,transparent);color:var(--t-muted,#6f6961);font:500 9.5px/1 inherit;font-family:inherit;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;transition:background .15s,color .15s}
+.csb-race-dots button:hover{background:color-mix(in srgb,var(--t-ink,#1c1917) 14%,transparent);color:var(--t-ink,#1c1917)}
+.csb-race-dots button.is-now{background:var(--flow);color:#fff}
+.csb-race-dots button.is-pain:not(.is-now){box-shadow:inset 0 0 0 1.5px #e4572e;color:#b2442a}
+.csb-race-dots button.has-notes:after{content:'';position:absolute;top:-1px;right:-1px;width:6px;height:6px;border-radius:50%;background:var(--flow);box-shadow:0 0 0 1.5px var(--t-paper,#fff)}
+.csb-race-dots button.is-now.has-notes:after{background:#fff;box-shadow:0 0 0 1.5px var(--flow)}
+.csb-race-sheet-none{margin:0;font-size:13px;color:var(--t-muted,#6f6961)}
+/* Screen placement inside the mockup, measured against the phone itself (padding % would use the parent's width). */
+html body :is(.csb-fd-dev.is-phone .csb-fd-face,.csb-ss-phone,.csb-rec-frame-phone .csb-rec-device,.csb-proto-phone .csb-proto-device){padding:0!important}
+html body :is(.csb-fd-dev.is-phone .csb-fd-screen,.csb-ss-phone>.csb-ss-screen){position:absolute!important;left:4.39%;right:4.39%;top:1.89%;bottom:1.84%;width:auto!important;height:auto!important;margin:0!important}
+html body :is(.csb-rec-frame-phone .csb-rec-viewport,.csb-proto-phone .csb-proto-screen){margin:3.88% 4.39% 3.78%!important;width:auto!important}
+html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-fd-dev.is-phone .csb-fd-screen,.csb-ss-phone>.csb-ss-screen){inset:0}
+html body :is([data-devices=frameless],.csb-canvas[data-devices-page=frameless] :is(.csb-hero,.csb-hx)) :is(.csb-rec-frame-phone .csb-rec-viewport,.csb-proto-phone .csb-proto-screen){margin:0!important}
