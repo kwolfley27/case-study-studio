@@ -3,7 +3,9 @@ import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
 /*
   Accounts for Case Study Studio.
-  - Sign in with Google, or with a one-time link sent by email.
+  - Sign in with Google, or with email + password.
+  - Email links are only for creating an account and for setting or resetting a password;
+    both land on the "Set a password" screen (#set-password).
   - Invite only: an email must be in studio_invites (Katelyn adds people from the account menu).
   - "owner" (Katelyn) also gets the AI features; everyone else gets the editor without them.
   Each person's case studies are saved to their own account (table "studies", private by row-level security).
@@ -31,7 +33,14 @@ export const authHeaders = () => ({ Authorization: `Bearer ${token || publicAnon
 
 const home = () => `${location.origin}${location.pathname}`;
 export const signInWithGoogle = () => supabase().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: home() } });
-export const signInWithEmail = (email: string) => supabase().auth.signInWithOtp({ email, options: { emailRedirectTo: home(), shouldCreateUser: true } });
+export const SET_PASSWORD_HASH = '#set-password';
+/** Existing accounts: email + password. */
+export const signInWithPassword = (email: string, password: string) => supabase().auth.signInWithPassword({ email, password });
+/** New accounts: a one-time link creates the account, then they choose a password. */
+export const createAccountWithEmail = (email: string) => supabase().auth.signInWithOtp({ email, options: { emailRedirectTo: home() + SET_PASSWORD_HASH, shouldCreateUser: true } });
+/** Forgot password, or an older account that only ever used links: email a link to set one. */
+export const sendPasswordLink = (email: string) => supabase().auth.resetPasswordForEmail(email, { redirectTo: home() + SET_PASSWORD_HASH });
+export const setPassword = (password: string) => supabase().auth.updateUser({ password });
 export const signOut = async () => { await supabase().auth.signOut(); setAccount(null); };
 
 /** Who is signed in, and are they on the invite list? */

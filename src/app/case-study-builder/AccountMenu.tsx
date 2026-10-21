@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { addInvite, listInvites, removeInvite, signOut, type Account } from './auth';
+import { addInvite, listInvites, removeInvite, SET_PASSWORD_HASH, signOut, type Account } from './auth';
 import { onCloudState, cloudState, type CloudState } from './cloud';
 
 /* The little account button in the header: who's signed in, save status, invites (owner) and sign out. */
@@ -19,6 +19,7 @@ export function AccountMenu({ account }: { account: Account }) {
       <div className="acct-who"><b>{account.name}</b><span>{account.email}</span></div>
       <p className="acct-save">{save === 'saving' ? 'Saving to your account…' : save === 'offline' ? 'Couldn’t reach your account. Saved in this browser; I’ll try again.' : 'All changes saved to your account.'}</p>
       {account.role === 'owner' && <Invites />}
+      <button type="button" className="acct-secondary" onClick={() => { location.hash = SET_PASSWORD_HASH; location.reload(); }}>Set or change password</button>
       <button type="button" className="acct-secondary" onClick={() => void signOut().then(() => location.reload())}>Sign out</button>
     </div>}
   </div>;
@@ -36,6 +37,6 @@ function Invites() {
     <form onSubmit={e => void add(e)}><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="their@email.com" aria-label="Email to invite" /><button type="submit" disabled={!/.+@.+\..+/.test(email)}>Invite</button></form>
     {msg && <p className="acct-error">{msg}</p>}
     <ul>{list.map(i => <li key={i.email}><span>{i.email}</span>{i.role === 'owner' ? <small>You</small> : <button type="button" aria-label={`Remove ${i.email}`} onClick={() => void removeInvite(i.email).then(load)}>Remove</button>}</li>)}</ul>
-    <p className="acct-fine">They sign in at this same address with Google or an email link. They get the editor and publishing; the AI features stay yours.</p>
+    <p className="acct-fine">They create an account at this same address (Google, or an email link and then a password). They get the editor and publishing; the AI features stay yours.</p>
   </div>;
 }

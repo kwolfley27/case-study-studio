@@ -50,3 +50,10 @@
 /* Opening: only show the card if checking your account takes a moment. */
 .acct.is-quiet .acct-card{animation:acct-late .25s ease .7s both}
 @keyframes acct-late{from{opacity:0;transform:translateY(4px)}}
+.acct-primary{width:100%;height:46px;margin-top:6px;border:0;border-radius:999px;background:#000;color:#fff;font:500 15px Inter,system-ui,sans-serif;cursor:pointer}
+.acct-primary:hover{background:#2a2725}.acct-primary:disabled{opacity:.5;cursor:default}
+.acct-primary:focus-visible{outline:2px solid #0f0e0d;outline-offset:2px}
+.acct-forgot{justify-self:end;font-size:13px!important;color:#6f6961!important}
+.acct-switch{margin:18px 0 0!important;font-size:14px!important;color:#44403b!important}
+.acct-card .acct-google{background:#fdfcfc;color:#0f0e0d;border:1px solid #e3dfda}
+.acct-card .acct-google:hover{background:#f5f3f1}
