@@ -3803,3 +3803,9 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-ivc .csb-interviews-people button::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:2px;border-radius:2px;background:var(--t-ink,#1c1917);transform:scaleY(0);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
 .csb-canvas .csb-ivc .csb-interviews-people button.is-active::before{transform:scaleY(1)}
 @container (max-width:700px){.csb-canvas .csb-ivc .csb-interviews-people button::before{top:auto;bottom:0;left:16px;right:16px;width:auto;height:2px;transform:scaleX(0)}.csb-canvas .csb-ivc .csb-interviews-people button.is-active::before{transform:scaleX(1)}.csb-canvas .csb-ivc .csb-interviews-people button{border-bottom:0!important}}
+
+/* Positioning chart: axis and quadrant labels break between words, never mid-word */
+.csb-canvas :is(.csb-pm-y,.csb-pm-x span,.csb-pm-q),.csb-canvas :is(.csb-pm-y,.csb-pm-x span,.csb-pm-q) *{overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
+.csb-canvas .csb-pm-y{white-space:nowrap;justify-self:center}
+.csb-canvas .csb-pm-x span{max-width:45%}
+.csb-canvas .csb-pm-q{max-width:42%}
