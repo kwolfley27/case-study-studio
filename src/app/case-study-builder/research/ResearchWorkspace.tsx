@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { MessagesSquare, ArrowDown, ArrowUp, BarChart3, Copy, CopyPlus, ExternalLink, ImagePlus, Link2, ListChecks, PenLine, Plus, Smartphone, Sparkles, Trash2, X } from 'lucide-react';
 import { uploadToStudio } from '../media';
+import { SurveyMap } from './SurveyMap';
 import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
@@ -74,6 +75,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
   const add = (list: Question[]) => { update({ questions: [...qs, ...list] }); setPreviewAt(qs.length); };
   // Deleting a question also clears any "Show only if" that pointed at it.
   const removeQ = (i: number) => { const gone = qs[i].id; update({ questions: qs.filter((_, k) => k !== i).map(q => q.showIf?.questionId === gone ? { ...q, showIf: undefined } : q) }); };
+  const [mapView, setMapView] = useState(false);
   const hasRecruit = qs.some(q => q.preset === 'recruit');
   const duplicate = (i: number) => { const n = [...qs]; n.splice(i + 1, 0, duplicateQuestion(qs[i])); update({ questions: n }); setPreviewAt(i + 1); };
   const hasSus = qs.some(q => q.preset?.startsWith('sus-'));
@@ -88,6 +90,8 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
       <LookEditor study={study} update={update} onFocus={() => setPreviewAt(-1)} />
       <p className="rw-kicker">Questions · {qs.length}{qs.some(q => q.bonus) ? ` · short version about ${estimateMinutes(qs.filter(q => !q.bonus), study.followupBudget)} min, bonus round about ${estimateMinutes(qs.filter(q => q.bonus), Math.max(1, Math.round((study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) / 2)))} more` : ''}</p>
       {qs.some(q => q.bonus) && <p className="rw-note" style={{ margin: '-4px 0 0' }}>Everyone gets the short version. At the end they’re offered the bonus round, and their short answers are already saved. Mark a question “Bonus round” to move it there.</p>}
+      <div className="rw-viewswitch" role="tablist" aria-label="Question view"><button type="button" role="tab" aria-selected={!mapView} onClick={() => setMapView(false)}>List</button><button type="button" role="tab" aria-selected={mapView} onClick={() => setMapView(true)}>Map</button></div>
+      {mapView ? <SurveyMap study={study} onPick={i => { setPreviewAt(i); setMapView(false); requestAnimationFrame(() => document.querySelectorAll('.rw-q')[i]?.scrollIntoView({ block: 'center', behavior: 'smooth' })); }} /> : <>
       {qs.map((q, i) => <div key={q.id} className={`rw-q ${previewAt === i ? 'is-on' : ''}`} onFocusCapture={() => setPreviewAt(i)} onClick={() => setPreviewAt(i)}>
         <div className="rw-q-head">
           <span className="rw-q-num">{i + 1}</span>
@@ -143,6 +147,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           {!q.preset?.startsWith('sus-') && q.preset !== 'name' && q.preset !== 'about' && <label className="rw-req" title="Only asked if they choose to keep going after the short version"><input type="checkbox" checked={!!q.bonus} onChange={e => setQ(i, { bonus: e.target.checked || undefined })} /> Bonus round</label>}
           {(q.type === 'single' || q.type === 'multi') && !q.preset?.startsWith('sus-') && <label className="rw-req" title="Each answer becomes a group (bucket) you can filter and compare in Results"><input type="checkbox" checked={!!q.group} onChange={e => setQ(i, { group: e.target.checked || undefined })} /> Use answers as groups</label>}</div>
       </div>)}
+      </>}
       <div className="rw-addbar">
         {QUESTION_TYPES.map(([t, l, hint]) => <button key={t} type="button" title={hint} onClick={() => add([newQuestion(t)])}>+ {l}</button>)}
       </div>
@@ -409,6 +414,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
       <button type="button" className="csb-quiet-button" onClick={load}>Refresh</button>
     </div>
     <Groups study={s} all={all} picks={picks} setPicks={setPicks} />
+    {all.length > 0 && <details className="rw-res rw-routes"><summary><h4>Routes through the survey<small>{Object.keys(picks).length ? 'for this group · ' : ''}how many people took each path</small></h4></summary><SurveyMap study={s} responses={responses} /></details>}
     {!responses.length ? <p className="rw-empty">{all.length ? 'No one in this group yet.' : 'No responses yet. Share the link from the Share tab.'}</p> : <>
       <div className="rw-addrow">
         <span>Add to the case study:</span>
