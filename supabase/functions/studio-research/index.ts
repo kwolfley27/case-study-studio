@@ -10,7 +10,9 @@ import { caller } from '../_shared/access.ts';
 //   get      public   { id }              → the open study, for participants
 //   followup public   { id, questionId, answer, history, context, used } → one AI follow-up question (or done)
 //   photoUpload public { id, questionId, type, size } → signed upload link for a "Show me" photo
-//   submit   public   { id, answers, ms, followups } → saves one response (+ Notion row)
+//   submit   public   { id, answers, ms, followups, others, part } → saves one response (+ Notion row).
+//            part 'core' (a survey with a bonus round) also returns { ref, token } so the bonus answers can be added later.
+//   extend   public   { id, ref, token, answers, ms, followups, others } → adds the bonus-round answers to that response
 //   publish  passcode { study }           → saves the study, creates the Notion database
 //   list     passcode {}                  → your studies with response counts
 //   results  passcode { id }              → all responses for one study
@@ -31,7 +33,7 @@ const MAX_BODY = 400_000;
 
 type ContactKey = 'name' | 'email' | 'phone';
 type FieldMode = 'off' | 'optional' | 'required';
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean };
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean; bonus?: boolean };
 const FOLLOWUP_TYPES = new Set(['long', 'text', 'single', 'multi', 'rank']);
 const PHOTO_TYPES: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'image/gif': 'gif' };
 const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
@@ -120,15 +122,27 @@ Deno.serve(async (request) => {
       if (error || !data) return reply({ error: 'Could not upload right now. Please try again.' }, 500);
       return reply({ uploadUrl: data.signedUrl, path });
     }
-    if (action === 'submit') {
+    if (action === 'submit' || action === 'extend') {
       const id = cleanId(body.id);
       const study = await readJson<Study>(`studies/${id}.json`);
       if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ error: 'This study is closed.' }, 410);
+      // Bonus round: the core answers were saved first; these add to that same response.
+      const extend = action === 'extend';
+      const ref = String(body.ref || '');
+      let prior: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>>; others?: Record<string, string>; editToken?: string; notionPageId?: string } | null = null;
+      if (extend) {
+        if (!/^[\w-]+\.json$/.test(ref)) return reply({ error: 'Could not find your earlier answers.' }, 400);
+        prior = await readJson(`responses/${id}/${ref}`);
+        if (!prior || !prior.editToken || prior.editToken !== String(body.token || '')) return reply({ error: 'Could not find your earlier answers.' }, 400);
+      }
+      const part = extend ? 'bonus' : body.part === 'core' ? 'core' : 'all';
       const answers = (body.answers && typeof body.answers === 'object') ? body.answers as Record<string, unknown> : {};
       const clean: Record<string, Answer> = {};
       for (const q of study.questions) {
         if (q.type === 'note') continue; // intro screens have no answer
-        if (!isShown(q, clean)) continue; // skipped by "Show only if"
+        if (part === 'core' && q.bonus) continue;
+        if (part === 'bonus' && !q.bonus) continue;
+        if (!isShown(q, { ...(prior?.answers ?? {}), ...clean })) continue; // skipped by "Show only if"
         const v = answers[q.id];
         if (q.type === 'contact') {
           const a = (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
@@ -161,7 +175,7 @@ Deno.serve(async (request) => {
       }
       const rawFu = (body.followups && typeof body.followups === 'object') ? body.followups as Record<string, unknown> : {};
       const followups: Record<string, Array<{ q: string; a: string }>> = {};
-      let budget = study.followupBudget ?? 6;
+      let budget = (study.followupBudget ?? 6) - Object.values(prior?.followups ?? {}).reduce((n, l) => n + l.length, 0);
       for (const q of study.questions) {
         if (budget <= 0) break;
         if (!(q.followups && q.followups > 0) || clean[q.id] == null) continue;
@@ -176,10 +190,19 @@ Deno.serve(async (request) => {
         const v = clean[q.id]; const picked = (Array.isArray(v) ? v : [v]).some(x => typeof x === 'string' && /^other\b/i.test(x.trim()));
         const t = text(rawOthers[q.id], 120).trim(); if (picked && t) others[q.id] = t;
       }
-      const response = { id: crypto.randomUUID(), at: new Date().toISOString(), ms: Math.max(0, Math.min(86_400_000, Number(body.ms) || 0)), answers: clean, ...(Object.keys(followups).length ? { followups } : {}), ...(Object.keys(others).length ? { others } : {}) };
-      await writeJson(`responses/${id}/${response.at.replace(/[:.]/g, '-')}-${response.id.slice(0, 8)}.json`, response);
-      if (study.notion?.databaseId) await notionRow(study, response).catch(() => undefined);
-      return reply({ ok: true });
+      const ms = Math.max(0, Math.min(86_400_000, Number(body.ms) || 0));
+      if (extend && prior) {
+        const merged = { ...prior, ms: prior.ms + ms, part: 'full', answers: { ...prior.answers, ...clean }, followups: { ...(prior.followups ?? {}), ...followups }, others: { ...(prior.others ?? {}), ...others }, editToken: undefined };
+        await writeJson(`responses/${id}/${ref}`, merged);
+        if (study.notion?.databaseId) await notionRow(study, merged, prior.notionPageId).catch(() => undefined);
+        return reply({ ok: true });
+      }
+      const editToken = part === 'core' ? crypto.randomUUID() : undefined;
+      const response: Record<string, unknown> & { id: string; at: string; ms: number; answers: Record<string, Answer> } = { id: crypto.randomUUID(), at: new Date().toISOString(), ms, answers: clean, ...(Object.keys(followups).length ? { followups } : {}), ...(Object.keys(others).length ? { others } : {}), ...(part === 'core' ? { part: 'core', editToken } : {}) };
+      const file = `${response.at.replace(/[:.]/g, '-')}-${response.id.slice(0, 8)}.json`;
+      if (study.notion?.databaseId) { const pageId = await notionRow(study, response as never).catch(() => undefined); if (pageId && part === 'core') response.notionPageId = pageId; }
+      await writeJson(`responses/${id}/${file}`, response);
+      return reply(part === 'core' ? { ok: true, ref: file, token: editToken } : { ok: true });
     }
 
     // ---------- Owner only ----------
@@ -203,6 +226,7 @@ Deno.serve(async (request) => {
           followups: FOLLOWUP_TYPES.has(q.type) && Number(q.followups) > 0 ? Math.min(3, Math.round(Number(q.followups))) : undefined,
           probe: FOLLOWUP_TYPES.has(q.type) && q.probe ? text(q.probe, 600) : undefined,
           group: (q.type === 'single' || q.type === 'multi') && q.group ? true : undefined,
+          bonus: q.bonus ? true : undefined,
           followIf: (q.type === 'single' || q.type === 'multi') && Array.isArray(q.followIf) && q.followIf.length ? q.followIf.map(o => text(o, 200)).slice(0, 30) : undefined,
           image: httpsUrl(q.image) || undefined,
           optionImages: Array.isArray(q.optionImages) && (q.type === 'single' || q.type === 'multi' || q.type === 'rank') ? q.optionImages.slice(0, 30).map(httpsUrl) : undefined,
@@ -235,6 +259,7 @@ Deno.serve(async (request) => {
       if (!study) return reply({ error: 'Study not found.' }, 404);
       const { data } = await store.list(`responses/${id}`, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
       const responses = (await Promise.all((data ?? []).map(f => readJson<{ answers: Record<string, unknown>; photoUrls?: Record<string, string[]> }>(`responses/${id}/${f.name}`)))).filter((x): x is NonNullable<typeof x> => !!x);
+      for (const r of responses as Array<Record<string, unknown>>) { delete r.editToken; delete r.notionPageId; }
       const photoQs = study.questions.filter(q => q.type === 'photo');
       if (photoQs.length) await Promise.all(responses.map(async r => {
         for (const q of photoQs) {
@@ -355,7 +380,7 @@ async function ensureDatabase(study: Study): Promise<string> {
   const db = await notion('databases', { method: 'POST', body: JSON.stringify({ parent: { type: 'page_id', page_id: parent }, title: [{ text: { content: `${study.title} · responses` } }], properties }) });
   return db.id;
 }
-async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>>; others?: Record<string, string> }) {
+async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>>; others?: Record<string, string> }, pageId?: string): Promise<string | undefined> {
   const properties: Record<string, unknown> = {
     Participant: { title: [{ text: { content: (() => { const nq = study.questions.find(x => x.preset === 'name'); const nv = nq ? response.answers[nq.id] : ''; return typeof nv === 'string' && nv.trim() ? nv.trim().slice(0, 40) : `Participant ${response.id.slice(0, 4).toUpperCase()}`; })() } }] },
     Submitted: { date: { start: response.at } },
@@ -378,7 +403,9 @@ async function notionRow(study: Study, response: { id: string; at: string; ms: n
   });
   const other = study.questions.map((q, i) => response.others?.[q.id] ? `Q${i + 1}: ${response.others[q.id]}` : '').filter(Boolean).join('  ');
   if (other) properties['Other (typed)'] = { rich_text: [{ text: { content: other.slice(0, 1990) } }] };
-  await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
+  if (pageId) { await notion(`pages/${pageId}`, { method: 'PATCH', body: JSON.stringify({ properties }) }); return pageId; }
+  const page = await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
+  return page?.id as string | undefined;
 }
 
 async function notionSession(study: Study, session: Session) {

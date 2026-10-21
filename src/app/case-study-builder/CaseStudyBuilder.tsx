@@ -1,7 +1,7 @@
 import { BuiltControls, buildFromPicture, editBuilt, setBuiltImage } from './Built';
 import { AssetsPanel } from "./AssetsPanel";
 import { AccountMenu } from "./AccountMenu";
-import type { Account } from "./auth";
+import { SET_PASSWORD_HASH, type Account } from "./auth";
 import { PanelResizer, usePanelWidths } from "./PanelResizer";
 import { ColorDots, bubbleOptions, inkOn } from "./ColorDots";
 import { SectionBasics } from "./SectionBasics";
@@ -73,6 +73,19 @@ const NOTION_PROJECT_URL = "https://www.notion.so/";
 
 // When the open study was too big for the quick local copy, only its id is kept; read that pointer
 // once, before anything writes to storage, so the full study is reopened from IndexedDB.
+/* Addresses, so a link opens the exact thing:
+   #/home · #/study/<id> · #/research · #/research/<survey id>[/share|/results] */
+type Route = { kind: 'home' } | { kind: 'study'; id: string } | { kind: 'research'; id?: string; tab?: string };
+function parseRoute(): Route | null {
+  const h = location.hash;
+  if (/^#\/home\/?$/.test(h)) return { kind: 'home' };
+  let m = /^#\/study\/([\w-]+)/.exec(h); if (m) return { kind: 'study', id: m[1] };
+  m = /^#\/research(?:\/([\w-]+))?(?:\/(build|share|results))?\/?$/.exec(h); if (m) return { kind: 'research', id: m[1], tab: m[2] };
+  return null;
+}
+const initialRoute = parseRoute();
+/** The page address without a leftover one-time sign-in code. */
+const cleanSearch = () => { const q = new URLSearchParams(location.search); q.delete('code'); const s = q.toString(); return s ? `?${s}` : ''; };
 let pendingRestoreId: string | null = null;
 try { if (!localStorage.getItem("katelyn-case-study-builder-v1")) pendingRestoreId = localStorage.getItem("katelyn-case-study-builder-v1:id"); } catch { /* ignore */ }
 
@@ -98,9 +111,12 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
   const [study, setStudy] = useState<BuilderStudy>(readLocalStudy);
   const studyRef = useRef(study); studyRef.current = study;
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showHome, setShowHome] = useState(false);
+  const [showHome, setShowHome] = useState(initialRoute?.kind === 'home');
   const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [showResearch, setShowResearch] = useState<boolean | string>(false);
+  const [showResearch, setShowResearch] = useState<boolean | string>(initialRoute?.kind === 'research' ? initialRoute.id ?? true : false);
+  const [researchSel, setResearchSel] = useState<{ id: string | null; tab: string }>({ id: initialRoute?.kind === 'research' ? initialRoute.id ?? null : null, tab: initialRoute?.kind === 'research' ? initialRoute.tab ?? 'build' : 'build' });
+  const [researchKey, setResearchKey] = useState(0); // remount Research when Back/Forward changes the survey
+  const routeLoading = useRef(initialRoute?.kind === 'study' && initialRoute.id !== study.id);
   const [showAdd, setShowAdd] = useState(false);
   const [addedComponentName, setAddedComponentName] = useState<string | null>(null);
   const pendingAddedSection = useRef<string | null>(null);
@@ -228,6 +244,31 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
   useEffect(() => { if (restoring.current) return; const t = window.setTimeout(() => { void saveStudy(study).catch(() => undefined); }, 600); return () => window.clearTimeout(t); }, [study]);
   // The quick local copy can be too big once Figma frames are pulled in; then only its id is kept and the full study lives in IndexedDB.
   useEffect(() => { if (restoring.current) return; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(study)); localStorage.removeItem(STORAGE_KEY + ":id"); } catch { try { localStorage.removeItem(STORAGE_KEY); localStorage.setItem(STORAGE_KEY + ":id", study.id); } catch { /* ignore */ } } }, [study]);
+  // Open the case study named in the address (#/study/<id>).
+  useEffect(() => {
+    if (!(initialRoute?.kind === 'study') || initialRoute.id === studyRef.current.id) { routeLoading.current = false; return; }
+    void getStudy(initialRoute.id).then(saved => { if (saved) { pendingRestoreId = null; restoring.current = false; setStudy(migrateStudy(saved as BuilderStudy)); } else setMessage({ text: 'That case study isn’t in your library, so your last one is open instead.', error: true }); }).catch(() => undefined).finally(() => { routeLoading.current = false; setRouteTick(t => t + 1); });
+  }, []);
+  const [routeTick, setRouteTick] = useState(0);
+  // Keep the address bar in step with what's open (Back and Forward work too).
+  const address = showResearch ? `#/research${researchSel.id ? `/${researchSel.id}${researchSel.tab !== 'build' ? `/${researchSel.tab}` : ''}` : ''}` : showHome ? '#/home' : `#/study/${study.id}`;
+  const firstAddress = useRef(true);
+  useEffect(() => {
+    if (routeLoading.current || location.hash === SET_PASSWORD_HASH) return;
+    const url = location.pathname + cleanSearch() + address;
+    if (location.hash !== address || location.search !== cleanSearch()) { if (firstAddress.current) history.replaceState(null, '', url); else history.pushState(null, '', url); }
+    firstAddress.current = false;
+  }, [address, routeTick]);
+  useEffect(() => {
+    const go = () => {
+      const r = parseRoute(); if (!r) return;
+      if (r.kind === 'home') { setShowResearch(false); setShowHome(true); return; }
+      if (r.kind === 'research') { setShowHome(false); setResearchSel({ id: r.id ?? null, tab: r.tab ?? 'build' }); setShowResearch(r.id ?? true); setResearchKey(k => k + 1); return; }
+      setShowResearch(false); setShowHome(false);
+      if (r.id !== studyRef.current.id) void getStudy(r.id).then(saved => { if (saved) { void saveStudy(studyRef.current).catch(() => undefined); setStudy(migrateStudy(saved as BuilderStudy)); setSelectedId(null); } });
+    };
+    addEventListener('popstate', go); return () => removeEventListener('popstate', go);
+  }, []);
   useEffect(() => { const id = pendingRestoreId; pendingRestoreId = null; if (!id) return;
     void getStudy(id).then(saved => { restoring.current = false; if (saved && isBuilderStudy(saved)) setStudy(migrateStudy(saved)); else if (saved) { setStudy(migrateStudy(saved as BuilderStudy)); } }).catch(() => { restoring.current = false; }); }, []);
   // Ask the browser to keep this site's storage (so it isn't cleared when the disk is low).
@@ -328,7 +369,7 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
   };
 
   const openStudy = (next: BuilderStudy) => { void saveStudy(study).catch(() => undefined); setStudy(migrateStudy(next)); setSelectedId(null); setShowHome(false); setMessage(null); window.scrollTo(0, 0); };
-  if (showResearch) return <Suspense fallback={null}><ResearchWorkspace project={{ id: study.id, title: study.title }} initialId={typeof showResearch === "string" ? showResearch : undefined} onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
+  if (showResearch) return <Suspense fallback={null}><ResearchWorkspace key={researchKey} project={{ id: study.id, title: study.title }} initialId={typeof showResearch === "string" ? showResearch : undefined} initialTab={researchSel.tab} onRoute={(id, tab) => setResearchSel(s => s.id === id && s.tab === tab ? s : { id, tab })} onExit={() => setShowResearch(false)} onAddSections={(sections, note) => { setStudy(previous => ({ ...previous, sections: [...previous.sections, ...sections] })); setSelectedId(sections[sections.length - 1]?.id ?? null); setShowResearch(false); setMessage({ text: `${note} It’s at the end of your case study.` }); }} /></Suspense>;
   if (showHome) return <HomeGallery owner={owner} onOpenResearch={id => { setShowHome(false); setShowResearch(id ?? true); }} current={study} onOpen={openStudy} onNew={async () => { const fresh = freshCopy(lucidExample, "Untitled case study"); await saveStudy(fresh).catch(() => undefined); openStudy(fresh); }} />;
 
   return <div className={`csb-app csb-view-${view} ${leftOpen ? "" : "hide-left"} ${rightOpen ? "" : "hide-right"} ${leftOpen && leftRail ? "left-rail" : ""}`} style={{ ["--csb-left-w" as string]: `${leftRail ? 60 : panelW.left}px`, ["--csb-right-w" as string]: `${panelW.right}px`, ["--inset-l" as string]: leftOpen ? `${(leftRail ? 60 : panelW.left) + 32}px` : "0px", ["--inset-r" as string]: rightOpen ? `${panelW.right + 32}px` : "0px" }}>

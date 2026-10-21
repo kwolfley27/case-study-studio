@@ -16,6 +16,7 @@ export type Question = { id: string; type: QuestionType; prompt: string; options
   /** How many AI follow-up questions to ask (0–3), and what they should dig into. */ followups?: number; probe?: string;
   /** Choice questions: only follow up when one of these was picked (empty = any answer). */ followIf?: string[];
   /** Choice questions: use the answers as groups (buckets) to compare in Results. */ group?: boolean;
+  /** Bonus round: only asked if they choose to keep going after the short version. */ bonus?: boolean;
   /** A picture shown above the question. */ image?: string;
   /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
 /** How the participant pages look. */
@@ -42,7 +43,7 @@ export type Transcript = { at: string; speakers: string[]; segments: TranscriptL
 export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** Most AI follow-ups one participant gets in total (default 6). */ followupBudget?: number; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 /** An AI follow-up the participant was asked, and their answer. */
 export type FollowUp = { q: string; a: string };
-export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** What they typed after picking "Other", by question. */ others?: Record<string, string>; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
+export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** What they typed after picking "Other", by question. */ others?: Record<string, string>; /** 'core' = stopped after the short version; 'full' = also did the bonus round. */ part?: 'core' | 'full'; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
 export const canFollowUp = (q: Question) => q.type === 'long' || q.type === 'text' || q.type === 'single' || q.type === 'multi' || q.type === 'rank';
 export const hasOptions = (q: Question) => q.type === 'single' || q.type === 'multi' || q.type === 'rank';
 /** How an answer reads in plain words (rankings are numbered). */
