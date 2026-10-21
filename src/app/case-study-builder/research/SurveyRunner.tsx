@@ -148,12 +148,12 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
             {ai && <span>An AI may ask a quick follow-up about what you say.</span>}
           </div>; })()}
         </div>}
-        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}{preview && q.bonus && <p className="rs-condition">Bonus round: only if they choose to keep going after the short version</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
+        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}{preview && q.bonus && <p className="rs-condition">Bonus round: only if they choose to keep going after the short version</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} onDone={preview ? undefined : () => void next()} /></>}
         {q && fuItem && <div className="rs-q">
           <small className="rs-count">{step + 1} / {n} · follow-up</small>
           <blockquote className="rs-echo">{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).slice(0, 160)}{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).length > 160 ? '…' : ''}</blockquote>
           <h2>{fuItem.q}</h2>
-          <LongAnswer label={fuItem.q} value={fuItem.a} set={setFuAnswer} />
+          <LongAnswer label={fuItem.q} value={fuItem.a} set={setFuAnswer} onDone={() => void next()} />
         </div>}
         {step === n && hasBonus && saved && !bonusMode && !finished && <div className="rs-intro rs-offer">
           <span className="rs-check" aria-hidden="true">✓</span>
@@ -176,7 +176,7 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   </div>;
 }
 
-function QuestionView({ q, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto }: { q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
+function QuestionView({ q, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto, onDone }: { onDone?: () => void; q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
   const list = Array.isArray(value) ? value as string[] : [];
   return <div className="rs-q">
     <small className="rs-count">{index + 1} / {total}{q.type === 'note' ? '' : q.required ? '' : ' · optional'}</small>
@@ -195,7 +195,7 @@ function QuestionView({ q, index, total, value, set, other, setOther, errors, co
       <div className="rs-scale-labels"><span>{q.type === 'nps' ? 'Not at all likely' : q.minLabel}</span><span>{q.type === 'nps' ? 'Extremely likely' : q.maxLabel}</span></div>
     </div>; })()}
     {q.type === 'text' && <input className="rs-input" autoFocus value={String(value ?? '')} onChange={e => set(e.target.value)} placeholder="Type your answer" aria-label={q.prompt} />}
-    {q.type === 'long' && <LongAnswer label={q.prompt} value={String(value ?? '')} set={set} />}
+    {q.type === 'long' && <LongAnswer label={q.prompt} value={String(value ?? '')} set={set} onDone={onDone} />}
     {q.type === 'contact' && <ContactFields q={q} value={value} set={set} errors={errors} />}
     {q.type === 'schedule' && <Booking q={q} value={value} set={set} contact={contact} preview={preview} />}
     {q.type === 'photo' && <PhotoAnswer q={q} value={value} set={set} upload={onUploadPhoto} />}
@@ -206,41 +206,109 @@ function QuestionView({ q, index, total, value, set, other, setOther, errors, co
 type Recognition = { lang: string; continuous: boolean; interimResults: boolean; start: () => void; stop: () => void; onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
 const SpeechAPI = (): (new () => Recognition) | undefined => typeof window === 'undefined' ? undefined : ((window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition) as (new () => Recognition) | undefined;
 
-function LongAnswer({ label, value, set }: { label: string; value: string; set: (v: string) => void }) {
+/* A live voice wave. Uses the real microphone level where the browser allows it alongside dictation;
+   on iPhone (where that can interrupt dictation) it animates with speech instead. */
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function Wave({ active, speaking }: { active: boolean; speaking: boolean }) {
+  const BARS = 24;
+  const bars = useRef<Array<HTMLSpanElement | null>>([]);
+  useEffect(() => {
+    if (!active) return;
+    let stream: MediaStream | null = null, ctx: AudioContext | null = null, raf = 0, stopped = false;
+    let analyser: AnalyserNode | null = null; const data = new Uint8Array(64);
+    const level = (k: number) => {
+      if (analyser) { analyser.getByteFrequencyData(data); return Math.min(1, (data[2 + (k % 30)] ?? 0) / 180); }
+      return speakingRef.current ? 0.25 + Math.random() * 0.75 : 0.08 + Math.random() * 0.08;
+    };
+    const tick = () => { if (stopped) return; bars.current.forEach((b, k) => { if (b) b.style.transform = `scaleY(${Math.max(0.1, level(k)).toFixed(2)})`; }); raf = requestAnimationFrame(tick); };
+    (async () => {
+      if (!isIOS() && navigator.mediaDevices?.getUserMedia) {
+        try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); if (stopped) { stream.getTracks().forEach(t => t.stop()); return; } ctx = new AudioContext(); analyser = ctx.createAnalyser(); analyser.fftSize = 128; ctx.createMediaStreamSource(stream).connect(analyser); } catch { /* fall back to the animated wave */ }
+      }
+      tick();
+    })();
+    return () => { stopped = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()); void ctx?.close().catch(() => undefined); };
+  }, [active]);
+  const speakingRef = useRef(speaking); speakingRef.current = speaking;
+  return <div className="rs-wave" aria-hidden="true">{Array.from({ length: BARS }, (_, k) => <span key={k} ref={el => { bars.current[k] = el; }} />)}</div>;
+}
+
+/* Voice first: a big "Tap to talk" button, with "Type instead" underneath.
+   Choosing to type twice makes typing the default for the rest of the survey (they may be somewhere quiet).
+   While talking: words appear live, and a bar like Claude's voice mode offers cancel, a live wave, pause and done. */
+const TYPE_KEY = 'csb-chose-typing';
+const typeCount = () => { try { return Number(sessionStorage.getItem(TYPE_KEY) || 0); } catch { return 0; } };
+const bumpType = () => { try { sessionStorage.setItem(TYPE_KEY, String(typeCount() + 1)); } catch { /* ignore */ } };
+const MicIcon = ({ size = 16 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5" /></svg>;
+
+function LongAnswer({ label, value, set, onDone }: { label: string; value: string; set: (v: string) => void; onDone?: () => void }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
+  const [speaking, setSpeaking] = useState(false);
   const [micError, setMicError] = useState('');
   const rec = useRef<Recognition | null>(null);
   const base = useRef(value);
+  const before = useRef(value); // the text before this recording, for cancel
+  const after = useRef<'keep' | 'next' | 'cancel'>('keep');
   const latest = useRef(value); latest.current = value;
+  const quiet = useRef(0);
   const supported = !!SpeechAPI();
-  useEffect(() => () => rec.current?.stop(), []);
-  const toggle = () => {
-    if (listening) { rec.current?.stop(); return; }
-    const API = SpeechAPI(); if (!API) return;
+  const [typing, setTyping] = useState(() => !supported || typeCount() >= 2);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => () => { after.current = 'keep'; rec.current?.stop(); }, []);
+  useEffect(() => { const el = box.current; if (el) el.scrollTop = el.scrollHeight; }, [value, interim]);
+  const start = () => {
+    const API = SpeechAPI(); if (!API) { setTyping(true); return; }
     const r = new API(); rec.current = r;
     r.lang = navigator.language || 'en-US'; r.continuous = true; r.interimResults = true;
-    base.current = latest.current;
+    base.current = latest.current; before.current = latest.current; after.current = 'keep';
     r.onresult = e => {
       let finalText = '', live = '';
       for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) finalText += t; else live += t; }
       if (finalText) { const joined = `${base.current}${base.current && !/\s$/.test(base.current) ? ' ' : ''}${finalText.trim()}`; base.current = joined; set(joined); }
-      setInterim(live);
+      setInterim(live); setSpeaking(true); window.clearTimeout(quiet.current); quiet.current = window.setTimeout(() => setSpeaking(false), 700);
     };
-    r.onerror = e => setMicError(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Microphone access was blocked. You can still type.' : e.error === 'no-speech' ? '' : 'Dictation stopped. Tap the mic to keep going.');
-    r.onend = () => { setListening(false); setInterim(''); };
+    r.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setMicError('Microphone access is off, so you can type instead.'); setTyping(true); }
+      else if (e.error !== 'no-speech' && e.error !== 'aborted') setMicError('That stopped early. Tap the mic to keep going.');
+    };
+    r.onend = () => {
+      setListening(false); setInterim(''); setSpeaking(false);
+      if (after.current === 'cancel') set(before.current);
+      if (after.current === 'next') window.setTimeout(() => onDone?.(), 0);
+      after.current = 'keep';
+    };
     setMicError(''); setListening(true);
     try { r.start(); } catch { setListening(false); }
   };
-  return <div className="rs-long">
-    <textarea className="rs-input" rows={5} autoFocus={!supported} value={value + (interim ? `${value && !/\s$/.test(value) ? ' ' : ''}${interim}` : '')} onChange={e => { if (!listening) set(e.target.value); }} readOnly={listening} placeholder={supported ? 'Type, or tap the mic and talk' : 'Type your answer'} aria-label={label} />
-    {supported && <div className="rs-dictate">
-      <button type="button" className={`rs-mic ${listening ? 'is-on' : ''}`} onClick={toggle} aria-pressed={listening}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5" /></svg>
-        {listening ? 'Listening… tap to stop' : 'Tap to talk'}
-      </button>
-      <span>{micError || (listening ? 'Say as much as you like, like a voice memo. You can edit after.' : 'Talking is often easier than typing.')}</span>
-    </div>}
+  const stop = (then: 'keep' | 'next' | 'cancel') => { after.current = then; rec.current?.stop(); };
+  const shownFinal = value, shownLive = interim;
+  if (typing) return <div className="rs-long">
+    <textarea className="rs-input" rows={5} autoFocus value={value} onChange={e => set(e.target.value)} placeholder="The more detail, the better" aria-label={label} />
+    {micError && <p className="rs-hint">{micError}</p>}
+    {supported && !micError && <button type="button" className="rs-switch" onClick={() => { setTyping(false); start(); }}><MicIcon size={14} /> Talk instead</button>}
+  </div>;
+  const has = (value + interim).trim().length > 0;
+  if (listening) return <div className="rs-voice is-live">
+    <div className="rs-transcript" ref={box} aria-live="polite">{shownFinal || shownLive ? <>{shownFinal}{shownLive && <span className="rs-live">{shownFinal && !/\s$/.test(shownFinal) ? ' ' : ''}{shownLive}</span>}</> : <span className="rs-live">Listening…</span>}</div>
+    <div className="rs-voicebar">
+      <button type="button" className="rs-vb-btn" onClick={() => stop('cancel')} aria-label="Cancel this recording"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+      <Wave active={listening} speaking={speaking} />
+      <button type="button" className="rs-vb-btn" onClick={() => stop('keep')} aria-label="Pause"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg></button>
+      <button type="button" className="rs-vb-btn is-done" onClick={() => stop(onDone ? 'next' : 'keep')} aria-label="Done"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></button>
+    </div>
+  </div>;
+  return <div className="rs-voice">
+    {has ? <>
+      <textarea className="rs-input" rows={5} value={value} onChange={e => set(e.target.value)} aria-label={label} />
+      <div className="rs-voice-row"><button type="button" className="rs-mic" onClick={start}><MicIcon size={14} /> Keep talking</button><span>You can fix any words above.</span></div>
+    </> : <>
+      <button type="button" className="rs-mic-big" onClick={start} aria-label="Tap to talk"><MicIcon size={34} /></button>
+      <p className="rs-voice-label">Tap to talk</p>
+      <p className="rs-voice-sub">Like leaving a voice memo. 20–30 seconds is perfect.</p>
+      <button type="button" className="rs-switch" onClick={() => { bumpType(); setTyping(true); }}>Type instead</button>
+    </>}
+    {micError && <p className="rs-error" role="alert">{micError}</p>}
   </div>;
 }
 
