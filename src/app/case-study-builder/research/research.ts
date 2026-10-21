@@ -206,12 +206,13 @@ export const bucketCount = (responses: Array<{ answers: Record<string, unknown> 
 
 /* Love letter + breakup letter (a Smart Design method): short letters get emotional, honest answers that direct questions miss.
    The breakup letter shows what to fix; the love letter shows what to keep or copy. */
-export const LETTER_INTRO = { prompt: 'Quick change of pace: two short letters', hint: 'Imagine the way you plan meals and buy groceries is a person you’ve been in a relationship with.\n\nFirst, you’ll break up with it: tell it what’s not working. Then you’ll write a love note to something food-related you’d never give up.\n\nBe honest, be a little dramatic, and keep it short. A few sentences is plenty, and saying it out loud is easiest.\n\nFor example: “Dear alarm clock, we’ve had a good run, but you go off at the worst times and never let me finish a dream. It’s over.”' };
-export function letterQuestions(subject = 'the way you plan meals and shop for food right now'): Question[] {
+export const LETTER_INTRO = { prompt: 'Quick change of pace: two short letters', hint: 'Think about all the food things you’ve tried: apps, grocery stores, diets, meal plans, habits. Some didn’t work out. Some you’d never give up.\n\nFirst, you’ll write a breakup letter to one that let you down. Then a love note to one you can’t live without.\n\nBe honest, be a little dramatic, and keep it short. A few sentences is plenty, and saying it out loud is easiest.\n\nFor example: “Dear alarm clock, we’ve had a good run, but you go off at the worst times and never let me finish a dream. It’s over.”' };
+/** The letters work best addressed to one concrete thing people can picture (an app, a store, a habit), not an abstract process. */
+export function letterQuestions(): Question[] {
   return [
     { id: qid(), type: 'note', preset: 'letter', prompt: LETTER_INTRO.prompt, hint: LETTER_INTRO.hint },
-    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: `Break up with ${subject}. What would you tell it?`, hint: 'Start with “Dear …” and tell it why it’s over.', followups: 1, probe: 'Pick the most specific frustration in their letter and ask about the last time it happened.' },
-    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Now write a love note to a food store, app, recipe source or habit you’d never give up. What would you tell it?', hint: 'Start with “Dear …” and tell it what it does for you.', followups: 1, probe: 'Ask what it does for them that nothing else does, or the last time it saved the day.' },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Pick one food app, store, diet or habit that let you down, and write it a breakup letter.', hint: 'Like a tracking app you quit, a store you stopped going to, or a meal plan that never stuck. Start with “Dear …”, say what it is, and tell it why it’s over.', followups: 1, probe: 'Ask about the moment they knew it was over: what happened that last time. If it is an app or store, ask what they switched to (if anything) and why.' },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Now pick one food app, store, recipe source or habit you’d never give up, and write it a love note.', hint: 'Start with “Dear …”, say what it is, and tell it what it does for you.', followups: 1, probe: 'Ask what it does for them that nothing else does, or the last time it saved the day.' },
   ];
 }
 
