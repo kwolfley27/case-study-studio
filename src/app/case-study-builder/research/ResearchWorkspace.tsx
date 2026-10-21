@@ -100,7 +100,8 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           </span>
         </div>
         <textarea className="rw-prompt" rows={2} value={q.prompt} readOnly={q.preset?.startsWith('sus-')} onChange={e => setQ(i, { prompt: e.target.value })} aria-label={`Question ${i + 1}`} />
-        {!q.preset?.startsWith('sus-') && <input className="rw-input rw-hint-input" value={q.hint ?? ''} placeholder={splitPrompt({ prompt: q.prompt }).sub ? 'Helper text: the part in brackets above already shows small and gray' : 'Helper text (optional): shows smaller and lighter, e.g. “For example, …”'} aria-label={`Question ${i + 1} helper text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
+        {q.type === 'note' && <textarea className="rw-input rw-note-body" value={q.hint ?? ''} placeholder="What people should know before the next questions. Leave a blank line between paragraphs. A paragraph starting with “For example” is shown as an example." aria-label={`Screen ${i + 1} text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
+        {q.type !== 'note' && !q.preset?.startsWith('sus-') && <input className="rw-input rw-hint-input" value={q.hint ?? ''} placeholder={splitPrompt({ prompt: q.prompt }).sub ? 'Helper text: the part in brackets above already shows small and gray' : 'Helper text (optional): shows smaller and lighter, e.g. “For example, …”'} aria-label={`Question ${i + 1} helper text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
         {(() => { const lints = lintQuestion(q); return lints.length > 0 && <div className="rw-lints">{lints.map((l, k) => <p key={k} className={`rw-lint ${l.level === 'tip' ? 'is-tip' : ''}`}><b>{l.level === 'warn' ? 'Check' : 'Tip'}</b>{l.text}</p>)}</div>; })()}
         {hasOptions(q) && <div className="rw-opts">
           {(q.options ?? []).map((o, k) => <div key={k} className="rw-opt">{q.optionImages ? <OptionImage study={study} src={q.optionImages[k]} label={o} onChange={src => { const imgs = [...(q.optionImages ?? [])]; imgs[k] = src; setQ(i, { optionImages: imgs }); }} /> : q.type === 'rank' ? <span className="rw-rank-num">{k + 1}</span> : <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />}<input value={o} aria-label={`Option ${k + 1}`} onChange={e => setQ(i, { options: q.options!.map((x, n) => n === k ? e.target.value : x) })} /><button type="button" aria-label={`Remove option ${k + 1}`} onClick={() => setQ(i, { options: q.options!.filter((_, n) => n !== k), optionImages: q.optionImages?.filter((_, n) => n !== k) })}><X size={12} /></button></div>)}
@@ -135,7 +136,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           {!!q.followups && <small className="rw-note">After they answer, AI asks about what they actually said, one question at a time. It stops early when there’s nothing worth asking.</small>}
         </div>}
         <ShowIfEditor qs={qs} i={i} setQ={setQ} />
-        <div className="rw-row">{q.type !== 'schedule' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
+        <div className="rw-row">{q.type !== 'schedule' && q.type !== 'note' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
           {(q.type === 'single' || q.type === 'multi') && !q.preset?.startsWith('sus-') && <label className="rw-req" title="Each answer becomes a group (bucket) you can filter and compare in Results"><input type="checkbox" checked={!!q.group} onChange={e => setQ(i, { group: e.target.checked || undefined })} /> Use answers as groups</label>}</div>
       </div>)}
       <div className="rw-addbar">
@@ -404,7 +405,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
       </div>
       <Synthesis study={s} responses={responses} onAddSections={onAddSections} filterNote={Object.values(picks).join(' + ')} />
       <FollowUps study={s} responses={responses} />
-      {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact' && r.q.preset !== 'name').map(r => <div key={r.q.id} className="rw-res">
+      {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact' && r.kind !== 'note' && r.q.preset !== 'name').map(r => <div key={r.q.id} className="rw-res">
         <h4>{r.q.prompt}<small>{r.answered} answered</small></h4>
         {r.kind === 'choice' && <div className="rw-bars">{r.options.map(o => { const pct = r.answered ? Math.round(o.count / r.answered * 100) : 0; return <div key={o.label}><span>{o.label}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}{r.q.type === 'multi' && <small>Choose-all question: percentages add up to more than 100%.</small>}</div>}
         {r.kind === 'scale' && <div className="rw-bars">{r.dist.map((c, k) => { const pct = r.answered ? Math.round(c / r.answered * 100) : 0; return <div key={k}><span>{(r.q.min ?? 1) + k}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}<small>Average {r.mean.toFixed(1)} of {r.q.max ?? 5}</small></div>}

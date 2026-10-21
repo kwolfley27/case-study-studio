@@ -460,7 +460,7 @@ async function askWithTool(anthropicKey: string, system: string, tool: any, cont
 
 /* ---------- Survey design ---------- */
 async function designSurvey(anthropicKey: string, goal: string, title: string, current: Array<{ n: number; type: string; prompt: string; options?: string[] }>) {
-  const types = ['single', 'multi', 'rank', 'scale', 'nps', 'text', 'long', 'photo', 'contact', 'schedule'];
+  const types = ['single', 'multi', 'rank', 'scale', 'nps', 'text', 'long', 'photo', 'note', 'contact', 'schedule'];
   const tool = {
     name: 'propose_survey',
     description: 'Propose survey questions for the researcher to approve one by one.',
@@ -477,7 +477,7 @@ async function designSurvey(anthropicKey: string, goal: string, title: string, c
             properties: {
               ref: { type: 'string', description: 'A short id for this proposal, like "p1".' },
               replaces: { type: 'integer', description: 'If this rewrites an existing question, its number (n). Omit for a new question.' },
-              type: { type: 'string', enum: types, description: 'single = one choice, multi = checkboxes, rank = put options in order (best first), photo = upload a screenshot/photo ("show me"), scale = 1–5 rating, nps = 0–10, text = short answer, long = paragraph (participants can dictate by voice), contact = name/email/phone, schedule = booking link step.' },
+              type: { type: 'string', enum: types, description: 'single = one choice, multi = checkboxes, rank = put options in order (best first), photo = upload a screenshot/photo ("show me"), note = an intro screen with no answer (prompt = heading, hint = body text) to set up unusual questions, scale = 1–5 rating, nps = 0–10, text = short answer, long = paragraph (participants can dictate by voice), contact = name/email/phone, schedule = booking link step.' },
               prompt: { type: 'string', description: 'The question itself, without examples.' },
               hint: { type: 'string', description: 'Optional helper line shown smaller under the question, e.g. "For example, chopping vegetables or cooking rice ahead."' },
               options: { type: 'array', items: { type: 'string' }, description: 'For single/multi/rank only.' },

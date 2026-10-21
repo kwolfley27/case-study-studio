@@ -31,13 +31,13 @@ const MAX_BODY = 400_000;
 
 type ContactKey = 'name' | 'email' | 'phone';
 type FieldMode = 'off' | 'optional' | 'required';
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean };
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean };
 const FOLLOWUP_TYPES = new Set(['long', 'text', 'single', 'multi', 'rank']);
 const PHOTO_TYPES: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'image/gif': 'gif' };
 const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
 const color = (v: unknown) => /^#[0-9a-f]{6}$/i.test(String(v ?? '')) ? String(v) : undefined;
 type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
-const QUESTION_TYPES = new Set(['single', 'multi', 'scale', 'nps', 'text', 'long', 'contact', 'schedule', 'photo', 'rank']);
+const QUESTION_TYPES = new Set(['single', 'multi', 'scale', 'nps', 'text', 'long', 'contact', 'schedule', 'photo', 'rank', 'note']);
 const CONTACT_KEYS: ContactKey[] = ['name', 'email', 'phone'];
 const BOOKING_STATES = new Set(['Booked a time', 'Opened the booking link']);
 const fieldMode = (q: Question, k: ContactKey): FieldMode => { const v = q.contact?.[k] ?? (k === 'phone' ? 'off' : 'required'); return v === 'off' || v === 'optional' || v === 'required' ? v : 'off'; };
@@ -127,6 +127,7 @@ Deno.serve(async (request) => {
       const answers = (body.answers && typeof body.answers === 'object') ? body.answers as Record<string, unknown> : {};
       const clean: Record<string, Answer> = {};
       for (const q of study.questions) {
+        if (q.type === 'note') continue; // intro screens have no answer
         if (!isShown(q, clean)) continue; // skipped by "Show only if"
         const v = answers[q.id];
         if (q.type === 'contact') {
@@ -341,6 +342,7 @@ async function ensureDatabase(study: Study): Promise<string> {
   } else study.questions.forEach((q, i) => {
     // Contact info gets real Name / Email / Phone columns instead of one text column.
     if (q.type === 'contact') { if (fieldMode(q, 'name') !== 'off') properties.Name = { rich_text: {} }; if (fieldMode(q, 'email') !== 'off') properties.Email = { email: {} }; if (fieldMode(q, 'phone') !== 'off') properties.Phone = { phone_number: {} }; return; }
+    if (q.type === 'note') return;
     properties[propName(q, i)] = propSchema(q);
   });
   if (study.kind !== 'usability' && study.questions.some(q => (q.type === 'single' || q.type === 'multi') && q.options?.some(o => /^other\b/i.test(o.trim())))) properties['Other (typed)'] = { rich_text: {} };

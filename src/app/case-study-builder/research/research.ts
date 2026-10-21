@@ -3,7 +3,7 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 /* Your own research tool: studies, questions, scoring and the server calls. */
 
-export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank';
+export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note';
 export type ContactKey = 'name' | 'email' | 'phone';
 export type FieldMode = 'off' | 'optional' | 'required';
 /** Show a question only when an earlier choice question was answered with one of these options. */
@@ -94,7 +94,7 @@ export function estimateMinutes(qs: Question[], followupBudget = DEFAULT_FOLLOWU
   // Questions that branch off the same answer are alternatives: count the branch group once (its longest question).
   const branches = new Map<string, number>();
   for (const q of qs) {
-    let m = q.type === 'long' ? 1.5 : q.type === 'text' ? 0.4 : q.type === 'photo' ? 0.8 : q.type === 'rank' ? 0.4 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : 0.2;
+    let m = q.type === 'long' ? 1.5 : q.type === 'text' ? 0.4 : q.type === 'photo' ? 0.8 : q.type === 'rank' ? 0.4 : q.type === 'note' ? 0.2 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : 0.2;
     if (!q.required && (q.type === 'long' || q.type === 'photo')) m *= 0.5;
     if (q.followups) fuSlots += Math.min(3, q.followups);
     if (q.showIf?.questionId) { const k = q.showIf.questionId; branches.set(k, Math.max(branches.get(k) ?? 0, m)); continue; }
@@ -116,6 +116,7 @@ export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['contact', 'Contact info', 'Name, email, phone'],
   ['schedule', 'Book a time', 'Calendly or other booking link'],
   ['photo', 'Show me (photo)', 'Upload a screenshot or photo'],
+  ['note', 'Intro screen', 'A screen with no answer, to set up what comes next'],
 ];
 
 export const CONTACT_FIELDS: Array<[ContactKey, string]> = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
@@ -157,8 +158,8 @@ export const BOOKED = 'Booked a time', OPENED = 'Opened the booking link';
 
 const qid = () => crypto.randomUUID().slice(0, 8);
 export const newQuestion = (type: QuestionType): Question => ({
-  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo',
-  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.' }[type],
+  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo' && type !== 'note',
+  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.', note: 'A quick change of pace' }[type],
   ...(type === 'contact' ? { contact: { ...DEFAULT_CONTACT } } : {}),
   ...(type === 'schedule' ? { url: '' } : {}),
   ...(type === 'single' || type === 'multi' || type === 'rank' ? { options: ['Option one', 'Option two', 'Option three'] } : {}),
@@ -205,10 +206,12 @@ export const bucketCount = (responses: Array<{ answers: Record<string, unknown> 
 
 /* Love letter + breakup letter (a Smart Design method): short letters get emotional, honest answers that direct questions miss.
    The breakup letter shows what to fix; the love letter shows what to keep or copy. */
+export const LETTER_INTRO = { prompt: 'Quick change of pace: two short letters', hint: 'Imagine the way you plan meals and buy groceries is a person you’ve been in a relationship with.\n\nFirst, you’ll break up with it: tell it what’s not working. Then you’ll write a love note to something food-related you’d never give up.\n\nBe honest, be a little dramatic, and keep it short. A few sentences is plenty, and saying it out loud is easiest.\n\nFor example: “Dear alarm clock, we’ve had a good run, but you go off at the worst times and never let me finish a dream. It’s over.”' };
 export function letterQuestions(subject = 'the way you plan meals and shop for food right now'): Question[] {
   return [
-    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: `Write a short breakup letter to ${subject}.`, hint: 'Start with “Dear …” and tell it why it’s over. Two or three sentences is plenty, and saying it out loud works great.', followups: 1, probe: 'Pick the most specific frustration in their letter and ask about the last time it happened.' },
-    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Now write a short love letter to something food-related you genuinely love: a store, an app, a recipe source, a habit.', hint: 'Start with “Dear …” and tell it what it does for you.', followups: 1, probe: 'Ask what it does for them that nothing else does, or the last time it saved the day.' },
+    { id: qid(), type: 'note', preset: 'letter', prompt: LETTER_INTRO.prompt, hint: LETTER_INTRO.hint },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: `Break up with ${subject}. What would you tell it?`, hint: 'Start with “Dear …” and tell it why it’s over.', followups: 1, probe: 'Pick the most specific frustration in their letter and ask about the last time it happened.' },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Now write a love note to a food store, app, recipe source or habit you’d never give up. What would you tell it?', hint: 'Start with “Dear …” and tell it what it does for you.', followups: 1, probe: 'Ask what it does for them that nothing else does, or the last time it saved the day.' },
   ];
 }
 
@@ -233,6 +236,7 @@ export type QuestionResult =
   | { q: Question; kind: 'contact'; answered: number }
   | { q: Question; kind: 'schedule'; answered: number; booked: number }
   | { q: Question; kind: 'photo'; answered: number }
+  | { q: Question; kind: 'note'; answered: number }
   | { q: Question; kind: 'rank'; answered: number; items: Array<{ label: string; avg: number; firsts: number }> };
 
 export function aggregate(study: Study, responses: Response[]): QuestionResult[] {
@@ -254,6 +258,7 @@ export function aggregate(study: Study, responses: Response[]): QuestionResult[]
       return { q, kind: 'nps', answered: vals.length, score: Math.round(((p - d) / t) * 100), promoters: p, passives: pa, detractors: d };
     }
     if (q.type === 'contact') return { q, kind: 'contact', answered: vals.length };
+    if (q.type === 'note') return { q, kind: 'note', answered: 0 };
     if (q.type === 'photo') return { q, kind: 'photo', answered: vals.length };
     if (q.type === 'rank') {
       const items = (q.options ?? []).map(label => { const pos = vals.map(v => (v as string[]).indexOf(label)).filter(i => i >= 0); return { label, avg: pos.length ? pos.reduce((a, b) => a + b + 1, 0) / pos.length : 0, firsts: pos.filter(i => i === 0).length }; });
