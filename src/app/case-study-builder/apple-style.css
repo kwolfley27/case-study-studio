@@ -3632,3 +3632,36 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-race-expand:hover{background:color-mix(in srgb,var(--t-ink,#1c1917) 7%,transparent);color:var(--t-ink,#1c1917)}
 .csb-race-expand.has-notes{background:color-mix(in srgb,var(--t-ink,#1c1917) 7%,transparent);color:var(--t-ink,#1c1917)}
 .csb-race-expand b{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ── Reading scale + left reading edge (matches the original Figma portfolio) ──
+   Last word on size and alignment for everything after the hero, in the Studio
+   preview and on published pages. Older layers above (portfolio scale, the
+   editorial theme, the centered "alignment pass") made titles ~40px, centered
+   them, and put ~150px of air around every section. Here: 22–28px titles,
+   16px body, ~40px between sections, and one left edge so the page reads in an
+   F-pattern. The hero/cover stays centered. */
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-coverHero){padding-block:clamp(28px,3.6cqw,44px)!important}
+.csb-canvas .csb-doc-main .csb-story-section.csb-variant-dark,.csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted{padding-block:clamp(32px,4.4cqw,52px)!important}
+.csb-canvas .csb-doc-main .csb-section-intro{margin:0 0 clamp(16px,2.2cqw,24px)!important;max-width:720px;text-align:left!important}
+.csb-canvas .csb-doc-main .csb-section-intro>div{align-items:flex-start!important}
+.csb-canvas .csb-doc-main .csb-section-intro :is(h2,.csb-section-body,.csb-eyebrow){margin-left:0!important;text-align:left!important}
+.csb-canvas .csb-doc-main .csb-eyebrow{font-size:12px!important;font-weight:600!important;letter-spacing:.12em!important;text-transform:uppercase;margin-bottom:8px!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-details) h2{font-size:clamp(22px,2.6cqw,28px)!important;line-height:1.25!important;letter-spacing:-.015em!important;font-weight:var(--brand-weight,600)!important;max-width:680px;margin-bottom:10px!important;text-wrap:balance}
+.csb-canvas .csb-doc-main .csb-section-body{font-size:16px!important;line-height:1.7!important;max-width:680px}
+.csb-canvas .csb-doc-main .csb-editorial-statement{margin-inline:0!important;text-align:left!important;max-width:680px}
+.csb-canvas .csb-doc-main .csb-editorial-statement:not(.is-reading) p{font-size:clamp(20px,2.2cqw,24px)!important;line-height:1.4!important}
+.csb-canvas .csb-doc-main .csb-editorial-statement.is-reading p{font-size:16px!important;line-height:1.75!important}
+.csb-canvas .csb-doc-main .csb-findings p{font-size:16px;line-height:1.7}
+.csb-canvas .csb-doc-main .csb-findings h3{font-size:clamp(17px,1.8cqw,19px)}
+.csb-canvas .csb-doc-main .csb-findings li{padding-block:clamp(16px,2.2cqw,22px)}
+.csb-canvas .csb-doc-main .csb-quote-grid>.csb-quote{text-align:left!important}
+.csb-canvas .csb-doc-main .csb-quote-grid>.csb-quote .csb-quote-attribution{justify-content:flex-start!important}
+.csb-canvas .csb-doc-main .csb-apple-issue-legend{justify-content:flex-start}
+.csb-canvas .csb-doc-main .csb-gallery-adjustable{justify-content:flex-start}
+/* images: big enough to read, never taller than about half a screen */
+.csb-canvas .csb-doc-main :is(.csb-full-media-figure,.csb-gallery-image) img{max-height:min(62vh,640px)}
+/* hero: a bit smaller, still centered */
+.csb-canvas .csb-doc-main :is(.csb-hero h1,.csb-cover-title h1){font-size:clamp(32px,4.4cqw,46px)!important}
+.csb-canvas .csb-doc-main .csb-cover-summary{font-size:clamp(16px,1.6cqw,19px)}
+.csb-canvas .csb-doc-main .csb-gallery-adjustable.is-hug:not(.is-phones) .csb-gallery-image.has-image>:is(img,video){width:auto;max-width:100%;max-height:min(70vh,680px);margin-inline:auto}
+.csb-canvas .csb-doc-main .csb-gallery-caption{text-align:left}
