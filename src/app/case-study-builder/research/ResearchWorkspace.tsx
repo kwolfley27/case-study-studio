@@ -454,7 +454,8 @@ function FollowUps({ study, responses }: { study: Study; responses: Response[] }
 }
 
 /* ---------- Find themes with AI: synthesis the way a researcher would do it ---------- */
-type Synth = { summary: string; themes: Array<{ title: string; detail: string; count: number; segments?: string; quotes: Array<{ text: string; participant: string }> }>; forces?: Partial<Record<'push' | 'pull' | 'anxiety' | 'habit', Array<{ point: string; count: number; quote?: string }>>>; surprises?: string[]; lowEffort?: Array<{ participant: string; reason: string }>; nextQuestions?: string[]; note?: string };
+type Pain = { pain: string; people: number; frequency: number; intensity: number; spending: number; score: number; cost?: string; quote?: string; participant?: string };
+type Synth = { summary: string; themes: Array<{ title: string; detail: string; count: number; segments?: string; quotes: Array<{ text: string; participant: string }> }>; forces?: Partial<Record<'push' | 'pull' | 'anxiety' | 'habit', Array<{ point: string; count: number; quote?: string }>>>; surprises?: string[]; pains?: Pain[]; lowEffort?: Array<{ participant: string; reason: string }>; nextQuestions?: string[]; note?: string };
 const FORCE_LABEL = { push: ['Push', 'What’s wrong with how things are now'], pull: ['Pull', 'What they hope a change gets them'], anxiety: ['Anxiety', 'What worries them about changing'], habit: ['Habit', 'What keeps them doing it the old way'] } as const;
 function Synthesis({ study, responses, onAddSections, filterNote }: { study: Study; responses: Response[]; onAddSections: (s: CaseStudySection[], note: string) => void; filterNote?: string }) {
   const key = `csb-synth-${study.id}${filterNote ? `-${filterNote}` : ''}`;
@@ -476,19 +477,25 @@ function Synthesis({ study, responses, onAddSections, filterNote }: { study: Stu
     finally { setBusy(false); }
   };
   const addThemes = () => { if (!synth) return; const sec = { ...createSection('findings'), title: 'What kept coming up', eyebrow: 'Discover', items: synth.themes.slice(0, 6).map(t => ({ title: t.title, detail: `${t.detail}${t.count ? ` (${t.count} of ${responses.length} people)` : ''}` })) }; onAddSections([sec], `Added ${Math.min(6, synth.themes.length)} themes from “${study.title}”.`); };
+  const addPains = () => { if (!synth?.pains?.length) return; const sec = { ...createSection('findings'), title: 'The pains worth solving', eyebrow: 'Discover', items: synth.pains.slice(0, 5).map(p => ({ title: `${p.pain} (${p.score.toFixed(1)}/10)`, detail: `How often ${p.frequency}/10 · how much it hurts ${p.intensity}/10 · already paying to fix ${p.spending}/10. ${p.people} of ${responses.length} people.${p.cost ? ` Cost: ${p.cost}.` : ''}` })) }; onAddSections([sec], `Added the top ${Math.min(5, synth.pains.length)} pains.`); };
   const addQuotes = () => { if (!synth) return; const qs = synth.themes.flatMap(t => t.quotes.slice(0, 1)).slice(0, 6); const sec = { ...createSection('quotes'), title: 'In their words', eyebrow: 'Discover', items: qs.map(q => ({ title: q.participant, detail: q.text })) }; onAddSections([sec], `Added ${qs.length} quotes.`); };
   return <div className="rw-synth">
     <h4><Sparkles size={14} /> Themes {synth ? <small className="rw-note">from {responses.length} responses{filterNote ? ` · ${filterNote}` : ''}</small> : filterNote ? <small className="rw-note">for {filterNote}</small> : ''}</h4>
-    {!synth && <p>Reads every answer and follow-up, groups what people did and said into themes with counts, maps the four forces behind changing a habit, and flags low-effort responses.</p>}
+    {!synth && <p>Reads every answer and follow-up, groups what people did and said into themes with counts, scores each pain (how often, how much it hurts, already paying to fix), maps the four forces behind changing a habit, and flags low-effort responses.</p>}
     <div className="rw-row"><button type="button" className={synth ? 'csb-quiet-button' : 'csb-primary-button'} disabled={busy} onClick={() => void run()}>{busy ? 'Reading every answer…' : synth ? 'Run again' : 'Find themes with AI'}</button>
-      {synth && <><button type="button" className="csb-quiet-button" onClick={addThemes}>Add themes to case study</button><button type="button" className="csb-quiet-button" onClick={addQuotes}>Add quotes</button></>}</div>
+      {synth && <><button type="button" className="csb-quiet-button" onClick={addThemes}>Add themes to case study</button><button type="button" className="csb-quiet-button" onClick={addQuotes}>Add quotes</button>{!!synth.pains?.length && <button type="button" className="csb-quiet-button" onClick={addPains}>Add pain scores</button>}</>}</div>
     {error && <p className="csb-field-note is-error" role="alert">{error}</p>}
     {synth && <>
       {synth.note && <small className="rw-note is-warn">{synth.note}</small>}
       <p>{synth.summary}</p>
-      <h5>Themes</h5>
+      {synth.themes.length > 0 && <h5>Themes</h5>}
       {synth.themes.map((t, k) => <div key={k} className="rw-theme"><strong>{t.title}</strong><span className="rw-count">{t.count} of {responses.length} people{t.segments ? ` · ${t.segments}` : ''}</span><p>{t.detail}</p>{t.quotes.slice(0, 2).map((q, j) => <blockquote key={j}>“{q.text}” <em>— {q.participant}</em></blockquote>)}</div>)}
       {synth.forces && Object.values(synth.forces).some(f => f?.length) && <><h5>What drives change (four forces)</h5><div className="rw-forces">{(Object.keys(FORCE_LABEL) as Array<keyof typeof FORCE_LABEL>).map(f => <div key={f} className="rw-force"><b>{FORCE_LABEL[f][0]}</b><small>{FORCE_LABEL[f][1]}</small><ul>{(synth.forces?.[f] ?? []).map((x, j) => <li key={j}>{x.point}{x.count ? ` (${x.count})` : ''}</li>)}</ul></div>)}</div></>}
+      {!!synth.pains?.length && <><h5>Pain scores</h5><p className="rw-note" style={{ margin: 0 }}>Each pain scored 1–10 from what people said and did: how often it happens, how much it hurts, and whether they already spend money or effort to fix it. The best pains to build for score high on all three.</p>
+        <div className="rw-pains">{synth.pains.map((x, k) => <div key={k} className="rw-pain"><div className="rw-pain-head"><strong>{x.pain}</strong><b className={x.score >= 7 ? 'is-hot' : x.score >= 5 ? 'is-warm' : ''}>{x.score.toFixed(1)}</b></div>
+          <div className="rw-pain-bars">{([['How often', x.frequency], ['How much it hurts', x.intensity], ['Already paying to fix', x.spending]] as Array<[string, number]>).map(([l, v]) => <div key={l}><span>{l}</span><i><em style={{ width: `${v * 10}%` }} /></i><small>{v}</small></div>)}</div>
+          <span className="rw-count">{x.people} of {responses.length} people{x.cost ? ` · cost: ${x.cost}` : ''}</span>
+          {x.quote && <blockquote>“{x.quote}”{x.participant ? <em> — {x.participant}</em> : null}</blockquote>}</div>)}</div></>}
       {!!synth.surprises?.length && <><h5>Surprises and contradictions</h5><ul className="rw-flags" style={{ color: 'inherit' }}>{synth.surprises.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
       {!!synth.nextQuestions?.length && <><h5>Worth asking next round</h5><ul className="rw-flags" style={{ color: 'inherit' }}>{synth.nextQuestions.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
       {!!synth.lowEffort?.length && <><h5>Low-effort responses</h5><ul className="rw-flags">{synth.lowEffort.map((x, j) => <li key={j}>{x.participant}: {x.reason}</li>)}</ul></>}
