@@ -5,7 +5,7 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const KEEP = 3;
+const KEEP = 12; // several updates can go out in one afternoon; keep older files around so open pages keep working
 const dir = 'docs/assets';
 const log = path.join(dir, '.builds.json');
 const start = Date.now() - 1000;
