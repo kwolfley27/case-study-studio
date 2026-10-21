@@ -61,7 +61,7 @@ export function Interviews({ section, editorMode = false }: { section: CaseStudy
         <div className="csb-ivc-track" ref={track} tabIndex={0} aria-label="What this interview showed — scroll sideways for more">
           {cards.map((c, k) => { const quote = /quote/i.test(c.label); return <div key={k} className={`csb-ivc-card ${quote ? 'is-quote' : ''}`} style={{ ['--tone' as string]: toneOf(c) }}>
             <span className="csb-ivc-label">{stored ? <EditableText field={field(k, 'label')} value={c.label} /> : c.label}</span>
-            <p className="csb-ivc-text">{quote && '“'}<EditableText field={field(k, 'text')} value={c.text} />{quote && '”'}</p>
+            <p className="csb-ivc-text">{quote && !/^\s*["“”'‘]/.test(c.text) && '“'}<EditableText field={field(k, 'text')} value={c.text} />{quote && !/["“”'’]\s*$/.test(c.text) && '”'}</p>
             {(editorMode || (c.note || '').trim()) && <small className="csb-ivc-note"><EditableText field={field(k, 'note')} value={c.note || ''} /></small>}
           </div>; })}
         </div>

@@ -3792,3 +3792,8 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-psf-hmw{justify-items:start}
 .csb-canvas .csb-doc-main .csb-psf-stick>div[style]{justify-items:start!important}
 .csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-face.is-front{padding:0}
+/* Interview people: no colored stroke; the selected person is the white row with dark text */
+.csb-ivc .csb-interviews-people button,.csb-ivc .csb-interviews-people button.is-active{border:0!important;box-shadow:none}
+.csb-ivc .csb-interviews-people button:focus{outline:none}
+.csb-ivc .csb-interviews-people button:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:-4px;border-radius:10px}
+.csb-ivc .csb-interviews-people button.is-active strong{font-weight:650}
