@@ -53,6 +53,13 @@ Deno.serve(async (request) => {
       if (images.length < 2) return reply({ error: 'Send at least two screenshots.' }, 400);
       return reply(await nameScreens(anthropicKey, images, String(body.context || '').slice(0, 200)));
     }
+    // Design a survey: draft new questions, or suggest rewrites of the current ones, for Katelyn to approve one by one.
+    if (body.task === 'designSurvey') {
+      const goal = String(body.goal || '').slice(0, 3000).trim();
+      const current = (Array.isArray(body.questions) ? body.questions : []).slice(0, 60).map((q: any, i: number) => ({ n: i + 1, type: String(q?.type || ''), prompt: String(q?.prompt || '').slice(0, 400), options: Array.isArray(q?.options) ? q.options.map((o: unknown) => String(o).slice(0, 150)).slice(0, 20) : undefined }));
+      if (!goal && !current.length) return reply({ error: 'Describe what you want to learn and who should take the survey.' }, 400);
+      return reply(await designSurvey(anthropicKey, goal, String(body.title || '').slice(0, 200), current));
+    }
     // Build a section from a picture: lay out the reference with the studio's building blocks.
     if (body.task === 'buildSection') {
       const image = String(body.image || '');
@@ -435,4 +442,61 @@ async function askWithTool(anthropicKey: string, system: string, tool: any, cont
     messages.push({ role: 'assistant', content: data.content?.length ? data.content : [{ type: 'text', text: '(no answer)' }] }, { role: 'user', content: `Now call the ${tool.name} tool.` });
   }
   return null;
+}
+
+/* ---------- Survey design ---------- */
+async function designSurvey(anthropicKey: string, goal: string, title: string, current: Array<{ n: number; type: string; prompt: string; options?: string[] }>) {
+  const types = ['single', 'multi', 'scale', 'nps', 'text', 'long', 'contact', 'schedule'];
+  const tool = {
+    name: 'propose_survey',
+    description: 'Propose survey questions for the researcher to approve one by one.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'A short survey title (only if the survey has none or a better one is clearly needed).' },
+        intro: { type: 'string', description: 'A one or two sentence welcome message with an honest time estimate.' },
+        summary: { type: 'string', description: 'One or two sentences on the overall approach (who it screens in/out and why).' },
+        questions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              ref: { type: 'string', description: 'A short id for this proposal, like "p1".' },
+              replaces: { type: 'integer', description: 'If this rewrites an existing question, its number (n). Omit for a new question.' },
+              type: { type: 'string', enum: types, description: 'single = one choice, multi = checkboxes, scale = 1–5 rating, nps = 0–10, text = short answer, long = paragraph (participants can dictate by voice), contact = name/email/phone, schedule = booking link step.' },
+              prompt: { type: 'string' },
+              options: { type: 'array', items: { type: 'string' }, description: 'For single/multi only.' },
+              minLabel: { type: 'string' }, maxLabel: { type: 'string' },
+              required: { type: 'boolean' },
+              showIf: { type: 'object', description: 'Only show this question when an earlier single/multi question has one of these answers. ref is a proposal ref or "n<number>" for an existing question.', properties: { ref: { type: 'string' }, anyOf: { type: 'array', items: { type: 'string' } } }, required: ['ref', 'anyOf'] },
+              why: { type: 'string', description: 'One short sentence: what this question tells the researcher, or what was wrong with the original.' },
+            },
+            required: ['ref', 'type', 'prompt', 'why'],
+          },
+        },
+      },
+      required: ['questions', 'summary'],
+    },
+  };
+  const system = `You are a senior UX researcher helping a product designer write a survey (often a screener to recruit people for 25–30 minute interviews).
+Write questions that follow research best practice:
+- Ask about past behavior with concrete time frames ("In the past 4 weeks, how often…") rather than hypotheticals or opinions about the future.
+- Never lead: no "Don't you agree…", no question that reveals which answer qualifies someone. Include "None of these" / "Other" where people might not fit.
+- One idea per question. Plain, friendly language a 12-year-old could read. Balanced scales with labeled ends.
+- Keep screeners short (about 6–10 questions, under 3 minutes). Put the most disqualifying questions first.
+- Use showIf to branch: follow-ups only for the people they apply to.
+- For screeners, end with an interest question (Yes / Maybe, if there's a time that works / No thanks), then a contact question and a schedule step both shown only for Yes or Maybe.
+- Prefer one open "long" question about a recent specific experience — participants can answer it by voice.
+If existing questions are given, keep the good ones (do not propose them again), suggest rewrites only where there's a real problem (set replaces), and add what is missing. Always answer by calling the propose_survey tool.`;
+  const content = [{ type: 'text', text: `${goal ? `WHAT I WANT TO LEARN / WHO SHOULD TAKE IT:\n${goal}\n\n` : ''}${title ? `SURVEY TITLE: ${title}\n\n` : ''}${current.length ? `CURRENT QUESTIONS (JSON):\n${JSON.stringify(current)}` : 'There are no questions yet. Draft the full survey.'}` }];
+  const result = await askWithTool(anthropicKey, system, tool, content, 6000, 120000);
+  if (!result || !Array.isArray(result.questions)) throw new Error('The AI did not return any questions. Try again.');
+  const clean = result.questions.slice(0, 30).filter((q: any) => types.includes(q?.type) && q?.prompt).map((q: any, i: number) => ({
+    ref: String(q.ref || `p${i + 1}`).slice(0, 20), replaces: Number.isInteger(q.replaces) && current.some(c => c.n === q.replaces) ? q.replaces : undefined, type: q.type, prompt: String(q.prompt).slice(0, 500),
+    options: (q.type === 'single' || q.type === 'multi') && Array.isArray(q.options) ? q.options.map((o: unknown) => String(o).slice(0, 200)).filter(Boolean).slice(0, 20) : undefined,
+    minLabel: q.type === 'scale' && q.minLabel ? String(q.minLabel).slice(0, 60) : undefined, maxLabel: q.type === 'scale' && q.maxLabel ? String(q.maxLabel).slice(0, 60) : undefined,
+    required: typeof q.required === 'boolean' ? q.required : undefined, why: String(q.why || '').slice(0, 300),
+    showIf: q.showIf?.ref && Array.isArray(q.showIf.anyOf) ? { ref: String(q.showIf.ref).slice(0, 20), anyOf: q.showIf.anyOf.map((o: unknown) => String(o).slice(0, 200)).slice(0, 20) } : undefined,
+  }));
+  return { title: result.title ? String(result.title).slice(0, 200) : undefined, intro: result.intro ? String(result.intro).slice(0, 600) : undefined, summary: String(result.summary || '').slice(0, 600), questions: clean };
 }

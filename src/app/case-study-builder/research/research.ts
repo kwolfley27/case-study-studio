@@ -3,16 +3,33 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 /* Your own research tool: studies, questions, scoring and the server calls. */
 
-export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long';
-export type Question = { id: string; type: QuestionType; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string };
+export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule';
+export type ContactKey = 'name' | 'email' | 'phone';
+export type FieldMode = 'off' | 'optional' | 'required';
+/** Show a question only when an earlier choice question was answered with one of these options. */
+export type ShowIf = { questionId: string; anyOf: string[] };
+export type Question = { id: string; type: QuestionType; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string;
+  /** Contact info: which fields to ask for. */ contact?: Partial<Record<ContactKey, FieldMode>>;
+  /** Book a time: a Calendly (or other scheduling) link. */ url?: string;
+  showIf?: ShowIf;
+  /** A picture shown above the question. */ image?: string;
+  /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
+/** How the participant pages look. */
+export type Theme = { accent?: string; background?: string; cover?: string };
+export const ACCENTS = ['#000000', '#2f5b45', '#1f4ea3', '#6b3fa0', '#c2410c', '#be185d', '#0f766e'];
+export const BACKGROUNDS = ['#fdfcfc', '#f6f1e9', '#eef3ef', '#eef2f8', '#f6eef4'];
+/** A readable text colour on top of the accent. */
+export const onColor = (hex: string) => { const m = /^#?([0-9a-f]{6})$/i.exec(hex); if (!m) return '#fff'; const n = parseInt(m[1], 16); const l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#000' : '#fff'; };
+export const duplicateQuestion = (q: Question): Question => ({ ...structuredClone(q), id: qid(), preset: q.preset?.startsWith('sus-') || q.preset === 'nps' ? undefined : q.preset === 'recruit' ? undefined : q.preset });
+export type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
 export type Task = { id: string; title: string; scenario?: string; success?: string };
 export type Outcome = 'success' | 'help' | 'fail' | 'skipped';
 export type TaskRecord = { taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] };
 export type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; audioUrl?: string; notes?: string; tasks: TaskRecord[]; transcript?: Transcript; notionPageId?: string };
 export type TranscriptLine = { s: number; e: number; spk: number; text: string };
 export type Transcript = { at: string; speakers: string[]; segments: TranscriptLine[] };
-export type Study = { id: string; kind: 'survey' | 'usability'; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
-export type Response = { id: string; at: string; ms: number; answers: Record<string, string | number | string[]> };
+export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer> };
 
 export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['single', 'One choice', 'Pick one option'],
@@ -21,12 +38,53 @@ export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['nps', 'NPS 0–10', 'How likely to recommend'],
   ['text', 'Short answer', 'A few words'],
   ['long', 'Long answer', 'A paragraph'],
+  ['contact', 'Contact info', 'Name, email, phone'],
+  ['schedule', 'Book a time', 'Calendly or other booking link'],
 ];
+
+export const CONTACT_FIELDS: Array<[ContactKey, string]> = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
+export const DEFAULT_CONTACT: Record<ContactKey, FieldMode> = { name: 'required', email: 'required', phone: 'off' };
+export const contactModes = (q: Question): Record<ContactKey, FieldMode> => ({ ...DEFAULT_CONTACT, ...(q.contact ?? {}) });
+export const validEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+export const validPhone = (v: string) => v.replace(/\D/g, '').length >= 7;
+/** Problems with a contact answer, by field. Empty when it's fine to continue. */
+export function contactErrors(q: Question, v: unknown): Partial<Record<ContactKey, string>> {
+  const a = (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Partial<Record<ContactKey, string>>; const m = contactModes(q); const out: Partial<Record<ContactKey, string>> = {};
+  for (const [k, label] of CONTACT_FIELDS) {
+    const val = (a[k] ?? '').trim(); if (m[k] === 'off') continue;
+    if (!val) { if (m[k] === 'required') out[k] = `${label} is required`; continue; }
+    if (k === 'email' && !validEmail(val)) out[k] = 'Check the email address';
+    if (k === 'phone' && !validPhone(val)) out[k] = 'Check the phone number';
+  }
+  return out;
+}
+/** Whether a question should be shown, given the answers so far. */
+export const isShown = (q: Question, answers: Record<string, unknown>) => {
+  if (!q.showIf?.questionId || !q.showIf.anyOf?.length) return true;
+  const v = answers[q.showIf.questionId];
+  return (Array.isArray(v) ? v : [v]).some(x => q.showIf!.anyOf.includes(String(x)));
+};
+/** Calendly can be embedded inline; other booking links open in a new tab. */
+export const isCalendly = (url?: string) => { try { return !!url && /(^|\.)calendly\.com$/.test(new URL(url).hostname); } catch { return false; } };
+export function bookingUrl(url: string, contact?: Partial<Record<ContactKey, string>>, embed = false) {
+  try {
+    const u = new URL(url);
+    if (isCalendly(url)) {
+      if (contact?.name) u.searchParams.set('name', contact.name);
+      if (contact?.email) u.searchParams.set('email', contact.email);
+      if (embed) { u.searchParams.set('embed_domain', location.hostname); u.searchParams.set('embed_type', 'Inline'); u.searchParams.set('hide_gdpr_banner', '1'); }
+    }
+    return u.toString();
+  } catch { return url; }
+}
+export const BOOKED = 'Booked a time', OPENED = 'Opened the booking link';
 
 const qid = () => crypto.randomUUID().slice(0, 8);
 export const newQuestion = (type: QuestionType): Question => ({
-  id: qid(), type, required: type !== 'long' && type !== 'text',
-  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', long: 'Tell us about the last time you booked a class.' }[type],
+  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule',
+  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat' }[type],
+  ...(type === 'contact' ? { contact: { ...DEFAULT_CONTACT } } : {}),
+  ...(type === 'schedule' ? { url: '' } : {}),
   ...(type === 'single' || type === 'multi' ? { options: ['Option one', 'Option two', 'Option three'] } : {}),
   ...(type === 'scale' ? { min: 1, max: 5, minLabel: 'Very hard', maxLabel: 'Very easy' } : {}),
 });
@@ -47,6 +105,16 @@ export const SUS_ITEMS = [
 export const susQuestions = (): Question[] => SUS_ITEMS.map((prompt, i) => ({ id: qid(), type: 'scale', prompt, min: 1, max: 5, minLabel: 'Strongly disagree', maxLabel: 'Strongly agree', required: true, preset: `sus-${i + 1}` }));
 export const npsQuestion = (): Question => ({ ...newQuestion('nps'), preset: 'nps' });
 
+/* Recruit for interviews: "Would you be open to a follow-up?" → contact info → book a time, only for Yes / Maybe. */
+export const INTEREST_OPTIONS = ['Yes', 'Maybe, if there’s a time that works', 'No thanks'];
+export function recruitQuestions(): Question[] {
+  const ask: Question = { id: qid(), type: 'single', preset: 'recruit', required: true, prompt: 'Would you be open to a 25–30 minute follow-up interview?', options: [...INTEREST_OPTIONS] };
+  const showIf = { questionId: ask.id, anyOf: INTEREST_OPTIONS.slice(0, 2) };
+  return [ask,
+    { ...newQuestion('contact'), prompt: 'Great! How can we reach you?', showIf },
+    { ...newQuestion('schedule'), prompt: 'Want to pick a time now?', showIf }];
+}
+
 export const newStudy = (project?: { id: string; title: string }): Study => ({ id: crypto.randomUUID(), kind: 'survey', title: 'Untitled survey', projectId: project?.id, projectTitle: project?.title, intro: 'Thanks for helping! This takes about 3 minutes. There are no right or wrong answers.', thanks: 'Thank you — your answers really help.', status: 'open', questions: [newQuestion('single'), newQuestion('scale'), newQuestion('text')], published: false });
 
 /* ---------- Scoring ---------- */
@@ -54,11 +122,13 @@ export type QuestionResult =
   | { q: Question; kind: 'choice'; answered: number; options: Array<{ label: string; count: number }> }
   | { q: Question; kind: 'scale'; answered: number; mean: number; dist: number[] }
   | { q: Question; kind: 'nps'; answered: number; score: number; promoters: number; passives: number; detractors: number }
-  | { q: Question; kind: 'text'; answered: number; answers: string[] };
+  | { q: Question; kind: 'text'; answered: number; answers: string[] }
+  | { q: Question; kind: 'contact'; answered: number }
+  | { q: Question; kind: 'schedule'; answered: number; booked: number };
 
 export function aggregate(study: Study, responses: Response[]): QuestionResult[] {
   return study.questions.map(q => {
-    const vals = responses.map(r => r.answers[q.id]).filter(v => v != null && v !== '' && !(Array.isArray(v) && !v.length));
+    const vals = responses.map(r => r.answers[q.id]).filter(v => v != null && v !== '' && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.values(v).some(Boolean)));
     if (q.type === 'single' || q.type === 'multi') {
       const counts = new Map((q.options ?? []).map(o => [o, 0]));
       for (const v of vals) for (const x of (Array.isArray(v) ? v : [v])) counts.set(String(x), (counts.get(String(x)) ?? 0) + 1);
@@ -74,6 +144,8 @@ export function aggregate(study: Study, responses: Response[]): QuestionResult[]
       const t = Math.max(1, vals.length);
       return { q, kind: 'nps', answered: vals.length, score: Math.round(((p - d) / t) * 100), promoters: p, passives: pa, detractors: d };
     }
+    if (q.type === 'contact') return { q, kind: 'contact', answered: vals.length };
+    if (q.type === 'schedule') return { q, kind: 'schedule', answered: vals.length, booked: vals.filter(v => v === BOOKED).length };
     return { q, kind: 'text', answered: vals.length, answers: vals.map(String) };
   });
 }
