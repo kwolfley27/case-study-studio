@@ -35,7 +35,13 @@ jobs:
           set -e
           cfg=$(jq -n --arg site "https://studio.katelynwolfley.design/" \
             --arg allow "https://studio.katelynwolfley.design/**,https://kwolfley27.github.io/case-study-studio/**,http://localhost:5173/**,http://127.0.0.1:5173/**" \
-            '{site_url: $site, uri_allow_list: $allow, external_email_enabled: true, mailer_otp_exp: 3600}')
+            '{site_url: $site, uri_allow_list: $allow, external_email_enabled: true, mailer_otp_exp: 3600, mailer_otp_length: 6,
+              mailer_subjects_recovery: "Your Case Study Studio code: set your password",
+              mailer_templates_recovery_content: "<h2>Set your password</h2><p>Type this code on the sign-in screen:</p><p style=\"font-size:28px;letter-spacing:6px;font-weight:600\">{{ .Token }}</p><p>Or <a href=\"{{ .ConfirmationURL }}\">tap here</a> (works if it opens in the same browser you asked from).</p><p>Didn’t ask for this? You can ignore it.</p>",
+              mailer_subjects_magic_link: "Your Case Study Studio code",
+              mailer_templates_magic_link_content: "<h2>Your sign-in code</h2><p>Type this code on the sign-in screen:</p><p style=\"font-size:28px;letter-spacing:6px;font-weight:600\">{{ .Token }}</p><p>Or <a href=\"{{ .ConfirmationURL }}\">tap here</a> (works if it opens in the same browser you asked from).</p>",
+              mailer_subjects_confirmation: "Your Case Study Studio code",
+              mailer_templates_confirmation_content: "<h2>Create your account</h2><p>Type this code on the sign-in screen:</p><p style=\"font-size:28px;letter-spacing:6px;font-weight:600\">{{ .Token }}</p><p>Or <a href=\"{{ .ConfirmationURL }}\">tap here</a> (works if it opens in the same browser you asked from).</p>"}')
           if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
             cfg=$(echo "$cfg" | jq --arg id "$GOOGLE_CLIENT_ID" --arg sec "$GOOGLE_CLIENT_SECRET" '. + {external_google_enabled: true, external_google_client_id: $id, external_google_secret: $sec}')
             echo "Google sign-in: switching on"
