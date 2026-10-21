@@ -42,11 +42,19 @@ export type Transcript = { at: string; speakers: string[]; segments: TranscriptL
 export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** Most AI follow-ups one participant gets in total (default 6). */ followupBudget?: number; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 /** An AI follow-up the participant was asked, and their answer. */
 export type FollowUp = { q: string; a: string };
-export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
+export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** What they typed after picking "Other", by question. */ others?: Record<string, string>; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
 export const canFollowUp = (q: Question) => q.type === 'long' || q.type === 'text' || q.type === 'single' || q.type === 'multi' || q.type === 'rank';
 export const hasOptions = (q: Question) => q.type === 'single' || q.type === 'multi' || q.type === 'rank';
 /** How an answer reads in plain words (rankings are numbered). */
-export const answerWords = (v: unknown, q?: Question) => Array.isArray(v) ? (q?.type === 'rank' ? v.map((x, i) => `${i + 1}. ${x}`).join(', ') : v.join(', ')) : v != null && typeof v !== 'object' ? String(v) : '';
+/** "Other" options open a box to type what they meant. */
+export const isOtherOption = (o: string) => /^other\b/i.test(o.trim());
+/** How an answer reads in plain words (rankings are numbered; "Other" includes what they typed). */
+export const answerWords = (v: unknown, q?: Question, other?: string) => {
+  const fill = (x: unknown) => other?.trim() && isOtherOption(String(x)) ? `${x} (${other.trim()})` : String(x);
+  return Array.isArray(v) ? (q?.type === 'rank' ? v.map((x, i) => `${i + 1}. ${x}`).join(', ') : v.map(fill).join(', ')) : v != null && typeof v !== 'object' ? fill(v) : '';
+};
+/** Did they pick an "Other" option on this answer? */
+export const pickedOther = (v: unknown) => (Array.isArray(v) ? v : [v]).some(x => typeof x === 'string' && isOtherOption(x));
 export const isChoice = (q: Question) => q.type === 'single' || q.type === 'multi';
 export const DEFAULT_FOLLOWUP_BUDGET = 6;
 /** Does this answer earn a follow-up? Choice questions can be limited to certain answers. */
@@ -194,6 +202,15 @@ const matchesValue = (v: unknown, option: string) => Array.isArray(v) ? v.includ
 /** Keep only responses in the chosen buckets (questionId → option). */
 export const filterByGroups = <R extends { answers: Record<string, unknown> }>(responses: R[], picks: Record<string, string>) => responses.filter(r => Object.entries(picks).every(([qid, opt]) => matchesValue(r.answers[qid], opt)));
 export const bucketCount = (responses: Array<{ answers: Record<string, unknown> }>, qid: string, option: string) => responses.filter(r => matchesValue(r.answers[qid], option)).length;
+
+/* Love letter + breakup letter (a Smart Design method): short letters get emotional, honest answers that direct questions miss.
+   The breakup letter shows what to fix; the love letter shows what to keep or copy. */
+export function letterQuestions(subject = 'the way you plan meals and shop for food right now'): Question[] {
+  return [
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: `Write a short breakup letter to ${subject}.`, hint: 'Start with “Dear …” and tell it why it’s over. Two or three sentences is plenty, and saying it out loud works great.', followups: 1, probe: 'Pick the most specific frustration in their letter and ask about the last time it happened.' },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Now write a short love letter to something food-related you genuinely love: a store, an app, a recipe source, a habit.', hint: 'Start with “Dear …” and tell it what it does for you.', followups: 1, probe: 'Ask what it does for them that nothing else does, or the last time it saved the day.' },
+  ];
+}
 
 /* Recruit for interviews: "Would you be open to a follow-up?" → contact info → book a time, only for Yes / Maybe. */
 export const INTEREST_OPTIONS = ['Yes', 'Maybe, if there’s a time that works', 'No thanks'];
