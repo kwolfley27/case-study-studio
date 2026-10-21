@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, type ContactKey, type Question, type Study } from './research';
+import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, type ContactKey, type Question, type Study } from './research';
 import './research.css';
 
 const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.values(v as object).some(x => String(x ?? '').trim()));
@@ -74,7 +74,7 @@ function QuestionView({ q, index, total, value, set, errors, contact, preview }:
   return <div className="rs-q">
     <small className="rs-count">{index + 1} / {total}{q.required ? '' : ' · optional'}</small>
     {q.image && <img className="rs-qimg" src={q.image} alt="" />}
-    <h2>{q.prompt}</h2>
+    {(() => { const { title, sub } = splitPrompt(q); return <><h2>{title}</h2>{sub && <p className="rs-sub">{sub}</p>}</>; })()}
     {q.type === 'multi' && <p className="rs-hint">Choose all that apply</p>}
     {(q.type === 'single' || q.type === 'multi') && (() => { const pics = (q.optionImages ?? []).some(Boolean); return <div className={`rs-options ${pics ? 'has-images' : ''}`} role={q.type === 'single' ? 'radiogroup' : 'group'} aria-label={q.prompt}>
       {(q.options ?? []).map((o, i) => { const on = q.type === 'single' ? value === o : list.includes(o); const mark = <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />; const img = q.optionImages?.[i]; return <button key={i} type="button" role={q.type === 'single' ? 'radio' : 'checkbox'} aria-checked={on} className={`rs-option ${on ? 'is-on' : ''} ${pics ? 'is-card' : ''}`}

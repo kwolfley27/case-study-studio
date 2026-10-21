@@ -29,7 +29,7 @@ const MAX_BODY = 400_000;
 
 type ContactKey = 'name' | 'email' | 'phone';
 type FieldMode = 'off' | 'optional' | 'required';
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[] };
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string };
 const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
 const color = (v: unknown) => /^#[0-9a-f]{6}$/i.test(String(v ?? '')) ? String(v) : undefined;
 type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
@@ -134,6 +134,7 @@ Deno.serve(async (request) => {
         questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 60).filter(q => QUESTION_TYPES.has(q.type)).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined,
           contact: q.type === 'contact' ? Object.fromEntries(CONTACT_KEYS.map(k => [k, fieldMode(q, k)])) as Record<ContactKey, FieldMode> : undefined,
           url: q.type === 'schedule' && /^https:\/\//.test(String(q.url ?? '')) ? text(q.url, 500) : undefined,
+          hint: q.hint ? text(q.hint, 500) : undefined,
           image: httpsUrl(q.image) || undefined,
           optionImages: Array.isArray(q.optionImages) && (q.type === 'single' || q.type === 'multi') ? q.optionImages.slice(0, 30).map(httpsUrl) : undefined,
           showIf: q.showIf?.questionId ? { questionId: cleanId(q.showIf.questionId), anyOf: (Array.isArray(q.showIf.anyOf) ? q.showIf.anyOf : []).map(o => text(o, 200)).slice(0, 30) } : undefined })),
