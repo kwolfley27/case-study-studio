@@ -290,6 +290,8 @@ export const chartable = (results: QuestionResult[]) => results.filter(r => (r.k
 /* ---------- Server ---------- */
 export const RESEARCH_URL = import.meta.env.VITE_STUDIO_RESEARCH_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-research` : '');
 export const participantLink = (id: string) => `${location.origin}${location.pathname}#/r/${id}`;
+/** The same survey in test mode: real AI follow-ups, but nothing is saved to Results or Notion. */
+export const testLink = (id: string) => `${participantLink(id)}?test=1`;
 const PASS = 'csb-ai-passcode';
 export const getPasscode = () => { try { return localStorage.getItem(PASS) || ''; } catch { return ''; } };
 export const setPasscode = (v: string) => { try { localStorage.setItem(PASS, v); } catch { /* ignore */ } };

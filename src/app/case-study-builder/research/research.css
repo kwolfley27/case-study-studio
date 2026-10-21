@@ -473,3 +473,10 @@
 .rs-wave{flex:1;min-width:0;height:36px;display:flex;align-items:center;justify-content:center;gap:3px}
 .rs-wave span{display:block;width:3px;height:100%;border-radius:3px;background:var(--rs-accent,#000);transform:scaleY(.12);transition:transform .08s linear}
 .rs.is-preview .rs-vb-btn{width:36px;height:36px}.rs.is-preview .rs-wave{height:28px}
+.rs-testbar{position:sticky;top:0;z-index:5;margin:0 -24px;padding:7px 12px;background:#fff4d6;color:#7a5200;font-size:12.5px;font-weight:500;text-align:center}
+.rs-page.is-test .rs{padding-top:0}
+.rw-testbtn{margin-top:8px;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.rw-resplist-toggle{all:unset;cursor:pointer;display:block}
+.rw-resplist ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rw-resplist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #eee;font-size:12.5px}
+.rw-resplist li em{display:block;font-style:normal;color:var(--csb-muted);font-size:11.5px}

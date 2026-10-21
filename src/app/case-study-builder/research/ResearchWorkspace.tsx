@@ -5,7 +5,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, testLink, fmtMs, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -159,6 +159,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
     <div className="rw-preview" aria-label="Live preview">
       <div className="rw-phone"><SurveyRunner study={study} preview startAt={previewAt} /></div>
       <small>Live preview · what participants see</small>
+      <a className="csb-quiet-button rw-testbtn" href={testLink(study.id)} target="_blank" rel="noreferrer" title="Runs your latest edits with real AI follow-ups. Nothing is saved to Results."><ExternalLink size={13} /> Test it for real</a>
     </div>
   </div>;
 }
@@ -340,6 +341,13 @@ function Share({ study, update }: { study: Study; update: (p: Partial<Study>) =>
       {note && <p className={`csb-field-note ${note.error ? 'is-error' : ''}`} role="status">{note.text}</p>}
     </div>
     <div className={`rw-card ${study.published ? '' : 'is-muted'}`}>
+      <h3>Test it first <small>(answers aren’t saved)</small></h3>
+      <p>Runs the whole survey with real AI follow-ups, but nothing goes to Results or Notion. On this computer it uses your latest edits, even before you publish. On another device it uses the published version.</p>
+      <div className="rw-link"><input readOnly value={testLink(study.id)} aria-label="Test link" onFocus={e => e.target.select()} />
+        <button type="button" className="csb-quiet-button" onClick={() => void navigator.clipboard?.writeText(testLink(study.id))}><Copy size={13} /> Copy</button>
+        <a className="csb-quiet-button" href={testLink(study.id)} target="_blank" rel="noreferrer"><ExternalLink size={13} /> Open</a></div>
+    </div>
+    <div className={`rw-card ${study.published ? '' : 'is-muted'}`}>
       <h3>3 · Send the link</h3>
       <p>Anyone with the link can answer. Works on phones. Answers are anonymous unless you ask for a name.</p>
       <div className="rw-link"><input readOnly value={link} aria-label="Participant link" onFocus={e => e.target.select()} />
@@ -410,6 +418,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
       </div>
       <Synthesis study={s} responses={responses} onAddSections={onAddSections} filterNote={Object.values(picks).join(' + ')} />
       <FollowUps study={s} responses={responses} />
+      <ResponseList study={s} responses={all} onRemoved={load} />
       {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact' && r.kind !== 'note' && r.q.preset !== 'name').map(r => <div key={r.q.id} className="rw-res">
         <h4>{r.q.prompt}<small>{r.answered} answered</small></h4>
         {r.kind === 'choice' && <div className="rw-bars">{r.options.map(o => { const pct = r.answered ? Math.round(o.count / r.answered * 100) : 0; return <div key={o.label}><span>{o.label}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}{r.q.type === 'multi' && <small>Choose-all question: percentages add up to more than 100%.</small>}</div>}
@@ -528,5 +537,24 @@ function Groups({ study, all, picks, setPicks }: { study: Study; all: Response[]
       </div>}
       {C && <small className="rw-note">Each cell: how many people are in both groups. Darker = a bigger share of that row. Click a cell to see just those people. People can be in more than one group when the question allows several answers.</small>}
     </div>}
+  </div>;
+}
+
+/* Every response, newest first, with Delete (for test runs that slipped in before test links existed). */
+function ResponseList({ study, responses, onRemoved }: { study: Study; responses: Response[]; onRemoved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState('');
+  if (!responses.length) return null;
+  const remove = async (r: Response) => {
+    if (!window.confirm('Delete this response? It’s removed from Results for good.')) return;
+    setBusy(r.id); try { await call('removeResponse', { id: study.id, responseId: r.id }, true); onRemoved(); } catch (e) { window.alert(e instanceof Error ? e.message : 'Could not delete it.'); } finally { setBusy(''); }
+  };
+  const sorted = [...responses].sort((a, b) => b.at.localeCompare(a.at));
+  return <div className="rw-res rw-resplist">
+    <button type="button" className="rw-resplist-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}><h4>All responses<small>{responses.length} · {open ? 'hide' : 'show'}</small></h4></button>
+    {open && <ul>{sorted.map(r => <li key={r.id}>
+      <span><b>{new Date(r.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</b> · {fmtMs(r.ms)}{r.part === 'core' ? ' · short version' : ''}<em>{groupLabel(study, r) || 'No groups'}</em></span>
+      <button type="button" className="csb-quiet-button" disabled={busy === r.id} onClick={() => void remove(r)}>{busy === r.id ? 'Deleting…' : 'Delete'}</button>
+    </li>)}</ul>}
   </div>;
 }

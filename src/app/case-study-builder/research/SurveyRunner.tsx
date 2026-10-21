@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, wantsFollowUp, estimateMinutes, answerWords, isOtherOption, pickedOther, DEFAULT_FOLLOWUP_BUDGET, type ContactKey, type FollowUp, type Question, type Study } from './research';
+import { BOOKED, OPENED, onColor, bookingUrl, call, readDrafts, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, wantsFollowUp, estimateMinutes, answerWords, isOtherOption, pickedOther, DEFAULT_FOLLOWUP_BUDGET, type ContactKey, type FollowUp, type Question, type Study } from './research';
 import './research.css';
 
 const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.values(v as object).some(x => String(x ?? '').trim()));
@@ -410,15 +410,25 @@ function Booking({ q, value, set, contact, preview }: { q: Question; value: unkn
 
 /* The page participants open: #/r/<study id> */
 export default function ParticipantPage({ id }: { id: string }) {
+  // Test mode (#/r/<id>?test=1): runs exactly like the real thing, but nothing is saved to Results or Notion.
+  // On the computer you build on, it uses your latest unpublished edits.
+  const test = /[?&]test=1\b/.test(location.hash);
+  const draft = test ? readDrafts().find(s => s.id === id) : undefined;
   const [study, setStudy] = useState<Study | null>(null);
   const [error, setError] = useState('');
-  useEffect(() => { document.title = 'Research study'; call<{ study: Study }>('get', { id }).then(d => { setStudy(d.study); document.title = d.study.title; }, e => setError(e instanceof Error ? e.message : 'Could not open this study.')); }, [id]);
-  return <main className={`rs-page ${study?.theme?.background ? 'has-theme' : ''}`} style={study?.theme?.background ? { '--rs-bg': study.theme.background } as React.CSSProperties : undefined}>
+  useEffect(() => {
+    document.title = 'Research study';
+    if (draft) { setStudy(draft); document.title = `Test: ${draft.title}`; return; }
+    call<{ study: Study }>('get', { id }).then(d => { setStudy(d.study); document.title = test ? `Test: ${d.study.title}` : d.study.title; }, e => setError(e instanceof Error ? e.message : 'Could not open this study.'));
+  }, [id]);
+  const inline = draft ? { questions: draft.questions, goal: draft.goal, followupBudget: draft.followupBudget } : undefined;
+  return <main className={`rs-page ${study?.theme?.background ? 'has-theme' : ''} ${test ? 'is-test' : ''}`} style={study?.theme?.background ? { '--rs-bg': study.theme.background } as React.CSSProperties : undefined}>
+    {test && <div className="rs-testbar" role="status">Test mode · answers aren’t saved to Results{draft ? ' · using your latest edits' : ''}</div>}
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part) => call('submit', { id, answers, ms, followups, others, part })}
-          onExtend={(saved, answers, ms, followups, others) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others })}
-          onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used }); return r.question || null; }}
+      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part) => call('submit', { id, answers, ms, followups, others, part, test })}
+          onExtend={(saved, answers, ms, followups, others) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others, test })}
+          onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used, ...(inline ? { test: true, study: inline } : {}) }, !!inline); return r.question || null; }}
           onUploadPhoto={async (q, file) => {
             const { uploadUrl, path } = await call<{ uploadUrl: string; path: string }>('photoUpload', { id, questionId: q.id, type: file.type || 'image/jpeg', size: file.size });
             const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'image/jpeg' }, body: file }).catch(() => null);
