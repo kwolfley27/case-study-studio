@@ -183,13 +183,12 @@ export const SUS_ITEMS = [
 export const susQuestions = (): Question[] => SUS_ITEMS.map((prompt, i) => ({ id: qid(), type: 'scale', prompt, min: 1, max: 5, minLabel: 'Strongly disagree', maxLabel: 'Strongly agree', required: true, preset: `sus-${i + 1}` }));
 export const npsQuestion = (): Question => ({ ...newQuestion('nps'), preset: 'nps' });
 
-/* About you: who they are, sorted into groups you can compare in Results. Name is first name + last initial only. */
+/* About you: who they are, sorted into groups you can compare in Results. No names: answers stay anonymous (Results numbers people P1, P2…). */
 export const AGE_RANGES = ['18–24', '25–34', '35–44', '45–54', '55+'];
 export const PREP_OPTIONS = ['Most weeks', 'Sometimes', 'Rarely or never'];
 export const LIFESTYLE_OPTIONS = ['Student', 'Work full-time', 'Parent or caregiver', 'Go to the gym regularly', 'Run or train for races', 'Play a sport', 'None of these'];
 export function aboutYouQuestions(): Question[] {
   return [
-    { id: qid(), type: 'text', preset: 'name', required: true, prompt: 'What’s your first name and last initial?', hint: 'For example, Sam L. Just so we can tell answers apart; it isn’t shared.' },
     { id: qid(), type: 'single', preset: 'about', required: true, group: true, prompt: 'What’s your age range?', options: [...AGE_RANGES] },
     { id: qid(), type: 'single', preset: 'about', required: true, group: true, prompt: 'How often do you meal prep?', hint: 'Making meals or ingredients ahead of time to eat later in the week.', options: [...PREP_OPTIONS], followups: 1, followIf: ['Rarely or never'], probe: 'If they rarely or never meal prep, ask what gets in the way, or whether they have tried and what happened.' },
     { id: qid(), type: 'multi', preset: 'about', required: true, group: true, prompt: 'Which of these describe you right now?', options: [...LIFESTYLE_OPTIONS], followups: 1, followIf: ['Go to the gym regularly', 'Run or train for races', 'Play a sport'], probe: 'For people who train: ask how their training shapes what and when they eat, or how food planning fits around training.' },
