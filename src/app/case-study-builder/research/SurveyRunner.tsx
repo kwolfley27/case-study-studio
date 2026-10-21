@@ -10,9 +10,12 @@ const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && 
    Open questions with AI follow-ups: after an answer, onFollowUp may return a follow-up question, shown as its own screen. */
 type AskFollowUp = (q: Question, answer: string, history: FollowUp[], context: FollowUp[], used: number) => Promise<string | null>;
 type UploadPhoto = (q: Question, file: File) => Promise<string>;
+type Saved = { ref: string; token: string };
+type Submit = (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, part?: 'core') => Promise<unknown>;
+type Extend = (saved: Saved, answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>) => Promise<unknown>;
 
 
-export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPhoto, startAt }: { study: Study; preview?: boolean; onSubmit?: (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>) => Promise<void>; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; startAt?: number }) {
+export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, onUploadPhoto, startAt }: { study: Study; preview?: boolean; onSubmit?: Submit; onExtend?: Extend; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; startAt?: number }) {
   const [step, setStep] = useState(startAt ?? -1); // -1 intro, 0..n-1 questions, n thanks
   const [sub, setSub] = useState<number | null>(null); // which follow-up of the current question is showing
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -23,8 +26,15 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
   const [error, setError] = useState('');
   const [touched, setTouched] = useState(false);
   const started = useRef(Date.now());
+  // Short version first; at the end, an optional bonus round (their short answers are already saved by then).
+  const [bonusMode, setBonusMode] = useState(false);
+  const [saved, setSaved] = useState<Saved | null>(null);
+  const [finished, setFinished] = useState(false);
+  const hasBonus = !preview && !!onExtend && study.questions.some(x => x.bonus);
   useEffect(() => { if (startAt !== undefined) { setStep(startAt); setSub(null); } }, [startAt]);
-  const qs = preview ? study.questions : study.questions.filter(q => isShown(q, answers));
+  const visible = study.questions.filter(q => isShown(q, answers));
+  const coreQs = visible.filter(x => !x.bonus), bonusQs = visible.filter(x => x.bonus);
+  const qs = preview ? study.questions : hasBonus ? (bonusMode ? [...coreQs, ...bonusQs] : coreQs) : visible;
   const n = qs.length;
   const q = step >= 0 && step < n ? qs[step] : null;
   const value = q ? answers[q.id] : undefined;
@@ -51,7 +61,13 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
       const shown = shownIds();
       const sentOthers = Object.fromEntries(Object.entries(others).filter(([k, t]) => shown.has(k) && t.trim() && pickedOther(answers[k])).map(([k, t]) => [k, t.trim()]));
       const sentFu = Object.fromEntries(Object.entries(fu).filter(([k]) => shown.has(k)).map(([k, list]) => [k, list.filter(x => x.a.trim())]).filter(([, list]) => (list as FollowUp[]).length));
-      try { await onSubmit?.(Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k))), Date.now() - started.current, sentFu, sentOthers); go(n); }
+      const sent = Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k)));
+      try {
+        if (hasBonus && bonusMode && saved) { const b = new Set(bonusQs.map(x => x.id)); const only = <T,>(o: Record<string, T>) => Object.fromEntries(Object.entries(o).filter(([k]) => b.has(k))); await onExtend!(saved, only(sent), Date.now() - started.current, only(sentFu), only(sentOthers)); setFinished(true); }
+        else if (hasBonus) { const r = await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers, 'core') as Partial<Saved> | undefined; if (r?.ref && r.token) setSaved({ ref: r.ref, token: r.token }); else setFinished(true); }
+        else { await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers); setFinished(true); }
+        go(n);
+      }
       catch (e) { setError(e instanceof Error ? e.message : 'Could not send your answers. Please try again.'); }
       finally { setBusy(''); }
     } else { if (step === -1) started.current = Date.now(); go(step + 1); }
@@ -101,26 +117,30 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
           {t.cover && <img className="rs-cover" src={t.cover} alt="" />}
           <h1>{study.title}</h1>
           {study.intro && <p>{study.intro}</p>}
-          {(() => { const talk = study.questions.some(x => x.type === 'long'); const ai = study.questions.some(x => x.followups); return (talk || ai) && <ul className="rs-howto">
-            {talk && <li>Answer out loud or type — whatever’s easier. Talk like you’re leaving a voice memo; rambling is welcome.</li>}
-            {ai && <li>An AI may ask a quick follow-up about what you said. Skip any you don’t want to answer.</li>}
-            <li>There are no right answers, and your answers are anonymous.</li>
-          </ul>; })()}
           <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>
-          <small>{qs.filter(x => x.type !== 'note').length} question{qs.filter(x => x.type !== 'note').length === 1 ? '' : 's'} · about {estimateMinutes(study.questions, study.followupBudget)} min</small>
+          {(() => { const talk = study.questions.some(x => x.type === 'long'); const ai = study.questions.some(x => x.followups); return <div className="rs-meta">
+            <span>About {estimateMinutes(preview ? study.questions.filter(x => !x.bonus) : hasBonus ? coreQs : visible, study.followupBudget)} min{talk ? ' · Talk or type' : ''} · Anonymous</span>
+            {ai && <span>An AI may ask a quick follow-up about what you say.</span>}
+          </div>; })()}
         </div>}
-        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
+        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}{preview && q.bonus && <p className="rs-condition">Bonus round: only if they choose to keep going after the short version</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
         {q && fuItem && <div className="rs-q">
           <small className="rs-count">{step + 1} / {n} · follow-up</small>
           <blockquote className="rs-echo">{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).slice(0, 160)}{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).length > 160 ? '…' : ''}</blockquote>
           <h2>{fuItem.q}</h2>
           <LongAnswer label={fuItem.q} value={fuItem.a} set={setFuAnswer} />
         </div>}
-        {step === n && <div className="rs-intro rs-thanks"><span className="rs-check" aria-hidden="true">✓</span><h1>{study.thanks || 'Thank you.'}</h1><p>You can close this page now.</p></div>}
+        {step === n && hasBonus && saved && !bonusMode && !finished && <div className="rs-intro rs-offer">
+          <span className="rs-check" aria-hidden="true">✓</span>
+          <h1>That’s it, thank you!</h1>
+          {(() => { const m = estimateMinutes(bonusQs, Math.max(0, (study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) - used)); return <p>Your answers are saved. Got about {m} more minute{m === 1 ? '' : 's'} for a few bonus questions?</p>; })()}
+          <div className="rs-offer-actions"><button type="button" className="rs-primary" onClick={() => { setBonusMode(true); started.current = Date.now(); go(coreQs.length); }}>Keep going</button><button type="button" className="rs-ghost" onClick={() => setFinished(true)}>I’m done</button></div>
+        </div>}
+        {step === n && (!hasBonus || finished || !saved) && <div className="rs-intro rs-thanks"><span className="rs-check" aria-hidden="true">✓</span><h1>{study.thanks || 'Thank you.'}</h1><p>You can close this page now.</p></div>}
       </motion.div>
     </AnimatePresence>
     {q && <div className="rs-nav">
-      <button type="button" className="rs-ghost" onClick={back}>Back</button>
+      {bonusMode && step === coreQs.length && sub === null ? <span /> : <button type="button" className="rs-ghost" onClick={back}>Back</button>}
       <div className="rs-nav-right">
         {error && <span className="rs-error" role="alert">{error}</span>}
         {fuItem ? !fuItem.a.trim() && <button type="button" className="rs-ghost" disabled={!!busy} onClick={() => void advance()}>Skip</button>
@@ -285,7 +305,8 @@ export default function ParticipantPage({ id }: { id: string }) {
   return <main className={`rs-page ${study?.theme?.background ? 'has-theme' : ''}`} style={study?.theme?.background ? { '--rs-bg': study.theme.background } as React.CSSProperties : undefined}>
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={async (answers, ms, followups, others) => { await call('submit', { id, answers, ms, followups, others }); }}
+      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part) => call('submit', { id, answers, ms, followups, others, part })}
+          onExtend={(saved, answers, ms, followups, others) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others })}
           onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used }); return r.question || null; }}
           onUploadPhoto={async (q, file) => {
             const { uploadUrl, path } = await call<{ uploadUrl: string; path: string }>('photoUpload', { id, questionId: q.id, type: file.type || 'image/jpeg', size: file.size });

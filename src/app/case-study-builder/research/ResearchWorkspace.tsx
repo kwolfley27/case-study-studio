@@ -5,7 +5,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -86,13 +86,15 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
         <div className="rw-seg" role="radiogroup" aria-label="Follow-up limit">{[4, 6, 8, 12].map(v => <button key={v} type="button" role="radio" aria-checked={(study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) === v} className={(study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) === v ? 'is-on' : ''} onClick={() => update({ followupBudget: v })}>{v}</button>)}</div></div>}
       <AiDesigner study={study} update={update} setPreviewAt={setPreviewAt} />
       <LookEditor study={study} update={update} onFocus={() => setPreviewAt(-1)} />
-      <p className="rw-kicker">Questions · {qs.length}</p>
+      <p className="rw-kicker">Questions · {qs.length}{qs.some(q => q.bonus) ? ` · short version about ${estimateMinutes(qs.filter(q => !q.bonus), study.followupBudget)} min, bonus round about ${estimateMinutes(qs.filter(q => q.bonus), Math.max(1, Math.round((study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) / 2)))} more` : ''}</p>
+      {qs.some(q => q.bonus) && <p className="rw-note" style={{ margin: '-4px 0 0' }}>Everyone gets the short version. At the end they’re offered the bonus round, and their short answers are already saved. Mark a question “Bonus round” to move it there.</p>}
       {qs.map((q, i) => <div key={q.id} className={`rw-q ${previewAt === i ? 'is-on' : ''}`} onFocusCapture={() => setPreviewAt(i)} onClick={() => setPreviewAt(i)}>
         <div className="rw-q-head">
           <span className="rw-q-num">{i + 1}</span>
           <select value={q.type} aria-label="Question type" disabled={!!q.preset && (q.preset.startsWith('sus-') || q.preset === 'nps' || q.preset === 'name')} onChange={e => { const t = e.target.value as Question['type']; const base = newQuestion(t); setQ(i, { type: t, options: base.options, min: base.min, max: base.max, minLabel: base.minLabel, maxLabel: base.maxLabel, contact: base.contact, url: t === 'schedule' ? q.url ?? '' : undefined, ...(t === 'contact' || t === 'schedule' ? { prompt: base.prompt, required: base.required } : {}) }); }}>{QUESTION_TYPES.map(([t, l]) => <option key={t} value={t}>{l}</option>)}</select>
           {q.preset && <span className="rw-tag">{q.preset === 'nps' ? 'NPS' : q.preset === 'letter' ? 'Letter' : q.preset === 'recruit' ? 'Recruit' : q.preset === 'name' ? 'Name · private' : q.preset === 'about' ? 'About you' : 'SUS'}</span>}
           {q.group && <span className="rw-tag is-group">Group</span>}
+          {q.bonus && <span className="rw-tag is-bonus">Bonus round</span>}
           <span className="rw-q-tools">
             <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
             <button type="button" aria-label="Move down" disabled={i === qs.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>
@@ -138,6 +140,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
         </div>}
         <ShowIfEditor qs={qs} i={i} setQ={setQ} />
         <div className="rw-row">{q.type !== 'schedule' && q.type !== 'note' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
+          {!q.preset?.startsWith('sus-') && q.preset !== 'name' && q.preset !== 'about' && <label className="rw-req" title="Only asked if they choose to keep going after the short version"><input type="checkbox" checked={!!q.bonus} onChange={e => setQ(i, { bonus: e.target.checked || undefined })} /> Bonus round</label>}
           {(q.type === 'single' || q.type === 'multi') && !q.preset?.startsWith('sus-') && <label className="rw-req" title="Each answer becomes a group (bucket) you can filter and compare in Results"><input type="checkbox" checked={!!q.group} onChange={e => setQ(i, { group: e.target.checked || undefined })} /> Use answers as groups</label>}</div>
       </div>)}
       <div className="rw-addbar">
@@ -391,6 +394,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
   return <div className="rw-results">
     <div className="rw-stats">
       <div><strong>{responses.length}</strong><small>Responses</small></div>
+      {s.questions.some(q => q.bonus) && <div><strong>{responses.filter(r => r.part !== 'core').length}</strong><small>Did the bonus round</small></div>}
       <div><strong>{medianSec ? `${Math.floor(medianSec / 60)}:${String(medianSec % 60).padStart(2, '0')}` : '—'}</strong><small>Median time</small></div>
       {sus && <div><strong>{sus.n ? Math.round(sus.score) : '—'}</strong><small>SUS {sus.grade && `· ${sus.grade}`}</small></div>}
       {nps && <div><strong>{nps.answered ? `${nps.score > 0 ? '+' : ''}${nps.score}` : '—'}</strong><small>NPS</small></div>}

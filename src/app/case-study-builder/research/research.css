@@ -433,3 +433,7 @@
 .rs-note-example{padding:12px 14px;border-radius:12px;background:#f5f3f1;font-style:italic;color:#777169;font-size:15px}
 .rs.is-preview .rs-note-body{font-size:14px;gap:9px}.rs.is-preview .rs-note-example{font-size:12.5px;padding:9px 11px}
 .rw-note-body{min-height:110px;font-size:12.5px!important}
+.rs-meta{display:grid;gap:4px;font-size:13px;color:#a59f97;line-height:1.4}
+.rs-offer-actions{display:flex;gap:10px;flex-wrap:wrap}
+.rw-tag.is-bonus{background:#f6eef4;color:#8a2f6b}
+.rs-offer .rs-check{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--rs-accent,#000);color:var(--rs-on,#fdfcfc);font-size:20px}
