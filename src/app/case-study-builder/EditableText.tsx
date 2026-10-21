@@ -4,6 +4,18 @@ import { createContext, useContext, useLayoutEffect, useRef } from 'react';
 export type TextStyle = { tone?: 'ink' | 'muted' | 'accent' | 'accent2'; size?: 's' | 'l' | 'xl'; weight?: 'light' | 'regular' | 'bold' };
 export const EditingContext = createContext<{ edit?: (field: string, value: string) => void; styles?: Record<string, TextStyle> }>({});
 
+/** No orphans: the last two words of each line of text stay together (a non-breaking space between them),
+    so a paragraph or heading never ends with one word alone. Skipped for short labels and very long word pairs. */
+export function noOrphan(text: string): string {
+  if (!text || typeof text !== 'string') return text;
+  return text.split('\n').map(line => {
+    const m = line.match(/^(.*\S)[ \t]+(\S+)(\s*)$/);
+    if (!m || line.trim().split(/\s+/).length < 4) return line;
+    const prev = m[1].split(/\s/).pop() ?? '';
+    return prev.length + m[2].length > 24 ? line : `${m[1]}\u00A0${m[2]}${m[3]}`;
+  }).join('\n');
+}
+
 export function EditableText({ value, field, children }: { value: string; field: string; children?: React.ReactNode }) {
   const { edit, styles } = useContext(EditingContext);
   if (edit) installTextBoxFix();
@@ -11,7 +23,7 @@ export function EditableText({ value, field, children }: { value: string; field:
   const style = styles?.[field];
   const tokens = style ? { 'data-tone': style.tone, 'data-size': style.size, 'data-weight': style.weight } : {};
   useLayoutEffect(() => { if (ref.current && document.activeElement !== ref.current && ref.current.textContent !== value) ref.current.textContent = value; }, [value, !!edit]);
-  if (!edit) return style && (style.tone || style.size || style.weight) ? <span className="csb-ts" {...tokens}>{children ?? value}</span> : <>{children ?? value}</>;
+  if (!edit) { const shown = children ?? noOrphan(value); return style && (style.tone || style.size || style.weight) ? <span className="csb-ts" {...tokens}>{shown}</span> : <>{shown}</>; }
   return <span ref={ref} className="csb-editable-text csb-ts" data-field={field} {...tokens} contentEditable suppressContentEditableWarning role="textbox" aria-label={`Edit ${field.replace(/items\.\d+\./, 'item ')}`} aria-multiline="true" tabIndex={0}
     onInput={e => edit(field, e.currentTarget.textContent || '')}
     onKeyDown={e => { if (e.key === 'Escape') { e.currentTarget.blur(); } if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
