@@ -3776,3 +3776,9 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-section-intro{margin-bottom:clamp(24px,3.4cqw,34px)!important}
 /* No orphans (browsers that support it; the published page also glues the last two words) */
 .csb-canvas :is(p,h1,h2,h3,h4,li,blockquote,figcaption,dd){text-wrap:pretty}
+
+/* Side menu shows from the start (like the original site), so the column it's
+   centered beside never looks off-center. A short fade on page load only. */
+.csb-side-nav ol,.csb-side-nav.is-revealed ol{opacity:1;transform:none;pointer-events:auto;animation:csb-nav-in .6s cubic-bezier(.22,1,.36,1) .15s both}
+@keyframes csb-nav-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.csb-side-nav ol{animation:none}}
