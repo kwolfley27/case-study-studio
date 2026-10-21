@@ -5,7 +5,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -96,6 +96,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           </span>
         </div>
         <textarea className="rw-prompt" rows={2} value={q.prompt} readOnly={q.preset?.startsWith('sus-')} onChange={e => setQ(i, { prompt: e.target.value })} aria-label={`Question ${i + 1}`} />
+        {!q.preset?.startsWith('sus-') && <input className="rw-input rw-hint-input" value={q.hint ?? ''} placeholder={splitPrompt({ prompt: q.prompt }).sub ? 'Helper text: the part in brackets above already shows small and gray' : 'Helper text (optional): shows smaller and lighter, e.g. “For example, …”'} aria-label={`Question ${i + 1} helper text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
         {(q.type === 'single' || q.type === 'multi') && <div className="rw-opts">
           {(q.options ?? []).map((o, k) => <div key={k} className="rw-opt">{q.optionImages ? <OptionImage study={study} src={q.optionImages[k]} label={o} onChange={src => { const imgs = [...(q.optionImages ?? [])]; imgs[k] = src; setQ(i, { optionImages: imgs }); }} /> : <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />}<input value={o} aria-label={`Option ${k + 1}`} onChange={e => setQ(i, { options: q.options!.map((x, n) => n === k ? e.target.value : x) })} /><button type="button" aria-label={`Remove option ${k + 1}`} onClick={() => setQ(i, { options: q.options!.filter((_, n) => n !== k), optionImages: q.optionImages?.filter((_, n) => n !== k) })}><X size={12} /></button></div>)}
           <button type="button" className="rw-add-opt" onClick={() => setQ(i, { options: [...(q.options ?? []), `Option ${(q.options?.length ?? 0) + 1}`] })}>+ Add option</button>
@@ -142,7 +143,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
 
 /* ---------- Design with AI: describe the goal, approve questions one by one ---------- */
 const AI_URL = import.meta.env.VITE_STUDIO_AI_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-ai-draft` : '');
-type Proposal = { ref: string; replaces?: number; type: Question['type']; prompt: string; options?: string[]; minLabel?: string; maxLabel?: string; required?: boolean; why: string; showIf?: { ref: string; anyOf: string[] } };
+type Proposal = { ref: string; replaces?: number; type: Question['type']; prompt: string; hint?: string; options?: string[]; minLabel?: string; maxLabel?: string; required?: boolean; why: string; showIf?: { ref: string; anyOf: string[] } };
 type Design = { title?: string; intro?: string; summary: string; questions: Proposal[] };
 const TYPE_LABEL = Object.fromEntries(QUESTION_TYPES.map(([t, l]) => [t, l])) as Record<Question['type'], string>;
 
@@ -176,7 +177,7 @@ function AiDesigner({ study, update, setPreviewAt }: { study: Study; update: (p:
     for (const p of chosen) {
       const base = newQuestion(p.type);
       const target = p.replaces ? qs[p.replaces - 1] : undefined;
-      const q: Question = { ...base, id: target?.id ?? base.id, prompt: p.prompt, ...(p.options?.length ? { options: p.options } : {}), ...(p.minLabel ? { minLabel: p.minLabel } : {}), ...(p.maxLabel ? { maxLabel: p.maxLabel } : {}), ...(p.required !== undefined && p.type !== 'schedule' ? { required: p.required } : {}), showIf: target?.showIf };
+      const q: Question = { ...base, id: target?.id ?? base.id, prompt: p.prompt, ...(p.hint ? { hint: p.hint } : {}), ...(p.options?.length ? { options: p.options } : {}), ...(p.minLabel ? { minLabel: p.minLabel } : {}), ...(p.maxLabel ? { maxLabel: p.maxLabel } : {}), ...(p.required !== undefined && p.type !== 'schedule' ? { required: p.required } : {}), showIf: target?.showIf };
       map[p.ref] = q.id;
       if (target) list = list.map(x => x.id === target.id ? q : x); else list.push(q);
     }
@@ -209,6 +210,7 @@ function AiDesigner({ study, update, setPreviewAt }: { study: Study; update: (p:
           <span><small>{p.replaces ? `Rewrite of Q${p.replaces}` : 'New'} · {TYPE_LABEL[p.type]}</small>
             {p.replaces && qs[p.replaces - 1] && <s>{qs[p.replaces - 1].prompt}</s>}
             <strong>{p.prompt}</strong>
+            {p.hint && <em>{p.hint}</em>}
             {p.options && <em>{p.options.join(' · ')}</em>}
             {p.showIf && <em className="rw-ai-cond">{condText(p)}</em>}
             <i>{p.why}</i></span></label>
