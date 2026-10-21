@@ -2,6 +2,15 @@ import React, { lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import './reset.css';
 
+// After the site updates, a page that's been open a while may ask for files from an older version that are gone.
+// Reload once to pick up the new version instead of showing a blank page.
+window.addEventListener('vite:preloadError', event => {
+  event.preventDefault();
+  try { if (sessionStorage.getItem('csb-reloaded-for-update')) return; sessionStorage.setItem('csb-reloaded-for-update', '1'); } catch { /* storage unavailable */ }
+  location.reload();
+});
+window.addEventListener('load', () => { setTimeout(() => { try { sessionStorage.removeItem('csb-reloaded-for-update'); } catch { /* ignore */ } }, 10000); });
+
 // Participant links (#/r/<study id>) open the research study instead of the studio.
 // Every page is loaded on demand, so a visitor reading a case study doesn't download the whole studio.
 const CaseStudyBuilder = lazy(() => import('./app/case-study-builder/StudioEntry'));
