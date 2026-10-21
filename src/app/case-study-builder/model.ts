@@ -1,4 +1,4 @@
-export type SectionKind = "flowRace" | "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "flowRace" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "photo" | "brand" | "flowRace" | "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "flowRace" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -150,6 +150,8 @@ export interface BuilderStudy {
 }
 
 export const componentNames: Record<SectionKind, string> = {
+  photo: "Photo",
+  brand: "Brand identity",
   built: "Built from a picture",
   flowRace: "Recorded flows",
   coverHero: "Title reveal hero",
@@ -205,6 +207,8 @@ export const componentNames: Record<SectionKind, string> = {
 };
 
 export const componentDescriptions: Record<SectionKind, string> = {
+  photo: "One photo beside your words (or full width, or two side by side), so the story doesn\u2019t read like an essay.",
+  brand: "Logo, typefaces and labeled color swatches: primary and state colors with names and hex codes.",
   built: "A layout rebuilt from a picture you dropped in, using your colours and type.",
   flowRace: "The same task recorded in each app, playing side by side, with time and screen counts.",
   showcase: "A bento of soft panels, each showing one designed component at its real size. Pull them straight from Figma.",
@@ -259,6 +263,8 @@ export const componentDescriptions: Record<SectionKind, string> = {
 };
 
 export const navDefaults: Record<SectionKind, string> = {
+  photo: "Photo",
+  brand: "Branding",
   built: "Section",
   flowRace: "Recorded flows",
   showcase: "Components", screenFocus: "Screens", screenStory: "Walkthrough", screenStrip: "Screens", affinity: "Affinity", aeiou: "Observations", abtest: "A/B test", taskSuccess: "Task success", roadmap: "Roadmap", flowCompare: "Flows", userFlow: "User flow", jtbd: "Jobs to be done", scrollSite: "The site", barChart: "Chart", insights: "Insights", iterations: "Iterations", screenGroups: "Wireframes", isoShowcase: "Showcase", gifBoard: "Inspiration", screenTrio: "Screens", floatDevices: "Devices", interviewQs: "Questions", typeSpec: "Type", flowDiff: "Redesign", featureCompare: "Features", positioning: "Landscape", coverHero: "Overview", details: "Overview", empathy: "Empathy map", rows: "Details", timeline: "Timeline", screenRecording: "Demo", prototype: "Prototype", findings: "Findings", interviews: "Interviews", carousel: "Explorations",
@@ -275,6 +281,7 @@ import { defaultFlowCompare } from "./FlowCompare";
 import { defaultFlowDiff, defaultUserFlow } from "./UserFlow";
 import { defaultJTBD } from "./JobsToBeDone";
 import { defaultFlowRace } from "./FlowRace";
+import { defaultBrandItems } from "./Brand";
 import { defaultFeatureCompare, defaultPositioning } from "./CompetitorViews";
 export const createSection = (kind: SectionKind): CaseStudySection => ({
   id: crypto.randomUUID(),
@@ -284,6 +291,8 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     built: "",
     flowRace: "Same task, recorded in every app",
     coverHero: "Making access feel obvious, not accidental.",
+    photo: "A moment worth seeing",
+    brand: "Branding",
     timeline: "How the work unfolded",
     details: "Project overview",
     empathy: "Inside their head",
@@ -334,12 +343,14 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     comparison: "From the original brief to the real problem",
     gallery: "The work, up close",
   }[kind],
-  body: kind === "coverHero" ? "" : kind === "fullMedia" ? "Add a short introduction, or leave this blank to let the media speak for itself." : "Add the key idea you want a reader to remember. Keep it short enough to let the visual carry the story.",
+  body: kind === "coverHero" || kind === "brand" ? "" : kind === "photo" ? "Say what the reader is looking at and why it matters. A few sentences is plenty." : kind === "fullMedia" ? "Add a short introduction, or leave this blank to let the media speak for itself." : "Add the key idea you want a reader to remember. Keep it short enough to let the visual carry the story.",
   variant: "light",
   items: {
     built: [],
     flowRace: [],
     coverHero: [{ title: "Hero visual", detail: "", image: "" }],
+    photo: [{ title: "", detail: "", image: "" }],
+    brand: defaultBrandItems(),
     affinity: [],
     showcase: [{ title: "Task details", detail: "", image: "", tileSize: "standard" }, { title: "Filter menu", detail: "", image: "", tileSize: "standard" }, { title: "Calendar view", detail: "", image: "", tileSize: "wide" }],
     screenFocus: [{ title: "Find a class", detail: "Times are visible right on the schedule.", image: "", spots: [] }, { title: "Pick a time", detail: "Open spots show before you commit.", image: "", spots: [{ x: .08, y: .44, w: .84, h: .14, note: "Spots left are shown on every time, so nobody finds out at checkout." }] }, { title: "Confirm", detail: "One tap, with the pass applied automatically.", image: "", spots: [] }, { title: "You’re in", detail: "Added to your calendar with directions.", image: "", spots: [] }],

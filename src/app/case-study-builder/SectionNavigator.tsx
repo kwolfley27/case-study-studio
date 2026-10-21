@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Clapperboard, Tablet, Layers, GalleryVerticalEnd, Laptop, GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, Type, Lightbulb, Flag, History, UserRound, Users, Video, Workflow, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Palette, Clapperboard, Tablet, Layers, GalleryVerticalEnd, Laptop, GitCompare, Grid2x2, ListChecks, AlignLeft, ArrowLeftRight, BarChart3, Brain, CalendarRange, CircleCheck, Columns2, Columns3, Component, Copy, Crosshair, Eye, EyeOff, FlaskConical, Frame, GalleryHorizontal, GitBranch, Hash, Image, Images, Info, LayoutTemplate, ListOrdered, MessagesSquare, MoreHorizontal, MousePointerClick, MoveDown, MoveUp, Plus, Quote, Route, Rows3, ScanSearch, Smartphone, StickyNote, Target, Trash2, Type, Lightbulb, Flag, History, UserRound, Users, Video, Workflow, Sparkles } from 'lucide-react';
 import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, type SectionKind } from './model';
 
 /*
@@ -8,6 +8,7 @@ import { componentNames, navLabelFor, type BuilderStudy, type CaseStudySection, 
 */
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 const ICONS: Record<SectionKind, Icon> = {
+  photo: ImageIcon, brand: Palette,
   built: Sparkles,
   flowRace: Video,
   coverHero: LayoutTemplate, details: Info, timeline: CalendarRange, empathy: Brain, persona: UserRound, journey: Route, problem: Target,

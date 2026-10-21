@@ -42,6 +42,9 @@ import { JTBDControls } from "./JobsToBeDone";
 import { ScrollSiteControls } from "./ScrollSite";
 import { BarChartControls } from "./BarChart";
 import { TypeSpecimenControls } from "./TypeSpecimen";
+import { PhotoControls } from "./Photo";
+import { InterviewsControls } from "./StoryBlocks";
+import { BrandControls } from "./Brand";
 import { AnnotationControls } from "./AppleExtras";
 import { QuotesControls } from "./Quotes";
 import { InsightsControls } from "./Insights";
@@ -406,6 +409,9 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
         {selected.kind === "iterations" && <><div className="csb-inspector-divider" /><IterationsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "insights" && <><div className="csb-inspector-divider" /><InsightsControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "quotes" && <><div className="csb-inspector-divider" /><QuotesControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "interviews" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Interview cards</p><InterviewsControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "photo" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Photo</p><PhotoControls section={selected} onChange={updateSection} /></>}
+        {selected.kind === "brand" && <><div className="csb-inspector-divider" /><p className="csb-panel-kicker">Brand identity</p><BrandControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "typeSpec" && <><div className="csb-inspector-divider" /><TypeSpecimenControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "scrollSite" && <><div className="csb-inspector-divider" /><ScrollSiteControls section={selected} onChange={updateSection} /></>}
         {selected.kind === "jtbd" && <><div className="csb-inspector-divider" /><JTBDControls section={selected} onChange={jtbd => updateSection({ jtbd })} /></>}

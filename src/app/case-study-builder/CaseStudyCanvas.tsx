@@ -25,6 +25,8 @@ import { QuotesView } from "./Quotes";
 import { Insights } from "./Insights";
 import { Iterations } from "./Iterations";
 import { TypeSpecimen } from "./TypeSpecimen";
+import { Photo, photoLayoutOf } from "./Photo";
+import { Brand } from "./Brand";
 import { FeatureCompare, Positioning } from "./CompetitorViews";
 import { AEIOUBoard } from "./AEIOU";
 import { AffinityDiagram } from "./AffinityDiagram";
@@ -141,7 +143,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "timeline": return <WorkTimeline section={section} />;
     case "details": return <ProjectDetails section={section} />;
     case "screenRecording": return <ScreenRecording section={section} editorMode={editorMode} />;
-    case "interviews": return <Interviews section={section} />;
+    case "interviews": return <Interviews section={section} editorMode={editorMode} />;
     case "carousel": return <ScreenCarousel section={section} />;
     case "prototype": return <PrototypeEmbed section={section} editorMode={editorMode} onSetLink={onSetPrototype} />;
     case "persona": return <Persona section={section} />;
@@ -158,6 +160,8 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "aeiou": return <AEIOUBoard section={section} />;
     case "barChart": return <BarChart section={section} />;
     case "typeSpec": return <TypeSpecimen section={section} />;
+    case "photo": return <Photo section={section} editorMode={editorMode} />;
+    case "brand": return <Brand section={section} editorMode={editorMode} />;
     case "scrollSite": return <ScrollSite section={section} editorMode={editorMode} />;
     case "jtbd": return <JobsToBeDone section={section} />;
     case "userFlow": return <UserFlow section={section} editorMode={editorMode} />;
@@ -261,7 +265,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     </header></EditingContext.Provider>}
     {(() => {
       // Sections sharing options.group form one phase with a pinned step menu.
-      const renderOne = (section: CaseStudySection) => { const index = study.sections.indexOf(section); return <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} data-devices={(section.options?.devices === "framed" || section.options?.devices === "frameless" ? String(section.options.devices) : study.deviceStyle) === "frameless" ? "frameless" : undefined} data-grad-sec={section.options?.gradient === "off" || section.options?.gradient === "on" ? String(section.options.gradient) : undefined} data-hidden-label={section.hidden ? "Hidden from the page" : undefined} className={`csb-story-section ${section.hidden ? "is-hidden-section" : ""} csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
+      const renderOne = (section: CaseStudySection) => { const index = study.sections.indexOf(section); return <EditingContext.Provider key={section.id} value={{edit:editorMode?(field,value)=>onEditSection?.(section.id,field,value):undefined,styles:section.textStyles}}><section id={`builder-section-${section.id}`} data-devices={(section.options?.devices === "framed" || section.options?.devices === "frameless" ? String(section.options.devices) : study.deviceStyle) === "frameless" ? "frameless" : undefined} data-grad-sec={section.options?.gradient === "off" || section.options?.gradient === "on" ? String(section.options.gradient) : undefined} data-hidden-label={section.hidden ? "Hidden from the page" : undefined} className={`csb-story-section ${section.hidden ? "is-hidden-section" : ""} csb-kind-${section.kind} csb-variant-${section.variant} ${section.kind === "fullMedia" ? "csb-full-media-section" : ""} ${section.kind === "photo" ? `csb-photo-${photoLayoutOf(section)}` : ""} ${selectedSectionId === section.id ? "is-selected" : ""}`} onClick={editorMode ? () => onSelectSection?.(section.id) : undefined}>
       {section.kind === "coverHero" ? <CoverHero section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} /> : <div className="csb-section-inner"><Enter><SectionIntro section={section} index={index} /></Enter><SectionVisual section={section} editorMode={editorMode} onUploadMedia={onUploadMedia} onSetPrototype={onSetPrototype} /></div>}
     </section></EditingContext.Provider>; };
       const visible = study.sections.filter(sec => !(sec.hidden && !editorMode));

@@ -24,7 +24,7 @@ const WEIGHT: Record<number, string> = { 100: 'Thin', 200: 'Extra Light', 300: '
 const stackOf = (family: string) => STACK[family] ?? `"${family}",system-ui,sans-serif`;
 const DEFAULT: FontSpec = { family: 'Inter', size: 18 };
 
-function useFonts(families: string[]) {
+export function useFonts(families: string[]) {
   useEffect(() => {
     const want = [...new Set(families.map(f => GOOGLE[f] ?? (/^[\w\s]+$/.test(f) ? `${f.replace(/ /g, '+')}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400` : '')).filter(Boolean))];
     if (!want.length) return;
