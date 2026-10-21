@@ -424,3 +424,7 @@
 .rw-xtab [role=rowheader]{display:flex;align-items:center;gap:6px}.rw-xtab [role=rowheader] em{font-style:normal;color:var(--csb-muted);font-size:11px}
 .rw-xcell{border:0;border-radius:6px;padding:8px 0;font:600 12.5px/1 inherit;cursor:pointer;background:rgba(31,78,163,var(--a));color:#10213f}
 .rw-xcell:disabled{cursor:default;background:#f6f6f4;color:#c4c4c4}
+.rs-other{margin-top:2px}
+.rw-others{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--csb-muted)}
+.rw-others span{padding:3px 9px;border-radius:999px;background:#f2f2f0;color:#1d2622}
+.rw-others b{font-weight:600;margin-left:4px;opacity:.6}

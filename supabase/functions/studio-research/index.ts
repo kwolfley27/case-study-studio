@@ -100,7 +100,8 @@ Deno.serve(async (request) => {
       // A budget across the whole interview, so nobody gets worn out.
       if ((Number(body.used) || 0) >= (study.followupBudget ?? 6)) return reply({ done: true });
       const answer = text(body.answer, 4000).trim();
-      if ((q.type === 'single' || q.type === 'multi') && q.followIf?.length && !answer.split(', ').some(a => q.followIf!.includes(a))) return reply({ done: true });
+      // Choice answers arrive as plain words; a typed "Other" looks like "Other (Sprouts)".
+      if ((q.type === 'single' || q.type === 'multi') && q.followIf?.length && !answer.split(', ').some(a => q.followIf!.some(f => a === f || a.startsWith(`${f} (`)))) return reply({ done: true });
       if (answer.length < 2) return reply({ done: true });
       const context = (Array.isArray(body.context) ? body.context : []).slice(0, 20).map((c: { q?: unknown; a?: unknown }) => ({ q: text(c?.q, 300), a: text(c?.a, 600) }));
       try { return reply(await followUp(study, q, answer, history, context, Number(body.used) || 0)); }
@@ -166,7 +167,15 @@ Deno.serve(async (request) => {
         const list = (Array.isArray(rawFu[q.id]) ? rawFu[q.id] as Array<{ q?: unknown; a?: unknown }> : []).slice(0, Math.min(3, q.followups)).map(f => ({ q: text(f?.q, 300), a: text(f?.a, 4000).trim() })).filter(f => f.q && f.a);
         if (list.length) { followups[q.id] = list.slice(0, budget); budget -= list.length; }
       }
-      const response = { id: crypto.randomUUID(), at: new Date().toISOString(), ms: Math.max(0, Math.min(86_400_000, Number(body.ms) || 0)), answers: clean, ...(Object.keys(followups).length ? { followups } : {}) };
+      // What they typed after picking an "Other" option.
+      const rawOthers = (body.others && typeof body.others === 'object') ? body.others as Record<string, unknown> : {};
+      const others: Record<string, string> = {};
+      for (const q of study.questions) {
+        if (q.type !== 'single' && q.type !== 'multi') continue;
+        const v = clean[q.id]; const picked = (Array.isArray(v) ? v : [v]).some(x => typeof x === 'string' && /^other\b/i.test(x.trim()));
+        const t = text(rawOthers[q.id], 120).trim(); if (picked && t) others[q.id] = t;
+      }
+      const response = { id: crypto.randomUUID(), at: new Date().toISOString(), ms: Math.max(0, Math.min(86_400_000, Number(body.ms) || 0)), answers: clean, ...(Object.keys(followups).length ? { followups } : {}), ...(Object.keys(others).length ? { others } : {}) };
       await writeJson(`responses/${id}/${response.at.replace(/[:.]/g, '-')}-${response.id.slice(0, 8)}.json`, response);
       if (study.notion?.databaseId) await notionRow(study, response).catch(() => undefined);
       return reply({ ok: true });
@@ -334,6 +343,7 @@ async function ensureDatabase(study: Study): Promise<string> {
     if (q.type === 'contact') { if (fieldMode(q, 'name') !== 'off') properties.Name = { rich_text: {} }; if (fieldMode(q, 'email') !== 'off') properties.Email = { email: {} }; if (fieldMode(q, 'phone') !== 'off') properties.Phone = { phone_number: {} }; return; }
     properties[propName(q, i)] = propSchema(q);
   });
+  if (study.kind !== 'usability' && study.questions.some(q => (q.type === 'single' || q.type === 'multi') && q.options?.some(o => /^other\b/i.test(o.trim())))) properties['Other (typed)'] = { rich_text: {} };
   if (study.notion?.databaseId) {
     await notion(`databases/${study.notion.databaseId}`, { method: 'PATCH', body: JSON.stringify({ title: [{ text: { content: `${study.title} · responses` } }], properties }) });
     return study.notion.databaseId;
@@ -343,7 +353,7 @@ async function ensureDatabase(study: Study): Promise<string> {
   const db = await notion('databases', { method: 'POST', body: JSON.stringify({ parent: { type: 'page_id', page_id: parent }, title: [{ text: { content: `${study.title} · responses` } }], properties }) });
   return db.id;
 }
-async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>> }) {
+async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>>; others?: Record<string, string> }) {
   const properties: Record<string, unknown> = {
     Participant: { title: [{ text: { content: (() => { const nq = study.questions.find(x => x.preset === 'name'); const nv = nq ? response.answers[nq.id] : ''; return typeof nv === 'string' && nv.trim() ? nv.trim().slice(0, 40) : `Participant ${response.id.slice(0, 4).toUpperCase()}`; })() } }] },
     Submitted: { date: { start: response.at } },
@@ -364,6 +374,8 @@ async function notionRow(study: Study, response: { id: string; at: string; ms: n
       properties[name] = { rich_text: [{ text: { content: full.slice(0, 1990) } }] };
     }
   });
+  const other = study.questions.map((q, i) => response.others?.[q.id] ? `Q${i + 1}: ${response.others[q.id]}` : '').filter(Boolean).join('  ');
+  if (other) properties['Other (typed)'] = { rich_text: [{ text: { content: other.slice(0, 1990) } }] };
   await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
 }
 

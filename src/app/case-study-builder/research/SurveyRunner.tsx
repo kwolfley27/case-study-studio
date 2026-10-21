@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, wantsFollowUp, estimateMinutes, answerWords, DEFAULT_FOLLOWUP_BUDGET, type ContactKey, type FollowUp, type Question, type Study } from './research';
+import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, wantsFollowUp, estimateMinutes, answerWords, isOtherOption, pickedOther, DEFAULT_FOLLOWUP_BUDGET, type ContactKey, type FollowUp, type Question, type Study } from './research';
 import './research.css';
 
 const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.values(v as object).some(x => String(x ?? '').trim()));
@@ -12,11 +12,12 @@ type AskFollowUp = (q: Question, answer: string, history: FollowUp[], context: F
 type UploadPhoto = (q: Question, file: File) => Promise<string>;
 
 
-export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPhoto, startAt }: { study: Study; preview?: boolean; onSubmit?: (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>) => Promise<void>; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; startAt?: number }) {
+export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPhoto, startAt }: { study: Study; preview?: boolean; onSubmit?: (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>) => Promise<void>; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; startAt?: number }) {
   const [step, setStep] = useState(startAt ?? -1); // -1 intro, 0..n-1 questions, n thanks
   const [sub, setSub] = useState<number | null>(null); // which follow-up of the current question is showing
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [fu, setFu] = useState<Record<string, FollowUp[]>>({});
+  const [others, setOthers] = useState<Record<string, string>>({}); // what they typed after picking "Other"
   const [fuDone, setFuDone] = useState<Record<string, boolean>>({}); // the AI said there's nothing more to ask
   const [busy, setBusy] = useState<'' | 'thinking' | 'sending'>('');
   const [error, setError] = useState('');
@@ -36,7 +37,8 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
   const fieldErrors = q?.type === 'contact' ? contactErrors(q, value) : {};
   const contactOk = !Object.keys(fieldErrors).length;
   const rankDone = q?.type === 'rank' ? (Array.isArray(value) ? value.length : 0) >= (q.options?.length ?? 0) : true;
-  const canNext = !q || !!fuItem || (q.type === 'contact' ? (contactOk || (!q.required && !answered)) : q.type === 'rank' ? (q.required ? rankDone : true) : (!q.required || answered));
+  const needsOther = !!q && (q.type === 'single' || q.type === 'multi') && pickedOther(value) && !(others[q.id] ?? '').trim();
+  const canNext = !q || !!fuItem || (!needsOther && (q.type === 'contact' ? (contactOk || (!q.required && !answered)) : q.type === 'rank' ? (q.required ? rankDone : true) : (!q.required || answered)));
   const set = (v: unknown) => { if (!q) return; setAnswers(a => ({ ...a, [q.id]: v })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); setFuDone(d => ({ ...d, [q.id]: false })); };
   const setFuAnswer = (a: string) => { if (!q || sub === null) return; setFu(f => ({ ...f, [q.id]: (f[q.id] ?? []).map((x, i) => i === sub ? { ...x, a } : x) })); setFuDone(d => ({ ...d, [q.id]: false })); };
   const contact = study.questions.filter(x => x.type === 'contact').map(x => answers[x.id]).find(hasValue) as Partial<Record<ContactKey, string>> | undefined;
@@ -47,8 +49,9 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
       setBusy('sending'); setError('');
       // Only send answers to questions the participant actually saw.
       const shown = shownIds();
+      const sentOthers = Object.fromEntries(Object.entries(others).filter(([k, t]) => shown.has(k) && t.trim() && pickedOther(answers[k])).map(([k, t]) => [k, t.trim()]));
       const sentFu = Object.fromEntries(Object.entries(fu).filter(([k]) => shown.has(k)).map(([k, list]) => [k, list.filter(x => x.a.trim())]).filter(([, list]) => (list as FollowUp[]).length));
-      try { await onSubmit?.(Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k))), Date.now() - started.current, sentFu); go(n); }
+      try { await onSubmit?.(Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k))), Date.now() - started.current, sentFu, sentOthers); go(n); }
       catch (e) { setError(e instanceof Error ? e.message : 'Could not send your answers. Please try again.'); }
       finally { setBusy(''); }
     } else { if (step === -1) started.current = Date.now(); go(step + 1); }
@@ -58,8 +61,8 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
     if (!q || !onFollowUp || history.length >= maxFu || fuDone[q.id] || used - (fu[q.id]?.length ?? 0) + history.length >= budget) return false;
     setBusy('thinking');
     try {
-      const context = qs.slice(0, step).filter(x => x.preset !== 'name').map(x => ({ q: x.prompt, a: answerWords(answers[x.id], x) })).filter(x => x.a); // names never go to the AI
-      const question = await onFollowUp(q, answerWords(value, q), history, context, used - (fu[q.id]?.length ?? 0) + history.length);
+      const context = qs.slice(0, step).filter(x => x.preset !== 'name').map(x => ({ q: x.prompt, a: answerWords(answers[x.id], x, others[x.id]) })).filter(x => x.a); // names never go to the AI
+      const question = await onFollowUp(q, answerWords(value, q, others[q.id]), history, context, used - (fu[q.id]?.length ?? 0) + history.length);
       if (!question) { setFuDone(d => ({ ...d, [q.id]: true })); return false; }
       setFu(f => ({ ...f, [q.id]: [...history, { q: question, a: '' }] })); setSub(history.length); setTouched(false);
       return true;
@@ -106,7 +109,7 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
           <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>
           <small>{n} question{n === 1 ? '' : 's'} · about {estimateMinutes(study.questions, study.followupBudget)} min</small>
         </div>}
-        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
+        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
         {q && fuItem && <div className="rs-q">
           <small className="rs-count">{step + 1} / {n} · follow-up</small>
           <blockquote className="rs-echo">{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).slice(0, 160)}{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).length > 160 ? '…' : ''}</blockquote>
@@ -128,7 +131,7 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
   </div>;
 }
 
-function QuestionView({ q, index, total, value, set, errors, contact, preview, onUploadPhoto }: { q: Question; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
+function QuestionView({ q, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto }: { q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
   const list = Array.isArray(value) ? value as string[] : [];
   return <div className="rs-q">
     <small className="rs-count">{index + 1} / {total}{q.required ? '' : ' · optional'}</small>
@@ -139,6 +142,7 @@ function QuestionView({ q, index, total, value, set, errors, contact, preview, o
     {(q.type === 'single' || q.type === 'multi') && (() => { const pics = (q.optionImages ?? []).some(Boolean); return <div className={`rs-options ${pics ? 'has-images' : ''}`} role={q.type === 'single' ? 'radiogroup' : 'group'} aria-label={q.prompt}>
       {(q.options ?? []).map((o, i) => { const on = q.type === 'single' ? value === o : list.includes(o); const mark = <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />; const img = q.optionImages?.[i]; return <button key={i} type="button" role={q.type === 'single' ? 'radio' : 'checkbox'} aria-checked={on} className={`rs-option ${on ? 'is-on' : ''} ${pics ? 'is-card' : ''}`}
         onClick={() => set(q.type === 'single' ? o : on ? list.filter(x => x !== o) : [...list, o])}>{pics ? <>{img ? <img src={img} alt="" /> : <span className="rs-card-ph" aria-hidden="true" />}<span className="rs-card-label">{mark}{o}</span></> : <>{mark}{o}</>}</button>; })}
+      {pickedOther(value) && (q.options ?? []).some(isOtherOption) && <input className="rs-input rs-other" autoFocus value={other} maxLength={120} onChange={e => setOther(e.target.value)} placeholder={/store|shop|grocer/i.test(q.prompt) ? 'Which store?' : 'Please tell us which'} aria-label={`${q.prompt} (other)`} />}
     </div>; })()}
     {(q.type === 'scale' || q.type === 'nps') && (() => { const lo = q.type === 'nps' ? 0 : q.min ?? 1, hi = q.type === 'nps' ? 10 : q.max ?? 5; return <div className={`rs-scale ${q.type === 'nps' ? 'is-nps' : ''}`}>
       <div className="rs-scale-row" role="radiogroup" aria-label={q.prompt}>{Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map(v => <button key={v} type="button" role="radio" aria-checked={value === v} className={value === v ? 'is-on' : ''} onClick={() => set(v)}>{v}</button>)}</div>
@@ -280,7 +284,7 @@ export default function ParticipantPage({ id }: { id: string }) {
   return <main className={`rs-page ${study?.theme?.background ? 'has-theme' : ''}`} style={study?.theme?.background ? { '--rs-bg': study.theme.background } as React.CSSProperties : undefined}>
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={async (answers, ms, followups) => { await call('submit', { id, answers, ms, followups }); }}
+      : <SurveyRunner study={study} onSubmit={async (answers, ms, followups, others) => { await call('submit', { id, answers, ms, followups, others }); }}
           onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used }); return r.question || null; }}
           onUploadPhoto={async (q, file) => {
             const { uploadUrl, path } = await call<{ uploadUrl: string; path: string }>('photoUpload', { id, questionId: q.id, type: file.type || 'image/jpeg', size: file.size });
