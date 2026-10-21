@@ -3797,3 +3797,9 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-ivc .csb-interviews-people button:focus{outline:none}
 .csb-ivc .csb-interviews-people button:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:-4px;border-radius:10px}
 .csb-ivc .csb-interviews-people button.is-active strong{font-weight:650}
+
+/* Interview highlights: active person marked with a plain dark bar (matches the side menu), not a clipped colored border */
+.csb-canvas .csb-ivc .csb-interviews-people button{position:relative;border-left:0!important;box-shadow:none!important}
+.csb-canvas .csb-ivc .csb-interviews-people button::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:2px;border-radius:2px;background:var(--t-ink,#1c1917);transform:scaleY(0);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.csb-canvas .csb-ivc .csb-interviews-people button.is-active::before{transform:scaleY(1)}
+@container (max-width:700px){.csb-canvas .csb-ivc .csb-interviews-people button::before{top:auto;bottom:0;left:16px;right:16px;width:auto;height:2px;transform:scaleX(0)}.csb-canvas .csb-ivc .csb-interviews-people button.is-active::before{transform:scaleX(1)}.csb-canvas .csb-ivc .csb-interviews-people button{border-bottom:0!important}}
