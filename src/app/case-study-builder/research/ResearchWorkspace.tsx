@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { MessagesSquare, ArrowDown, ArrowUp, BarChart3, Copy, CopyPlus, ExternalLink, ImagePlus, Link2, ListChecks, PenLine, Plus, Smartphone, Sparkles, Trash2, X } from 'lucide-react';
 import { uploadToStudio } from '../media';
 import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, answerWords, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, answerWords, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -89,8 +89,9 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
       {qs.map((q, i) => <div key={q.id} className={`rw-q ${previewAt === i ? 'is-on' : ''}`} onFocusCapture={() => setPreviewAt(i)} onClick={() => setPreviewAt(i)}>
         <div className="rw-q-head">
           <span className="rw-q-num">{i + 1}</span>
-          <select value={q.type} aria-label="Question type" disabled={!!q.preset} onChange={e => { const t = e.target.value as Question['type']; const base = newQuestion(t); setQ(i, { type: t, options: base.options, min: base.min, max: base.max, minLabel: base.minLabel, maxLabel: base.maxLabel, contact: base.contact, url: t === 'schedule' ? q.url ?? '' : undefined, ...(t === 'contact' || t === 'schedule' ? { prompt: base.prompt, required: base.required } : {}) }); }}>{QUESTION_TYPES.map(([t, l]) => <option key={t} value={t}>{l}</option>)}</select>
-          {q.preset && <span className="rw-tag">{q.preset === 'nps' ? 'NPS' : q.preset === 'recruit' ? 'Recruit' : 'SUS'}</span>}
+          <select value={q.type} aria-label="Question type" disabled={!!q.preset && (q.preset.startsWith('sus-') || q.preset === 'nps' || q.preset === 'name')} onChange={e => { const t = e.target.value as Question['type']; const base = newQuestion(t); setQ(i, { type: t, options: base.options, min: base.min, max: base.max, minLabel: base.minLabel, maxLabel: base.maxLabel, contact: base.contact, url: t === 'schedule' ? q.url ?? '' : undefined, ...(t === 'contact' || t === 'schedule' ? { prompt: base.prompt, required: base.required } : {}) }); }}>{QUESTION_TYPES.map(([t, l]) => <option key={t} value={t}>{l}</option>)}</select>
+          {q.preset && <span className="rw-tag">{q.preset === 'nps' ? 'NPS' : q.preset === 'recruit' ? 'Recruit' : q.preset === 'name' ? 'Name · private' : q.preset === 'about' ? 'About you' : 'SUS'}</span>}
+          {q.group && <span className="rw-tag is-group">Group</span>}
           <span className="rw-q-tools">
             <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}><ArrowUp size={13} /></button>
             <button type="button" aria-label="Move down" disabled={i === qs.length - 1} onClick={() => move(i, i + 1)}><ArrowDown size={13} /></button>
@@ -134,7 +135,8 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           {!!q.followups && <small className="rw-note">After they answer, AI asks about what they actually said, one question at a time. It stops early when there’s nothing worth asking.</small>}
         </div>}
         <ShowIfEditor qs={qs} i={i} setQ={setQ} />
-        {q.type !== 'schedule' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
+        <div className="rw-row">{q.type !== 'schedule' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
+          {(q.type === 'single' || q.type === 'multi') && !q.preset?.startsWith('sus-') && <label className="rw-req" title="Each answer becomes a group (bucket) you can filter and compare in Results"><input type="checkbox" checked={!!q.group} onChange={e => setQ(i, { group: e.target.checked || undefined })} /> Use answers as groups</label>}</div>
       </div>)}
       <div className="rw-addbar">
         {QUESTION_TYPES.map(([t, l, hint]) => <button key={t} type="button" title={hint} onClick={() => add([newQuestion(t)])}>+ {l}</button>)}
@@ -143,6 +145,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
         <p className="rw-kicker">Standard questionnaires</p>
         <button type="button" disabled={hasSus} onClick={() => add(susQuestions())}><strong>SUS · System Usability Scale</strong><small>10 standard statements. Gives a 0–100 usability score and grade.</small></button>
         <button type="button" disabled={qs.some(q => q.preset === 'nps')} onClick={() => add([npsQuestion()])}><strong>NPS · Net Promoter Score</strong><small>“How likely are you to recommend…” 0–10. Gives a score from −100 to 100.</small></button>
+        <button type="button" disabled={qs.some(q => q.preset === 'name')} onClick={() => { update({ questions: [...aboutYouQuestions(), ...qs] }); setPreviewAt(0); }}><strong>About you (start of survey)</strong><small>First name + last initial, age range, how often they meal prep, and what describes them (student, gym, runner…). Sorts everyone into groups you can compare in Results.</small></button>
         <button type="button" disabled={hasRecruit} onClick={() => add(recruitQuestions())}><strong>Recruit for interviews</strong><small>“Open to a follow-up interview?” Yes / Maybe / No. Yes and Maybe then get contact info and your Calendly link.</small></button>
       </div>
       <label className="rw-field"><span>Thank-you message</span><input value={study.thanks ?? ''} onChange={e => update({ thanks: e.target.value })} onFocus={() => setPreviewAt(qs.length)} /></label>
@@ -347,14 +350,16 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
   const [picked, setPicked] = useState<Record<string, boolean>>({});
   const load = () => { setError(''); call<{ study: Study; responses: Response[] }>('results', { id: study.id }, true).then(setData, e => setError(e instanceof Error ? e.message : 'Could not load results.')); };
   useEffect(load, [study.id]);
-  const s = data?.study ?? study; const responses = data?.responses ?? [];
-  const results = useMemo(() => aggregate(s, responses), [data]);
-  const sus = useMemo(() => susScore(s, responses), [data]);
+  const [picks, setPicks] = useState<Record<string, string>>({}); // group filter: question id → option
+  const s = data?.study ?? study; const all = data?.responses ?? [];
+  const responses = useMemo(() => filterByGroups(all, picks), [data, picks]);
+  const results = useMemo(() => aggregate(s, responses), [data, picks]);
+  const sus = useMemo(() => susScore(s, responses), [data, picks]);
   const nps = results.find((r): r is Extract<QuestionResult, { kind: 'nps' }> => r.kind === 'nps');
   const medianSec = responses.length ? Math.round([...responses].sort((a, b) => a.ms - b.ms)[Math.floor(responses.length / 2)].ms / 1000) : 0;
   // Open answers with their AI follow-ups, one entry per participant.
-  const entries = (qid: string) => responses.filter(rs => { const v = rs.answers[qid]; return v != null && v !== '' && typeof v !== 'object'; }).map(rs => ({ key: `${qid}-${rs.id}`, text: String(rs.answers[qid]), fu: (rs.followups?.[qid] ?? []).map((f, j) => ({ key: `${qid}-${rs.id}-f${j}`, q: f.q, text: f.a })) }));
-  const quotes = results.flatMap(r => r.kind === 'text' ? entries(r.q.id).flatMap(e => [{ key: e.key, text: e.text }, ...e.fu.map(f => ({ key: f.key, text: f.text }))]) : []);
+  const entries = (qid: string) => responses.filter(rs => { const v = rs.answers[qid]; return v != null && v !== '' && typeof v !== 'object'; }).map(rs => ({ key: `${qid}-${rs.id}`, text: String(rs.answers[qid]), name: participantName(s, rs), who: groupLabel(s, rs), fu: (rs.followups?.[qid] ?? []).map((f, j) => ({ key: `${qid}-${rs.id}-f${j}`, q: f.q, text: f.a })) }));
+  const quotes = results.flatMap(r => r.kind === 'text' && r.q.preset !== 'name' ? entries(r.q.id).flatMap(e => [{ key: e.key, text: e.text, who: e.who }, ...e.fu.map(f => ({ key: f.key, text: f.text, who: e.who }))]) : []);
 
   const addCharts = () => {
     const choice = results.filter((r): r is Extract<QuestionResult, { kind: 'choice' }> => r.kind === 'choice' && r.answered > 0).slice(0, 4);
@@ -374,7 +379,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
   };
   const addQuotes = () => {
     const chosen = quotes.filter(q => picked[q.key]).slice(0, 6); if (!chosen.length) return;
-    const sec = { ...createSection('quotes'), title: 'In their words', eyebrow: 'Discover', items: chosen.map((q, i) => ({ title: `Participant ${String(i + 1).padStart(2, '0')}`, detail: q.text })) };
+    const sec = { ...createSection('quotes'), title: 'In their words', eyebrow: 'Discover', items: chosen.map((q, i) => ({ title: q.who || `Participant ${String(i + 1).padStart(2, '0')}`, detail: q.text })) }; // groups, never names
     onAddSections([sec], `Added ${chosen.length} quote${chosen.length === 1 ? '' : 's'}.`);
   };
 
@@ -388,16 +393,17 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
       {nps && <div><strong>{nps.answered ? `${nps.score > 0 ? '+' : ''}${nps.score}` : '—'}</strong><small>NPS</small></div>}
       <button type="button" className="csb-quiet-button" onClick={load}>Refresh</button>
     </div>
-    {!responses.length ? <p className="rw-empty">No responses yet. Share the link from the Share tab.</p> : <>
+    <Groups study={s} all={all} picks={picks} setPicks={setPicks} />
+    {!responses.length ? <p className="rw-empty">{all.length ? 'No one in this group yet.' : 'No responses yet. Share the link from the Share tab.'}</p> : <>
       <div className="rw-addrow">
         <span>Add to the case study:</span>
         <button type="button" className="csb-quiet-button" onClick={addCharts}>Charts</button>
         <button type="button" className="csb-quiet-button" onClick={addScores}>Scores</button>
         <button type="button" className="csb-quiet-button" disabled={!Object.values(picked).some(Boolean)} onClick={addQuotes}>Selected quotes</button>
       </div>
-      <Synthesis study={s} responses={responses} onAddSections={onAddSections} />
+      <Synthesis study={s} responses={responses} onAddSections={onAddSections} filterNote={Object.values(picks).join(' + ')} />
       <FollowUps study={s} responses={responses} />
-      {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact').map(r => <div key={r.q.id} className="rw-res">
+      {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact' && r.q.preset !== 'name').map(r => <div key={r.q.id} className="rw-res">
         <h4>{r.q.prompt}<small>{r.answered} answered</small></h4>
         {r.kind === 'choice' && <div className="rw-bars">{r.options.map(o => { const pct = r.answered ? Math.round(o.count / r.answered * 100) : 0; return <div key={o.label}><span>{o.label}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}{r.q.type === 'multi' && <small>Choose-all question: percentages add up to more than 100%.</small>}</div>}
         {r.kind === 'scale' && <div className="rw-bars">{r.dist.map((c, k) => { const pct = r.answered ? Math.round(c / r.answered * 100) : 0; return <div key={k}><span>{(r.q.min ?? 1) + k}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}<small>Average {r.mean.toFixed(1)} of {r.q.max ?? 5}</small></div>}
@@ -405,7 +411,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
         {r.kind === 'photo' && <div className="rw-results-photos">{responses.flatMap(rs => (rs.photoUrls?.[r.q.id] ?? []).map((u, k) => <a key={`${rs.id}-${k}`} href={u} target="_blank" rel="noreferrer"><img src={u} alt="Participant photo" loading="lazy" /></a>))}{!r.answered && <p className="rw-empty">No photos yet.</p>}</div>}
         {r.kind === 'schedule' && <div className="rw-nps"><strong>{r.booked}</strong><span>booked a time{r.answered > r.booked ? ` · ${r.answered - r.booked} opened the link but didn’t finish in the survey` : ''}</span></div>}
         {r.kind === 'nps' && <div className="rw-nps"><strong>{r.score > 0 ? '+' : ''}{r.score}</strong><span>{r.promoters} promoters · {r.passives} passives · {r.detractors} detractors</span></div>}
-        {r.kind === 'text' && <ul className="rw-quotes">{entries(r.q.id).map(e => <li key={e.key}><label><input type="checkbox" checked={!!picked[e.key]} onChange={ev => setPicked(p => ({ ...p, [e.key]: ev.target.checked }))} /> “{e.text}”</label>
+        {r.kind === 'text' && <ul className="rw-quotes">{entries(r.q.id).map(e => <li key={e.key}><label><input type="checkbox" checked={!!picked[e.key]} onChange={ev => setPicked(p => ({ ...p, [e.key]: ev.target.checked }))} /> “{e.text}”</label>{(e.name || e.who) && <span className="rw-who">{[e.name, e.who].filter(Boolean).join(' · ')}</span>}
           {e.fu.length > 0 && <ul className="rw-fu-list">{e.fu.map(f => <li key={f.key}><small>AI follow-up: {f.q}</small><label><input type="checkbox" checked={!!picked[f.key]} onChange={ev => setPicked(p => ({ ...p, [f.key]: ev.target.checked }))} /> “{f.text}”</label></li>)}</ul>}</li>)}</ul>}
       </div>)}
       {sus && <div className="rw-res"><h4>System Usability Scale<small>{sus.n} complete</small></h4><div className="rw-nps"><strong>{Math.round(sus.score)}</strong><span>{sus.grade}. The average product scores 68.</span></div></div>}
@@ -441,19 +447,19 @@ function FollowUps({ study, responses }: { study: Study; responses: Response[] }
 /* ---------- Find themes with AI: synthesis the way a researcher would do it ---------- */
 type Synth = { summary: string; themes: Array<{ title: string; detail: string; count: number; segments?: string; quotes: Array<{ text: string; participant: string }> }>; forces?: Partial<Record<'push' | 'pull' | 'anxiety' | 'habit', Array<{ point: string; count: number; quote?: string }>>>; surprises?: string[]; lowEffort?: Array<{ participant: string; reason: string }>; nextQuestions?: string[]; note?: string };
 const FORCE_LABEL = { push: ['Push', 'What’s wrong with how things are now'], pull: ['Pull', 'What they hope a change gets them'], anxiety: ['Anxiety', 'What worries them about changing'], habit: ['Habit', 'What keeps them doing it the old way'] } as const;
-function Synthesis({ study, responses, onAddSections }: { study: Study; responses: Response[]; onAddSections: (s: CaseStudySection[], note: string) => void }) {
-  const key = `csb-synth-${study.id}`;
+function Synthesis({ study, responses, onAddSections, filterNote }: { study: Study; responses: Response[]; onAddSections: (s: CaseStudySection[], note: string) => void; filterNote?: string }) {
+  const key = `csb-synth-${study.id}${filterNote ? `-${filterNote}` : ''}`;
   const [synth, setSynth] = useState<Synth | null>(() => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const open = study.questions.filter(q => ['long', 'text', 'single', 'multi', 'rank', 'scale'].includes(q.type));
+  const open = study.questions.filter(q => ['long', 'text', 'single', 'multi', 'rank', 'scale'].includes(q.type) && q.preset !== 'name'); // names never go to the AI
   if (responses.length < 2 || !open.some(q => q.type === 'long' || q.type === 'text' || q.followups)) return null;
   const run = async () => {
     setBusy(true); setError('');
     try {
       const qList = open.map((q, i) => ({ n: i + 1, type: q.type, prompt: q.prompt, options: q.options }));
       const people = responses.map((r, k) => ({ p: `P${k + 1}`, answers: Object.fromEntries(open.map((q, i) => [i + 1, answerWords(r.answers[q.id], q)]).filter(([, a]) => a)), followups: Object.fromEntries(open.map((q, i) => [i + 1, r.followups?.[q.id] ?? []]).filter(([, f]) => (f as unknown[]).length)) }));
-      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'synthesize', title: study.title, goal: study.goal, questions: qList, people }) });
+      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'synthesize', title: study.title + (filterNote ? ` (only: ${filterNote})` : ''), goal: study.goal, questions: qList, people, groupBy: open.map((q, i) => q.group ? i + 1 : 0).filter(Boolean) }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !Array.isArray(data.themes)) throw new Error(res.status === 401 ? 'Enter your Studio passcode on the Share tab first.' : /Notion research link|Figma design link/.test(data.error || '') ? 'Finding themes needs the latest studio-ai-draft function deployed.' : data.error || 'Could not find themes. Try again.');
       setSynth(data); try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
@@ -463,7 +469,7 @@ function Synthesis({ study, responses, onAddSections }: { study: Study; response
   const addThemes = () => { if (!synth) return; const sec = { ...createSection('findings'), title: 'What kept coming up', eyebrow: 'Discover', items: synth.themes.slice(0, 6).map(t => ({ title: t.title, detail: `${t.detail}${t.count ? ` (${t.count} of ${responses.length} people)` : ''}` })) }; onAddSections([sec], `Added ${Math.min(6, synth.themes.length)} themes from “${study.title}”.`); };
   const addQuotes = () => { if (!synth) return; const qs = synth.themes.flatMap(t => t.quotes.slice(0, 1)).slice(0, 6); const sec = { ...createSection('quotes'), title: 'In their words', eyebrow: 'Discover', items: qs.map(q => ({ title: q.participant, detail: q.text })) }; onAddSections([sec], `Added ${qs.length} quotes.`); };
   return <div className="rw-synth">
-    <h4><Sparkles size={14} /> Themes {synth ? <small className="rw-note">from {responses.length} responses</small> : ''}</h4>
+    <h4><Sparkles size={14} /> Themes {synth ? <small className="rw-note">from {responses.length} responses{filterNote ? ` · ${filterNote}` : ''}</small> : filterNote ? <small className="rw-note">for {filterNote}</small> : ''}</h4>
     {!synth && <p>Reads every answer and follow-up, groups what people did and said into themes with counts, maps the four forces behind changing a habit, and flags low-effort responses.</p>}
     <div className="rw-row"><button type="button" className={synth ? 'csb-quiet-button' : 'csb-primary-button'} disabled={busy} onClick={() => void run()}>{busy ? 'Reading every answer…' : synth ? 'Run again' : 'Find themes with AI'}</button>
       {synth && <><button type="button" className="csb-quiet-button" onClick={addThemes}>Add themes to case study</button><button type="button" className="csb-quiet-button" onClick={addQuotes}>Add quotes</button></>}</div>
@@ -478,5 +484,33 @@ function Synthesis({ study, responses, onAddSections }: { study: Study; response
       {!!synth.nextQuestions?.length && <><h5>Worth asking next round</h5><ul className="rw-flags" style={{ color: 'inherit' }}>{synth.nextQuestions.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
       {!!synth.lowEffort?.length && <><h5>Low-effort responses</h5><ul className="rw-flags">{synth.lowEffort.map((x, j) => <li key={j}>{x.participant}: {x.reason}</li>)}</ul></>}
     </>}
+  </div>;
+}
+
+/* ---------- Groups: the buckets people sorted themselves into. Click to filter everything; compare two groupings. ---------- */
+function Groups({ study, all, picks, setPicks }: { study: Study; all: Response[]; picks: Record<string, string>; setPicks: (p: Record<string, string>) => void }) {
+  const gqs = groupQuestions(study);
+  const nonAge = gqs.filter(q => !AGE_RANGES.some(a => q.options?.includes(a)));
+  const [rowQ, setRowQ] = useState(nonAge[0]?.id ?? gqs[0]?.id ?? '');
+  const [colQ, setColQ] = useState(nonAge[1]?.id ?? gqs.find(q => q.id !== (nonAge[0]?.id ?? gqs[0]?.id))?.id ?? '');
+  if (!gqs.length || !all.length) return null;
+  const toggle = (qid: string, opt: string) => { const next = { ...picks }; if (next[qid] === opt) delete next[qid]; else next[qid] = opt; setPicks(next); };
+  const short = (p: string) => p.replace(/\?$/, '').replace(/^(what’s|what's|what is|how often do you|which of these describe you right now)\s*/i, '').replace(/^your\s+/i, '') || (/describe/i.test(p) ? 'describes them' : p);
+  const R = gqs.find(q => q.id === rowQ), C = gqs.find(q => q.id === colQ && q.id !== rowQ);
+  const filtered = filterByGroups(all, picks).length;
+  return <div className="rw-res rw-groups">
+    <h4>Groups<small>{Object.keys(picks).length ? `Showing ${filtered} of ${all.length} · ` : `${all.length} people · click a group to filter everything below`}{Object.keys(picks).length > 0 && <button type="button" className="rw-linkbtn" onClick={() => setPicks({})}>Show everyone</button>}</small></h4>
+    {gqs.map(q => <div key={q.id} className="rw-group-row"><span>{short(q.prompt)}</span><div className="rw-chips">{(q.options ?? []).map(o => { const n = bucketCount(all, q.id, o); const on = picks[q.id] === o; return <button key={o} type="button" aria-pressed={on} className={on ? 'is-on' : ''} disabled={!n && !on} onClick={() => toggle(q.id, o)}>{o} <b>{n}</b></button>; })}</div></div>)}
+    {gqs.length > 1 && R && <div className="rw-compare">
+      <div className="rw-compare-head">Compare <select value={rowQ} onChange={e => setRowQ(e.target.value)} aria-label="Rows">{gqs.map(q => <option key={q.id} value={q.id}>{short(q.prompt)}</option>)}</select> by <select value={colQ} onChange={e => setColQ(e.target.value)} aria-label="Columns">{gqs.filter(q => q.id !== rowQ).map(q => <option key={q.id} value={q.id}>{short(q.prompt)}</option>)}</select></div>
+      {C && <div className="rw-xtab" role="table" style={{ gridTemplateColumns: `minmax(110px,1.2fr) repeat(${(C.options ?? []).length}, minmax(64px,1fr))` }}>
+        <span role="columnheader" />{(C.options ?? []).map(o => <span key={o} role="columnheader">{o}</span>)}
+        {(R.options ?? []).map(ro => { const rowAll = all.filter(r => { const v = r.answers[R.id]; return Array.isArray(v) ? v.includes(ro) : v === ro; }); return <Fragment key={ro}>
+          <span role="rowheader">{ro} <em>{rowAll.length}</em></span>
+          {(C.options ?? []).map(co => { const n = bucketCount(rowAll, C.id, co); const pct = rowAll.length ? n / rowAll.length : 0; return <button key={co} type="button" role="cell" className="rw-xcell" style={{ ['--a' as string]: String(Math.max(0.06, pct)) }} disabled={!n} title={`${n} of ${rowAll.length} who said “${ro}” also said “${co}”. Click to see them.`} onClick={() => setPicks({ [R.id]: ro, [C.id]: co })}>{n || '·'}</button>; })}
+        </Fragment>; })}
+      </div>}
+      {C && <small className="rw-note">Each cell: how many people are in both groups. Darker = a bigger share of that row. Click a cell to see just those people. People can be in more than one group when the question allows several answers.</small>}
+    </div>}
   </div>;
 }

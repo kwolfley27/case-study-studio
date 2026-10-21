@@ -15,6 +15,7 @@ export type Question = { id: string; type: QuestionType; prompt: string; options
   /** Smaller, lighter text under the question (e.g. examples). */ hint?: string;
   /** How many AI follow-up questions to ask (0–3), and what they should dig into. */ followups?: number; probe?: string;
   /** Choice questions: only follow up when one of these was picked (empty = any answer). */ followIf?: string[];
+  /** Choice questions: use the answers as groups (buckets) to compare in Results. */ group?: boolean;
   /** A picture shown above the question. */ image?: string;
   /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
 /** How the participant pages look. */
@@ -30,7 +31,7 @@ export function splitPrompt(q: Pick<Question, 'prompt' | 'hint'>): { title: stri
   if (m && m[1].length > 8) return { title: m[1], sub: own || m[2].trim() };
   return { title: q.prompt, sub: own };
 }
-export const duplicateQuestion = (q: Question): Question => ({ ...structuredClone(q), id: qid(), preset: q.preset?.startsWith('sus-') || q.preset === 'nps' ? undefined : q.preset === 'recruit' ? undefined : q.preset });
+export const duplicateQuestion = (q: Question): Question => ({ ...structuredClone(q), id: qid(), preset: q.preset?.startsWith('sus-') || q.preset === 'nps' ? undefined : q.preset === 'recruit' || q.preset === 'name' ? undefined : q.preset });
 export type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
 export type Task = { id: string; title: string; scenario?: string; success?: string };
 export type Outcome = 'success' | 'help' | 'fail' | 'skipped';
@@ -163,6 +164,28 @@ export const SUS_ITEMS = [
 ];
 export const susQuestions = (): Question[] => SUS_ITEMS.map((prompt, i) => ({ id: qid(), type: 'scale', prompt, min: 1, max: 5, minLabel: 'Strongly disagree', maxLabel: 'Strongly agree', required: true, preset: `sus-${i + 1}` }));
 export const npsQuestion = (): Question => ({ ...newQuestion('nps'), preset: 'nps' });
+
+/* About you: who they are, sorted into groups you can compare in Results. Name is first name + last initial only. */
+export const AGE_RANGES = ['18–24', '25–34', '35–44', '45–54', '55+'];
+export const PREP_OPTIONS = ['Most weeks', 'Sometimes', 'Rarely or never'];
+export const LIFESTYLE_OPTIONS = ['Student', 'Work full-time', 'Parent or caregiver', 'Go to the gym regularly', 'Run or train for races', 'Play a sport', 'None of these'];
+export function aboutYouQuestions(): Question[] {
+  return [
+    { id: qid(), type: 'text', preset: 'name', required: true, prompt: 'What’s your first name and last initial?', hint: 'For example, Sam L. Just so we can tell answers apart; it isn’t shared.' },
+    { id: qid(), type: 'single', preset: 'about', required: true, group: true, prompt: 'What’s your age range?', options: [...AGE_RANGES] },
+    { id: qid(), type: 'single', preset: 'about', required: true, group: true, prompt: 'How often do you meal prep?', hint: 'Making meals or ingredients ahead of time to eat later in the week.', options: [...PREP_OPTIONS], followups: 1, followIf: ['Rarely or never'], probe: 'If they rarely or never meal prep, ask what gets in the way, or whether they have tried and what happened.' },
+    { id: qid(), type: 'multi', preset: 'about', required: true, group: true, prompt: 'Which of these describe you right now?', options: [...LIFESTYLE_OPTIONS], followups: 1, followIf: ['Go to the gym regularly', 'Run or train for races', 'Play a sport'], probe: 'For people who train: ask how their training shapes what and when they eat, or how food planning fits around training.' },
+  ];
+}
+/** The participant's display name (first name + last initial), if the study asks for it. Never sent to AI or added to a case study. */
+export const participantName = (study: Study, r: { answers: Record<string, unknown> }) => { const q = study.questions.find(x => x.preset === 'name'); const v = q ? r.answers[q.id] : ''; return typeof v === 'string' ? v.trim().slice(0, 40) : ''; };
+export const groupQuestions = (study: Study) => study.questions.filter(q => q.group && (q.type === 'single' || q.type === 'multi'));
+/** A short anonymous description from someone's groups, e.g. "Most weeks · Runner". */
+export const groupLabel = (study: Study, r: { answers: Record<string, unknown> }) => groupQuestions(study).filter(q => !AGE_RANGES.some(a => q.options?.includes(a))).map(q => { const v = r.answers[q.id]; return Array.isArray(v) ? v.filter(x => x !== 'None of these').join(', ') : v ? String(v) : ''; }).filter(Boolean).join(' · ');
+const matchesValue = (v: unknown, option: string) => Array.isArray(v) ? v.includes(option) : v === option;
+/** Keep only responses in the chosen buckets (questionId → option). */
+export const filterByGroups = <R extends { answers: Record<string, unknown> }>(responses: R[], picks: Record<string, string>) => responses.filter(r => Object.entries(picks).every(([qid, opt]) => matchesValue(r.answers[qid], opt)));
+export const bucketCount = (responses: Array<{ answers: Record<string, unknown> }>, qid: string, option: string) => responses.filter(r => matchesValue(r.answers[qid], option)).length;
 
 /* Recruit for interviews: "Would you be open to a follow-up?" → contact info → book a time, only for Yes / Maybe. */
 export const INTEREST_OPTIONS = ['Yes', 'Maybe, if there’s a time that works', 'No thanks'];

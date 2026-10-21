@@ -58,7 +58,7 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
     if (!q || !onFollowUp || history.length >= maxFu || fuDone[q.id] || used - (fu[q.id]?.length ?? 0) + history.length >= budget) return false;
     setBusy('thinking');
     try {
-      const context = qs.slice(0, step).map(x => ({ q: x.prompt, a: answerWords(answers[x.id], x) })).filter(x => x.a);
+      const context = qs.slice(0, step).filter(x => x.preset !== 'name').map(x => ({ q: x.prompt, a: answerWords(answers[x.id], x) })).filter(x => x.a); // names never go to the AI
       const question = await onFollowUp(q, answerWords(value, q), history, context, used - (fu[q.id]?.length ?? 0) + history.length);
       if (!question) { setFuDone(d => ({ ...d, [q.id]: true })); return false; }
       setFu(f => ({ ...f, [q.id]: [...history, { q: question, a: '' }] })); setSub(history.length); setTouched(false);
