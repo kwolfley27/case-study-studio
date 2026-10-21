@@ -12,6 +12,7 @@ export type Question = { id: string; type: QuestionType; prompt: string; options
   /** Contact info: which fields to ask for. */ contact?: Partial<Record<ContactKey, FieldMode>>;
   /** Book a time: a Calendly (or other scheduling) link. */ url?: string;
   showIf?: ShowIf;
+  /** Smaller, lighter text under the question (e.g. examples). */ hint?: string;
   /** A picture shown above the question. */ image?: string;
   /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
 /** How the participant pages look. */
@@ -20,6 +21,13 @@ export const ACCENTS = ['#000000', '#2f5b45', '#1f4ea3', '#6b3fa0', '#c2410c', '
 export const BACKGROUNDS = ['#fdfcfc', '#f6f1e9', '#eef3ef', '#eef2f8', '#f6eef4'];
 /** A readable text colour on top of the accent. */
 export const onColor = (hex: string) => { const m = /^#?([0-9a-f]{6})$/i.exec(hex); if (!m) return '#fff'; const n = parseInt(m[1], 16); const l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#000' : '#fff'; };
+/** The question's main line and its smaller helper line. A trailing "(For example, …)" in the question counts as helper text. */
+export function splitPrompt(q: Pick<Question, 'prompt' | 'hint'>): { title: string; sub: string } {
+  const own = (q.hint ?? '').trim();
+  const m = /^([\s\S]*?[?.!:])\s*\(([^()]{6,})\)\s*$/.exec(q.prompt ?? '');
+  if (m && m[1].length > 8) return { title: m[1], sub: own || m[2].trim() };
+  return { title: q.prompt, sub: own };
+}
 export const duplicateQuestion = (q: Question): Question => ({ ...structuredClone(q), id: qid(), preset: q.preset?.startsWith('sus-') || q.preset === 'nps' ? undefined : q.preset === 'recruit' ? undefined : q.preset });
 export type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
 export type Task = { id: string; title: string; scenario?: string; success?: string };

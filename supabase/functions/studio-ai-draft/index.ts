@@ -464,7 +464,8 @@ async function designSurvey(anthropicKey: string, goal: string, title: string, c
               ref: { type: 'string', description: 'A short id for this proposal, like "p1".' },
               replaces: { type: 'integer', description: 'If this rewrites an existing question, its number (n). Omit for a new question.' },
               type: { type: 'string', enum: types, description: 'single = one choice, multi = checkboxes, scale = 1–5 rating, nps = 0–10, text = short answer, long = paragraph (participants can dictate by voice), contact = name/email/phone, schedule = booking link step.' },
-              prompt: { type: 'string' },
+              prompt: { type: 'string', description: 'The question itself, without examples.' },
+              hint: { type: 'string', description: 'Optional helper line shown smaller under the question, e.g. "For example, chopping vegetables or cooking rice ahead."' },
               options: { type: 'array', items: { type: 'string' }, description: 'For single/multi only.' },
               minLabel: { type: 'string' }, maxLabel: { type: 'string' },
               required: { type: 'boolean' },
@@ -492,7 +493,7 @@ If existing questions are given, keep the good ones (do not propose them again),
   const result = await askWithTool(anthropicKey, system, tool, content, 6000, 120000);
   if (!result || !Array.isArray(result.questions)) throw new Error('The AI did not return any questions. Try again.');
   const clean = result.questions.slice(0, 30).filter((q: any) => types.includes(q?.type) && q?.prompt).map((q: any, i: number) => ({
-    ref: String(q.ref || `p${i + 1}`).slice(0, 20), replaces: Number.isInteger(q.replaces) && current.some(c => c.n === q.replaces) ? q.replaces : undefined, type: q.type, prompt: String(q.prompt).slice(0, 500),
+    ref: String(q.ref || `p${i + 1}`).slice(0, 20), replaces: Number.isInteger(q.replaces) && current.some(c => c.n === q.replaces) ? q.replaces : undefined, type: q.type, prompt: String(q.prompt).slice(0, 500), hint: q.hint ? String(q.hint).slice(0, 300) : undefined,
     options: (q.type === 'single' || q.type === 'multi') && Array.isArray(q.options) ? q.options.map((o: unknown) => String(o).slice(0, 200)).filter(Boolean).slice(0, 20) : undefined,
     minLabel: q.type === 'scale' && q.minLabel ? String(q.minLabel).slice(0, 60) : undefined, maxLabel: q.type === 'scale' && q.maxLabel ? String(q.maxLabel).slice(0, 60) : undefined,
     required: typeof q.required === 'boolean' ? q.required : undefined, why: String(q.why || '').slice(0, 300),
