@@ -3809,3 +3809,15 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-pm-y{white-space:nowrap;justify-self:center}
 .csb-canvas .csb-pm-x span{max-width:45%}
 .csb-canvas .csb-pm-q{max-width:42%}
+
+/* Positioning chart: notes on hover / focus / tap */
+.csb-pm-dot.has-note{cursor:help;outline:none}
+.csb-pm-dot.has-note:hover,.csb-pm-dot.has-note:focus-within,.csb-pm-dot.has-note:focus{z-index:6}
+.csb-pm-dot.has-note:focus-visible>i{box-shadow:0 0 0 3px color-mix(in srgb,var(--cx-ink,#1c1917) 25%,transparent)}
+.csb-canvas .csb-pm-dot>span.csb-pm-note{position:absolute;left:-24px;top:22px;z-index:7;display:grid;gap:4px;width:min(260px,62cqw);padding:12px 14px;border-radius:12px;background:var(--t-ink,#1c1917);color:#fdfcfc;font-size:13px;line-height:1.5;font-weight:400;white-space:normal;text-align:left;box-shadow:0 12px 32px rgba(0,0,0,.18);opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.csb-canvas .csb-pm-note strong{font-size:13px;font-weight:600}
+.csb-canvas .csb-pm-dot>span.csb-pm-note.is-up{top:auto;bottom:22px;transform:translateY(-4px)}
+.csb-canvas .csb-pm-dot>span.csb-pm-note.is-end{left:auto;right:-24px}
+.csb-canvas .csb-pm-dot.has-note:is(:hover,:focus,:focus-within)>span.csb-pm-note{opacity:1;transform:none}
+.csb-pm-hint{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--t-muted,#6f6961)}
+.csb-pm-note-input{grid-column:1/-1;width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #e5e5ea;font:inherit;font-size:12.5px;line-height:1.45;color:#1c1917;resize:vertical}

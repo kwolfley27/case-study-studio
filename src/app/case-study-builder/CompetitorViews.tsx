@@ -94,7 +94,7 @@ export function FeatureCompareControls({ section, onChange }: { section: CaseStu
    Each product is a dot; ours is the ink dot with a soft ring.
    Dots drift out from the centre into place; drag them in the editor.
    ===================================================================== */
-export type PositioningData = { x: { low: string; high: string }; y: { low: string; high: string }; quadrants: [string, string, string, string]; points: Array<{ id: string; name: string; x: number; y: number; ours?: boolean }> };
+export type PositioningData = { x: { low: string; high: string }; y: { low: string; high: string }; quadrants: [string, string, string, string]; points: Array<{ id: string; name: string; x: number; y: number; ours?: boolean; /** Shown when a visitor hovers or taps the dot. */ note?: string }> };
 export const defaultPositioning = (): PositioningData => ({
   x: { low: 'Generic', high: 'Built for one studio' },
   y: { low: 'Many steps', high: 'Effortless' },
@@ -122,17 +122,19 @@ export function Positioning({ section, editorMode }: { section: CaseStudySection
         <motion.i className="csb-pm-axis is-x" initial={false} animate={{ scaleX: seen ? 1 : 0 }} transition={{ duration: .9, ease: [0.65, 0, 0.35, 1] }} />
         <motion.i className="csb-pm-axis is-y" initial={false} animate={{ scaleY: seen ? 1 : 0 }} transition={{ duration: .9, delay: .1, ease: [0.65, 0, 0.35, 1] }} />
         {data.quadrants.map((q, i) => <motion.span key={i} className={`csb-pm-q is-q${i}`} initial={false} animate={{ opacity: seen ? 1 : 0 }} transition={{ duration: .6, delay: .5 }}><EditableText field={`deep:positioning.quadrants.${i}`} value={q} /></motion.span>)}
-        {ordered.map((p, k) => { const idx = data.points.indexOf(p); const live = drag?.id === p.id ? drag : p; return <motion.div key={p.id} className={`csb-pm-dot ${p.ours ? 'is-ours' : ''} ${live.x > .7 ? 'is-left' : ''} ${drag?.id === p.id ? 'is-drag' : ''}`}
+        {ordered.map((p, k) => { const idx = data.points.indexOf(p); const live = drag?.id === p.id ? drag : p; return <motion.div key={p.id} className={`csb-pm-dot ${p.ours ? 'is-ours' : ''} ${live.x > .7 ? 'is-left' : ''} ${drag?.id === p.id ? 'is-drag' : ''} ${(p.note || '').trim() ? 'has-note' : ''}`} tabIndex={(p.note || '').trim() && !editorMode ? 0 : undefined} aria-describedby={(p.note || '').trim() ? `pm-note-${p.id}` : undefined}
           initial={false} animate={{ left: `${(seen ? live.x : .5) * 100}%`, top: `${(1 - (seen ? live.y : .5)) * 100}%`, opacity: seen ? 1 : 0 }}
           transition={drag?.id === p.id ? { duration: 0 } : { type: 'spring', stiffness: 90, damping: 16, delay: seen && !editorMode ? .5 + k * .12 + (p.ours ? .3 : 0) : 0 }}
           onPointerDown={editorMode ? e => { if ((e.target as HTMLElement).closest('[contenteditable=true]')) return; e.preventDefault(); (e.currentTarget.parentElement as HTMLElement).setPointerCapture(e.pointerId); setDrag({ id: p.id, x: p.x, y: p.y }); } : undefined}>
           <i />{p.ours && <motion.b aria-hidden="true" initial={false} animate={seen && expressive && !reduce ? { scale: [1, 1.9, 1], opacity: [.35, 0, .35] } : { scale: 1, opacity: .35 }} transition={{ duration: 2.4, repeat: seen && expressive && !reduce ? Infinity : 0, delay: 1.4 }} />}
           <span><EditableText field={`deep:positioning.points.${idx}.name`} value={p.name} /></span>
+          {(p.note || '').trim() && <span role="tooltip" id={`pm-note-${p.id}`} className={`csb-pm-note ${live.y < .4 ? 'is-up' : ''} ${live.x > .6 ? 'is-end' : live.x < .3 ? 'is-start' : ''}`}><strong>{p.name}</strong>{p.note}</span>}
         </motion.div>; })}
       </div>
       <span className="csb-pm-y is-low"><EditableText field="deep:positioning.y.low" value={data.y.low} /></span>
       <div className="csb-pm-x"><span><EditableText field="deep:positioning.x.low" value={data.x.low} /></span><span><EditableText field="deep:positioning.x.high" value={data.x.high} /></span></div>
     </div>
+    {data.points.some(p => (p.note || '').trim()) && <p className="csb-pm-hint">Hover or tap a dot for notes</p>}
   </div>;
 }
 
@@ -156,6 +158,7 @@ export function PositioningControls({ section, onChange }: { section: CaseStudyS
       <input value={p.name} aria-label={`Product ${i + 1}`} onChange={e => set({ points: data.points.map((x, k) => k === i ? { ...x, name: e.target.value } : x) })} />
       <label className="csb-check-field"><input type="radio" name={`pm-ours-${section.id}`} checked={!!p.ours} onChange={() => set({ points: data.points.map(x => ({ ...x, ours: x.id === p.id })) })} /> Ours</label>
       <button type="button" className="csb-icon-button" aria-label={`Remove ${p.name}`} onClick={() => set({ points: data.points.filter(x => x.id !== p.id) })}><Trash2 size={13} /></button>
+      <textarea className="csb-pm-note-input" rows={2} placeholder="Note shown on hover (optional)" aria-label={`Note for ${p.name}`} value={p.note ?? ''} onChange={e => set({ points: data.points.map((x, k) => k === i ? { ...x, note: e.target.value } : x) })} />
     </div>)}
     <button type="button" className="csb-quiet-button" onClick={() => set({ points: [...data.points, { id: cid(), name: 'Competitor', x: .5, y: .5 }] })}><Plus size={13} /> Add product</button>
   </div>;
