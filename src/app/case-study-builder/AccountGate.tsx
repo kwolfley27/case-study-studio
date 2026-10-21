@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createAccountWithEmail, loadAccount, sendPasswordLink, SET_PASSWORD_HASH, setPassword, signInWithGoogle, signInWithPassword, signOut, supabase, type Account } from './auth';
+import { verifyEmailCode, createAccountWithEmail, loadAccount, sendPasswordLink, SET_PASSWORD_HASH, setPassword, signInWithGoogle, signInWithPassword, signOut, supabase, type Account } from './auth';
 import { syncLibrary } from './cloud';
 import './account.css';
 
@@ -37,11 +37,7 @@ export function AccountGate({ children }: { children: (account: Account) => Reac
       {phase.kind === 'syncing' && <p className="acct-quiet" role="status">{phase.text}</p>}
       {phase.kind === 'signin' && <SignIn error={phase.error} onSent={(email, why) => setPhase({ kind: 'sent', email, why })} />}
       {phase.kind === 'set-password' && <SetPassword account={phase.account} onDone={() => { history.replaceState(null, '', location.pathname + location.search); void check(); }} />}
-      {phase.kind === 'sent' && <>
-        <h1>Check your email</h1>
-        <p>{phase.why === 'create' ? <>We sent a link to <b>{phase.email}</b> to create your account. Open it on this device, then choose a password so next time you can sign in right away.</> : <>We sent a link to <b>{phase.email}</b> to set your password. Open it on this device and you’ll choose a new one.</>}</p>
-        <button type="button" className="acct-link" onClick={() => setPhase({ kind: 'signin' })}>Use a different email</button>
-      </>}
+      {phase.kind === 'sent' && <CheckEmail email={phase.email} why={phase.why} onBack={() => setPhase({ kind: 'signin' })} onVerified={() => { history.replaceState(null, '', location.pathname + SET_PASSWORD_HASH); void check(); }} />}
       {phase.kind === 'not-invited' && <>
         <h1>You’re not on the list yet</h1>
         <p>Case Study Studio is invite only for now. Ask Katelyn to invite <b>{phase.email}</b>, then sign in again.</p>
@@ -143,5 +139,30 @@ function SetPassword({ account, onDone }: { account: Account; onDone: () => void
     </form>
     {msg && <p className="acct-error" role="alert">{msg}</p>}
     <p className="acct-switch"><button type="button" className="acct-link" onClick={onDone}>Skip for now</button></p>
+  </>;
+}
+
+/* After we email them: type the 6-digit code (works anywhere), or tap the link. */
+function CheckEmail({ email, why, onBack, onVerified }: { email: string; why: 'create' | 'password'; onBack: () => void; onVerified: () => void }) {
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const verify = async (ev: React.FormEvent) => {
+    ev.preventDefault(); setMsg('');
+    const token = code.replace(/\D/g, ''); if (token.length < 6) { setMsg('Enter the code from the email.'); return; }
+    setBusy(true); const { error: e } = await verifyEmailCode(email, token, why); setBusy(false);
+    if (e) setMsg(/expired|invalid/i.test(e.message) ? 'That code didn’t work or has expired. Go back and send a new one.' : e.message); else onVerified();
+  };
+  return <>
+    <h1>Check your email</h1>
+    <p>We sent a code to <b>{email}</b>{why === 'create' ? ' to create your account' : ' to set your password'}. Type it here:</p>
+    <form onSubmit={e => void verify(e)} className="acct-email">
+      <label htmlFor="acct-code">Code</label>
+      <input id="acct-code" inputMode="numeric" autoComplete="one-time-code" maxLength={10} value={code} onChange={e => setCode(e.target.value)} placeholder="123456" className="acct-code" />
+      <button type="submit" className="acct-primary" disabled={busy}>{busy ? 'Checking…' : 'Continue'}</button>
+    </form>
+    {msg && <p className="acct-error" role="alert">{msg}</p>}
+    <p className="acct-fine">You can also tap the link in the email, as long as it opens in this same browser. Not there? Check spam, or wait a minute; a few emails an hour can be sent.</p>
+    <p className="acct-switch"><button type="button" className="acct-link" onClick={onBack}>Use a different email</button></p>
   </>;
 }

@@ -57,3 +57,9 @@
 .acct-switch{margin:18px 0 0!important;font-size:14px!important;color:#44403b!important}
 .acct-card .acct-google{background:#fdfcfc;color:#0f0e0d;border:1px solid #e3dfda}
 .acct-card .acct-google:hover{background:#f5f3f1}
+.acct-code{letter-spacing:.3em;font-size:20px!important;text-align:center}
+.acct,.acct *{box-sizing:border-box}
+@media (max-width:440px){.acct-card{padding:28px 20px 22px;border-radius:20px}}
+.acct{grid-template-columns:minmax(0,1fr)}
+.acct-card{justify-self:center;min-width:0}
+.acct-email input{width:100%;min-width:0}

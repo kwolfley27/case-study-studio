@@ -41,6 +41,8 @@ export const createAccountWithEmail = (email: string) => supabase().auth.signInW
 /** Forgot password, or an older account that only ever used links: email a link to set one. */
 export const sendPasswordLink = (email: string) => supabase().auth.resetPasswordForEmail(email, { redirectTo: home() + SET_PASSWORD_HASH });
 export const setPassword = (password: string) => supabase().auth.updateUser({ password });
+/** The 6-digit code from the same email. Works on any device or browser, unlike the link. */
+export const verifyEmailCode = (email: string, token: string, why: 'create' | 'password') => supabase().auth.verifyOtp({ email, token, type: why === 'password' ? 'recovery' : 'email' });
 export const signOut = async () => { await supabase().auth.signOut(); setAccount(null); };
 
 /** Who is signed in, and are they on the invite list? */
