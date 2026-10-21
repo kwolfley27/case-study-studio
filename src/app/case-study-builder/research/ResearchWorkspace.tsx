@@ -5,7 +5,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, canFollowUp, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, answerWords, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -81,6 +81,8 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
       <label className="rw-field"><span>Survey title</span><input value={study.title} onChange={e => update({ title: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
       <label className="rw-field"><span>Welcome message</span><textarea rows={2} value={study.intro ?? ''} onChange={e => update({ intro: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
       <label className="rw-field"><span>What you want to learn <em className="rw-private">private · steers the AI follow-ups</em></span><textarea rows={3} value={study.goal ?? ''} onChange={e => update({ goal: e.target.value || undefined })} placeholder="e.g. Why people do or don’t meal prep, what gets in the way, and what they hope it’ll do for them (save money, eat healthier, save time). How they plan meals and shop for groceries. Tracking matters less." /></label>
+      {qs.some(q => q.followups) && <div className="rw-contact-row rw-budget"><span>Most AI follow-ups per person <small>keeps it from feeling like homework</small></span>
+        <div className="rw-seg" role="radiogroup" aria-label="Follow-up limit">{[4, 6, 8, 12].map(v => <button key={v} type="button" role="radio" aria-checked={(study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) === v} className={(study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) === v ? 'is-on' : ''} onClick={() => update({ followupBudget: v })}>{v}</button>)}</div></div>}
       <AiDesigner study={study} update={update} setPreviewAt={setPreviewAt} />
       <LookEditor study={study} update={update} onFocus={() => setPreviewAt(-1)} />
       <p className="rw-kicker">Questions · {qs.length}</p>
@@ -98,9 +100,12 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
         </div>
         <textarea className="rw-prompt" rows={2} value={q.prompt} readOnly={q.preset?.startsWith('sus-')} onChange={e => setQ(i, { prompt: e.target.value })} aria-label={`Question ${i + 1}`} />
         {!q.preset?.startsWith('sus-') && <input className="rw-input rw-hint-input" value={q.hint ?? ''} placeholder={splitPrompt({ prompt: q.prompt }).sub ? 'Helper text: the part in brackets above already shows small and gray' : 'Helper text (optional): shows smaller and lighter, e.g. “For example, …”'} aria-label={`Question ${i + 1} helper text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
-        {(q.type === 'single' || q.type === 'multi') && <div className="rw-opts">
-          {(q.options ?? []).map((o, k) => <div key={k} className="rw-opt">{q.optionImages ? <OptionImage study={study} src={q.optionImages[k]} label={o} onChange={src => { const imgs = [...(q.optionImages ?? [])]; imgs[k] = src; setQ(i, { optionImages: imgs }); }} /> : <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />}<input value={o} aria-label={`Option ${k + 1}`} onChange={e => setQ(i, { options: q.options!.map((x, n) => n === k ? e.target.value : x) })} /><button type="button" aria-label={`Remove option ${k + 1}`} onClick={() => setQ(i, { options: q.options!.filter((_, n) => n !== k), optionImages: q.optionImages?.filter((_, n) => n !== k) })}><X size={12} /></button></div>)}
-          <button type="button" className="rw-add-opt" onClick={() => setQ(i, { options: [...(q.options ?? []), `Option ${(q.options?.length ?? 0) + 1}`] })}>+ Add option</button>
+        {(() => { const lints = lintQuestion(q); return lints.length > 0 && <div className="rw-lints">{lints.map((l, k) => <p key={k} className={`rw-lint ${l.level === 'tip' ? 'is-tip' : ''}`}><b>{l.level === 'warn' ? 'Check' : 'Tip'}</b>{l.text}</p>)}</div>; })()}
+        {hasOptions(q) && <div className="rw-opts">
+          {(q.options ?? []).map((o, k) => <div key={k} className="rw-opt">{q.optionImages ? <OptionImage study={study} src={q.optionImages[k]} label={o} onChange={src => { const imgs = [...(q.optionImages ?? [])]; imgs[k] = src; setQ(i, { optionImages: imgs }); }} /> : q.type === 'rank' ? <span className="rw-rank-num">{k + 1}</span> : <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />}<input value={o} aria-label={`Option ${k + 1}`} onChange={e => setQ(i, { options: q.options!.map((x, n) => n === k ? e.target.value : x) })} /><button type="button" aria-label={`Remove option ${k + 1}`} onClick={() => setQ(i, { options: q.options!.filter((_, n) => n !== k), optionImages: q.optionImages?.filter((_, n) => n !== k) })}><X size={12} /></button></div>)}
+          <div className="rw-row"><button type="button" className="rw-add-opt" onClick={() => setQ(i, { options: [...(q.options ?? []), `Option ${(q.options?.length ?? 0) + 1}`], optionImages: q.optionImages ? [...q.optionImages, ''] : undefined })}>+ Add option</button>
+            {isChoice(q) && !(q.options ?? []).some(o => /^other\b/i.test(o)) && <button type="button" className="rw-add-opt" title="Tip: turn on AI follow-ups for “Other” so the AI asks what they meant" onClick={() => setQ(i, { options: [...(q.options ?? []), 'Other'], optionImages: q.optionImages ? [...q.optionImages, ''] : undefined })}>+ Other</button>}</div>
+          {q.type === 'rank' && <small className="rw-note">Participants tap options in order, best first. Results show the average position and how often each came first. Order here doesn’t matter; it’s shuffled for each person.</small>}
         </div>}
         {q.type === 'scale' && !q.preset && <div className="rw-scale">
           <label>From 1 to <select value={q.max ?? 5} onChange={e => setQ(i, { max: Number(e.target.value), min: 1 })}><option value={5}>5</option><option value={7}>7</option><option value={10}>10</option></select></label>
@@ -119,11 +124,12 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
         {q.image !== undefined && <ImageField study={study} label="Picture above the question" value={q.image} onChange={v => setQ(i, { image: v })} onRemove={() => setQ(i, { image: undefined })} />}
         {!q.preset?.startsWith('sus-') && <div className="rw-q-extra">
           {q.image === undefined && <button type="button" onClick={() => setQ(i, { image: '' })}><ImagePlus size={11} /> Picture</button>}
-          {(q.type === 'single' || q.type === 'multi') && <button type="button" onClick={() => setQ(i, { optionImages: q.optionImages ? undefined : (q.options ?? []).map(() => '') })}>{q.optionImages ? 'Plain options' : 'Picture options'}</button>}
+          {hasOptions(q) && <button type="button" onClick={() => setQ(i, { optionImages: q.optionImages ? undefined : (q.options ?? []).map(() => '') })}>{q.optionImages ? 'Plain options' : 'Picture options'}</button>}
         </div>}
         {canFollowUp(q) && <div className="rw-contact rw-fu">
           <div className="rw-contact-row"><span>AI follow-ups</span>
             <div className="rw-seg" role="radiogroup" aria-label="AI follow-ups">{[0, 1, 2, 3].map(v => <button key={v} type="button" role="radio" aria-checked={(q.followups ?? 0) === v} className={(q.followups ?? 0) === v ? 'is-on' : ''} onClick={() => setQ(i, { followups: v || undefined })}>{v === 0 ? 'Off' : `Up to ${v}`}</button>)}</div></div>
+          {!!q.followups && isChoice(q) && <div className="rw-showif"><span>Follow up when they pick {q.followIf?.length ? '' : <em>any answer</em>}</span><div className="rw-chips">{(q.options ?? []).map(o => { const on = !!q.followIf?.includes(o); return <button key={o} type="button" aria-pressed={on} className={on ? 'is-on' : ''} onClick={() => { const list = on ? (q.followIf ?? []).filter(x => x !== o) : [...(q.followIf ?? []), o]; setQ(i, { followIf: list.length ? list : undefined }); }}>{o}</button>; })}</div></div>}
           {!!q.followups && <input className="rw-input" value={q.probe ?? ''} placeholder="What to dig into (optional), e.g. If they don’t meal prep, ask what stops them. If they want to, ask why: money, time, health?" aria-label="What the AI should dig into" onChange={e => setQ(i, { probe: e.target.value || undefined })} />}
           {!!q.followups && <small className="rw-note">After they answer, AI asks about what they actually said, one question at a time. It stops early when there’s nothing worth asking.</small>}
         </div>}
@@ -389,11 +395,14 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
         <button type="button" className="csb-quiet-button" onClick={addScores}>Scores</button>
         <button type="button" className="csb-quiet-button" disabled={!Object.values(picked).some(Boolean)} onClick={addQuotes}>Selected quotes</button>
       </div>
+      <Synthesis study={s} responses={responses} onAddSections={onAddSections} />
       <FollowUps study={s} responses={responses} />
       {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact').map(r => <div key={r.q.id} className="rw-res">
         <h4>{r.q.prompt}<small>{r.answered} answered</small></h4>
         {r.kind === 'choice' && <div className="rw-bars">{r.options.map(o => { const pct = r.answered ? Math.round(o.count / r.answered * 100) : 0; return <div key={o.label}><span>{o.label}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}{r.q.type === 'multi' && <small>Choose-all question: percentages add up to more than 100%.</small>}</div>}
         {r.kind === 'scale' && <div className="rw-bars">{r.dist.map((c, k) => { const pct = r.answered ? Math.round(c / r.answered * 100) : 0; return <div key={k}><span>{(r.q.min ?? 1) + k}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}<small>Average {r.mean.toFixed(1)} of {r.q.max ?? 5}</small></div>}
+        {r.kind === 'rank' && <div className="rw-rank-res">{r.items.map((it, k) => <div key={it.label}><b>{k + 1}</b><span>{it.label}</span><em>avg {it.avg ? it.avg.toFixed(1) : '—'} · #1 for {it.firsts}</em></div>)}<small className="rw-note">Ordered by average position (1 = best). Each person saw the options shuffled.</small></div>}
+        {r.kind === 'photo' && <div className="rw-results-photos">{responses.flatMap(rs => (rs.photoUrls?.[r.q.id] ?? []).map((u, k) => <a key={`${rs.id}-${k}`} href={u} target="_blank" rel="noreferrer"><img src={u} alt="Participant photo" loading="lazy" /></a>))}{!r.answered && <p className="rw-empty">No photos yet.</p>}</div>}
         {r.kind === 'schedule' && <div className="rw-nps"><strong>{r.booked}</strong><span>booked a time{r.answered > r.booked ? ` · ${r.answered - r.booked} opened the link but didn’t finish in the survey` : ''}</span></div>}
         {r.kind === 'nps' && <div className="rw-nps"><strong>{r.score > 0 ? '+' : ''}{r.score}</strong><span>{r.promoters} promoters · {r.passives} passives · {r.detractors} detractors</span></div>}
         {r.kind === 'text' && <ul className="rw-quotes">{entries(r.q.id).map(e => <li key={e.key}><label><input type="checkbox" checked={!!picked[e.key]} onChange={ev => setPicked(p => ({ ...p, [e.key]: ev.target.checked }))} /> “{e.text}”</label>
@@ -425,6 +434,49 @@ function FollowUps({ study, responses }: { study: Study; responses: Response[] }
         {rows.map(r => <div role="row" key={r.id}><span role="cell">{r.c.name || '—'}</span><span role="cell">{r.c.email ? <a href={`mailto:${r.c.email}`}>{r.c.email}</a> : '—'}</span>{phone && <span role="cell">{r.c.phone || '—'}</span>}{interestQ && <span role="cell">{r.interest.split(',')[0] || '—'}</span>}{scheduleQ && <span role="cell">{r.booked ? '✓' : '—'}</span>}</div>)}
       </div>
       {emails && <div className="rw-row"><button type="button" className="csb-quiet-button" onClick={() => { void navigator.clipboard?.writeText(emails); setCopied(true); setTimeout(() => setCopied(false), 1500); }}><Copy size={13} /> {copied ? 'Copied' : 'Copy all emails'}</button></div>}
+    </>}
+  </div>;
+}
+
+/* ---------- Find themes with AI: synthesis the way a researcher would do it ---------- */
+type Synth = { summary: string; themes: Array<{ title: string; detail: string; count: number; segments?: string; quotes: Array<{ text: string; participant: string }> }>; forces?: Partial<Record<'push' | 'pull' | 'anxiety' | 'habit', Array<{ point: string; count: number; quote?: string }>>>; surprises?: string[]; lowEffort?: Array<{ participant: string; reason: string }>; nextQuestions?: string[]; note?: string };
+const FORCE_LABEL = { push: ['Push', 'What’s wrong with how things are now'], pull: ['Pull', 'What they hope a change gets them'], anxiety: ['Anxiety', 'What worries them about changing'], habit: ['Habit', 'What keeps them doing it the old way'] } as const;
+function Synthesis({ study, responses, onAddSections }: { study: Study; responses: Response[]; onAddSections: (s: CaseStudySection[], note: string) => void }) {
+  const key = `csb-synth-${study.id}`;
+  const [synth, setSynth] = useState<Synth | null>(() => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const open = study.questions.filter(q => ['long', 'text', 'single', 'multi', 'rank', 'scale'].includes(q.type));
+  if (responses.length < 2 || !open.some(q => q.type === 'long' || q.type === 'text' || q.followups)) return null;
+  const run = async () => {
+    setBusy(true); setError('');
+    try {
+      const qList = open.map((q, i) => ({ n: i + 1, type: q.type, prompt: q.prompt, options: q.options }));
+      const people = responses.map((r, k) => ({ p: `P${k + 1}`, answers: Object.fromEntries(open.map((q, i) => [i + 1, answerWords(r.answers[q.id], q)]).filter(([, a]) => a)), followups: Object.fromEntries(open.map((q, i) => [i + 1, r.followups?.[q.id] ?? []]).filter(([, f]) => (f as unknown[]).length)) }));
+      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'synthesize', title: study.title, goal: study.goal, questions: qList, people }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(data.themes)) throw new Error(res.status === 401 ? 'Enter your Studio passcode on the Share tab first.' : /Notion research link|Figma design link/.test(data.error || '') ? 'Finding themes needs the latest studio-ai-draft function deployed.' : data.error || 'Could not find themes. Try again.');
+      setSynth(data); try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Something went wrong.'); }
+    finally { setBusy(false); }
+  };
+  const addThemes = () => { if (!synth) return; const sec = { ...createSection('findings'), title: 'What kept coming up', eyebrow: 'Discover', items: synth.themes.slice(0, 6).map(t => ({ title: t.title, detail: `${t.detail}${t.count ? ` (${t.count} of ${responses.length} people)` : ''}` })) }; onAddSections([sec], `Added ${Math.min(6, synth.themes.length)} themes from “${study.title}”.`); };
+  const addQuotes = () => { if (!synth) return; const qs = synth.themes.flatMap(t => t.quotes.slice(0, 1)).slice(0, 6); const sec = { ...createSection('quotes'), title: 'In their words', eyebrow: 'Discover', items: qs.map(q => ({ title: q.participant, detail: q.text })) }; onAddSections([sec], `Added ${qs.length} quotes.`); };
+  return <div className="rw-synth">
+    <h4><Sparkles size={14} /> Themes {synth ? <small className="rw-note">from {responses.length} responses</small> : ''}</h4>
+    {!synth && <p>Reads every answer and follow-up, groups what people did and said into themes with counts, maps the four forces behind changing a habit, and flags low-effort responses.</p>}
+    <div className="rw-row"><button type="button" className={synth ? 'csb-quiet-button' : 'csb-primary-button'} disabled={busy} onClick={() => void run()}>{busy ? 'Reading every answer…' : synth ? 'Run again' : 'Find themes with AI'}</button>
+      {synth && <><button type="button" className="csb-quiet-button" onClick={addThemes}>Add themes to case study</button><button type="button" className="csb-quiet-button" onClick={addQuotes}>Add quotes</button></>}</div>
+    {error && <p className="csb-field-note is-error" role="alert">{error}</p>}
+    {synth && <>
+      {synth.note && <small className="rw-note is-warn">{synth.note}</small>}
+      <p>{synth.summary}</p>
+      <h5>Themes</h5>
+      {synth.themes.map((t, k) => <div key={k} className="rw-theme"><strong>{t.title}</strong><span className="rw-count">{t.count} of {responses.length} people{t.segments ? ` · ${t.segments}` : ''}</span><p>{t.detail}</p>{t.quotes.slice(0, 2).map((q, j) => <blockquote key={j}>“{q.text}” <em>— {q.participant}</em></blockquote>)}</div>)}
+      {synth.forces && Object.values(synth.forces).some(f => f?.length) && <><h5>What drives change (four forces)</h5><div className="rw-forces">{(Object.keys(FORCE_LABEL) as Array<keyof typeof FORCE_LABEL>).map(f => <div key={f} className="rw-force"><b>{FORCE_LABEL[f][0]}</b><small>{FORCE_LABEL[f][1]}</small><ul>{(synth.forces?.[f] ?? []).map((x, j) => <li key={j}>{x.point}{x.count ? ` (${x.count})` : ''}</li>)}</ul></div>)}</div></>}
+      {!!synth.surprises?.length && <><h5>Surprises and contradictions</h5><ul className="rw-flags" style={{ color: 'inherit' }}>{synth.surprises.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
+      {!!synth.nextQuestions?.length && <><h5>Worth asking next round</h5><ul className="rw-flags" style={{ color: 'inherit' }}>{synth.nextQuestions.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
+      {!!synth.lowEffort?.length && <><h5>Low-effort responses</h5><ul className="rw-flags">{synth.lowEffort.map((x, j) => <li key={j}>{x.participant}: {x.reason}</li>)}</ul></>}
     </>}
   </div>;
 }

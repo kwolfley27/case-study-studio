@@ -3,7 +3,7 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 /* Your own research tool: studies, questions, scoring and the server calls. */
 
-export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule';
+export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank';
 export type ContactKey = 'name' | 'email' | 'phone';
 export type FieldMode = 'off' | 'optional' | 'required';
 /** Show a question only when an earlier choice question was answered with one of these options. */
@@ -13,7 +13,8 @@ export type Question = { id: string; type: QuestionType; prompt: string; options
   /** Book a time: a Calendly (or other scheduling) link. */ url?: string;
   showIf?: ShowIf;
   /** Smaller, lighter text under the question (e.g. examples). */ hint?: string;
-  /** Open questions: how many AI follow-up questions to ask (0–3), and what they should dig into. */ followups?: number; probe?: string;
+  /** How many AI follow-up questions to ask (0–3), and what they should dig into. */ followups?: number; probe?: string;
+  /** Choice questions: only follow up when one of these was picked (empty = any answer). */ followIf?: string[];
   /** A picture shown above the question. */ image?: string;
   /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
 /** How the participant pages look. */
@@ -37,21 +38,67 @@ export type TaskRecord = { taskId: string; status: Outcome; ms: number; notes?: 
 export type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; audioUrl?: string; notes?: string; tasks: TaskRecord[]; transcript?: Transcript; notionPageId?: string };
 export type TranscriptLine = { s: number; e: number; spk: number; text: string };
 export type Transcript = { at: string; speakers: string[]; segments: TranscriptLine[] };
-export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** Most AI follow-ups one participant gets in total (default 6). */ followupBudget?: number; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 /** An AI follow-up the participant was asked, and their answer. */
 export type FollowUp = { q: string; a: string };
-export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]> };
-export const canFollowUp = (q: Question) => q.type === 'long' || q.type === 'text';
+export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
+export const canFollowUp = (q: Question) => q.type === 'long' || q.type === 'text' || q.type === 'single' || q.type === 'multi' || q.type === 'rank';
+export const hasOptions = (q: Question) => q.type === 'single' || q.type === 'multi' || q.type === 'rank';
+/** How an answer reads in plain words (rankings are numbered). */
+export const answerWords = (v: unknown, q?: Question) => Array.isArray(v) ? (q?.type === 'rank' ? v.map((x, i) => `${i + 1}. ${x}`).join(', ') : v.join(', ')) : v != null && typeof v !== 'object' ? String(v) : '';
+export const isChoice = (q: Question) => q.type === 'single' || q.type === 'multi';
+export const DEFAULT_FOLLOWUP_BUDGET = 6;
+/** Does this answer earn a follow-up? Choice questions can be limited to certain answers. */
+export function wantsFollowUp(q: Question, v: unknown) {
+  if (!canFollowUp(q) || !(q.followups && q.followups > 0)) return false;
+  if (isChoice(q) && q.followIf?.length) return (Array.isArray(v) ? v : [v]).some(x => q.followIf!.includes(String(x)));
+  return true;
+}
+
+/* ---------- Question checker: the mistakes experienced researchers avoid ---------- */
+export type Lint = { level: 'warn' | 'tip'; text: string };
+export function lintQuestion(q: Question): Lint[] {
+  if (q.preset || !['single', 'multi', 'text', 'long', 'scale'].includes(q.type)) return [];
+  const p = (q.prompt || '').trim(); const low = p.toLowerCase(); const out: Lint[] = [];
+  const open = q.type === 'long' || q.type === 'text';
+  const story = /^(tell me|walk me|describe|talk me|think about|picture)\b/i.test(p); // a story prompt with supporting cues is fine
+  const marks = (p.match(/\?/g) || []).length;
+  if (/\b(how much would you pay|would you pay|would you (use|buy|try|want|like)|will you|if there (was|were)|would it help|would you be (interested|likely))\b/.test(low))
+    out.push({ level: 'warn', text: 'Asks people to predict the future. People are bad at that. Ask about something they already did: “Tell me about the last time you…”' });
+  if (/\b(don’t|don't|doesn’t|doesn't|isn’t|isn't|wouldn’t|wouldn't) you\b|\bhow (great|easy|helpful|useful|much do you (love|like))\b|\b(agree|frustrating|annoying|love)\b.*\?/.test(low) && !/tell me|walk me/.test(low))
+    out.push({ level: 'warn', text: 'May lead people toward an answer. Keep the wording neutral, e.g. “How do you feel about…” or “What was that like?”' });
+  if (!story && (marks > 1 || /\?\s*\S.*\b(and|or) (what|how|why|when|where|who)\b/i.test(p) || /\b(and|or) (what|how|why|when|where|who)\b[^?]*\?$/i.test(p) && p.split(/\b(?:and|or) (?:what|how|why|when|where|who)\b/i)[0].length > 25))
+    out.push({ level: 'tip', text: 'Two questions in one. People tend to answer only one. Consider splitting it, or let an AI follow-up ask the second part.' });
+  if (open && marks <= 1 && /^(do|does|did|are|is|was|were|have|has|can|could|would|will|should)\b/i.test(p))
+    out.push({ level: 'tip', text: 'Yes/no wording: people may answer in one word. Try “Tell me about…” or “Walk me through…”.' });
+  if (open && /\b(usually|typically|normally|in general|generally)\b/i.test(p) && !/\blast time\b/i.test(p))
+    out.push({ level: 'tip', text: 'Asks for an average, which people tend to idealise. Anchor it to a real moment: “the last time you…”.' });
+  if (open && /^why\b/i.test(p))
+    out.push({ level: 'tip', text: '“Why” can feel like being put on the spot. “What made you…” or “What led to…” usually gets a fuller story.' });
+  return out;
+}
+
+/** A realistic time estimate: open answers by voice take a minute or two, follow-ups add more. */
+export function estimateMinutes(qs: Question[]) {
+  let min = 0;
+  for (const q of qs) {
+    min += q.type === 'long' ? 1.5 : q.type === 'text' ? 0.5 : q.type === 'photo' ? 1 : q.type === 'rank' ? 0.4 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : 0.2;
+    if (q.followups) min += Math.min(3, q.followups) * (isChoice(q) ? 0.5 : 0.8) * 0.6; // AI often stops early
+  }
+  return Math.max(1, Math.round(min));
+}
 
 export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['single', 'One choice', 'Pick one option'],
   ['multi', 'Checkboxes', 'Pick any that apply'],
+  ['rank', 'Rank', 'Put options in order, best first'],
   ['scale', 'Scale', 'Rate from 1 to 5 (or 7)'],
   ['nps', 'NPS 0–10', 'How likely to recommend'],
   ['text', 'Short answer', 'A few words'],
   ['long', 'Long answer', 'A paragraph'],
   ['contact', 'Contact info', 'Name, email, phone'],
   ['schedule', 'Book a time', 'Calendly or other booking link'],
+  ['photo', 'Show me (photo)', 'Upload a screenshot or photo'],
 ];
 
 export const CONTACT_FIELDS: Array<[ContactKey, string]> = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
@@ -93,11 +140,11 @@ export const BOOKED = 'Booked a time', OPENED = 'Opened the booking link';
 
 const qid = () => crypto.randomUUID().slice(0, 8);
 export const newQuestion = (type: QuestionType): Question => ({
-  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule',
-  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat' }[type],
+  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo',
+  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.' }[type],
   ...(type === 'contact' ? { contact: { ...DEFAULT_CONTACT } } : {}),
   ...(type === 'schedule' ? { url: '' } : {}),
-  ...(type === 'single' || type === 'multi' ? { options: ['Option one', 'Option two', 'Option three'] } : {}),
+  ...(type === 'single' || type === 'multi' || type === 'rank' ? { options: ['Option one', 'Option two', 'Option three'] } : {}),
   ...(type === 'scale' ? { min: 1, max: 5, minLabel: 'Very hard', maxLabel: 'Very easy' } : {}),
 });
 
@@ -136,7 +183,9 @@ export type QuestionResult =
   | { q: Question; kind: 'nps'; answered: number; score: number; promoters: number; passives: number; detractors: number }
   | { q: Question; kind: 'text'; answered: number; answers: string[] }
   | { q: Question; kind: 'contact'; answered: number }
-  | { q: Question; kind: 'schedule'; answered: number; booked: number };
+  | { q: Question; kind: 'schedule'; answered: number; booked: number }
+  | { q: Question; kind: 'photo'; answered: number }
+  | { q: Question; kind: 'rank'; answered: number; items: Array<{ label: string; avg: number; firsts: number }> };
 
 export function aggregate(study: Study, responses: Response[]): QuestionResult[] {
   return study.questions.map(q => {
@@ -157,6 +206,11 @@ export function aggregate(study: Study, responses: Response[]): QuestionResult[]
       return { q, kind: 'nps', answered: vals.length, score: Math.round(((p - d) / t) * 100), promoters: p, passives: pa, detractors: d };
     }
     if (q.type === 'contact') return { q, kind: 'contact', answered: vals.length };
+    if (q.type === 'photo') return { q, kind: 'photo', answered: vals.length };
+    if (q.type === 'rank') {
+      const items = (q.options ?? []).map(label => { const pos = vals.map(v => (v as string[]).indexOf(label)).filter(i => i >= 0); return { label, avg: pos.length ? pos.reduce((a, b) => a + b + 1, 0) / pos.length : 0, firsts: pos.filter(i => i === 0).length }; });
+      return { q, kind: 'rank', answered: vals.length, items: items.sort((a, b) => (a.avg || 99) - (b.avg || 99) || b.firsts - a.firsts) };
+    }
     if (q.type === 'schedule') return { q, kind: 'schedule', answered: vals.length, booked: vals.filter(v => v === BOOKED).length };
     return { q, kind: 'text', answered: vals.length, answers: vals.map(String) };
   });
