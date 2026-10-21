@@ -353,3 +353,9 @@
 .is-on>.rs-card-label>.rs-mark.is-box{box-shadow:none;background:var(--rs-accent,#000)}
 .is-on>.rs-card-label>.rs-mark.is-box::after{content:"";position:absolute;left:6px;top:2.5px;width:4px;height:9px;border:solid var(--rs-on,#fdfcfc);border-width:0 2px 2px 0;transform:rotate(45deg)}
 .rw-hint-input{font-size:12px!important;color:#6e6e73}
+.rs-echo{margin:0;padding:2px 0 2px 12px;border-left:2px solid #ebe8e4;color:#a59f97;font-size:14px;line-height:1.45;font-style:italic}
+.rs.is-preview .rs-echo{font-size:12.5px}
+.rw-private{font-style:normal;font-weight:400;color:#a15c07;margin-left:6px;font-size:11px}
+.rw-fu{padding-top:6px;border-top:1px dashed #e5e5e5}
+.rw-quotes .rw-fu-list{list-style:none;margin:6px 0 0 24px;padding:0;display:grid;gap:6px}
+.rw-fu-list small{display:block;color:var(--csb-muted);font-size:11.5px}

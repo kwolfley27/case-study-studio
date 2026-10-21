@@ -13,6 +13,7 @@ export type Question = { id: string; type: QuestionType; prompt: string; options
   /** Book a time: a Calendly (or other scheduling) link. */ url?: string;
   showIf?: ShowIf;
   /** Smaller, lighter text under the question (e.g. examples). */ hint?: string;
+  /** Open questions: how many AI follow-up questions to ask (0–3), and what they should dig into. */ followups?: number; probe?: string;
   /** A picture shown above the question. */ image?: string;
   /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
 /** How the participant pages look. */
@@ -36,8 +37,11 @@ export type TaskRecord = { taskId: string; status: Outcome; ms: number; notes?: 
 export type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; audioUrl?: string; notes?: string; tasks: TaskRecord[]; transcript?: Transcript; notionPageId?: string };
 export type TranscriptLine = { s: number; e: number; spk: number; text: string };
 export type Transcript = { at: string; speakers: string[]; segments: TranscriptLine[] };
-export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
-export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer> };
+export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+/** An AI follow-up the participant was asked, and their answer. */
+export type FollowUp = { q: string; a: string };
+export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]> };
+export const canFollowUp = (q: Question) => q.type === 'long' || q.type === 'text';
 
 export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['single', 'One choice', 'Pick one option'],

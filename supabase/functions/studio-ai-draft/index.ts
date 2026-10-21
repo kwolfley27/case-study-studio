@@ -469,6 +469,8 @@ async function designSurvey(anthropicKey: string, goal: string, title: string, c
               options: { type: 'array', items: { type: 'string' }, description: 'For single/multi only.' },
               minLabel: { type: 'string' }, maxLabel: { type: 'string' },
               required: { type: 'boolean' },
+              followups: { type: 'integer', description: 'For long/text questions only: how many AI follow-up questions (0–3) to ask about each participant\'s answer.' },
+              probe: { type: 'string', description: 'For questions with followups: what the AI follow-ups should dig into, including branches (e.g. "If they don\'t do X, ask what stops them; if they want to, ask why").' },
               showIf: { type: 'object', description: 'Only show this question when an earlier single/multi question has one of these answers. ref is a proposal ref or "n<number>" for an existing question.', properties: { ref: { type: 'string' }, anyOf: { type: 'array', items: { type: 'string' } } }, required: ['ref', 'anyOf'] },
               why: { type: 'string', description: 'One short sentence: what this question tells the researcher, or what was wrong with the original.' },
             },
@@ -487,7 +489,8 @@ Write questions that follow research best practice:
 - Keep screeners short (about 6–10 questions, under 3 minutes). Put the most disqualifying questions first.
 - Use showIf to branch: follow-ups only for the people they apply to.
 - For screeners, end with an interest question (Yes / Maybe, if there's a time that works / No thanks), then a contact question and a schedule step both shown only for Yes or Maybe.
-- Prefer one open "long" question about a recent specific experience — participants can answer it by voice.
+- Prefer open "long" questions about a recent specific experience — participants can answer by voice.
+- If the researcher wants an unmoderated interview (no live calls), favour 6–10 open "long" questions with followups (1–2) and a probe describing what to dig into and how to branch, instead of many fixed branches. Skip the interest/contact/schedule questions unless they ask to recruit.
 If existing questions are given, keep the good ones (do not propose them again), suggest rewrites only where there's a real problem (set replaces), and add what is missing. Always answer by calling the propose_survey tool.`;
   const content = [{ type: 'text', text: `${goal ? `WHAT I WANT TO LEARN / WHO SHOULD TAKE IT:\n${goal}\n\n` : ''}${title ? `SURVEY TITLE: ${title}\n\n` : ''}${current.length ? `CURRENT QUESTIONS (JSON):\n${JSON.stringify(current)}` : 'There are no questions yet. Draft the full survey.'}` }];
   const result = await askWithTool(anthropicKey, system, tool, content, 6000, 120000);
@@ -496,7 +499,7 @@ If existing questions are given, keep the good ones (do not propose them again),
     ref: String(q.ref || `p${i + 1}`).slice(0, 20), replaces: Number.isInteger(q.replaces) && current.some(c => c.n === q.replaces) ? q.replaces : undefined, type: q.type, prompt: String(q.prompt).slice(0, 500), hint: q.hint ? String(q.hint).slice(0, 300) : undefined,
     options: (q.type === 'single' || q.type === 'multi') && Array.isArray(q.options) ? q.options.map((o: unknown) => String(o).slice(0, 200)).filter(Boolean).slice(0, 20) : undefined,
     minLabel: q.type === 'scale' && q.minLabel ? String(q.minLabel).slice(0, 60) : undefined, maxLabel: q.type === 'scale' && q.maxLabel ? String(q.maxLabel).slice(0, 60) : undefined,
-    required: typeof q.required === 'boolean' ? q.required : undefined, why: String(q.why || '').slice(0, 300),
+    required: typeof q.required === 'boolean' ? q.required : undefined, followups: (q.type === 'long' || q.type === 'text') && Number.isInteger(q.followups) && q.followups > 0 ? Math.min(3, q.followups) : undefined, probe: q.probe ? String(q.probe).slice(0, 600) : undefined, why: String(q.why || '').slice(0, 300),
     showIf: q.showIf?.ref && Array.isArray(q.showIf.anyOf) ? { ref: String(q.showIf.ref).slice(0, 20), anyOf: q.showIf.anyOf.map((o: unknown) => String(o).slice(0, 200)).slice(0, 20) } : undefined,
   }));
   return { title: result.title ? String(result.title).slice(0, 200) : undefined, intro: result.intro ? String(result.intro).slice(0, 600) : undefined, summary: String(result.summary || '').slice(0, 600), questions: clean };

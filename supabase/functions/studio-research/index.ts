@@ -8,7 +8,8 @@ import { caller } from '../_shared/access.ts';
 //
 // Actions (POST JSON { action, ... }):
 //   get      public   { id }              → the open study, for participants
-//   submit   public   { id, answers, ms } → saves one response (+ Notion row)
+//   followup public   { id, questionId, answer, history, context } → one AI follow-up question (or done)
+//   submit   public   { id, answers, ms, followups } → saves one response (+ Notion row)
 //   publish  passcode { study }           → saves the study, creates the Notion database
 //   list     passcode {}                  → your studies with response counts
 //   results  passcode { id }              → all responses for one study
@@ -29,7 +30,7 @@ const MAX_BODY = 400_000;
 
 type ContactKey = 'name' | 'email' | 'phone';
 type FieldMode = 'off' | 'optional' | 'required';
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string };
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string };
 const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
 const color = (v: unknown) => /^#[0-9a-f]{6}$/i.test(String(v ?? '')) ? String(v) : undefined;
 type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
@@ -42,7 +43,7 @@ type Task = { id: string; title: string; scenario?: string; success?: string };
 type Outcome = 'success' | 'help' | 'fail' | 'skipped';
 type Transcript = { at: string; speakers: string[]; segments: Array<{ s: number; e: number; spk: number; text: string }> };
 type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; notes?: string; notionPageId?: string; transcript?: Transcript; tasks: Array<{ taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] }> };
-type Study = { id: string; kind: 'survey' | 'usability'; theme?: { accent?: string; background?: string; cover?: string }; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
+type Study = { id: string; kind: 'survey' | 'usability'; goal?: string; theme?: { accent?: string; background?: string; cover?: string }; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
 
 const cleanId = (v: unknown) => String(v ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 const text = (v: unknown, n = 2000) => String(v ?? '').slice(0, n);
@@ -83,8 +84,21 @@ Deno.serve(async (request) => {
       const study = await readJson<Study>(`studies/${cleanId(body.id)}.json`);
       if (!study) return reply({ error: 'This study could not be found.' }, 404);
       if (study.status !== 'open') return reply({ error: 'This study is closed. Thank you for your interest.' }, 410);
-      const { notion: _n, ...publicStudy } = study;
-      return reply({ study: publicStudy });
+      const { notion: _n, goal: _g, ...publicStudy } = study;
+      return reply({ study: { ...publicStudy, questions: study.questions.map(({ probe: _p, ...q }) => q) } });
+    }
+    if (action === 'followup') {
+      // Ask one follow-up about this participant's answer. Small, fast model; short output.
+      const study = await readJson<Study>(`studies/${cleanId(body.id)}.json`);
+      if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ done: true });
+      const q = study.questions.find(x => x.id === cleanId(body.questionId));
+      const history = (Array.isArray(body.history) ? body.history : []).slice(0, 3).map((h: { q?: unknown; a?: unknown }) => ({ q: text(h?.q, 300), a: text(h?.a, 3000) }));
+      if (!q || !(q.followups && q.followups > 0) || history.length >= Math.min(3, q.followups)) return reply({ done: true });
+      const answer = text(body.answer, 4000).trim();
+      if (answer.length < 2) return reply({ done: true });
+      const context = (Array.isArray(body.context) ? body.context : []).slice(0, 20).map((c: { q?: unknown; a?: unknown }) => ({ q: text(c?.q, 300), a: text(c?.a, 600) }));
+      try { return reply(await followUp(study, q, answer, history, context)); }
+      catch { return reply({ done: true }); } // never block a participant on an AI hiccup
     }
     if (action === 'submit') {
       const id = cleanId(body.id);
@@ -113,7 +127,14 @@ Deno.serve(async (request) => {
         else if (q.type === 'scale' || q.type === 'nps') { const n = Number(v); const lo = q.type === 'nps' ? 0 : (q.min ?? 1), hi = q.type === 'nps' ? 10 : (q.max ?? 5); if (Number.isFinite(n) && n >= lo && n <= hi) clean[q.id] = Math.round(n); }
         else clean[q.id] = text(v, q.type === 'long' ? 4000 : 500);
       }
-      const response = { id: crypto.randomUUID(), at: new Date().toISOString(), ms: Math.max(0, Math.min(86_400_000, Number(body.ms) || 0)), answers: clean };
+      const rawFu = (body.followups && typeof body.followups === 'object') ? body.followups as Record<string, unknown> : {};
+      const followups: Record<string, Array<{ q: string; a: string }>> = {};
+      for (const q of study.questions) {
+        if (!(q.followups && q.followups > 0) || clean[q.id] == null) continue;
+        const list = (Array.isArray(rawFu[q.id]) ? rawFu[q.id] as Array<{ q?: unknown; a?: unknown }> : []).slice(0, Math.min(3, q.followups)).map(f => ({ q: text(f?.q, 300), a: text(f?.a, 4000).trim() })).filter(f => f.q && f.a);
+        if (list.length) followups[q.id] = list;
+      }
+      const response = { id: crypto.randomUUID(), at: new Date().toISOString(), ms: Math.max(0, Math.min(86_400_000, Number(body.ms) || 0)), answers: clean, ...(Object.keys(followups).length ? { followups } : {}) };
       await writeJson(`responses/${id}/${response.at.replace(/[:.]/g, '-')}-${response.id.slice(0, 8)}.json`, response);
       if (study.notion?.databaseId) await notionRow(study, response).catch(() => undefined);
       return reply({ ok: true });
@@ -130,11 +151,14 @@ Deno.serve(async (request) => {
       const study: Study = {
         id, kind: s.kind === 'usability' ? 'usability' : 'survey', format: s.kind === 'usability' && s.format === 'interview' ? 'interview' : undefined, tasks: Array.isArray(s.tasks) ? s.tasks.slice(0, 30).map(t => ({ id: cleanId(t.id) || crypto.randomUUID().slice(0, 8), title: text(t.title, 200), scenario: text(t.scenario, 1500), success: text(t.success, 500) })) : undefined, title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
         status: s.status === 'closed' ? 'closed' : 'open',
+        goal: s.goal ? text(s.goal, 2000) : undefined,
         theme: s.theme ? { accent: color(s.theme.accent), background: color(s.theme.background), cover: httpsUrl(s.theme.cover) || undefined } : undefined,
         questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 60).filter(q => QUESTION_TYPES.has(q.type)).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined,
           contact: q.type === 'contact' ? Object.fromEntries(CONTACT_KEYS.map(k => [k, fieldMode(q, k)])) as Record<ContactKey, FieldMode> : undefined,
           url: q.type === 'schedule' && /^https:\/\//.test(String(q.url ?? '')) ? text(q.url, 500) : undefined,
           hint: q.hint ? text(q.hint, 500) : undefined,
+          followups: (q.type === 'long' || q.type === 'text') && Number(q.followups) > 0 ? Math.min(3, Math.round(Number(q.followups))) : undefined,
+          probe: (q.type === 'long' || q.type === 'text') && q.probe ? text(q.probe, 600) : undefined,
           image: httpsUrl(q.image) || undefined,
           optionImages: Array.isArray(q.optionImages) && (q.type === 'single' || q.type === 'multi') ? q.optionImages.slice(0, 30).map(httpsUrl) : undefined,
           showIf: q.showIf?.questionId ? { questionId: cleanId(q.showIf.questionId), anyOf: (Array.isArray(q.showIf.anyOf) ? q.showIf.anyOf : []).map(o => text(o, 200)).slice(0, 30) } : undefined })),
@@ -275,7 +299,7 @@ async function ensureDatabase(study: Study): Promise<string> {
   const db = await notion('databases', { method: 'POST', body: JSON.stringify({ parent: { type: 'page_id', page_id: parent }, title: [{ text: { content: `${study.title} · responses` } }], properties }) });
   return db.id;
 }
-async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer> }) {
+async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>> }) {
   const properties: Record<string, unknown> = {
     Participant: { title: [{ text: { content: `Participant ${response.id.slice(0, 4).toUpperCase()}` } }] },
     Submitted: { date: { start: response.at } },
@@ -289,7 +313,10 @@ async function notionRow(study: Study, response: { id: string; at: string; ms: n
     if (q.type === 'single') properties[name] = { select: { name: String(v).replace(/,/g, ' ').slice(0, 100) } };
     else if (q.type === 'multi') properties[name] = { multi_select: (v as string[]).map(x => ({ name: x.replace(/,/g, ' ').slice(0, 100) })) };
     else if (q.type === 'scale' || q.type === 'nps') properties[name] = { number: Number(v) };
-    else properties[name] = { rich_text: [{ text: { content: String(v).slice(0, 1990) } }] };
+    else {
+      const full = [String(v), ...(response.followups?.[q.id] ?? []).map(f => `\n\nFollow-up: ${f.q}\n${f.a}`)].join('');
+      properties[name] = { rich_text: [{ text: { content: full.slice(0, 1990) } }] };
+    }
   });
   await notion('pages', { method: 'POST', body: JSON.stringify({ parent: { database_id: study.notion!.databaseId }, properties }) });
 }
@@ -325,4 +352,40 @@ async function notionTranscript(pageId: string, t: Transcript) {
     { text: { content: turn.text.slice(0, 1900) } },
   ] } }))];
   for (let i = 0; i < blocks.length; i += 100) await notion(`blocks/${pageId}/children`, { method: 'PATCH', body: JSON.stringify({ children: blocks.slice(i, i + 100) }) });
+}
+
+/* ---------- AI follow-ups: one short, curious question about what they just said ---------- */
+async function followUp(study: Study, q: Question, answer: string, history: Array<{ q: string; a: string }>, context: Array<{ q: string; a: string }>) {
+  const key = Deno.env.get('ANTHROPIC_API_KEY');
+  if (!key) return { done: true };
+  const tool = { name: 'next_step', description: 'Either ask one follow-up question or finish this topic.', input_schema: { type: 'object', properties: { done: { type: 'boolean', description: 'true when there is nothing worth asking (the answer is already thorough, off-topic, or the participant clearly wants to move on).' }, question: { type: 'string', description: 'The follow-up question, when done is false.' } }, required: ['done'] } };
+  const system = `You are a warm, curious UX researcher running an asynchronous interview. Participants answer by voice dictation or typing, one question at a time, like a text conversation. Answers can be rambly; that's fine.
+Read their latest answer and ask ONE short follow-up (max 25 words) that digs into what THEY said: the why behind a habit, their biggest obstacle, what they'd want and why, or a specific recent example.
+Rules:
+- Refer to something specific from their answer, in their words. Sound like a person texting, not a form.
+- Never lead or suggest an answer. Offer options only as loose examples ("is it more about time, money, something else?").
+- Never pitch or describe a product. Never ask for names, contact details, or anything identifying.
+- Don't repeat a question already asked. One question only, no preamble, no "thanks for sharing".
+- If the answer is already thorough, off-topic, or they signal they're done ("that's it", "not really"), set done to true.`;
+  const lines = [
+    study.goal ? `WHAT THE RESEARCHER WANTS TO LEARN: ${study.goal}` : '',
+    q.probe ? `WHAT TO DIG INTO FOR THIS QUESTION: ${q.probe}` : '',
+    context.length ? `THEIR EARLIER ANSWERS IN THIS STUDY:\n${context.map(c => `- ${c.q}: ${c.a}`).join('\n')}` : '',
+    `QUESTION: ${q.prompt}`,
+    `THEIR ANSWER: ${answer}`,
+    ...history.map((h, i) => `FOLLOW-UP ${i + 1}: ${h.q}\nTHEIR ANSWER: ${h.a || '(skipped)'}`),
+    history.length ? 'Ask the next follow-up, or set done if the topic is covered.' : 'Ask the first follow-up.',
+  ].filter(Boolean).join('\n\n');
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: Deno.env.get('FOLLOWUP_MODEL') || 'claude-haiku-5-5', max_tokens: 300, system, tools: [tool], tool_choice: { type: 'auto' }, messages: [{ role: 'user', content: lines + '\n\nAnswer by calling the next_step tool.' }] }),
+    signal: AbortSignal.timeout(20000),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message || 'AI failed.');
+  const use = (data.content ?? []).find((p: { type: string }) => p.type === 'tool_use');
+  const question = String(use?.input?.question ?? '').trim().replace(/^["“]|["”]$/g, '').slice(0, 300);
+  if (!use || use.input?.done || question.length < 5) return { done: true };
+  return { question };
 }

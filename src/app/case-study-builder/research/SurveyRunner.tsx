@@ -1,69 +1,119 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, type ContactKey, type Question, type Study } from './research';
+import { BOOKED, OPENED, onColor, bookingUrl, call, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, type ContactKey, type FollowUp, type Question, type Study } from './research';
 import './research.css';
 
 const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.values(v as object).some(x => String(x ?? '').trim()));
 
 /* One question per screen. Used by the participant link and the builder's live preview.
-   Questions with "Show only if" are skipped when the earlier answer doesn't match (the preview shows every question). */
-export function SurveyRunner({ study, preview, onSubmit, startAt }: { study: Study; preview?: boolean; onSubmit?: (answers: Record<string, unknown>, ms: number) => Promise<void>; startAt?: number }) {
+   Questions with "Show only if" are skipped when the earlier answer doesn't match (the preview shows every question).
+   Open questions with AI follow-ups: after an answer, onFollowUp may return a follow-up question, shown as its own screen. */
+type AskFollowUp = (q: Question, answer: string, history: FollowUp[], context: FollowUp[]) => Promise<string | null>;
+const answerText = (v: unknown) => Array.isArray(v) ? v.join(', ') : v != null && typeof v !== 'object' ? String(v) : '';
+
+export function SurveyRunner({ study, preview, onSubmit, onFollowUp, startAt }: { study: Study; preview?: boolean; onSubmit?: (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>) => Promise<void>; onFollowUp?: AskFollowUp; startAt?: number }) {
   const [step, setStep] = useState(startAt ?? -1); // -1 intro, 0..n-1 questions, n thanks
+  const [sub, setSub] = useState<number | null>(null); // which follow-up of the current question is showing
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
-  const [busy, setBusy] = useState(false);
+  const [fu, setFu] = useState<Record<string, FollowUp[]>>({});
+  const [fuDone, setFuDone] = useState<Record<string, boolean>>({}); // the AI said there's nothing more to ask
+  const [busy, setBusy] = useState<'' | 'thinking' | 'sending'>('');
   const [error, setError] = useState('');
   const [touched, setTouched] = useState(false);
   const started = useRef(Date.now());
-  useEffect(() => { if (startAt !== undefined) setStep(startAt); }, [startAt]);
+  useEffect(() => { if (startAt !== undefined) { setStep(startAt); setSub(null); } }, [startAt]);
   const qs = preview ? study.questions : study.questions.filter(q => isShown(q, answers));
   const n = qs.length;
   const q = step >= 0 && step < n ? qs[step] : null;
   const value = q ? answers[q.id] : undefined;
   const answered = !!q && hasValue(value);
+  const fuList = q ? fu[q.id] ?? [] : [];
+  const fuItem = sub !== null ? fuList[sub] : undefined;
+  const maxFu = q && canFollowUp(q) && onFollowUp ? Math.min(3, q.followups ?? 0) : 0;
   const fieldErrors = q?.type === 'contact' ? contactErrors(q, value) : {};
   const contactOk = !Object.keys(fieldErrors).length;
-  const canNext = !q || (q.type === 'contact' ? (contactOk || (!q.required && !answered)) : (!q.required || answered));
-  const set = (v: unknown) => q && setAnswers(a => ({ ...a, [q.id]: v }));
+  const canNext = !q || !!fuItem || (q.type === 'contact' ? (contactOk || (!q.required && !answered)) : (!q.required || answered));
+  const set = (v: unknown) => { if (!q) return; setAnswers(a => ({ ...a, [q.id]: v })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); setFuDone(d => ({ ...d, [q.id]: false })); };
+  const setFuAnswer = (a: string) => { if (!q || sub === null) return; setFu(f => ({ ...f, [q.id]: (f[q.id] ?? []).map((x, i) => i === sub ? { ...x, a } : x) })); setFuDone(d => ({ ...d, [q.id]: false })); };
   const contact = study.questions.filter(x => x.type === 'contact').map(x => answers[x.id]).find(hasValue) as Partial<Record<ContactKey, string>> | undefined;
-  const go = (s: number) => { setTouched(false); setStep(s); };
+  const go = (s: number) => { setTouched(false); setSub(null); setStep(s); };
+  const shownIds = () => new Set(qs.map(x => x.id));
+  const advance = async () => {
+    if (step === n - 1) {
+      setBusy('sending'); setError('');
+      // Only send answers to questions the participant actually saw.
+      const shown = shownIds();
+      const sentFu = Object.fromEntries(Object.entries(fu).filter(([k]) => shown.has(k)).map(([k, list]) => [k, list.filter(x => x.a.trim())]).filter(([, list]) => (list as FollowUp[]).length));
+      try { await onSubmit?.(Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k))), Date.now() - started.current, sentFu); go(n); }
+      catch (e) { setError(e instanceof Error ? e.message : 'Could not send your answers. Please try again.'); }
+      finally { setBusy(''); }
+    } else { if (step === -1) started.current = Date.now(); go(step + 1); }
+  };
+  /** Ask the AI for the next follow-up; false when there isn't one. */
+  const askMore = async (history: FollowUp[]) => {
+    if (!q || !onFollowUp || history.length >= maxFu || fuDone[q.id]) return false;
+    setBusy('thinking');
+    try {
+      const context = qs.slice(0, step).map(x => ({ q: x.prompt, a: answerText(answers[x.id]) })).filter(x => x.a);
+      const question = await onFollowUp(q, answerText(value), history, context);
+      if (!question) { setFuDone(d => ({ ...d, [q.id]: true })); return false; }
+      setFu(f => ({ ...f, [q.id]: [...history, { q: question, a: '' }] })); setSub(history.length); setTouched(false);
+      return true;
+    } catch { return false; } finally { setBusy(''); }
+  };
   const next = async () => {
     if (!canNext) { setTouched(true); return; }
     if (busy) return;
-    if (step === n - 1) {
-      setBusy(true); setError('');
-      // Only send answers to questions the participant actually saw.
-      const shown = new Set(qs.map(x => x.id));
-      try { await onSubmit?.(Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k))), Date.now() - started.current); go(n); }
-      catch (e) { setError(e instanceof Error ? e.message : 'Could not send your answers. Please try again.'); }
-      finally { setBusy(false); }
-    } else { if (step === -1) started.current = Date.now(); go(step + 1); }
+    if (q && sub === null && maxFu && answered) {
+      if (fuList.length) { setSub(0); return; }
+      if (await askMore([])) return;
+    } else if (q && sub !== null) {
+      if (sub + 1 < fuList.length) { setSub(sub + 1); return; }
+      if (fuItem?.a.trim() && await askMore(fuList)) return;
+    }
+    await advance();
+  };
+  const back = () => {
+    setTouched(false);
+    if (sub !== null) { setSub(sub > 0 ? sub - 1 : null); return; }
+    const prev = step > 0 ? qs[step - 1] : null; const prevFu = prev ? fu[prev.id] ?? [] : [];
+    go(Math.max(-1, step - 1)); if (prevFu.length) setSub(prevFu.length - 1); // land on the last follow-up they saw
   };
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey && (e.target as HTMLElement).tagName !== 'TEXTAREA') { e.preventDefault(); void next(); } };
   const condition = preview && q?.showIf?.anyOf?.length ? (() => { const i = study.questions.findIndex(x => x.id === q.showIf!.questionId); return i >= 0 ? `Only shown if Q${i + 1} is ${q.showIf!.anyOf.map(o => `“${o}”`).join(' or ')}` : ''; })() : '';
+  const fuNote = preview && q && canFollowUp(q) && (q.followups ?? 0) > 0 ? `After they answer, AI asks up to ${q.followups} follow-up${q.followups === 1 ? '' : 's'} about what they said` : '';
+  const lastLabel = step === n - 1 && !(maxFu && (sub === null ? answered : fuList.length < maxFu)) ? 'Submit' : 'Next';
 
   const t = study.theme ?? {};
   const themeStyle = { ...(t.accent ? { '--rs-accent': t.accent, '--rs-on': onColor(t.accent) } : {}), ...(t.background ? { '--rs-bg': t.background } : {}) } as React.CSSProperties;
   return <div className={`rs ${preview ? 'is-preview' : ''}`} style={themeStyle} onKeyDown={onKey}>
     {step >= 0 && step < n && <div className="rs-progress" aria-hidden="true"><i style={{ width: `${((step + (answered ? 1 : 0)) / n) * 100}%` }} /></div>}
     <AnimatePresence mode="wait">
-      <motion.div key={step} className="rs-screen" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
+      <motion.div key={`${step}-${sub ?? 'q'}`} className="rs-screen" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
         {step === -1 && <div className="rs-intro">
           {t.cover && <img className="rs-cover" src={t.cover} alt="" />}
           <h1>{study.title}</h1>
           {study.intro && <p>{study.intro}</p>}
           <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>
-          <small>{n} question{n === 1 ? '' : 's'} · about {Math.max(1, Math.round(n * 0.3))} min</small>
+          <small>{n} question{n === 1 ? '' : 's'} · about {Math.max(1, Math.round(n * (study.questions.some(x => x.followups) ? 0.8 : 0.3)))} min</small>
         </div>}
-        {q && <>{condition && <p className="rs-condition">{condition}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} /></>}
+        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} /></>}
+        {q && fuItem && <div className="rs-q">
+          <small className="rs-count">{step + 1} / {n} · follow-up</small>
+          <blockquote className="rs-echo">{answerText(sub === 0 ? value : fuList[sub! - 1]?.a).slice(0, 160)}{answerText(sub === 0 ? value : fuList[sub! - 1]?.a).length > 160 ? '…' : ''}</blockquote>
+          <h2>{fuItem.q}</h2>
+          <LongAnswer label={fuItem.q} value={fuItem.a} set={setFuAnswer} />
+        </div>}
         {step === n && <div className="rs-intro rs-thanks"><span className="rs-check" aria-hidden="true">✓</span><h1>{study.thanks || 'Thank you.'}</h1><p>You can close this page now.</p></div>}
       </motion.div>
     </AnimatePresence>
     {q && <div className="rs-nav">
-      <button type="button" className="rs-ghost" onClick={() => go(Math.max(-1, step - 1))}>Back</button>
+      <button type="button" className="rs-ghost" onClick={back}>Back</button>
       <div className="rs-nav-right">
         {error && <span className="rs-error" role="alert">{error}</span>}
-        {!q.required && !answered && step < n - 1 && <button type="button" className="rs-ghost" onClick={() => go(step + 1)}>{q.type === 'schedule' ? 'Not now' : 'Skip'}</button>}
-        <button type="button" className="rs-primary" disabled={busy || (!canNext && q.type !== 'contact')} onClick={() => void next()}>{busy ? 'Sending…' : step === n - 1 ? 'Submit' : 'Next'}</button>
+        {fuItem ? !fuItem.a.trim() && <button type="button" className="rs-ghost" disabled={!!busy} onClick={() => void advance()}>Skip</button>
+          : !q.required && !answered && step < n - 1 && <button type="button" className="rs-ghost" onClick={() => go(step + 1)}>{q.type === 'schedule' ? 'Not now' : 'Skip'}</button>}
+        <button type="button" className="rs-primary" disabled={!!busy || (!canNext && q.type !== 'contact')} onClick={() => void next()}>{busy === 'thinking' ? 'One sec…' : busy === 'sending' ? 'Sending…' : lastLabel}</button>
       </div>
     </div>}
   </div>;
@@ -175,6 +225,7 @@ export default function ParticipantPage({ id }: { id: string }) {
   return <main className={`rs-page ${study?.theme?.background ? 'has-theme' : ''}`} style={study?.theme?.background ? { '--rs-bg': study.theme.background } as React.CSSProperties : undefined}>
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={async (answers, ms) => { await call('submit', { id, answers, ms }); }} />}
+      : <SurveyRunner study={study} onSubmit={async (answers, ms, followups) => { await call('submit', { id, answers, ms, followups }); }}
+          onFollowUp={async (q, answer, history, context) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context }); return r.question || null; }} />}
   </main>;
 }
