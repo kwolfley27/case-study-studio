@@ -31,7 +31,7 @@ const MAX_BODY = 400_000;
 
 type ContactKey = 'name' | 'email' | 'phone';
 type FieldMode = 'off' | 'optional' | 'required';
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[] };
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean };
 const FOLLOWUP_TYPES = new Set(['long', 'text', 'single', 'multi', 'rank']);
 const PHOTO_TYPES: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'image/gif': 'gif' };
 const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
@@ -192,6 +192,7 @@ Deno.serve(async (request) => {
           hint: q.hint ? text(q.hint, 500) : undefined,
           followups: FOLLOWUP_TYPES.has(q.type) && Number(q.followups) > 0 ? Math.min(3, Math.round(Number(q.followups))) : undefined,
           probe: FOLLOWUP_TYPES.has(q.type) && q.probe ? text(q.probe, 600) : undefined,
+          group: (q.type === 'single' || q.type === 'multi') && q.group ? true : undefined,
           followIf: (q.type === 'single' || q.type === 'multi') && Array.isArray(q.followIf) && q.followIf.length ? q.followIf.map(o => text(o, 200)).slice(0, 30) : undefined,
           image: httpsUrl(q.image) || undefined,
           optionImages: Array.isArray(q.optionImages) && (q.type === 'single' || q.type === 'multi' || q.type === 'rank') ? q.optionImages.slice(0, 30).map(httpsUrl) : undefined,
@@ -344,7 +345,7 @@ async function ensureDatabase(study: Study): Promise<string> {
 }
 async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>> }) {
   const properties: Record<string, unknown> = {
-    Participant: { title: [{ text: { content: `Participant ${response.id.slice(0, 4).toUpperCase()}` } }] },
+    Participant: { title: [{ text: { content: (() => { const nq = study.questions.find(x => x.preset === 'name'); const nv = nq ? response.answers[nq.id] : ''; return typeof nv === 'string' && nv.trim() ? nv.trim().slice(0, 40) : `Participant ${response.id.slice(0, 4).toUpperCase()}`; })() } }] },
     Submitted: { date: { start: response.at } },
     'Time (s)': { number: Math.round(response.ms / 1000) },
   };
