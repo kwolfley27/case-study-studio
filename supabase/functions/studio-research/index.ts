@@ -27,12 +27,22 @@ const BUCKET = 'case-study-research';
 const NOTION_VERSION = '2022-06-28';
 const MAX_BODY = 400_000;
 
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string };
+type ContactKey = 'name' | 'email' | 'phone';
+type FieldMode = 'off' | 'optional' | 'required';
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[] };
+const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
+const color = (v: unknown) => /^#[0-9a-f]{6}$/i.test(String(v ?? '')) ? String(v) : undefined;
+type Answer = string | number | string[] | Partial<Record<ContactKey, string>>;
+const QUESTION_TYPES = new Set(['single', 'multi', 'scale', 'nps', 'text', 'long', 'contact', 'schedule']);
+const CONTACT_KEYS: ContactKey[] = ['name', 'email', 'phone'];
+const BOOKING_STATES = new Set(['Booked a time', 'Opened the booking link']);
+const fieldMode = (q: Question, k: ContactKey): FieldMode => { const v = q.contact?.[k] ?? (k === 'phone' ? 'off' : 'required'); return v === 'off' || v === 'optional' || v === 'required' ? v : 'off'; };
+const isShown = (q: Question, answers: Record<string, unknown>) => { if (!q.showIf?.questionId || !q.showIf.anyOf?.length) return true; const v = answers[q.showIf.questionId]; return (Array.isArray(v) ? v : [v]).some(x => q.showIf!.anyOf.includes(String(x))); };
 type Task = { id: string; title: string; scenario?: string; success?: string };
 type Outcome = 'success' | 'help' | 'fail' | 'skipped';
 type Transcript = { at: string; speakers: string[]; segments: Array<{ s: number; e: number; spk: number; text: string }> };
 type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; notes?: string; notionPageId?: string; transcript?: Transcript; tasks: Array<{ taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] }> };
-type Study = { id: string; kind: 'survey' | 'usability'; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
+type Study = { id: string; kind: 'survey' | 'usability'; theme?: { accent?: string; background?: string; cover?: string }; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
 
 const cleanId = (v: unknown) => String(v ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 const text = (v: unknown, n = 2000) => String(v ?? '').slice(0, n);
@@ -81,9 +91,22 @@ Deno.serve(async (request) => {
       const study = await readJson<Study>(`studies/${id}.json`);
       if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ error: 'This study is closed.' }, 410);
       const answers = (body.answers && typeof body.answers === 'object') ? body.answers as Record<string, unknown> : {};
-      const clean: Record<string, string | number | string[]> = {};
+      const clean: Record<string, Answer> = {};
       for (const q of study.questions) {
+        if (!isShown(q, clean)) continue; // skipped by "Show only if"
         const v = answers[q.id];
+        if (q.type === 'contact') {
+          const a = (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
+          const c: Partial<Record<ContactKey, string>> = {};
+          for (const k of CONTACT_KEYS) { if (fieldMode(q, k) === 'off') continue; const val = text(a[k], k === 'name' ? 120 : 200).trim(); if (val) c[k] = val; }
+          const empty = !Object.keys(c).length;
+          if (empty && !q.required) continue;
+          for (const k of CONTACT_KEYS) if (fieldMode(q, k) === 'required' && !c[k]) return reply({ error: `Please add your ${k}.` }, 400);
+          if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email)) return reply({ error: 'Please check your email address.' }, 400);
+          if (c.phone && c.phone.replace(/\D/g, '').length < 7) return reply({ error: 'Please check your phone number.' }, 400);
+          clean[q.id] = c; continue;
+        }
+        if (q.type === 'schedule') { const st = text(v, 60); if (BOOKING_STATES.has(st)) clean[q.id] = st; continue; }
         if (v == null || v === '') { if (q.required) return reply({ error: `Please answer: ${q.prompt}` }, 400); continue; }
         if (q.type === 'multi') clean[q.id] = (Array.isArray(v) ? v : [v]).map(x => text(x, 200)).filter(x => q.options?.includes(x)).slice(0, 30);
         else if (q.type === 'single') { const s = text(v, 200); if (q.options?.includes(s)) clean[q.id] = s; }
@@ -107,7 +130,13 @@ Deno.serve(async (request) => {
       const study: Study = {
         id, kind: s.kind === 'usability' ? 'usability' : 'survey', format: s.kind === 'usability' && s.format === 'interview' ? 'interview' : undefined, tasks: Array.isArray(s.tasks) ? s.tasks.slice(0, 30).map(t => ({ id: cleanId(t.id) || crypto.randomUUID().slice(0, 8), title: text(t.title, 200), scenario: text(t.scenario, 1500), success: text(t.success, 500) })) : undefined, title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
         status: s.status === 'closed' ? 'closed' : 'open',
-        questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 60).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined })),
+        theme: s.theme ? { accent: color(s.theme.accent), background: color(s.theme.background), cover: httpsUrl(s.theme.cover) || undefined } : undefined,
+        questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 60).filter(q => QUESTION_TYPES.has(q.type)).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined,
+          contact: q.type === 'contact' ? Object.fromEntries(CONTACT_KEYS.map(k => [k, fieldMode(q, k)])) as Record<ContactKey, FieldMode> : undefined,
+          url: q.type === 'schedule' && /^https:\/\//.test(String(q.url ?? '')) ? text(q.url, 500) : undefined,
+          image: httpsUrl(q.image) || undefined,
+          optionImages: Array.isArray(q.optionImages) && (q.type === 'single' || q.type === 'multi') ? q.optionImages.slice(0, 30).map(httpsUrl) : undefined,
+          showIf: q.showIf?.questionId ? { questionId: cleanId(q.showIf.questionId), anyOf: (Array.isArray(q.showIf.anyOf) ? q.showIf.anyOf : []).map(o => text(o, 200)).slice(0, 30) } : undefined })),
         notion: { pageUrl: s.notion?.pageUrl ? text(s.notion.pageUrl, 500) : undefined, databaseId: prev?.notion?.databaseId },
         createdAt: prev?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString(),
       };
@@ -217,6 +246,7 @@ async function notion(path: string, init: RequestInit = {}) {
 const notionPageId = (url: string) => { const m = url.replace(/-/g, '').match(/([0-9a-f]{32})(?:[?#]|$)/i); return m ? m[1] : ''; };
 const propName = (q: Question, i: number) => `${String(i + 1).padStart(2, '0')} ${q.prompt}`.slice(0, 90).replace(/[.,]+$/, '');
 function propSchema(q: Question) {
+  if (q.type === 'schedule') return { select: { options: [{ name: 'Booked a time', color: 'green' }, { name: 'Opened the booking link', color: 'gray' }] } };
   if (q.type === 'single') return { select: { options: (q.options ?? []).slice(0, 100).map(name => ({ name: name.replace(/,/g, ' ').slice(0, 100) })) } };
   if (q.type === 'multi') return { multi_select: { options: (q.options ?? []).slice(0, 100).map(name => ({ name: name.replace(/,/g, ' ').slice(0, 100) })) } };
   if (q.type === 'scale' || q.type === 'nps') return { number: { format: 'number' } };
@@ -230,7 +260,11 @@ async function ensureDatabase(study: Study): Promise<string> {
     const iv = study.format === 'interview';
     (study.tasks ?? []).forEach((t, i) => { if (!iv) properties[taskName(t, i)] = { select: { options: OUTCOMES } }; properties[`${taskName(t, i, iv)} · time (s)`] = { number: { format: 'number' } }; properties[`${taskName(t, i, iv)} · notes`] = { rich_text: {} }; });
     properties['Session notes'] = { rich_text: {} };
-  } else study.questions.forEach((q, i) => { properties[propName(q, i)] = propSchema(q); });
+  } else study.questions.forEach((q, i) => {
+    // Contact info gets real Name / Email / Phone columns instead of one text column.
+    if (q.type === 'contact') { if (fieldMode(q, 'name') !== 'off') properties.Name = { rich_text: {} }; if (fieldMode(q, 'email') !== 'off') properties.Email = { email: {} }; if (fieldMode(q, 'phone') !== 'off') properties.Phone = { phone_number: {} }; return; }
+    properties[propName(q, i)] = propSchema(q);
+  });
   if (study.notion?.databaseId) {
     await notion(`databases/${study.notion.databaseId}`, { method: 'PATCH', body: JSON.stringify({ title: [{ text: { content: `${study.title} · responses` } }], properties }) });
     return study.notion.databaseId;
@@ -240,7 +274,7 @@ async function ensureDatabase(study: Study): Promise<string> {
   const db = await notion('databases', { method: 'POST', body: JSON.stringify({ parent: { type: 'page_id', page_id: parent }, title: [{ text: { content: `${study.title} · responses` } }], properties }) });
   return db.id;
 }
-async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, string | number | string[]> }) {
+async function notionRow(study: Study, response: { id: string; at: string; ms: number; answers: Record<string, Answer> }) {
   const properties: Record<string, unknown> = {
     Participant: { title: [{ text: { content: `Participant ${response.id.slice(0, 4).toUpperCase()}` } }] },
     Submitted: { date: { start: response.at } },
@@ -249,6 +283,8 @@ async function notionRow(study: Study, response: { id: string; at: string; ms: n
   study.questions.forEach((q, i) => {
     const v = response.answers[q.id]; if (v == null) return;
     const name = propName(q, i);
+    if (q.type === 'contact') { const c = v as Partial<Record<ContactKey, string>>; if (c.name) properties.Name = { rich_text: [{ text: { content: c.name } }] }; if (c.email) properties.Email = { email: c.email }; if (c.phone) properties.Phone = { phone_number: c.phone }; return; }
+    if (q.type === 'schedule') { properties[name] = { select: { name: String(v) } }; return; }
     if (q.type === 'single') properties[name] = { select: { name: String(v).replace(/,/g, ' ').slice(0, 100) } };
     else if (q.type === 'multi') properties[name] = { multi_select: (v as string[]).map(x => ({ name: x.replace(/,/g, ' ').slice(0, 100) })) };
     else if (q.type === 'scale' || q.type === 'nps') properties[name] = { number: Number(v) };
