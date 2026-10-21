@@ -3741,3 +3741,5 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-ivc-card.is-quote .csb-ivc-text{font-weight:500}
 .csb-ivc-note{font-size:14px;line-height:1.55;color:var(--t-body,#67615a)}
 @container (max-width:700px){.csb-ivc{grid-template-columns:1fr!important}.csb-ivc-track{grid-auto-columns:85%}.csb-ivc .csb-interviews-people button{flex:none}}
+/* Project details (role, timeline, team) shares the same left edge as every other section */
+.csb-canvas .csb-doc-main section.csb-story-section.csb-kind-details{padding-inline:clamp(20px,4cqw,40px)!important}
