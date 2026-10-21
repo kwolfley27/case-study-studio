@@ -3782,3 +3782,13 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-side-nav ol,.csb-side-nav.is-revealed ol{opacity:1;transform:none;pointer-events:auto;animation:csb-nav-in .6s cubic-bezier(.22,1,.36,1) .15s both}
 @keyframes csb-nav-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.csb-side-nav ol{animation:none}}
+
+/* Problem statement (scroll flip): on the same left edge as the heading, sized with the page */
+.csb-canvas .csb-doc-main .csb-psf{max-width:none;margin:0;height:160vh}
+.csb-canvas .csb-doc-main .csb-psf-stick{justify-items:start}
+.csb-canvas .csb-doc-main .csb-psf-face.is-front{place-items:center start;padding:0;background:none;box-shadow:none;min-height:clamp(220px,30cqw,320px)}
+.csb-canvas .csb-doc-main .csb-psf .csb-ps-sentence{text-align:left;max-width:780px;font-size:clamp(24px,3cqw,32px);line-height:1.35;font-weight:400;text-wrap:pretty}
+.csb-canvas .csb-doc-main .csb-psf-hint{left:0;transform:none;bottom:0}
+.csb-canvas .csb-doc-main .csb-psf-hmw{justify-items:start}
+.csb-canvas .csb-doc-main .csb-psf-stick>div[style]{justify-items:start!important}
+.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-face.is-front{padding:0}
