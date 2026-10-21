@@ -9,6 +9,8 @@ import { caller } from '../_shared/access.ts';
 // Actions (POST JSON { action, ... }):
 //   get      public   { id }              → the open study, for participants
 //   followup public   { id, questionId, answer, history, context, used } → one AI follow-up question (or done)
+//   removeResponse passcode { id, responseId } → deletes one response (e.g. your own test run)
+//   (submit/extend with test: true save to tests/ instead, so test runs never reach Results or Notion)
 //   photoUpload public { id, questionId, type, size } → signed upload link for a "Show me" photo
 //   submit   public   { id, answers, ms, followups, others, part } → saves one response (+ Notion row).
 //            part 'core' (a survey with a bonus round) also returns { ref, token } so the bonus answers can be added later.
@@ -94,7 +96,10 @@ Deno.serve(async (request) => {
     }
     if (action === 'followup') {
       // Ask one follow-up about this participant's answer. Small, fast model; short output.
-      const study = await readJson<Study>(`studies/${cleanId(body.id)}.json`);
+      let study = await readJson<Study>(`studies/${cleanId(body.id)}.json`);
+      // Owner test runs can use unpublished edits (sent inline); everyone else gets the published study.
+      const inline = body.test && owner() && body.study && typeof body.study === 'object' ? body.study as { questions?: Question[]; goal?: string; followupBudget?: number } : null;
+      if (inline && Array.isArray(inline.questions)) study = { ...(study ?? { id: cleanId(body.id), kind: 'survey', title: 'Test', status: 'open', questions: [] } as Study), status: 'open', goal: text(inline.goal, 2000) || study?.goal, followupBudget: Number(inline.followupBudget) || study?.followupBudget, questions: inline.questions.slice(0, 60).map(q => ({ id: cleanId(q.id), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).slice(0, 30) : undefined, followups: Number(q.followups) || undefined, probe: q.probe ? text(q.probe, 600) : undefined, followIf: Array.isArray(q.followIf) ? q.followIf.map(o => text(o, 200)) : undefined })) };
       if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ done: true });
       const q = study.questions.find(x => x.id === cleanId(body.questionId));
       const history = (Array.isArray(body.history) ? body.history : []).slice(0, 3).map((h: { q?: unknown; a?: unknown }) => ({ q: text(h?.q, 300), a: text(h?.a, 3000) }));
@@ -128,11 +133,12 @@ Deno.serve(async (request) => {
       if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ error: 'This study is closed.' }, 410);
       // Bonus round: the core answers were saved first; these add to that same response.
       const extend = action === 'extend';
+      const folder = body.test ? 'tests' : 'responses'; // test runs never reach Results or Notion
       const ref = String(body.ref || '');
       let prior: { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, Array<{ q: string; a: string }>>; others?: Record<string, string>; editToken?: string; notionPageId?: string } | null = null;
       if (extend) {
         if (!/^[\w-]+\.json$/.test(ref)) return reply({ error: 'Could not find your earlier answers.' }, 400);
-        prior = await readJson(`responses/${id}/${ref}`);
+        prior = await readJson(`${folder}/${id}/${ref}`);
         if (!prior || !prior.editToken || prior.editToken !== String(body.token || '')) return reply({ error: 'Could not find your earlier answers.' }, 400);
       }
       const part = extend ? 'bonus' : body.part === 'core' ? 'core' : 'all';
@@ -193,15 +199,15 @@ Deno.serve(async (request) => {
       const ms = Math.max(0, Math.min(86_400_000, Number(body.ms) || 0));
       if (extend && prior) {
         const merged = { ...prior, ms: prior.ms + ms, part: 'full', answers: { ...prior.answers, ...clean }, followups: { ...(prior.followups ?? {}), ...followups }, others: { ...(prior.others ?? {}), ...others }, editToken: undefined };
-        await writeJson(`responses/${id}/${ref}`, merged);
-        if (study.notion?.databaseId) await notionRow(study, merged, prior.notionPageId).catch(() => undefined);
+        await writeJson(`${folder}/${id}/${ref}`, merged);
+        if (study.notion?.databaseId && !body.test) await notionRow(study, merged, prior.notionPageId).catch(() => undefined);
         return reply({ ok: true });
       }
       const editToken = part === 'core' ? crypto.randomUUID() : undefined;
       const response: Record<string, unknown> & { id: string; at: string; ms: number; answers: Record<string, Answer> } = { id: crypto.randomUUID(), at: new Date().toISOString(), ms, answers: clean, ...(Object.keys(followups).length ? { followups } : {}), ...(Object.keys(others).length ? { others } : {}), ...(part === 'core' ? { part: 'core', editToken } : {}) };
       const file = `${response.at.replace(/[:.]/g, '-')}-${response.id.slice(0, 8)}.json`;
-      if (study.notion?.databaseId) { const pageId = await notionRow(study, response as never).catch(() => undefined); if (pageId && part === 'core') response.notionPageId = pageId; }
-      await writeJson(`responses/${id}/${file}`, response);
+      if (study.notion?.databaseId && !body.test) { const pageId = await notionRow(study, response as never).catch(() => undefined); if (pageId && part === 'core') response.notionPageId = pageId; }
+      await writeJson(`${folder}/${id}/${file}`, response);
       return reply(part === 'core' ? { ok: true, ref: file, token: editToken } : { ok: true });
     }
 
@@ -274,13 +280,22 @@ Deno.serve(async (request) => {
       const withAudio = await Promise.all(sessions.map(async ss => { if (!ss.audioPath) return ss; const { data: signed } = await store.createSignedUrl(ss.audioPath, 3600); return { ...ss, audioUrl: signed?.signedUrl }; }));
       return reply({ study, responses, sessions: withAudio });
     }
+    if (action === 'removeResponse') {
+      const id = cleanId(body.id), rid = cleanId(body.responseId);
+      const { data } = await store.list(`responses/${id}`, { limit: 1000 });
+      const file = (data ?? []).find(f => f.name.endsWith(`-${rid.slice(0, 8)}.json`));
+      if (!file) return reply({ error: 'Response not found.' }, 404);
+      await store.remove([`responses/${id}/${file.name}`]);
+      return reply({ ok: true });
+    }
     if (action === 'remove') {
       const id = cleanId(body.id);
       const { data } = await store.list(`responses/${id}`, { limit: 1000 });
       const { data: sf } = await store.list(`sessions/${id}`, { limit: 1000 });
       const { data: af } = await store.list(`audio/${id}`, { limit: 1000 });
       const { data: pf } = await store.list(`photos/${id}`, { limit: 1000 });
-      const paths = [`studies/${id}.json`, ...(data ?? []).map(f => `responses/${id}/${f.name}`), ...(sf ?? []).map(f => `sessions/${id}/${f.name}`), ...(af ?? []).map(f => `audio/${id}/${f.name}`), ...(pf ?? []).map(f => `photos/${id}/${f.name}`)];
+      const { data: tf } = await store.list(`tests/${id}`, { limit: 1000 });
+      const paths = [`studies/${id}.json`, ...(data ?? []).map(f => `responses/${id}/${f.name}`), ...(sf ?? []).map(f => `sessions/${id}/${f.name}`), ...(af ?? []).map(f => `audio/${id}/${f.name}`), ...(pf ?? []).map(f => `photos/${id}/${f.name}`), ...(tf ?? []).map(f => `tests/${id}/${f.name}`)];
       await store.remove(paths);
       return reply({ ok: true });
     }
