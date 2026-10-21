@@ -46,8 +46,9 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const maxFu = q && canFollowUp(q) && onFollowUp && wantsFollowUp(q, value) ? Math.min(3, q.followups ?? 0) : 0;
   const fieldErrors = q?.type === 'contact' ? contactErrors(q, value) : {};
   const contactOk = !Object.keys(fieldErrors).length;
-  const rankDone = q?.type === 'rank' ? (Array.isArray(value) ? value.length : 0) >= (q.options?.length ?? 0) : true;
-  const needsOther = !!q && (q.type === 'single' || q.type === 'multi') && pickedOther(value) && !(others[q.id] ?? '').trim();
+  // Ranking is done once every real option is placed (the last one places itself); "Other" is optional.
+  const rankDone = q?.type === 'rank' ? (q.options ?? []).filter(o => !isOtherOption(o)).every(o => Array.isArray(value) && value.includes(o)) : true;
+  const needsOther = !!q && (q.type === 'single' || q.type === 'multi' || q.type === 'rank') && pickedOther(value) && !(others[q.id] ?? '').trim();
   const canNext = !q || !!fuItem || (!needsOther && (q.type === 'contact' ? (contactOk || (!q.required && !answered)) : q.type === 'rank' ? (q.required ? rankDone : true) : (!q.required || answered)));
   const set = (v: unknown) => { if (!q) return; setAnswers(a => ({ ...a, [q.id]: v })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); setFuDone(d => ({ ...d, [q.id]: false })); };
   const setFuAnswer = (a: string) => { if (!q || sub === null) return; setFu(f => ({ ...f, [q.id]: (f[q.id] ?? []).map((x, i) => i === sub ? { ...x, a } : x) })); setFuDone(d => ({ ...d, [q.id]: false })); };
@@ -72,13 +73,37 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
       finally { setBusy(''); }
     } else { if (step === -1) started.current = Date.now(); go(step + 1); }
   };
+  /* Follow-ups are fetched while they're still answering (after a short pause), so Next is usually instant.
+     The same answer is never asked about twice, and Next never waits more than a couple of seconds. */
+  const fuCache = useRef(new Map<string, Promise<string | null>>());
+  const fetchFu = (qq: Question, ans: string, history: FollowUp[], usedNow: number) => {
+    const key = `${qq.id}|${ans}|${history.map(h => h.a).join('§')}`;
+    let p = fuCache.current.get(key);
+    if (!p) {
+      const context = qs.slice(0, step).filter(x => x.preset !== 'name').map(x => ({ q: x.prompt, a: answerWords(answers[x.id], x, others[x.id]) })).filter(x => x.a); // names never go to the AI
+      p = onFollowUp!(qq, ans, history, context, usedNow).catch(() => null);
+      fuCache.current.set(key, p);
+    }
+    return p;
+  };
+  const curAns = q ? answerWords(value, q, others[q.id]) : '';
+  const curFu = fuItem?.a ?? '';
+  useEffect(() => {
+    if (!q || !onFollowUp || !maxFu || fuDone[q.id]) return;
+    if (sub !== null && (sub + 1 < fuList.length || fuList.length >= maxFu || !curFu.trim())) return;
+    if (sub === null && (!curAns || ((q.type === 'long' || q.type === 'text') && curAns.length < 12))) return;
+    const history = sub === null ? [] : fuList;
+    const usedNow = used - (fu[q.id]?.length ?? 0) + history.length;
+    if (usedNow >= budget) return;
+    const t = window.setTimeout(() => { void fetchFu(q, curAns, history, usedNow); }, q.type === 'long' || q.type === 'text' || sub !== null ? 1200 : 150);
+    return () => window.clearTimeout(t);
+  }, [q?.id, curAns, curFu, sub, maxFu]);
   /** Ask the AI for the next follow-up; false when there isn't one. */
   const askMore = async (history: FollowUp[]) => {
     if (!q || !onFollowUp || history.length >= maxFu || fuDone[q.id] || used - (fu[q.id]?.length ?? 0) + history.length >= budget) return false;
     setBusy('thinking');
     try {
-      const context = qs.slice(0, step).filter(x => x.preset !== 'name').map(x => ({ q: x.prompt, a: answerWords(answers[x.id], x, others[x.id]) })).filter(x => x.a); // names never go to the AI
-      const question = await onFollowUp(q, answerWords(value, q, others[q.id]), history, context, used - (fu[q.id]?.length ?? 0) + history.length);
+      const question = await Promise.race([fetchFu(q, answerWords(value, q, others[q.id]), history, used - (fu[q.id]?.length ?? 0) + history.length), new Promise<null>(r => window.setTimeout(() => r(null), 2200))]);
       if (!question) { setFuDone(d => ({ ...d, [q.id]: true })); return false; }
       setFu(f => ({ ...f, [q.id]: [...history, { q: question, a: '' }] })); setSub(history.length); setTouched(false);
       return true;
@@ -159,11 +184,11 @@ function QuestionView({ q, index, total, value, set, other, setOther, errors, co
     {q.type === 'note' ? <><h2>{q.prompt}</h2>{q.hint && <div className="rs-note-body">{q.hint.split(/\n{2,}/).map((para, k) => <p key={k} className={/^for example/i.test(para.trim()) ? 'rs-note-example' : ''}>{para}</p>)}</div>}</>
       : (() => { const { title, sub } = splitPrompt(q); return <><h2>{title}</h2>{sub && <p className="rs-sub">{sub}</p>}</>; })()}
     {q.type === 'multi' && <p className="rs-hint">Choose all that apply</p>}
-    {q.type === 'rank' && <RankAnswer q={q} value={value} set={set} shuffle={!preview} />}
+    {q.type === 'rank' && <RankAnswer q={q} value={value} set={set} shuffle={!preview} other={other} setOther={setOther} />}
     {(q.type === 'single' || q.type === 'multi') && (() => { const pics = (q.optionImages ?? []).some(Boolean); return <div className={`rs-options ${pics ? 'has-images' : ''}`} role={q.type === 'single' ? 'radiogroup' : 'group'} aria-label={q.prompt}>
       {(q.options ?? []).map((o, i) => { const on = q.type === 'single' ? value === o : list.includes(o); const mark = <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />; const img = q.optionImages?.[i]; return <button key={i} type="button" role={q.type === 'single' ? 'radio' : 'checkbox'} aria-checked={on} className={`rs-option ${on ? 'is-on' : ''} ${pics ? 'is-card' : ''}`}
         onClick={() => set(q.type === 'single' ? o : on ? list.filter(x => x !== o) : [...list, o])}>{pics ? <>{img ? <img src={img} alt="" /> : <span className="rs-card-ph" aria-hidden="true" />}<span className="rs-card-label">{mark}{o}</span></> : <>{mark}{o}</>}</button>; })}
-      {pickedOther(value) && (q.options ?? []).some(isOtherOption) && <input className="rs-input rs-other" autoFocus value={other} maxLength={120} onChange={e => setOther(e.target.value)} placeholder={/store|shop|grocer/i.test(q.prompt) ? 'Which store?' : 'Please tell us which'} aria-label={`${q.prompt} (other)`} />}
+      {pickedOther(value) && (q.options ?? []).some(isOtherOption) && <OtherBox value={other} set={setOther} prompt={q.prompt} />}
     </div>; })()}
     {(q.type === 'scale' || q.type === 'nps') && (() => { const lo = q.type === 'nps' ? 0 : q.min ?? 1, hi = q.type === 'nps' ? 10 : q.max ?? 5; return <div className={`rs-scale ${q.type === 'nps' ? 'is-nps' : ''}`}>
       <div className="rs-scale-row" role="radiogroup" aria-label={q.prompt}>{Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map(v => <button key={v} type="button" role="radio" aria-checked={value === v} className={value === v ? 'is-on' : ''} onClick={() => set(v)}>{v}</button>)}</div>
@@ -220,17 +245,35 @@ function LongAnswer({ label, value, set }: { label: string; value: string; set: 
 }
 
 /* ---------- Rank: tap in order, best first. Shuffled per person so list order doesn't bias the result. ---------- */
-function RankAnswer({ q, value, set, shuffle }: { q: Question; value: unknown; set: (v: unknown) => void; shuffle?: boolean }) {
+function RankAnswer({ q, value, set, shuffle, other, setOther }: { q: Question; value: unknown; set: (v: unknown) => void; shuffle?: boolean; other: string; setOther: (t: string) => void }) {
   const order = Array.isArray(value) ? value as string[] : [];
   const opts = q.options ?? [];
   const shown = useMemo(() => { const list = opts.map((o, i) => ({ o, img: q.optionImages?.[i] })); if (shuffle) for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } return list; }, [q.id, opts.join('|'), shuffle]);
-  const toggle = (o: string) => set(order.includes(o) ? order.filter(x => x !== o) : [...order, o]);
+  const real = opts.filter(o => !isOtherOption(o));
+  // Once all but one real option are placed, the last one places itself.
+  const toggle = (o: string) => {
+    if (order.includes(o)) { set(order.filter(x => x !== o)); return; }
+    let next = [...order, o];
+    const left = real.filter(x => !next.includes(x));
+    if (left.length === 1 && !isOtherOption(o)) next = [...next.filter(x => !isOtherOption(x)), left[0], ...next.filter(isOtherOption)];
+    set(next);
+  };
   return <div className="rs-rank" role="group" aria-label={q.prompt}>
-    <p className="rs-hint">Tap them in order, best first. Tap again to undo.</p>
+    <p className="rs-hint">Tap them in order, best first. The last one fills in by itself. Tap again to undo.</p>
     {shown.map(({ o, img }) => { const pos = order.indexOf(o); return <button key={o} type="button" className={`rs-rank-item ${pos >= 0 ? 'is-on' : ''}`} aria-pressed={pos >= 0} aria-label={pos >= 0 ? `${o}, ranked ${pos + 1}` : o} onClick={() => toggle(o)}>
       <span className="rs-rank-badge" aria-hidden="true">{pos >= 0 ? pos + 1 : ''}</span>{img && <img src={img} alt="" />}{o}</button>; })}
-    {order.length > 0 && <div className="rs-rank-foot"><span>{order.length === opts.length ? 'All ranked' : `${order.length} of ${opts.length} ranked`}</span><button type="button" onClick={() => set([])}>Start over</button></div>}
+    {pickedOther(order) && <OtherBox value={other} set={setOther} prompt={q.prompt} />}
+    {order.length > 0 && <div className="rs-rank-foot"><span>{real.every(o => order.includes(o)) ? 'All ranked' : `${order.filter(o => !isOtherOption(o)).length} of ${real.length} ranked`}</span><button type="button" onClick={() => set([])}>Start over</button></div>}
   </div>;
+}
+
+/* The box that opens after picking "Other": scrolled into view so it's never missed on a phone. */
+function OtherBox({ value, set, prompt }: { value: string; set: (t: string) => void; prompt: string }) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { const el = ref.current; if (!el) return; el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, []);
+  const store = /store|shop|grocer/i.test(prompt);
+  return <label className="rs-field rs-other-wrap"><span>{store ? 'Which store?' : 'Tell us which'}</span>
+    <input ref={ref} className="rs-input rs-other" value={value} maxLength={120} onChange={e => set(e.target.value)} placeholder={store ? 'e.g. Sprouts' : 'Type it here'} /></label>;
 }
 
 /* ---------- Show me: a screenshot or photo (up to 3) ---------- */

@@ -437,3 +437,5 @@
 .rs-offer-actions{display:flex;gap:10px;flex-wrap:wrap}
 .rw-tag.is-bonus{background:#f6eef4;color:#8a2f6b}
 .rs-offer .rs-check{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--rs-accent,#000);color:var(--rs-on,#fdfcfc);font-size:20px}
+.rs-note-example{background:none!important;border-radius:0!important;padding:2px 0 2px 14px!important;border-left:2px solid #d9d4cd;font-style:italic}
+.rs-other-wrap{margin-top:6px}
