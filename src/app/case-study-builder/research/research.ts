@@ -88,21 +88,26 @@ export function lintQuestion(q: Question): Lint[] {
   return out;
 }
 
-/** A realistic time estimate for one person: open answers by voice take a minute or two; questions behind "Show only if"
-    usually apply to only some people; optional ones are often skipped; follow-ups are capped by the per-person limit and the AI often stops early. */
+/** A realistic time estimate for one person. Taps take seconds; a spoken open answer is usually 30–60 seconds;
+    optional ones are often skipped; follow-ups (about 30 s each) are capped by the per-person limit.
+    Questions behind "Show only if" on the same earlier question are alternatives when they need different answers
+    (count the longest branch), but add up when they share the same condition (they're all shown together). */
 export function estimateMinutes(qs: Question[], followupBudget = DEFAULT_FOLLOWUP_BUDGET) {
   let min = 0, fuSlots = 0;
-  // Questions that branch off the same answer are alternatives: count the branch group once (its longest question).
-  const branches = new Map<string, number>();
+  const branches = new Map<string, Map<string, number>>(); // source question → condition → minutes
   for (const q of qs) {
-    let m = q.type === 'long' ? 1.5 : q.type === 'text' ? 0.4 : q.type === 'photo' ? 0.8 : q.type === 'rank' ? 0.4 : q.type === 'note' ? 0.2 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : 0.2;
+    let m = q.type === 'long' ? 0.75 : q.type === 'text' ? 0.3 : q.type === 'photo' ? 0.6 : q.type === 'rank' ? 0.35 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : q.type === 'note' ? 0.15 : q.type === 'multi' ? 0.2 : 0.15;
     if (!q.required && (q.type === 'long' || q.type === 'photo')) m *= 0.5;
     if (q.followups) fuSlots += Math.min(3, q.followups);
-    if (q.showIf?.questionId) { const k = q.showIf.questionId; branches.set(k, Math.max(branches.get(k) ?? 0, m)); continue; }
+    if (q.showIf?.questionId) {
+      const cond = [...q.showIf.anyOf].sort().join('|');
+      const byCond = branches.get(q.showIf.questionId) ?? new Map<string, number>();
+      byCond.set(cond, (byCond.get(cond) ?? 0) + m); branches.set(q.showIf.questionId, byCond); continue;
+    }
     min += m;
   }
-  for (const m of branches.values()) min += m;
-  min += Math.min(fuSlots, followupBudget) * 0.8 * 0.6;
+  for (const byCond of branches.values()) min += Math.max(...byCond.values());
+  min += Math.min(fuSlots, followupBudget) * 0.5;
   return Math.max(1, Math.round(min));
 }
 
