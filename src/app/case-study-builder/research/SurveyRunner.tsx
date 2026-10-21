@@ -305,7 +305,6 @@ function LongAnswer({ label, value, set, onDone }: { label: string; value: strin
     </> : <>
       <button type="button" className="rs-mic-big" onClick={start} aria-label="Tap to talk"><MicIcon size={34} /></button>
       <p className="rs-voice-label">Tap to talk</p>
-      <p className="rs-voice-sub">Like leaving a voice memo. 20–30 seconds is perfect.</p>
       <button type="button" className="rs-switch" onClick={() => { bumpType(); setTyping(true); }}>Type instead</button>
     </>}
     {micError && <p className="rs-error" role="alert">{micError}</p>}
