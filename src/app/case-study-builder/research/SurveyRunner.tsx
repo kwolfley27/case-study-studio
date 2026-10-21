@@ -107,7 +107,7 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
             <li>There are no right answers, and your answers are anonymous.</li>
           </ul>; })()}
           <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>
-          <small>{n} question{n === 1 ? '' : 's'} · about {estimateMinutes(study.questions, study.followupBudget)} min</small>
+          <small>{qs.filter(x => x.type !== 'note').length} question{qs.filter(x => x.type !== 'note').length === 1 ? '' : 's'} · about {estimateMinutes(study.questions, study.followupBudget)} min</small>
         </div>}
         {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
         {q && fuItem && <div className="rs-q">
@@ -124,7 +124,7 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
       <div className="rs-nav-right">
         {error && <span className="rs-error" role="alert">{error}</span>}
         {fuItem ? !fuItem.a.trim() && <button type="button" className="rs-ghost" disabled={!!busy} onClick={() => void advance()}>Skip</button>
-          : !q.required && !answered && step < n - 1 && <button type="button" className="rs-ghost" onClick={() => go(step + 1)}>{q.type === 'schedule' ? 'Not now' : 'Skip'}</button>}
+          : q.type !== 'note' && !q.required && !answered && step < n - 1 && <button type="button" className="rs-ghost" onClick={() => go(step + 1)}>{q.type === 'schedule' ? 'Not now' : 'Skip'}</button>}
         <button type="button" className="rs-primary" disabled={!!busy || (!canNext && q.type !== 'contact')} onClick={() => void next()}>{busy === 'thinking' ? 'One sec…' : busy === 'sending' ? 'Sending…' : lastLabel}</button>
       </div>
     </div>}
@@ -134,9 +134,10 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
 function QuestionView({ q, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto }: { q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
   const list = Array.isArray(value) ? value as string[] : [];
   return <div className="rs-q">
-    <small className="rs-count">{index + 1} / {total}{q.required ? '' : ' · optional'}</small>
+    <small className="rs-count">{index + 1} / {total}{q.type === 'note' ? '' : q.required ? '' : ' · optional'}</small>
     {q.image && <img className="rs-qimg" src={q.image} alt="" />}
-    {(() => { const { title, sub } = splitPrompt(q); return <><h2>{title}</h2>{sub && <p className="rs-sub">{sub}</p>}</>; })()}
+    {q.type === 'note' ? <><h2>{q.prompt}</h2>{q.hint && <div className="rs-note-body">{q.hint.split(/\n{2,}/).map((para, k) => <p key={k} className={/^for example/i.test(para.trim()) ? 'rs-note-example' : ''}>{para}</p>)}</div>}</>
+      : (() => { const { title, sub } = splitPrompt(q); return <><h2>{title}</h2>{sub && <p className="rs-sub">{sub}</p>}</>; })()}
     {q.type === 'multi' && <p className="rs-hint">Choose all that apply</p>}
     {q.type === 'rank' && <RankAnswer q={q} value={value} set={set} shuffle={!preview} />}
     {(q.type === 'single' || q.type === 'multi') && (() => { const pics = (q.optionImages ?? []).some(Boolean); return <div className={`rs-options ${pics ? 'has-images' : ''}`} role={q.type === 'single' ? 'radiogroup' : 'group'} aria-label={q.prompt}>
