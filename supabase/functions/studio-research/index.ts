@@ -158,7 +158,7 @@ Deno.serve(async (request) => {
         if (q.type === 'schedule') { const st = text(v, 60); if (BOOKING_STATES.has(st)) clean[q.id] = st; continue; }
         if (q.type === 'rank') {
           const order = [...new Set((Array.isArray(v) ? v : []).map(x => text(x, 200)))].filter(x => q.options?.includes(x));
-          if (q.required && order.length < (q.options?.length ?? 0)) return reply({ error: `Please rank every option: ${q.prompt}` }, 400);
+          if (q.required && order.filter(x => !/^other\b/i.test(x.trim())).length < (q.options ?? []).filter(o => !/^other\b/i.test(o.trim())).length) return reply({ error: `Please rank every option: ${q.prompt}` }, 400);
           if (order.length) clean[q.id] = order;
           continue;
         }
@@ -186,7 +186,7 @@ Deno.serve(async (request) => {
       const rawOthers = (body.others && typeof body.others === 'object') ? body.others as Record<string, unknown> : {};
       const others: Record<string, string> = {};
       for (const q of study.questions) {
-        if (q.type !== 'single' && q.type !== 'multi') continue;
+        if (q.type !== 'single' && q.type !== 'multi' && q.type !== 'rank') continue;
         const v = clean[q.id]; const picked = (Array.isArray(v) ? v : [v]).some(x => typeof x === 'string' && /^other\b/i.test(x.trim()));
         const t = text(rawOthers[q.id], 120).trim(); if (picked && t) others[q.id] = t;
       }

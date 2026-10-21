@@ -52,7 +52,7 @@ export const isOtherOption = (o: string) => /^other\b/i.test(o.trim());
 /** How an answer reads in plain words (rankings are numbered; "Other" includes what they typed). */
 export const answerWords = (v: unknown, q?: Question, other?: string) => {
   const fill = (x: unknown) => other?.trim() && isOtherOption(String(x)) ? `${x} (${other.trim()})` : String(x);
-  return Array.isArray(v) ? (q?.type === 'rank' ? v.map((x, i) => `${i + 1}. ${x}`).join(', ') : v.map(fill).join(', ')) : v != null && typeof v !== 'object' ? fill(v) : '';
+  return Array.isArray(v) ? (q?.type === 'rank' ? v.map((x, i) => `${i + 1}. ${fill(x)}`).join(', ') : v.map(fill).join(', ')) : v != null && typeof v !== 'object' ? fill(v) : '';
 };
 /** Did they pick an "Other" option on this answer? */
 export const pickedOther = (v: unknown) => (Array.isArray(v) ? v : [v]).some(x => typeof x === 'string' && isOtherOption(x));
@@ -205,15 +205,12 @@ const matchesValue = (v: unknown, option: string) => Array.isArray(v) ? v.includ
 export const filterByGroups = <R extends { answers: Record<string, unknown> }>(responses: R[], picks: Record<string, string>) => responses.filter(r => Object.entries(picks).every(([qid, opt]) => matchesValue(r.answers[qid], opt)));
 export const bucketCount = (responses: Array<{ answers: Record<string, unknown> }>, qid: string, option: string) => responses.filter(r => matchesValue(r.answers[qid], option)).length;
 
-/* Love letter + breakup letter (a Smart Design method), spoken as voice notes: they get emotional, honest answers that direct questions miss.
-   The breakup letter shows what to fix; the love letter shows what to keep or copy. */
-export const LETTER_INTRO = { prompt: 'Quick change of pace: a breakup and a love note', hint: 'Think about all the food things you’ve tried: apps, grocery stores, diets, meal plans, habits. Some didn’t work out. Some you’d never give up.\n\nNext, you’ll break up with one that let you down, then tell one you love why you can’t live without it.\n\nTap the mic and say it out loud, like leaving a voice note. Be honest, be a little dramatic, and keep it short.\n\nFor example, you might say: “Dear alarm clock, we’ve had a good run, but you go off at the worst times and never let me finish a dream. It’s over.”' };
-/** Spoken, not written: the letters work best addressed out loud to one concrete thing people can picture (an app, a store, a habit). */
+/** Love it / can't stand it: the plain-language version of the love-letter / breakup-letter method.
+    (A participant found "write a breakup letter" confusing; asking directly gets the same honest answers.) */
 export function letterQuestions(): Question[] {
   return [
-    { id: qid(), type: 'note', preset: 'letter', prompt: LETTER_INTRO.prompt, hint: LETTER_INTRO.hint },
-    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Pick one food app, store, diet or habit that let you down, and break up with it. What would you say?', hint: 'Like a tracking app you quit, a store you stopped going to, or a meal plan that never stuck. Tap the mic and start with “Dear …”', followups: 1, probe: 'Ask about the moment they knew it was over: what happened that last time. If it is an app or store, ask what they switched to (if anything) and why.' },
-    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'Now pick one food app, store, recipe source or habit you’d never give up. Tell it why you love it.', hint: 'Tap the mic and start with “Dear …”', followups: 1, probe: 'Ask what it does for them that nothing else does, or the last time it saved the day.' },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'What’s one food thing you love and would never part with?', hint: 'An app, a store, a recipe source, a habit… Tell us what it does for you.', followups: 1, probe: 'Ask what it does for them that nothing else does, or about the last time it saved the day.' },
+    { id: qid(), type: 'long', preset: 'letter', required: true, prompt: 'And one food thing you struggle with or can’t stand?', hint: 'An app, a store, a diet, a habit… Tell us what happens.', followups: 1, probe: 'Pick the most specific frustration and ask about the last time it happened. If it is an app or store, ask what they did instead.' },
   ];
 }
 
