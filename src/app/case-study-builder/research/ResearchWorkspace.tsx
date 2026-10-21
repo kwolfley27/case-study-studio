@@ -5,7 +5,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, splitPrompt, canFollowUp, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -80,6 +80,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
     <div className="rw-editor">
       <label className="rw-field"><span>Survey title</span><input value={study.title} onChange={e => update({ title: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
       <label className="rw-field"><span>Welcome message</span><textarea rows={2} value={study.intro ?? ''} onChange={e => update({ intro: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
+      <label className="rw-field"><span>What you want to learn <em className="rw-private">private · steers the AI follow-ups</em></span><textarea rows={3} value={study.goal ?? ''} onChange={e => update({ goal: e.target.value || undefined })} placeholder="e.g. Why people do or don’t meal prep, what gets in the way, and what they hope it’ll do for them (save money, eat healthier, save time). How they plan meals and shop for groceries. Tracking matters less." /></label>
       <AiDesigner study={study} update={update} setPreviewAt={setPreviewAt} />
       <LookEditor study={study} update={update} onFocus={() => setPreviewAt(-1)} />
       <p className="rw-kicker">Questions · {qs.length}</p>
@@ -120,6 +121,12 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           {q.image === undefined && <button type="button" onClick={() => setQ(i, { image: '' })}><ImagePlus size={11} /> Picture</button>}
           {(q.type === 'single' || q.type === 'multi') && <button type="button" onClick={() => setQ(i, { optionImages: q.optionImages ? undefined : (q.options ?? []).map(() => '') })}>{q.optionImages ? 'Plain options' : 'Picture options'}</button>}
         </div>}
+        {canFollowUp(q) && <div className="rw-contact rw-fu">
+          <div className="rw-contact-row"><span>AI follow-ups</span>
+            <div className="rw-seg" role="radiogroup" aria-label="AI follow-ups">{[0, 1, 2, 3].map(v => <button key={v} type="button" role="radio" aria-checked={(q.followups ?? 0) === v} className={(q.followups ?? 0) === v ? 'is-on' : ''} onClick={() => setQ(i, { followups: v || undefined })}>{v === 0 ? 'Off' : `Up to ${v}`}</button>)}</div></div>
+          {!!q.followups && <input className="rw-input" value={q.probe ?? ''} placeholder="What to dig into (optional), e.g. If they don’t meal prep, ask what stops them. If they want to, ask why: money, time, health?" aria-label="What the AI should dig into" onChange={e => setQ(i, { probe: e.target.value || undefined })} />}
+          {!!q.followups && <small className="rw-note">After they answer, AI asks about what they actually said, one question at a time. It stops early when there’s nothing worth asking.</small>}
+        </div>}
         <ShowIfEditor qs={qs} i={i} setQ={setQ} />
         {q.type !== 'schedule' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
       </div>)}
@@ -143,7 +150,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
 
 /* ---------- Design with AI: describe the goal, approve questions one by one ---------- */
 const AI_URL = import.meta.env.VITE_STUDIO_AI_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-ai-draft` : '');
-type Proposal = { ref: string; replaces?: number; type: Question['type']; prompt: string; hint?: string; options?: string[]; minLabel?: string; maxLabel?: string; required?: boolean; why: string; showIf?: { ref: string; anyOf: string[] } };
+type Proposal = { ref: string; replaces?: number; type: Question['type']; prompt: string; hint?: string; followups?: number; probe?: string; options?: string[]; minLabel?: string; maxLabel?: string; required?: boolean; why: string; showIf?: { ref: string; anyOf: string[] } };
 type Design = { title?: string; intro?: string; summary: string; questions: Proposal[] };
 const TYPE_LABEL = Object.fromEntries(QUESTION_TYPES.map(([t, l]) => [t, l])) as Record<Question['type'], string>;
 
@@ -161,7 +168,7 @@ function AiDesigner({ study, update, setPreviewAt }: { study: Study; update: (p:
   const ask = async () => {
     setBusy(true); setError('');
     try {
-      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'designSurvey', goal, title: study.title, questions: qs.map(q => ({ type: q.type, prompt: q.prompt, options: q.options })) }) });
+      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'designSurvey', goal: [study.goal ? `Research goal: ${study.goal}` : '', goal].filter(Boolean).join('\n\n'), title: study.title, questions: qs.map(q => ({ type: q.type, prompt: q.prompt, options: q.options })) }) });
       const data = await res.json().catch(() => ({}));
       if (res.status === 401) { setNeedPass(true); throw new Error(data.message || 'Enter your Studio passcode.'); }
       if (!res.ok || !Array.isArray(data.questions)) throw new Error(/Notion research link|Figma design link/.test(data.error || '') ? 'Survey design needs the latest studio-ai-draft function deployed.' : data.error || 'The AI could not draft questions. Try again.');
@@ -177,7 +184,7 @@ function AiDesigner({ study, update, setPreviewAt }: { study: Study; update: (p:
     for (const p of chosen) {
       const base = newQuestion(p.type);
       const target = p.replaces ? qs[p.replaces - 1] : undefined;
-      const q: Question = { ...base, id: target?.id ?? base.id, prompt: p.prompt, ...(p.hint ? { hint: p.hint } : {}), ...(p.options?.length ? { options: p.options } : {}), ...(p.minLabel ? { minLabel: p.minLabel } : {}), ...(p.maxLabel ? { maxLabel: p.maxLabel } : {}), ...(p.required !== undefined && p.type !== 'schedule' ? { required: p.required } : {}), showIf: target?.showIf };
+      const q: Question = { ...base, id: target?.id ?? base.id, prompt: p.prompt, ...(p.hint ? { hint: p.hint } : {}), ...(p.followups && (p.type === 'long' || p.type === 'text') ? { followups: Math.min(3, p.followups), probe: p.probe } : {}), ...(p.options?.length ? { options: p.options } : {}), ...(p.minLabel ? { minLabel: p.minLabel } : {}), ...(p.maxLabel ? { maxLabel: p.maxLabel } : {}), ...(p.required !== undefined && p.type !== 'schedule' ? { required: p.required } : {}), showIf: target?.showIf };
       map[p.ref] = q.id;
       if (target) list = list.map(x => x.id === target.id ? q : x); else list.push(q);
     }
@@ -211,6 +218,7 @@ function AiDesigner({ study, update, setPreviewAt }: { study: Study; update: (p:
             {p.replaces && qs[p.replaces - 1] && <s>{qs[p.replaces - 1].prompt}</s>}
             <strong>{p.prompt}</strong>
             {p.hint && <em>{p.hint}</em>}
+            {!!p.followups && <em className="rw-ai-cond">AI follow-ups: up to {p.followups}{p.probe ? ` · ${p.probe}` : ''}</em>}
             {p.options && <em>{p.options.join(' · ')}</em>}
             {p.showIf && <em className="rw-ai-cond">{condText(p)}</em>}
             <i>{p.why}</i></span></label>
@@ -338,7 +346,9 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
   const sus = useMemo(() => susScore(s, responses), [data]);
   const nps = results.find((r): r is Extract<QuestionResult, { kind: 'nps' }> => r.kind === 'nps');
   const medianSec = responses.length ? Math.round([...responses].sort((a, b) => a.ms - b.ms)[Math.floor(responses.length / 2)].ms / 1000) : 0;
-  const quotes = results.flatMap(r => r.kind === 'text' ? r.answers.map((a, k) => ({ key: `${r.q.id}-${k}`, text: a })) : []);
+  // Open answers with their AI follow-ups, one entry per participant.
+  const entries = (qid: string) => responses.filter(rs => { const v = rs.answers[qid]; return v != null && v !== '' && typeof v !== 'object'; }).map(rs => ({ key: `${qid}-${rs.id}`, text: String(rs.answers[qid]), fu: (rs.followups?.[qid] ?? []).map((f, j) => ({ key: `${qid}-${rs.id}-f${j}`, q: f.q, text: f.a })) }));
+  const quotes = results.flatMap(r => r.kind === 'text' ? entries(r.q.id).flatMap(e => [{ key: e.key, text: e.text }, ...e.fu.map(f => ({ key: f.key, text: f.text }))]) : []);
 
   const addCharts = () => {
     const choice = results.filter((r): r is Extract<QuestionResult, { kind: 'choice' }> => r.kind === 'choice' && r.answered > 0).slice(0, 4);
@@ -386,7 +396,8 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
         {r.kind === 'scale' && <div className="rw-bars">{r.dist.map((c, k) => { const pct = r.answered ? Math.round(c / r.answered * 100) : 0; return <div key={k}><span>{(r.q.min ?? 1) + k}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}<small>Average {r.mean.toFixed(1)} of {r.q.max ?? 5}</small></div>}
         {r.kind === 'schedule' && <div className="rw-nps"><strong>{r.booked}</strong><span>booked a time{r.answered > r.booked ? ` · ${r.answered - r.booked} opened the link but didn’t finish in the survey` : ''}</span></div>}
         {r.kind === 'nps' && <div className="rw-nps"><strong>{r.score > 0 ? '+' : ''}{r.score}</strong><span>{r.promoters} promoters · {r.passives} passives · {r.detractors} detractors</span></div>}
-        {r.kind === 'text' && <ul className="rw-quotes">{r.answers.map((a, k) => { const key = `${r.q.id}-${k}`; return <li key={key}><label><input type="checkbox" checked={!!picked[key]} onChange={e => setPicked(p => ({ ...p, [key]: e.target.checked }))} /> “{a}”</label></li>; })}</ul>}
+        {r.kind === 'text' && <ul className="rw-quotes">{entries(r.q.id).map(e => <li key={e.key}><label><input type="checkbox" checked={!!picked[e.key]} onChange={ev => setPicked(p => ({ ...p, [e.key]: ev.target.checked }))} /> “{e.text}”</label>
+          {e.fu.length > 0 && <ul className="rw-fu-list">{e.fu.map(f => <li key={f.key}><small>AI follow-up: {f.q}</small><label><input type="checkbox" checked={!!picked[f.key]} onChange={ev => setPicked(p => ({ ...p, [f.key]: ev.target.checked }))} /> “{f.text}”</label></li>)}</ul>}</li>)}</ul>}
       </div>)}
       {sus && <div className="rw-res"><h4>System Usability Scale<small>{sus.n} complete</small></h4><div className="rw-nps"><strong>{Math.round(sus.score)}</strong><span>{sus.grade}. The average product scores 68.</span></div></div>}
     </>}
