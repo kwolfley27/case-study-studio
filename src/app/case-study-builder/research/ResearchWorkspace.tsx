@@ -11,10 +11,11 @@ import './research.css';
 
 type Tab = 'build' | 'share' | 'results';
 
-export function ResearchWorkspace({ onExit, onAddSections, project, initialId }: { onExit: () => void; onAddSections: (sections: CaseStudySection[], note: string) => void; project?: { id: string; title: string }; initialId?: string }) {
+export function ResearchWorkspace({ onExit, onAddSections, project, initialId, initialTab, onRoute }: { onExit: () => void; onAddSections: (sections: CaseStudySection[], note: string) => void; project?: { id: string; title: string }; initialId?: string; initialTab?: string; /** Tells the app which survey and tab are open, for the address bar. */ onRoute?: (id: string | null, tab: string) => void }) {
   const [studies, setStudies] = useState<Study[]>(() => readDrafts());
   const [currentId, setCurrentId] = useState<string | null>(() => initialId && readDrafts().some(s => s.id === initialId) ? initialId : (readDrafts().find(s => s.projectId === project?.id) ?? readDrafts()[0])?.id ?? null);
-  const [tab, setTab] = useState<Tab>('build');
+  const [tab, setTab] = useState<Tab>(() => initialTab === 'share' || initialTab === 'results' ? initialTab : 'build');
+  useEffect(() => { onRoute?.(currentId, tab); }, [currentId, tab]);
   const [previewAt, setPreviewAt] = useState(-1);
   const [counts, setCounts] = useState<Record<string, number>>({});
   useEffect(() => { writeDrafts(studies); }, [studies]);
