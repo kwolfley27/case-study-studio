@@ -104,7 +104,7 @@ export function SurveyRunner({ study, preview, onSubmit, onFollowUp, onUploadPho
             <li>There are no right answers, and your answers are anonymous.</li>
           </ul>; })()}
           <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>
-          <small>{n} question{n === 1 ? '' : 's'} · about {estimateMinutes(study.questions)} min</small>
+          <small>{n} question{n === 1 ? '' : 's'} · about {estimateMinutes(study.questions, study.followupBudget)} min</small>
         </div>}
         {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} /></>}
         {q && fuItem && <div className="rs-q">

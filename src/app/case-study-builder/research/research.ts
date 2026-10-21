@@ -79,13 +79,21 @@ export function lintQuestion(q: Question): Lint[] {
   return out;
 }
 
-/** A realistic time estimate: open answers by voice take a minute or two, follow-ups add more. */
-export function estimateMinutes(qs: Question[]) {
-  let min = 0;
+/** A realistic time estimate for one person: open answers by voice take a minute or two; questions behind "Show only if"
+    usually apply to only some people; optional ones are often skipped; follow-ups are capped by the per-person limit and the AI often stops early. */
+export function estimateMinutes(qs: Question[], followupBudget = DEFAULT_FOLLOWUP_BUDGET) {
+  let min = 0, fuSlots = 0;
+  // Questions that branch off the same answer are alternatives: count the branch group once (its longest question).
+  const branches = new Map<string, number>();
   for (const q of qs) {
-    min += q.type === 'long' ? 1.5 : q.type === 'text' ? 0.5 : q.type === 'photo' ? 1 : q.type === 'rank' ? 0.4 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : 0.2;
-    if (q.followups) min += Math.min(3, q.followups) * (isChoice(q) ? 0.5 : 0.8) * 0.6; // AI often stops early
+    let m = q.type === 'long' ? 1.5 : q.type === 'text' ? 0.4 : q.type === 'photo' ? 0.8 : q.type === 'rank' ? 0.4 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : 0.2;
+    if (!q.required && (q.type === 'long' || q.type === 'photo')) m *= 0.5;
+    if (q.followups) fuSlots += Math.min(3, q.followups);
+    if (q.showIf?.questionId) { const k = q.showIf.questionId; branches.set(k, Math.max(branches.get(k) ?? 0, m)); continue; }
+    min += m;
   }
+  for (const m of branches.values()) min += m;
+  min += Math.min(fuSlots, followupBudget) * 0.8 * 0.6;
   return Math.max(1, Math.round(min));
 }
 
