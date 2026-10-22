@@ -55,7 +55,7 @@ Deno.serve(async (request) => {
     }
     // Synthesis: themes, the four forces, surprises and low-effort responses from a study's answers.
     if (body.task === 'synthesize') {
-      const questions = (Array.isArray(body.questions) ? body.questions : []).slice(0, 90).map((q: any) => ({ n: Number(q?.n) || 0, type: String(q?.type || '').slice(0, 12), prompt: String(q?.prompt || '').slice(0, 300), options: Array.isArray(q?.options) ? q.options.map((o: unknown) => String(o).slice(0, 100)).slice(0, 20) : undefined }));
+      const questions = (Array.isArray(body.questions) ? body.questions : []).slice(0, 150).map((q: any) => ({ n: Number(q?.n) || 0, type: String(q?.type || '').slice(0, 12), prompt: String(q?.prompt || '').slice(0, 300), options: Array.isArray(q?.options) ? q.options.map((o: unknown) => String(o).slice(0, 100)).slice(0, 20) : undefined }));
       let budget = 140_000; let dropped = 0;
       const people = [];
       for (const p of (Array.isArray(body.people) ? body.people : []).slice(0, 300)) {
