@@ -35,7 +35,7 @@ function buildTree(questions: Question[], include: (q: Question) => boolean): No
   return roots.map(make);
 }
 
-const TYPE: Partial<Record<Question['type'], string>> = { single: 'One choice', multi: 'Checkboxes', rank: 'Rank', scale: 'Scale', nps: 'NPS', text: 'Short answer', long: 'Talk or type', contact: 'Contact', schedule: 'Book a time', photo: 'Photo', note: 'Screen' };
+const TYPE: Partial<Record<Question['type'], string>> = { single: 'One choice', multi: 'Checkboxes', rank: 'Rank', scale: 'Scale', nps: 'NPS', text: 'Short answer', long: 'Talk or type', contact: 'Contact', schedule: 'Book a time', photo: 'Photo', note: 'Screen', section: 'Section' };
 
 export function SurveyMap({ study, responses, onPick }: { study: Study; responses?: Response[]; onPick?: (questionIndex: number) => void }) {
   const qs = study.questions;
@@ -52,17 +52,17 @@ export function SurveyMap({ study, responses, onPick }: { study: Study; response
     const { q } = node;
     const opts = (q.type === 'single' || q.type === 'multi') && q.options?.length ? q.options : null;
     const total = got(q);
-    return <div className={`sm-node ${lane ? 'in-lane' : ''} ${q.type === 'note' ? 'is-note' : ''}`}>
+    return <div className={`sm-node ${lane ? 'in-lane' : ''} ${q.type === 'note' ? 'is-note' : ''} ${q.type === 'section' ? 'is-section' : ''}`}>
       <button type="button" className="sm-card" onClick={() => onPick?.(node.n - 1)} disabled={!onPick}>
-        <span className="sm-num">{q.type === 'note' ? '·' : node.n}</span>
+        <span className="sm-num">{q.type === 'note' ? '·' : q.type === 'section' ? '§' : node.n}</span>
         <span className="sm-body">
           <span className="sm-q">{short(q.prompt)}</span>
           <span className="sm-tags">
             <em>{TYPE[q.type] ?? q.type}</em>
             {q.group && <em className="is-group">Group</em>}
             {!!q.followups && <em className="is-ai">AI ×{q.followups}{q.followIf?.length ? ' (some answers)' : ''}</em>}
-            {!q.required && q.type !== 'note' && <em>Optional</em>}
-            {live && q.type !== 'note' && <b>{total} answered</b>}
+            {!q.required && q.type !== 'note' && q.type !== 'section' && <em>Optional</em>}
+            {live && q.type !== 'note' && q.type !== 'section' && <b>{total} answered</b>}
           </span>
           {live && q.group && opts && total > 0 && <span className="sm-buckets">{opts.map(o => { const c = responses!.filter(r => { const v = r.answers[q.id]; return Array.isArray(v) ? v.includes(o) : v === o; }).length; return <span key={o} className={c ? '' : 'is-zero'}>{short(o, 36)} <b>{c}</b></span>; })}</span>}
         </span>
@@ -94,7 +94,7 @@ export function SurveyMap({ study, responses, onPick }: { study: Study; response
   };
 
   return <Canvas><div className={`sm ${live ? 'is-live' : ''}`}>
-    <div className="sm-start"><small>Start of survey</small>{live ? `${responses!.length} people` : short(qs[0]?.prompt ?? '', 60)}</div>
+    <div className="sm-start"><small>Start of survey</small>{live ? `${responses!.length} people` : short(study.title || qs[0]?.prompt || '', 60)}</div>
     {core.map(n => <Card key={n.q.id} node={n} />)}
     {bonus.length > 0 && <>
       <div className="sm-gate"><strong>Short version ends</strong><span>“Got a few more minutes?” offers the bonus round{live ? ` · ${bonusTakers} of ${responses!.length} kept going` : ''}</span></div>

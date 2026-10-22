@@ -3,7 +3,7 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 /* Your own research tool: studies, questions, scoring and the server calls. */
 
-export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note';
+export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note' | 'section';
 export type ContactKey = 'name' | 'email' | 'phone';
 export type FieldMode = 'off' | 'optional' | 'required';
 /** Show a question only when an earlier choice question was answered with one of these options. */
@@ -19,6 +19,11 @@ export type Question = { id: string; type: QuestionType; prompt: string; options
   /** Bonus round: only asked if they choose to keep going after the short version. */ bonus?: boolean;
   /** A picture shown above the question. */ image?: string;
   /** Pictures for each choice option (same order as options); shows the options as picture cards. */ optionImages?: string[] };
+/** The end of the survey: an AI recap of what they said (they confirm or correct it), and a fun result, e.g. "What kind of meal planner are you?" */
+export type ResultType = { name: string; blurb?: string; image?: string; /** Private: who fits this type. Helps the AI pick. */ who?: string };
+export type Ending = { recap?: boolean; title?: string; types?: ResultType[] };
+/** What a participant saw at the end. */
+export type EndingAnswer = { recap?: string; ok?: 'yes' | 'no'; fix?: string; type?: string };
 /** How the participant pages look. */
 export type Theme = { accent?: string; background?: string; cover?: string };
 export const ACCENTS = ['#000000', '#2f5b45', '#1f4ea3', '#6b3fa0', '#c2410c', '#be185d', '#0f766e'];
@@ -40,10 +45,10 @@ export type TaskRecord = { taskId: string; status: Outcome; ms: number; notes?: 
 export type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; audioUrl?: string; notes?: string; tasks: TaskRecord[]; transcript?: Transcript; notionPageId?: string };
 export type TranscriptLine = { s: number; e: number; spk: number; text: string };
 export type Transcript = { at: string; speakers: string[]; segments: TranscriptLine[] };
-export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** Most AI follow-ups one participant gets in total (default 6). */ followupBudget?: number; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
+export type Study = { id: string; kind: 'survey' | 'usability'; theme?: Theme; ending?: Ending; /** What you want to learn. Private; guides the AI follow-ups. */ goal?: string; /** Most AI follow-ups one participant gets in total (default 6). */ followupBudget?: number; /** 'interview': a usability-style session where each step is a question you ask, not a task. */ format?: 'interview'; tasks?: Task[]; title: string; /** The case study this research belongs to. */ projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string; responses?: number; published?: boolean };
 /** An AI follow-up the participant was asked, and their answer. */
 export type FollowUp = { q: string; a: string };
-export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** What they typed after picking "Other", by question. */ others?: Record<string, string>; /** 'core' = stopped after the short version; 'full' = also did the bonus round. */ part?: 'core' | 'full'; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
+export type Response = { id: string; at: string; ms: number; answers: Record<string, Answer>; followups?: Record<string, FollowUp[]>; /** What they typed after picking "Other", by question. */ others?: Record<string, string>; /** 'core' = stopped after the short version; 'full' = also did the bonus round. */ part?: 'core' | 'full'; ending?: EndingAnswer; /** Signed links to uploaded photos, by question (added when results load). */ photoUrls?: Record<string, string[]> };
 export const canFollowUp = (q: Question) => q.type === 'long' || q.type === 'text' || q.type === 'single' || q.type === 'multi' || q.type === 'rank';
 export const hasOptions = (q: Question) => q.type === 'single' || q.type === 'multi' || q.type === 'rank';
 /** How an answer reads in plain words (rankings are numbered). */
@@ -96,7 +101,7 @@ export function estimateMinutes(qs: Question[], followupBudget = DEFAULT_FOLLOWU
   let min = 0, fuSlots = 0;
   const branches = new Map<string, Map<string, number>>(); // source question → condition → minutes
   for (const q of qs) {
-    let m = q.type === 'long' ? 0.75 : q.type === 'text' ? 0.3 : q.type === 'photo' ? 0.6 : q.type === 'rank' ? 0.35 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : q.type === 'note' ? 0.15 : q.type === 'multi' ? 0.2 : 0.15;
+    let m = q.type === 'long' ? 0.75 : q.type === 'text' ? 0.3 : q.type === 'photo' ? 0.6 : q.type === 'rank' ? 0.35 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : q.type === 'note' ? 0.15 : q.type === 'section' ? 0.05 : q.type === 'multi' ? 0.2 : 0.15;
     if (!q.required && (q.type === 'long' || q.type === 'photo')) m *= 0.5;
     if (q.followups) fuSlots += Math.min(3, q.followups);
     if (q.showIf?.questionId) {
@@ -123,6 +128,7 @@ export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['schedule', 'Book a time', 'Calendly or other booking link'],
   ['photo', 'Show me (photo)', 'Upload a screenshot or photo'],
   ['note', 'Intro screen', 'A screen with no answer, to set up what comes next'],
+  ['section', 'Section', 'Starts a new part, like “Meal prep”, with a title screen'],
 ];
 
 export const CONTACT_FIELDS: Array<[ContactKey, string]> = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
@@ -164,8 +170,8 @@ export const BOOKED = 'Booked a time', OPENED = 'Opened the booking link';
 
 const qid = () => crypto.randomUUID().slice(0, 8);
 export const newQuestion = (type: QuestionType): Question => ({
-  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo' && type !== 'note',
-  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.', note: 'A quick change of pace' }[type],
+  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo' && type !== 'note' && type !== 'section',
+  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.', note: 'A quick change of pace', section: 'Meal prep' }[type],
   ...(type === 'contact' ? { contact: { ...DEFAULT_CONTACT } } : {}),
   ...(type === 'schedule' ? { url: '' } : {}),
   ...(type === 'single' || type === 'multi' || type === 'rank' ? { options: ['Option one', 'Option two', 'Option three'] } : {}),
@@ -261,7 +267,7 @@ export function aggregate(study: Study, responses: Response[]): QuestionResult[]
       return { q, kind: 'nps', answered: vals.length, score: Math.round(((p - d) / t) * 100), promoters: p, passives: pa, detractors: d };
     }
     if (q.type === 'contact') return { q, kind: 'contact', answered: vals.length };
-    if (q.type === 'note') return { q, kind: 'note', answered: 0 };
+    if (q.type === 'note' || q.type === 'section') return { q, kind: 'note', answered: 0 };
     if (q.type === 'photo') return { q, kind: 'photo', answered: vals.length };
     if (q.type === 'rank') {
       const items = (q.options ?? []).map(label => { const pos = vals.map(v => (v as string[]).indexOf(label)).filter(i => i >= 0); return { label, avg: pos.length ? pos.reduce((a, b) => a + b + 1, 0) / pos.length : 0, firsts: pos.filter(i => i === 0).length }; });
@@ -341,3 +347,19 @@ export function aggregateTasks(study: Study, sessions: Session[]): TaskResult[] 
   });
 }
 export const fmtMs = (ms: number) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+/* ---------- Sections ---------- */
+/** Screens with no answer. */
+export const isScreen = (q: Question) => q.type === 'note' || q.type === 'section';
+/** The section each question belongs to (the last section title at or before it), by question id. */
+export function sectionOf(qs: Question[]) {
+  const out = new Map<string, Question | undefined>(); let cur: Question | undefined;
+  for (const q of qs) { if (q.type === 'section') cur = q; out.set(q.id, cur); }
+  return out;
+}
+/** "Anything else about meal prep?": an optional open question at the end of a section. */
+export const moreQuestion = (section: Question): Question => ({ id: qid(), type: 'long', preset: 'more', required: false, prompt: `Anything else you want to share about ${section.prompt.trim().toLowerCase() || 'this'}?`, hint: 'Optional. A story, a detail we missed, anything.', bonus: section.bonus });
+/** Where a section ends (index of its last question). */
+export function sectionEnd(qs: Question[], i: number) { let j = i; while (j + 1 < qs.length && qs[j + 1].type !== 'section') j++; return j; }
+/** Its "anything else?" question, if it has one. */
+export const sectionMore = (qs: Question[], i: number) => { const end = sectionEnd(qs, i); for (let k = i + 1; k <= end; k++) if (qs[k].preset === 'more') return k; return -1; };
