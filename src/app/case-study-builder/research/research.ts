@@ -304,6 +304,11 @@ export const chartable = (results: QuestionResult[]) => results.filter(r => (r.k
 /* ---------- Server ---------- */
 export const RESEARCH_URL = import.meta.env.VITE_STUDIO_RESEARCH_URL || (projectId ? `https://${projectId}.supabase.co/functions/v1/studio-research` : '');
 export const participantLink = (id: string) => `${location.origin}${location.pathname}#/r/${id}`;
+/** Share pages with a picture for texting (a small page in public/s/… with link-preview tags). */
+const SHARE_PAGES: Record<string, string> = { '8d8c2154-9df3-4419-9e30-6eabdaa75eec': 's/meal-prep/' };
+/** The link to text people: the picture page when there is one. The date at the end makes iMessage fetch a fresh preview each day. */
+export const shareLink = (id: string) => { const page = SHARE_PAGES[id]; if (!page) return participantLink(id); const d = new Date(); return `${location.origin}/${page}?d=${d.getMonth() + 1}${String(d.getDate()).padStart(2, '0')}`; };
+export const hasSharePage = (id: string) => !!SHARE_PAGES[id];
 /** The same survey in test mode: real AI follow-ups, but nothing is saved to Results or Notion. */
 export const testLink = (id: string) => `${participantLink(id)}?test=1`;
 const PASS = 'csb-ai-passcode';

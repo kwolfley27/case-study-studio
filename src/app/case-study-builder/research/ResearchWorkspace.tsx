@@ -6,7 +6,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, testLink, fmtMs, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, moreQuestion, sectionEnd, sectionMore, isScreen, type ContactKey, type Ending, type ResultType, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, testLink, fmtMs, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, shareLink, hasSharePage, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, moreQuestion, sectionEnd, sectionMore, isScreen, type ContactKey, type Ending, type ResultType, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -352,7 +352,7 @@ function Share({ study, update }: { study: Study; update: (p: Partial<Study>) =>
   const [needPass, setNeedPass] = useState(!getPasscode());
   const [pass, setPass] = useState(getPasscode());
   const [copied, setCopied] = useState(false);
-  const link = participantLink(study.id);
+  const link = shareLink(study.id);
   const publish = async (patch: Partial<Study> = {}) => {
     setBusy(true); setNote(null);
     try {
@@ -391,6 +391,7 @@ function Share({ study, update }: { study: Study; update: (p: Partial<Study>) =>
       <div className="rw-link"><input readOnly value={link} aria-label="Participant link" onFocus={e => e.target.select()} />
         <button type="button" className="csb-quiet-button" disabled={!study.published} onClick={() => { void navigator.clipboard?.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); }}><Copy size={13} /> {copied ? 'Copied' : 'Copy'}</button>
         <a className="csb-quiet-button" href={link} target="_blank" rel="noreferrer" aria-disabled={!study.published}><ExternalLink size={13} /> Open</a></div>
+      {hasSharePage(study.id) && <small className="rw-note">This link shows your picture when you text it. Paste it on its own line; the picture card should appear in iMessage before you hit send.</small>}
     </div>
   </div>;
 }
