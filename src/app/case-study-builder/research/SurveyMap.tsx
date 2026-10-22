@@ -35,14 +35,15 @@ function buildTree(questions: Question[], include: (q: Question) => boolean): No
   return roots.map(make);
 }
 
-const TYPE: Partial<Record<Question['type'], string>> = { single: 'One choice', multi: 'Checkboxes', rank: 'Rank', scale: 'Scale', nps: 'NPS', text: 'Short answer', long: 'Talk or type', contact: 'Contact', schedule: 'Book a time', photo: 'Photo', note: 'Screen', section: 'Section' };
+const TYPE: Partial<Record<Question['type'], string>> = { single: 'One choice', multi: 'Checkboxes', rank: 'Rank', scale: 'Scale', nps: 'NPS', text: 'Short answer', long: 'Talk or type', contact: 'Contact', schedule: 'Book a time', photo: 'Photo', note: 'Screen', section: 'Section', meme: 'Meme break' };
 
 /* What the + menu can add. "Yes / No" is a one-choice question with those two answers, ready to branch on. */
-const ADD_TYPES: Array<[string, string]> = [['yesno', 'Yes / No'], ['single', 'One choice'], ['multi', 'Checkboxes'], ['slider', 'Slider 1–10'], ['long', 'Talk or type'], ['text', 'Short answer'], ['section', 'Section']];
+const ADD_TYPES: Array<[string, string]> = [['yesno', 'Yes / No'], ['single', 'One choice'], ['multi', 'Checkboxes'], ['slider', 'Slider 1–10'], ['long', 'Talk or type'], ['text', 'Short answer'], ['section', 'Section'], ['meme', 'Meme break']];
 const make = (kind: string): Question => {
   if (kind === 'yesno') return { ...newQuestion('single'), prompt: 'New yes / no question', options: ['Yes', 'No'] };
   if (kind === 'slider') return { ...newQuestion('scale'), prompt: 'New slider question', min: 1, max: 10, minLabel: 'Not at all', maxLabel: 'Very', slider: true };
   if (kind === 'section') return { ...newQuestion('section'), prompt: 'New section' };
+  if (kind === 'meme') return newQuestion('meme');
   const q = newQuestion(kind as Question['type']); return { ...q, prompt: kind === 'long' ? 'Tell me about the last time you…' : 'New question' };
 };
 type AddAt = { key: string; pos: number; showIf?: Question['showIf']; bonus?: boolean };
@@ -94,13 +95,13 @@ export function SurveyMap({ study, responses, onPick, onChange }: { study: Study
       <button type="button" className={`sm-card ${edit && sel === q.id ? 'is-sel' : ''}`} onClick={() => edit ? setSel(q.id) : onPick?.(node.n - 1)} disabled={!onPick && !edit}>
         <span className="sm-num">{q.type === 'note' ? '·' : q.type === 'section' ? '§' : node.n}</span>
         <span className="sm-body">
-          <span className="sm-q">{short(q.prompt)}</span>
+          <span className="sm-q">{q.type === 'meme' ? (q.image ? '🖼 ' : '') + (short(q.prompt) || 'Meme break') : short(q.prompt)}</span>
           <span className="sm-tags">
             <em>{TYPE[q.type] ?? q.type}</em>
             {q.group && <em className="is-group">Group</em>}
             {!!q.followups && <em className="is-ai">AI ×{q.followups}{q.followIf?.length ? ' (some answers)' : ''}</em>}
-            {!q.required && q.type !== 'note' && q.type !== 'section' && <em>Optional</em>}
-            {live && q.type !== 'note' && q.type !== 'section' && <b>{total} answered</b>}
+            {!q.required && q.type !== 'note' && q.type !== 'section' && q.type !== 'meme' && <em>Optional</em>}
+            {live && q.type !== 'note' && q.type !== 'section' && q.type !== 'meme' && <b>{total} answered</b>}
           </span>
           {live && q.group && opts && total > 0 && <span className="sm-buckets">{opts.map(o => { const c = responses!.filter(r => { const v = r.answers[q.id]; return Array.isArray(v) ? v.includes(o) : v === o; }).length; return <span key={o} className={c ? '' : 'is-zero'}>{short(o, 36)} <b>{c}</b></span>; })}</span>}
         </span>
@@ -151,7 +152,7 @@ export function SurveyMap({ study, responses, onPick, onChange }: { study: Study
       <button type="button" className="sm-drawer-link" onClick={() => setQ(selQ.id, { options: [...(selQ.options ?? []), `Answer ${(selQ.options?.length ?? 0) + 1}`] })}>+ Add answer</button></div>}
     {selQ.type === 'scale' && <div className="sm-drawer-row"><input value={selQ.minLabel ?? ''} placeholder="Low label" aria-label="Low label" onChange={e => setQ(selQ.id, { minLabel: e.target.value })} /><input value={selQ.maxLabel ?? ''} placeholder="High label" aria-label="High label" onChange={e => setQ(selQ.id, { maxLabel: e.target.value })} /></div>}
     {canFollowUp(selQ) && <div className="sm-drawer-row"><span>AI follow-ups</span><div className="sm-seg">{[0, 1, 2].map(v => <button key={v} type="button" aria-pressed={(selQ.followups ?? 0) === v} onClick={() => setQ(selQ.id, { followups: v || undefined })}>{v ? `Up to ${v}` : 'Off'}</button>)}</div></div>}
-    <div className="sm-drawer-row">{selQ.type !== 'section' && selQ.type !== 'note' && <label><input type="checkbox" checked={!!selQ.required} onChange={e => setQ(selQ.id, { required: e.target.checked })} /> Required</label>}
+    <div className="sm-drawer-row">{selQ.type !== 'section' && selQ.type !== 'note' && selQ.type !== 'meme' && <label><input type="checkbox" checked={!!selQ.required} onChange={e => setQ(selQ.id, { required: e.target.checked })} /> Required</label>}
       {selQ.type === 'scale' && <label><input type="checkbox" checked={!!selQ.slider} onChange={e => setQ(selQ.id, { slider: e.target.checked || undefined })} /> Slider</label>}</div>
     {selNode && hasOptions(selQ) && selQ.type !== 'rank' && (selQ.options ?? []).some(o => !selNode.lanes.some(l => l.anyOf.includes(o))) && <button type="button" className="sm-drawer-btn" onClick={() => branch(selNode)}>{selNode.lanes.length ? 'Add paths for the other answers' : 'Branch on the answer'}</button>}
     <div className="sm-drawer-foot">{onPick && <button type="button" className="sm-drawer-link" onClick={() => onPick(index.get(selQ.id) ?? 0)}>All settings</button>}<button type="button" className="sm-drawer-del" onClick={() => remove(selQ.id)}>Delete</button></div>
