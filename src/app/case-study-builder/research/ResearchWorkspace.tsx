@@ -84,6 +84,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
       <label className="rw-field"><span>Survey title</span><input value={study.title} onChange={e => update({ title: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
       <label className="rw-field"><span>Welcome message</span><textarea rows={2} value={study.intro ?? ''} onChange={e => update({ intro: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
       <label className="rw-field"><span>What you want to learn <em className="rw-private">private · steers the AI follow-ups</em></span><textarea rows={3} value={study.goal ?? ''} onChange={e => update({ goal: e.target.value || undefined })} placeholder="e.g. Why people do or don’t meal prep, what gets in the way, and what they hope it’ll do for them (save money, eat healthier, save time). How they plan meals and shop for groceries. Tracking matters less." /></label>
+      <label className="rw-field"><span>Your predictions <em className="rw-private">private · one per line · “Find themes” checks each one</em></span><textarea rows={3} value={study.predictions ?? ''} onChange={e => update({ predictions: e.target.value || undefined })} placeholder="e.g. Most people who quit tracking quit because logging takes too long." /></label>
       {qs.some(q => q.followups) && <div className="rw-contact-row rw-budget"><span>Most AI follow-ups per person <small>keeps it from feeling like homework</small></span>
         <div className="rw-seg" role="radiogroup" aria-label="Follow-up limit">{[4, 6, 8, 12].map(v => <button key={v} type="button" role="radio" aria-checked={(study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) === v} className={(study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) === v ? 'is-on' : ''} onClick={() => update({ followupBudget: v })}>{v}</button>)}</div></div>}
       <AiDesigner study={study} update={update} setPreviewAt={setPreviewAt} />
@@ -121,6 +122,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           <label>From 1 to <select value={q.max ?? 5} onChange={e => setQ(i, { max: Number(e.target.value), min: 1 })}><option value={5}>5</option><option value={7}>7</option><option value={10}>10</option></select></label>
           <input value={q.minLabel ?? ''} placeholder="Low label" aria-label="Low label" onChange={e => setQ(i, { minLabel: e.target.value })} />
           <input value={q.maxLabel ?? ''} placeholder="High label" aria-label="High label" onChange={e => setQ(i, { maxLabel: e.target.value })} />
+          <label className="rw-req" title="A drag slider instead of a row of number buttons"><input type="checkbox" checked={!!q.slider} onChange={e => setQ(i, { slider: e.target.checked || undefined })} /> Slider</label>
         </div>}
         {q.type === 'contact' && <div className="rw-contact">
           {CONTACT_FIELDS.map(([k, label]) => { const m = contactModes(q)[k]; return <div key={k} className="rw-contact-row"><span>{label}</span>
@@ -295,7 +297,7 @@ function ImageField({ study, label, value, onChange, onRemove }: { study: Study;
   return <div className="rw-contact">
     <div className="rw-imgfield">
       {value ? <img src={value} alt="" /> : null}
-      <input className="rw-input" type="url" value={value} placeholder={`${label}: paste an image link`} aria-label={label} onChange={e => onChange(e.target.value)} />
+      <input className="rw-input" type="url" value={value} placeholder={`${label}: paste a picture or an image link`} aria-label={label} onChange={e => onChange(e.target.value)} onPaste={e => { const f = [...e.clipboardData.files].find(x => x.type.startsWith('image/')); if (f) { e.preventDefault(); void upload(f, onChange); } }} />
       <label className="rw-upload"><ImagePlus size={12} /> {busy ? 'Uploading…' : 'Upload'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={e => void upload(e.target.files?.[0], onChange)} /></label>
       {onRemove && <button type="button" className="rw-icon" aria-label="Remove picture" onClick={onRemove}><X size={12} /></button>}
     </div>
@@ -438,6 +440,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
     <div className="rw-stats">
       <div><strong>{responses.length}</strong><small>Responses</small></div>
       {s.questions.some(q => q.bonus) && <div><strong>{responses.filter(r => r.part !== 'core').length}</strong><small>Did the bonus round</small></div>}
+      {responses.some(r => r.early) && <div><strong>{responses.filter(r => r.early).length}</strong><small>Finished early</small></div>}
       <div><strong>{medianSec ? `${Math.floor(medianSec / 60)}:${String(medianSec % 60).padStart(2, '0')}` : '—'}</strong><small>Median time</small></div>
       {sus && <div><strong>{sus.n ? Math.round(sus.score) : '—'}</strong><small>SUS {sus.grade && `· ${sus.grade}`}</small></div>}
       {nps && <div><strong>{nps.answered ? `${nps.score > 0 ? '+' : ''}${nps.score}` : '—'}</strong><small>NPS</small></div>}
@@ -501,7 +504,8 @@ function FollowUps({ study, responses }: { study: Study; responses: Response[] }
 
 /* ---------- Find themes with AI: synthesis the way a researcher would do it ---------- */
 type Pain = { pain: string; people: number; frequency: number; intensity: number; spending: number; score: number; cost?: string; quote?: string; participant?: string };
-type Synth = { summary: string; themes: Array<{ title: string; detail: string; count: number; segments?: string; quotes: Array<{ text: string; participant: string }> }>; forces?: Partial<Record<'push' | 'pull' | 'anxiety' | 'habit', Array<{ point: string; count: number; quote?: string }>>>; surprises?: string[]; pains?: Pain[]; lowEffort?: Array<{ participant: string; reason: string }>; nextQuestions?: string[]; note?: string };
+type Prediction = { prediction: string; verdict: 'supported' | 'mixed' | 'not supported' | 'not enough data'; evidence: string; quote?: string; participant?: string };
+type Synth = { predictions?: Prediction[]; summary: string; themes: Array<{ title: string; detail: string; count: number; segments?: string; quotes: Array<{ text: string; participant: string }> }>; forces?: Partial<Record<'push' | 'pull' | 'anxiety' | 'habit', Array<{ point: string; count: number; quote?: string }>>>; surprises?: string[]; pains?: Pain[]; lowEffort?: Array<{ participant: string; reason: string }>; nextQuestions?: string[]; note?: string };
 const FORCE_LABEL = { push: ['Push', 'What’s wrong with how things are now'], pull: ['Pull', 'What they hope a change gets them'], anxiety: ['Anxiety', 'What worries them about changing'], habit: ['Habit', 'What keeps them doing it the old way'] } as const;
 function Synthesis({ study, responses, onAddSections, filterNote }: { study: Study; responses: Response[]; onAddSections: (s: CaseStudySection[], note: string) => void; filterNote?: string }) {
   const key = `csb-synth-${study.id}${filterNote ? `-${filterNote}` : ''}`;
@@ -515,7 +519,7 @@ function Synthesis({ study, responses, onAddSections, filterNote }: { study: Stu
     try {
       const qList = open.map((q, i) => ({ n: i + 1, type: q.type, prompt: q.prompt, options: q.options }));
       const people = responses.map((r, k) => ({ p: `P${k + 1}`, answers: Object.fromEntries(open.map((q, i) => [i + 1, answerWords(r.answers[q.id], q, r.others?.[q.id])]).filter(([, a]) => a)), followups: Object.fromEntries(open.map((q, i) => [i + 1, r.followups?.[q.id] ?? []]).filter(([, f]) => (f as unknown[]).length)) }));
-      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'synthesize', title: study.title + (filterNote ? ` (only: ${filterNote})` : ''), goal: study.goal, questions: qList, people, groupBy: open.map((q, i) => q.group ? i + 1 : 0).filter(Boolean) }) });
+      const res = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), 'X-Studio-Passcode': getPasscode() }, body: JSON.stringify({ task: 'synthesize', title: study.title + (filterNote ? ` (only: ${filterNote})` : ''), goal: study.goal, questions: qList, people, groupBy: open.map((q, i) => q.group ? i + 1 : 0).filter(Boolean), predictions: (study.predictions ?? '').split('\n').map(x => x.trim()).filter(Boolean) }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !Array.isArray(data.themes)) throw new Error(res.status === 401 ? 'Enter your Studio passcode on the Share tab first.' : /Notion research link|Figma design link/.test(data.error || '') ? 'Finding themes needs the latest studio-ai-draft function deployed.' : data.error || 'Could not find themes. Try again.');
       setSynth(data); try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
@@ -534,6 +538,7 @@ function Synthesis({ study, responses, onAddSections, filterNote }: { study: Stu
     {synth && <>
       {synth.note && <small className="rw-note is-warn">{synth.note}</small>}
       <p>{synth.summary}</p>
+      {!!synth.predictions?.length && <><h5>Your predictions</h5><div className="rw-preds">{synth.predictions.map((x, k) => <div key={k} className={`rw-pred is-${x.verdict.replace(/ /g, '-')}`}><b>{x.verdict === 'supported' ? 'Supported' : x.verdict === 'mixed' ? 'Mixed' : x.verdict === 'not supported' ? 'Not supported' : 'Not enough data'}</b><strong>{x.prediction}</strong><p>{x.evidence}</p>{x.quote && <blockquote>“{x.quote}”{x.participant ? <em> — {x.participant}</em> : null}</blockquote>}</div>)}</div></>}
       {synth.themes.length > 0 && <h5>Themes</h5>}
       {synth.themes.map((t, k) => <div key={k} className="rw-theme"><strong>{t.title}</strong><span className="rw-count">{t.count} of {responses.length} people{t.segments ? ` · ${t.segments}` : ''}</span><p>{t.detail}</p>{t.quotes.slice(0, 2).map((q, j) => <blockquote key={j}>“{q.text}” <em>— {q.participant}</em></blockquote>)}</div>)}
       {synth.forces && Object.values(synth.forces).some(f => f?.length) && <><h5>What drives change (four forces)</h5><div className="rw-forces">{(Object.keys(FORCE_LABEL) as Array<keyof typeof FORCE_LABEL>).map(f => <div key={f} className="rw-force"><b>{FORCE_LABEL[f][0]}</b><small>{FORCE_LABEL[f][1]}</small><ul>{(synth.forces?.[f] ?? []).map((x, j) => <li key={j}>{x.point}{x.count ? ` (${x.count})` : ''}</li>)}</ul></div>)}</div></>}
@@ -604,7 +609,7 @@ function ResponseList({ study, responses, onRemoved }: { study: Study; responses
   return <div className="rw-res rw-resplist">
     <button type="button" className="rw-resplist-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}><h4>All responses<small>{responses.length} · {open ? 'hide' : 'show'}</small></h4></button>
     {open && <ul>{sorted.map(r => <li key={r.id}>
-      <span><b>{new Date(r.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</b> · {fmtMs(r.ms)}{r.part === 'core' ? ' · short version' : ''}{r.ending?.type ? ` · ${r.ending.type}` : ''}<em>{groupLabel(study, r) || 'No groups'}</em></span>
+      <span><b>{new Date(r.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</b> · {fmtMs(r.ms)}{r.part === 'core' ? ' · short version' : ''}{r.early ? ' · finished early' : ''}{r.ending?.type ? ` · ${r.ending.type}` : ''}<em>{groupLabel(study, r) || 'No groups'}</em></span>
       <button type="button" className="csb-quiet-button" disabled={busy === r.id} onClick={() => void remove(r)}>{busy === r.id ? 'Deleting…' : 'Delete'}</button>
     </li>)}</ul>}
   </div>;
