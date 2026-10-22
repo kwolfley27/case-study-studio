@@ -11,10 +11,10 @@ const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && 
 type AskFollowUp = (q: Question, answer: string, history: FollowUp[], context: FollowUp[], used: number) => Promise<string | null>;
 type UploadPhoto = (q: Question, file: File) => Promise<string>;
 type Saved = { ref: string; token: string };
-type Submit = (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, part?: 'core', ending?: EndingAnswer) => Promise<unknown>;
+type Submit = (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, part?: 'core', ending?: EndingAnswer, early?: boolean) => Promise<unknown>;
 /** Ask the AI for a short recap of their answers and which result type fits them best. */
 type AskEnding = (context: Array<{ q: string; a: string }>) => Promise<{ recap?: string; type?: string }>;
-type Extend = (saved: Saved, answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>) => Promise<unknown>;
+type Extend = (saved: Saved, answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, early?: boolean) => Promise<unknown>;
 
 
 export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, onUploadPhoto, onEnding, startAt }: { study: Study; preview?: boolean; onSubmit?: Submit; onExtend?: Extend; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; onEnding?: AskEnding; startAt?: number }) {
@@ -36,7 +36,7 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const ending = study.ending;
   const types = (ending?.types ?? []).filter(t => t.name.trim());
   const endingOn = !preview && !!onEnding && (!!ending?.recap || types.length > 0);
-  const [endPhase, setEndPhase] = useState<null | 'loading' | 'recap' | 'fix'>(null);
+  const [endPhase, setEndPhase] = useState<null | 'loading' | 'recap' | 'fix' | 'early'>(null);
   const [endAns, setEndAns] = useState<EndingAnswer | null>(null);
   const result: ResultType | undefined = preview ? types[0] : types.find(t => t.name === endAns?.type);
   const hasBonus = !preview && !!onExtend && study.questions.some(x => x.bonus);
@@ -95,6 +95,25 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
       catch (e) { setError(e instanceof Error ? e.message : 'Could not send your answers. Please try again.'); }
       finally { setBusy(''); }
     } else { if (step === -1) started.current = Date.now(); go(step + 1); }
+  };
+  /** “Finish early”: save what they've answered so far (no recap; they still get their result). */
+  const finishEarly = async () => {
+    setBusy('sending'); setError('');
+    const reached = new Set(qs.slice(0, step + 1).map(x => x.id));
+    const keep = <T,>(o: Record<string, T>) => Object.fromEntries(Object.entries(o).filter(([k]) => reached.has(k)));
+    const sent = keep(answers);
+    const sentFu = Object.fromEntries(Object.entries(keep(fu)).map(([k, list]) => [k, list.filter(x => x.a.trim())]).filter(([, list]) => (list as FollowUp[]).length));
+    const sentOthers = Object.fromEntries(Object.entries(keep(others)).filter(([k, t]) => t.trim() && pickedOther(answers[k])));
+    try {
+      if (bonusMode && saved) { const b = new Set(bonusQs.map(x => x.id)); const only = <T,>(o: Record<string, T>) => Object.fromEntries(Object.entries(o).filter(([k]) => b.has(k))); await onExtend!(saved, only(sent), Date.now() - started.current, only(sentFu), only(sentOthers), true); }
+      else {
+        let end: EndingAnswer | undefined;
+        if (endingOn && types.length) { const r: { type?: string } = await Promise.race([onEnding!(recapContext().filter((_, i) => i < 60)).catch(() => ({})), new Promise<{ type?: string }>(res => window.setTimeout(() => res({}), 8000))]); const type = types.find(t => t.name === r.type)?.name; if (type) { end = { type }; setEndAns(end); } }
+        await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers, undefined, end, true);
+      }
+      setFinished(true); setEndPhase(null); setSub(null); setStep(n);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not save your answers. Please try again.'); }
+    finally { setBusy(''); }
   };
   /* Follow-ups are fetched while they're still answering (after a short pause), so Next is usually instant.
      The same answer is never asked about twice, and Next never waits more than a couple of seconds. */
@@ -163,6 +182,7 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const themeStyle = { ...(t.accent ? { '--rs-accent': t.accent, '--rs-on': onColor(t.accent) } : {}), ...(t.background ? { '--rs-bg': t.background } : {}) } as React.CSSProperties;
   return <div className={`rs ${preview ? 'is-preview' : ''}`} style={themeStyle} onKeyDown={onKey}>
     {step >= 0 && step < n && <div className="rs-progress" aria-hidden="true"><i style={{ width: `${((step + (answered ? 1 : 0)) / n) * 100}%` }} /></div>}
+    {!preview && q && !endPhase && step >= 2 && step < n - 1 && <button type="button" className="rs-early" onClick={() => setEndPhase('early')}>Finish early</button>}
     <AnimatePresence mode="wait">
       <motion.div key={`${step}-${sub ?? 'q'}-${endPhase ?? ''}`} className="rs-screen" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
         {step === -1 && <div className="rs-intro">
@@ -181,6 +201,12 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
           <blockquote className="rs-echo">{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).slice(0, 160)}{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).length > 160 ? '…' : ''}</blockquote>
           <h2>{fuItem.q}</h2>
           <LongAnswer label={fuItem.q} value={fuItem.a} set={setFuAnswer} onDone={() => void next()} />
+        </div>}
+        {endPhase === 'early' && <div className="rs-intro rs-ending">
+          <h1>Finish now?</h1>
+          <p>We’ll save everything you’ve answered so far. It all helps, thank you!</p>
+          <div className="rs-offer-actions"><button type="button" className="rs-primary" disabled={!!busy} onClick={() => void finishEarly()}>{busy === 'sending' ? 'Saving…' : 'Save and finish'}</button><button type="button" className="rs-ghost" disabled={!!busy} onClick={() => setEndPhase(null)}>Keep going</button></div>
+          {error && <p className="rs-error" role="alert">{error}</p>}
         </div>}
         {endPhase === 'loading' && <div className="rs-intro rs-ending"><span className="rs-dots" aria-hidden="true"><i /><i /><i /></span><h1>Putting it together…</h1><p>A quick recap of what you told us.</p></div>}
         {(endPhase === 'recap' || endPhase === 'fix') && endAns?.recap && <div className="rs-q rs-recap">
@@ -244,7 +270,8 @@ function QuestionView({ q, section, index, total, value, set, other, setOther, e
         onClick={() => set(q.type === 'single' ? o : on ? list.filter(x => x !== o) : [...list, o])}>{pics ? <>{img ? <img src={img} alt="" /> : <span className="rs-card-ph" aria-hidden="true" />}<span className="rs-card-label">{mark}{o}</span></> : <>{mark}{o}</>}</button>; })}
       {pickedOther(value) && (q.options ?? []).some(isOtherOption) && <OtherBox value={other} set={setOther} prompt={q.prompt} />}
     </div>; })()}
-    {(q.type === 'scale' || q.type === 'nps') && (() => { const lo = q.type === 'nps' ? 0 : q.min ?? 1, hi = q.type === 'nps' ? 10 : q.max ?? 5; return <div className={`rs-scale ${q.type === 'nps' ? 'is-nps' : ''}`}>
+    {q.type === 'scale' && q.slider && <SliderAnswer q={q} value={value} set={set} />}
+    {(q.type === 'scale' && !q.slider || q.type === 'nps') && (() => { const lo = q.type === 'nps' ? 0 : q.min ?? 1, hi = q.type === 'nps' ? 10 : q.max ?? 5; return <div className={`rs-scale ${q.type === 'nps' ? 'is-nps' : ''}`}>
       <div className="rs-scale-row" role="radiogroup" aria-label={q.prompt}>{Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map(v => <button key={v} type="button" role="radio" aria-checked={value === v} className={value === v ? 'is-on' : ''} onClick={() => set(v)}>{v}</button>)}</div>
       <div className="rs-scale-labels"><span>{q.type === 'nps' ? 'Not at all likely' : q.minLabel}</span><span>{q.type === 'nps' ? 'Extremely likely' : q.maxLabel}</span></div>
     </div>; })()}
@@ -253,6 +280,22 @@ function QuestionView({ q, section, index, total, value, set, other, setOther, e
     {q.type === 'contact' && <ContactFields q={q} value={value} set={set} errors={errors} />}
     {q.type === 'schedule' && <Booking q={q} value={value} set={set} contact={contact} preview={preview} />}
     {q.type === 'photo' && <PhotoAnswer q={q} value={value} set={set} upload={onUploadPhoto} />}
+  </div>;
+}
+
+/* A 1–10 (or 1–5/7) slider. Nothing is picked until they touch it. */
+function SliderAnswer({ q, value, set }: { q: Question; value: unknown; set: (v: unknown) => void }) {
+  const lo = q.min ?? 1, hi = q.max ?? 10;
+  const has = typeof value === 'number';
+  const v = has ? value as number : Math.round((lo + hi) / 2);
+  const pct = ((v - lo) / (hi - lo)) * 100;
+  return <div className={`rs-slider ${has ? 'has-value' : ''}`}>
+    <div className="rs-slider-value" aria-hidden="true">{has ? v : '–'}<small>{has ? ` / ${hi}` : 'Drag or tap'}</small></div>
+    <input type="range" min={lo} max={hi} step={1} value={v} aria-label={q.prompt} aria-valuetext={has ? String(v) : 'Not answered'}
+      style={{ ['--pct' as string]: `${pct}%` }}
+      onChange={e => set(Number(e.target.value))} onPointerUp={e => set(Number((e.target as HTMLInputElement).value))} onKeyDown={e => { if (!has && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) set(v); }} />
+    <div className="rs-slider-ticks" aria-hidden="true">{Array.from({ length: hi - lo + 1 }, (_, i) => <span key={i} className={has && lo + i === v ? 'is-on' : ''}>{lo + i}</span>)}</div>
+    <div className="rs-scale-labels"><span>{q.minLabel}</span><span>{q.maxLabel}</span></div>
   </div>;
 }
 
@@ -489,9 +532,9 @@ export default function ParticipantPage({ id }: { id: string }) {
     {test && <div className="rs-testbar" role="status">Test mode · answers aren’t saved to Results{draft ? ' · using your latest edits' : ''}</div>}
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part, ending) => call('submit', { id, answers, ms, followups, others, part, ending, test })}
+      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part, ending, early) => call('submit', { id, answers, ms, followups, others, part, ending, early, test })}
           onEnding={context => call<{ recap?: string; type?: string }>('ending', { id, context, ...(inline ? { test: true, study: inline } : {}) }, !!inline)}
-          onExtend={(saved, answers, ms, followups, others) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others, test })}
+          onExtend={(saved, answers, ms, followups, others, early) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others, early, test })}
           onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used, ...(inline ? { test: true, study: inline } : {}) }, !!inline); return r.question || null; }}
           onUploadPhoto={async (q, file) => {
             const { uploadUrl, path } = await call<{ uploadUrl: string; path: string }>('photoUpload', { id, questionId: q.id, type: file.type || 'image/jpeg', size: file.size });

@@ -35,7 +35,7 @@ const MAX_BODY = 400_000;
 
 type ContactKey = 'name' | 'email' | 'phone';
 type FieldMode = 'off' | 'optional' | 'required';
-type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note' | 'section'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean; bonus?: boolean };
+type Question = { id: string; type: 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note' | 'section'; prompt: string; options?: string[]; min?: number; max?: number; minLabel?: string; maxLabel?: string; required?: boolean; preset?: string; contact?: Partial<Record<ContactKey, FieldMode>>; url?: string; showIf?: { questionId: string; anyOf: string[] }; image?: string; optionImages?: string[]; hint?: string; followups?: number; probe?: string; followIf?: string[]; group?: boolean; bonus?: boolean; slider?: boolean };
 const FOLLOWUP_TYPES = new Set(['long', 'text', 'single', 'multi', 'rank']);
 const PHOTO_TYPES: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'image/gif': 'gif' };
 const httpsUrl = (v: unknown) => /^https:\/\/[^\s"'<>]+$/.test(String(v ?? '')) ? text(v, 800) : '';
@@ -51,7 +51,7 @@ type Outcome = 'success' | 'help' | 'fail' | 'skipped';
 type Transcript = { at: string; speakers: string[]; segments: Array<{ s: number; e: number; spk: number; text: string }> };
 type Session = { id: string; at: string; participant: string; durationMs: number; audioPath?: string; notes?: string; notionPageId?: string; transcript?: Transcript; tasks: Array<{ taskId: string; status: Outcome; ms: number; notes?: string; tags?: string[] }> };
 type Ending = { recap?: boolean; title?: string; types?: Array<{ name: string; blurb?: string; image?: string; who?: string }> };
-type Study = { id: string; kind: 'survey' | 'usability'; ending?: Ending; goal?: string; followupBudget?: number; theme?: { accent?: string; background?: string; cover?: string }; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
+type Study = { id: string; kind: 'survey' | 'usability'; ending?: Ending; predictions?: string; goal?: string; followupBudget?: number; theme?: { accent?: string; background?: string; cover?: string }; format?: 'interview'; tasks?: Task[]; title: string; projectId?: string; projectTitle?: string; intro?: string; thanks?: string; status: 'open' | 'closed'; questions: Question[]; notion?: { pageUrl?: string; databaseId?: string; error?: string }; createdAt?: string; updatedAt?: string };
 
 const cleanId = (v: unknown) => String(v ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
 const text = (v: unknown, n = 2000) => String(v ?? '').slice(0, n);
@@ -92,7 +92,7 @@ Deno.serve(async (request) => {
       const study = await readJson<Study>(`studies/${cleanId(body.id)}.json`);
       if (!study) return reply({ error: 'This study could not be found.' }, 404);
       if (study.status !== 'open') return reply({ error: 'This study is closed. Thank you for your interest.' }, 410);
-      const { notion: _n, goal: _g, ...publicStudy } = study;
+      const { notion: _n, goal: _g, predictions: _pr, ...publicStudy } = study;
       const ending = study.ending ? { ...study.ending, types: study.ending.types?.map(({ who: _w, ...t }) => t) } : undefined; // who fits each type stays private
       return reply({ study: { ...publicStudy, ending, questions: study.questions.map(({ probe: _p, ...q }) => q) } });
     }
@@ -154,6 +154,7 @@ Deno.serve(async (request) => {
         if (!prior || !prior.editToken || prior.editToken !== String(body.token || '')) return reply({ error: 'Could not find your earlier answers.' }, 400);
       }
       const part = extend ? 'bonus' : body.part === 'core' ? 'core' : 'all';
+      const early = body.early === true; // “Finish early”: keep what they answered, skip required checks
       const answers = (body.answers && typeof body.answers === 'object') ? body.answers as Record<string, unknown> : {};
       const clean: Record<string, Answer> = {};
       for (const q of study.questions) {
@@ -176,7 +177,7 @@ Deno.serve(async (request) => {
         if (q.type === 'schedule') { const st = text(v, 60); if (BOOKING_STATES.has(st)) clean[q.id] = st; continue; }
         if (q.type === 'rank') {
           const order = [...new Set((Array.isArray(v) ? v : []).map(x => text(x, 200)))].filter(x => q.options?.includes(x));
-                    if (order.length) clean[q.id] = order;
+          if (order.length) clean[q.id] = order;
           continue;
         }
         if (q.type === 'photo') {
@@ -211,13 +212,13 @@ Deno.serve(async (request) => {
       const e = body.ending && typeof body.ending === 'object' ? body.ending as Record<string, unknown> : null;
       const endingAns = e && !extend ? Object.fromEntries(Object.entries({ recap: text(e.recap, 800).trim(), ok: e.ok === 'yes' || e.ok === 'no' ? e.ok : '', fix: text(e.fix, 3000).trim(), type: study.ending?.types?.some(t => t.name === e.type) ? text(e.type, 80) : '' }).filter(([, v]) => v)) : null;
       if (extend && prior) {
-        const merged = { ...prior, ms: prior.ms + ms, part: 'full', answers: { ...prior.answers, ...clean }, followups: { ...(prior.followups ?? {}), ...followups }, others: { ...(prior.others ?? {}), ...others }, editToken: undefined };
+        const merged = { ...prior, ms: prior.ms + ms, part: 'full', ...(early ? { early: true } : {}), answers: { ...prior.answers, ...clean }, followups: { ...(prior.followups ?? {}), ...followups }, others: { ...(prior.others ?? {}), ...others }, editToken: undefined };
         await writeJson(`${folder}/${id}/${ref}`, merged);
         if (study.notion?.databaseId && !body.test) await notionRow(study, merged, prior.notionPageId).catch(() => undefined);
         return reply({ ok: true });
       }
       const editToken = part === 'core' ? crypto.randomUUID() : undefined;
-      const response: Record<string, unknown> & { id: string; at: string; ms: number; answers: Record<string, Answer> } = { id: crypto.randomUUID(), at: new Date().toISOString(), ms, answers: clean, ...(Object.keys(followups).length ? { followups } : {}), ...(Object.keys(others).length ? { others } : {}), ...(endingAns && Object.keys(endingAns).length ? { ending: endingAns } : {}), ...(part === 'core' ? { part: 'core', editToken } : {}) };
+      const response: Record<string, unknown> & { id: string; at: string; ms: number; answers: Record<string, Answer> } = { id: crypto.randomUUID(), at: new Date().toISOString(), ms, answers: clean, ...(Object.keys(followups).length ? { followups } : {}), ...(Object.keys(others).length ? { others } : {}), ...(endingAns && Object.keys(endingAns).length ? { ending: endingAns } : {}), ...(early ? { early: true } : {}), ...(part === 'core' ? { part: 'core', editToken } : {}) };
       const file = `${response.at.replace(/[:.]/g, '-')}-${response.id.slice(0, 8)}.json`;
       if (study.notion?.databaseId && !body.test) { const pageId = await notionRow(study, response as never).catch(() => undefined); if (pageId && part === 'core') response.notionPageId = pageId; }
       await writeJson(`${folder}/${id}/${file}`, response);
@@ -236,6 +237,7 @@ Deno.serve(async (request) => {
         id, kind: s.kind === 'usability' ? 'usability' : 'survey', format: s.kind === 'usability' && s.format === 'interview' ? 'interview' : undefined, tasks: Array.isArray(s.tasks) ? s.tasks.slice(0, 30).map(t => ({ id: cleanId(t.id) || crypto.randomUUID().slice(0, 8), title: text(t.title, 200), scenario: text(t.scenario, 1500), success: text(t.success, 500) })) : undefined, title: text(s.title, 200) || 'Untitled study', projectId: s.projectId ? text(s.projectId, 80) : undefined, projectTitle: s.projectTitle ? text(s.projectTitle, 200) : undefined, intro: text(s.intro, 2000), thanks: text(s.thanks, 1000),
         status: s.status === 'closed' ? 'closed' : 'open',
         goal: s.goal ? text(s.goal, 2000) : undefined,
+        predictions: s.predictions ? text(s.predictions, 3000) : undefined,
         followupBudget: Number(s.followupBudget) >= 0 && s.followupBudget != null ? Math.min(20, Math.round(Number(s.followupBudget))) : undefined,
         ending: cleanEnding(s.ending),
         theme: s.theme ? { accent: color(s.theme.accent), background: color(s.theme.background), cover: httpsUrl(s.theme.cover) || undefined } : undefined,
@@ -247,6 +249,7 @@ Deno.serve(async (request) => {
           probe: FOLLOWUP_TYPES.has(q.type) && q.probe ? text(q.probe, 600) : undefined,
           group: (q.type === 'single' || q.type === 'multi') && q.group ? true : undefined,
           bonus: q.bonus ? true : undefined,
+          slider: q.type === 'scale' && q.slider ? true : undefined,
           followIf: (q.type === 'single' || q.type === 'multi') && Array.isArray(q.followIf) && q.followIf.length ? q.followIf.map(o => text(o, 200)).slice(0, 30) : undefined,
           image: httpsUrl(q.image) || undefined,
           optionImages: Array.isArray(q.optionImages) && (q.type === 'single' || q.type === 'multi' || q.type === 'rank') ? q.optionImages.slice(0, 30).map(httpsUrl) : undefined,
