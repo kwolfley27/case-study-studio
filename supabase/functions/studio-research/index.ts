@@ -167,8 +167,8 @@ Deno.serve(async (request) => {
           const c: Partial<Record<ContactKey, string>> = {};
           for (const k of CONTACT_KEYS) { if (fieldMode(q, k) === 'off') continue; const val = text(a[k], k === 'name' ? 120 : 200).trim(); if (val) c[k] = val; }
           const empty = !Object.keys(c).length;
-          if (empty && !q.required) continue;
-          for (const k of CONTACT_KEYS) if (fieldMode(q, k) === 'required' && !c[k]) return reply({ error: `Please add your ${k}.` }, 400);
+          if (empty) continue;
+          
           if (c.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email)) return reply({ error: 'Please check your email address.' }, 400);
           if (c.phone && c.phone.replace(/\D/g, '').length < 7) return reply({ error: 'Please check your phone number.' }, 400);
           clean[q.id] = c; continue;
@@ -176,16 +176,15 @@ Deno.serve(async (request) => {
         if (q.type === 'schedule') { const st = text(v, 60); if (BOOKING_STATES.has(st)) clean[q.id] = st; continue; }
         if (q.type === 'rank') {
           const order = [...new Set((Array.isArray(v) ? v : []).map(x => text(x, 200)))].filter(x => q.options?.includes(x));
-          if (q.required && order.filter(x => !/^other\b/i.test(x.trim())).length < (q.options ?? []).filter(o => !/^other\b/i.test(o.trim())).length) return reply({ error: `Please rank every option: ${q.prompt}` }, 400);
-          if (order.length) clean[q.id] = order;
+                    if (order.length) clean[q.id] = order;
           continue;
         }
         if (q.type === 'photo') {
           const paths = (Array.isArray(v) ? v : []).map(x => text(x, 200)).filter(x => x.startsWith(`photos/${id}/`) && !x.includes('..')).slice(0, 3);
-          if (paths.length) clean[q.id] = paths; else if (q.required) return reply({ error: `Please add a photo: ${q.prompt}` }, 400);
+          if (paths.length) clean[q.id] = paths;
           continue;
         }
-        if (v == null || v === '') { if (q.required) return reply({ error: `Please answer: ${q.prompt}` }, 400); continue; }
+        if (v == null || v === '') continue; // required answers are enforced on the page; the page may be an older version of the survey
         if (q.type === 'multi') clean[q.id] = (Array.isArray(v) ? v : [v]).map(x => text(x, 200)).filter(x => q.options?.includes(x)).slice(0, 30);
         else if (q.type === 'single') { const s = text(v, 200); if (q.options?.includes(s)) clean[q.id] = s; }
         else if (q.type === 'scale' || q.type === 'nps') { const n = Number(v); const lo = q.type === 'nps' ? 0 : (q.min ?? 1), hi = q.type === 'nps' ? 10 : (q.max ?? 5); if (Number.isFinite(n) && n >= lo && n <= hi) clean[q.id] = Math.round(n); }
