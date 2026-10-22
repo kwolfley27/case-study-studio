@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BOOKED, OPENED, onColor, bookingUrl, call, readDrafts, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, wantsFollowUp, estimateMinutes, answerWords, isOtherOption, pickedOther, DEFAULT_FOLLOWUP_BUDGET, type ContactKey, type FollowUp, type Question, type Study } from './research';
+import { BOOKED, OPENED, onColor, bookingUrl, call, readDrafts, contactErrors, contactModes, CONTACT_FIELDS, isCalendly, isShown, splitPrompt, canFollowUp, wantsFollowUp, estimateMinutes, answerWords, isOtherOption, pickedOther, isScreen, sectionOf, DEFAULT_FOLLOWUP_BUDGET, type ContactKey, type EndingAnswer, type ResultType, type FollowUp, type Question, type Study } from './research';
 import './research.css';
 
 const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.values(v as object).some(x => String(x ?? '').trim()));
@@ -11,11 +11,13 @@ const hasValue = (v: unknown) => v != null && v !== '' && !(Array.isArray(v) && 
 type AskFollowUp = (q: Question, answer: string, history: FollowUp[], context: FollowUp[], used: number) => Promise<string | null>;
 type UploadPhoto = (q: Question, file: File) => Promise<string>;
 type Saved = { ref: string; token: string };
-type Submit = (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, part?: 'core') => Promise<unknown>;
+type Submit = (answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, part?: 'core', ending?: EndingAnswer) => Promise<unknown>;
+/** Ask the AI for a short recap of their answers and which result type fits them best. */
+type AskEnding = (context: Array<{ q: string; a: string }>) => Promise<{ recap?: string; type?: string }>;
 type Extend = (saved: Saved, answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>) => Promise<unknown>;
 
 
-export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, onUploadPhoto, startAt }: { study: Study; preview?: boolean; onSubmit?: Submit; onExtend?: Extend; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; startAt?: number }) {
+export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, onUploadPhoto, onEnding, startAt }: { study: Study; preview?: boolean; onSubmit?: Submit; onExtend?: Extend; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; onEnding?: AskEnding; startAt?: number }) {
   const [step, setStep] = useState(startAt ?? -1); // -1 intro, 0..n-1 questions, n thanks
   const [sub, setSub] = useState<number | null>(null); // which follow-up of the current question is showing
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -30,6 +32,13 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const [bonusMode, setBonusMode] = useState(false);
   const [saved, setSaved] = useState<Saved | null>(null);
   const [finished, setFinished] = useState(false);
+  // The end: a recap to confirm or correct, and a result ("You're a Sunday Prepper").
+  const ending = study.ending;
+  const types = (ending?.types ?? []).filter(t => t.name.trim());
+  const endingOn = !preview && !!onEnding && (!!ending?.recap || types.length > 0);
+  const [endPhase, setEndPhase] = useState<null | 'loading' | 'recap' | 'fix'>(null);
+  const [endAns, setEndAns] = useState<EndingAnswer | null>(null);
+  const result: ResultType | undefined = preview ? types[0] : types.find(t => t.name === endAns?.type);
   const hasBonus = !preview && !!onExtend && study.questions.some(x => x.bonus);
   useEffect(() => { if (startAt !== undefined) { setStep(startAt); setSub(null); } }, [startAt]);
   const visible = study.questions.filter(q => isShown(q, answers));
@@ -55,7 +64,21 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const contact = study.questions.filter(x => x.type === 'contact').map(x => answers[x.id]).find(hasValue) as Partial<Record<ContactKey, string>> | undefined;
   const go = (s: number) => { setTouched(false); setSub(null); setStep(s); };
   const shownIds = () => new Set(qs.map(x => x.id));
-  const advance = async () => {
+  /** What they said, in plain words, for the recap (names and contact details never go to the AI). */
+  const recapContext = () => qs.filter(x => !isScreen(x) && x.preset !== 'name' && x.type !== 'contact' && x.type !== 'schedule' && x.type !== 'photo').map(x => {
+    const a = answerWords(answers[x.id], x, others[x.id]); const f = (fu[x.id] ?? []).filter(y => y.a.trim()).map(y => ` / asked "${y.q}": ${y.a}`).join('');
+    return { q: x.prompt, a: a ? a + f : '' };
+  }).filter(x => x.a);
+  const advance = async (endNow?: EndingAnswer) => {
+    if (step === n - 1 && endingOn && !bonusMode && !endNow) {
+      setEndPhase('loading'); setError('');
+      const r: { recap?: string; type?: string } = await Promise.race([onEnding!(recapContext()).catch(() => ({})), new Promise<{ recap?: string; type?: string }>(res => window.setTimeout(() => res({}), 9000))]);
+      const type = types.find(t => t.name === r.type)?.name ?? (types.length === 1 ? types[0].name : undefined);
+      const got: EndingAnswer = { ...(r.recap ? { recap: r.recap.slice(0, 800) } : {}), ...(type ? { type } : {}) };
+      setEndAns(got);
+      if (ending?.recap && got.recap) { setEndPhase('recap'); return; }
+      setEndPhase(null); await advance(got); return;
+    }
     if (step === n - 1) {
       setBusy('sending'); setError('');
       // Only send answers to questions the participant actually saw.
@@ -65,9 +88,9 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
       const sent = Object.fromEntries(Object.entries(answers).filter(([k]) => shown.has(k)));
       try {
         if (hasBonus && bonusMode && saved) { const b = new Set(bonusQs.map(x => x.id)); const only = <T,>(o: Record<string, T>) => Object.fromEntries(Object.entries(o).filter(([k]) => b.has(k))); await onExtend!(saved, only(sent), Date.now() - started.current, only(sentFu), only(sentOthers)); setFinished(true); }
-        else if (hasBonus) { const r = await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers, 'core') as Partial<Saved> | undefined; if (r?.ref && r.token) setSaved({ ref: r.ref, token: r.token }); else setFinished(true); }
-        else { await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers); setFinished(true); }
-        go(n);
+        else if (hasBonus) { const r = await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers, 'core', endNow) as Partial<Saved> | undefined; if (r?.ref && r.token) setSaved({ ref: r.ref, token: r.token }); else setFinished(true); }
+        else { await onSubmit?.(sent, Date.now() - started.current, sentFu, sentOthers, undefined, endNow); setFinished(true); }
+        setEndPhase(null); go(n);
       }
       catch (e) { setError(e instanceof Error ? e.message : 'Could not send your answers. Please try again.'); }
       finally { setBusy(''); }
@@ -130,6 +153,10 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey && (e.target as HTMLElement).tagName !== 'TEXTAREA') { e.preventDefault(); void next(); } };
   const condition = preview && q?.showIf?.anyOf?.length ? (() => { const i = study.questions.findIndex(x => x.id === q.showIf!.questionId); return i >= 0 ? `Only shown if Q${i + 1} is ${q.showIf!.anyOf.map(o => `“${o}”`).join(' or ')}` : ''; })() : '';
   const fuNote = preview && q && canFollowUp(q) && (q.followups ?? 0) > 0 ? `After they answer${q.followIf?.length ? ` ${q.followIf.map(o => `“${o}”`).join(' or ')}` : ''}, AI asks up to ${q.followups} follow-up${q.followups === 1 ? '' : 's'} about what they said` : '';
+  const secOf = sectionOf(qs);
+  const coreSections = qs.filter(x => x.type === 'section' && !x.bonus);
+  /** "Part 2 of 5" on a section screen; the section's name on its questions. */
+  const sectionLabel = (x: Question) => x.type === 'section' ? (x.bonus ? 'Bonus round' : `Part ${coreSections.indexOf(x) + 1} of ${coreSections.length}`) : secOf.get(x.id)?.prompt ?? '';
   const lastLabel = step === n - 1 && !(maxFu && (sub === null ? answered : fuList.length < maxFu)) ? 'Submit' : 'Next';
 
   const t = study.theme ?? {};
@@ -137,7 +164,7 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   return <div className={`rs ${preview ? 'is-preview' : ''}`} style={themeStyle} onKeyDown={onKey}>
     {step >= 0 && step < n && <div className="rs-progress" aria-hidden="true"><i style={{ width: `${((step + (answered ? 1 : 0)) / n) * 100}%` }} /></div>}
     <AnimatePresence mode="wait">
-      <motion.div key={`${step}-${sub ?? 'q'}`} className="rs-screen" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
+      <motion.div key={`${step}-${sub ?? 'q'}-${endPhase ?? ''}`} className="rs-screen" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .35, ease: [0.22, 1, 0.36, 1] }}>
         {step === -1 && <div className="rs-intro">
           {t.cover && <img className="rs-cover" src={t.cover} alt="" />}
           <h1>{study.title}</h1>
@@ -148,38 +175,65 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
             {ai && <span>An AI may ask a quick follow-up about what you say.</span>}
           </div>; })()}
         </div>}
-        {q && !fuItem && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}{preview && q.bonus && <p className="rs-condition">Bonus round: only if they choose to keep going after the short version</p>}<QuestionView q={q} index={step} total={n} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} onDone={preview ? undefined : () => void next()} /></>}
-        {q && fuItem && <div className="rs-q">
-          <small className="rs-count">{step + 1} / {n} · follow-up</small>
+        {q && !fuItem && !endPhase && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}{preview && q.bonus && <p className="rs-condition">Bonus round: only if they choose to keep going after the short version</p>}<QuestionView q={q} index={step} total={n} section={sectionLabel(q)} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} onDone={preview ? undefined : () => void next()} /></>}
+        {q && fuItem && !endPhase && <div className="rs-q">
+          <small className="rs-count">{sectionLabel(q) ? <span className="rs-count-sec">{sectionLabel(q)}</span> : null}follow-up</small>
           <blockquote className="rs-echo">{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).slice(0, 160)}{answerWords(sub === 0 ? value : fuList[sub! - 1]?.a, sub === 0 ? q : undefined).length > 160 ? '…' : ''}</blockquote>
           <h2>{fuItem.q}</h2>
           <LongAnswer label={fuItem.q} value={fuItem.a} set={setFuAnswer} onDone={() => void next()} />
         </div>}
+        {endPhase === 'loading' && <div className="rs-intro rs-ending"><span className="rs-dots" aria-hidden="true"><i /><i /><i /></span><h1>Putting it together…</h1><p>A quick recap of what you told us.</p></div>}
+        {(endPhase === 'recap' || endPhase === 'fix') && endAns?.recap && <div className="rs-q rs-recap">
+          <small className="rs-count">Before you go</small>
+          <h2>Here’s what we heard</h2>
+          <p className="rs-recap-text">{endAns.recap}</p>
+          {endPhase === 'recap' ? <>
+            <p className="rs-hint">Did we get that right?</p>
+            <div className="rs-recap-actions">
+              <button type="button" className="rs-primary" disabled={!!busy} onClick={() => { const a = { ...endAns, ok: 'yes' as const }; setEndAns(a); void advance(a); }}>{busy === 'sending' ? 'Sending…' : 'Yes, that’s right'}</button>
+              <button type="button" className="rs-ghost" disabled={!!busy} onClick={() => setEndPhase('fix')}>Not quite</button>
+            </div>
+          </> : <>
+            <p className="rs-hint">What did we get wrong, or miss?</p>
+            <LongAnswer label="What did we get wrong?" value={endAns.fix ?? ''} set={v => setEndAns(a => ({ ...a!, fix: v }))} />
+            <div className="rs-recap-actions">
+              <button type="button" className="rs-primary" disabled={!!busy} onClick={() => { const a = { ...endAns, ok: 'no' as const, fix: (endAns.fix ?? '').trim() || undefined }; void advance(a); }}>{busy === 'sending' ? 'Sending…' : 'Send my answers'}</button>
+              <button type="button" className="rs-ghost" disabled={!!busy} onClick={() => setEndPhase('recap')}>Back</button>
+            </div>
+          </>}
+          {error && <p className="rs-error" role="alert">{error}</p>}
+        </div>}
         {step === n && hasBonus && saved && !bonusMode && !finished && <div className="rs-intro rs-offer">
-          <span className="rs-check" aria-hidden="true">✓</span>
+          {result ? <ResultCard title={ending?.title} type={result} /> : <span className="rs-check" aria-hidden="true">✓</span>}
           <h1>That’s it, thank you!</h1>
           {(() => { const m = estimateMinutes(bonusQs, Math.max(0, (study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) - used)); return <p>Your answers are saved. Got about {m} more minute{m === 1 ? '' : 's'} for a few bonus questions?</p>; })()}
           <div className="rs-offer-actions"><button type="button" className="rs-primary" onClick={() => { setBonusMode(true); started.current = Date.now(); go(coreQs.length); }}>Keep going</button><button type="button" className="rs-ghost" onClick={() => setFinished(true)}>I’m done</button></div>
         </div>}
-        {step === n && (!hasBonus || finished || !saved) && <div className="rs-intro rs-thanks"><span className="rs-check" aria-hidden="true">✓</span><h1>{study.thanks || 'Thank you.'}</h1><p>You can close this page now.</p></div>}
+        {step === n && (!hasBonus || finished || !saved) && <div className="rs-intro rs-thanks">{result && !(hasBonus && bonusMode) ? <ResultCard title={ending?.title} type={result} /> : <span className="rs-check" aria-hidden="true">✓</span>}<h1>{study.thanks || 'Thank you.'}</h1><p>You can close this page now.</p></div>}
       </motion.div>
     </AnimatePresence>
-    {q && <div className="rs-nav">
+    {q && !endPhase && <div className="rs-nav">
       {bonusMode && step === coreQs.length && sub === null ? <span /> : <button type="button" className="rs-ghost" onClick={back}>Back</button>}
       <div className="rs-nav-right">
         {error && <span className="rs-error" role="alert">{error}</span>}
         {fuItem ? !fuItem.a.trim() && <button type="button" className="rs-ghost" disabled={!!busy} onClick={() => void advance()}>Skip</button>
-          : q.type !== 'note' && !q.required && !answered && step < n - 1 && <button type="button" className="rs-ghost" onClick={() => go(step + 1)}>{q.type === 'schedule' ? 'Not now' : 'Skip'}</button>}
+          : !isScreen(q) && !q.required && !answered && step < n - 1 && <button type="button" className="rs-ghost" onClick={() => go(step + 1)}>{q.type === 'schedule' ? 'Not now' : 'Skip'}</button>}
         <button type="button" className="rs-primary" disabled={!!busy || (!canNext && q.type !== 'contact')} onClick={() => void next()}>{busy === 'thinking' ? 'One sec…' : busy === 'sending' ? 'Sending…' : lastLabel}</button>
       </div>
     </div>}
   </div>;
 }
 
-function QuestionView({ q, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto, onDone }: { onDone?: () => void; q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
+function QuestionView({ q, section, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto, onDone }: { section?: string; onDone?: () => void; q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
   const list = Array.isArray(value) ? value as string[] : [];
+  if (q.type === 'section') return <div className="rs-q rs-section">
+    <small className="rs-section-part">{section}</small>
+    {q.image && <img className="rs-qimg" src={q.image} alt="" />}
+    <h2>{q.prompt}</h2>
+    {q.hint && <p className="rs-sub">{q.hint}</p>}
+  </div>;
   return <div className="rs-q">
-    <small className="rs-count">{index + 1} / {total}{q.type === 'note' ? '' : q.required ? '' : ' · optional'}</small>
+    <small className="rs-count">{section ? <span className="rs-count-sec is-only">{section}</span> : `${index + 1} / ${total}`}{q.type === 'note' ? '' : q.required ? '' : section ? 'optional' : ' · optional'}</small>
     {q.image && <img className="rs-qimg" src={q.image} alt="" />}
     {q.type === 'note' ? <><h2>{q.prompt}</h2>{q.hint && <div className="rs-note-body">{q.hint.split(/\n{2,}/).map((para, k) => <p key={k} className={/^for example/i.test(para.trim()) ? 'rs-note-example' : ''}>{para}</p>)}</div>}</>
       : (() => { const { title, sub } = splitPrompt(q); return <><h2>{title}</h2>{sub && <p className="rs-sub">{sub}</p>}</>; })()}
@@ -199,6 +253,16 @@ function QuestionView({ q, index, total, value, set, other, setOther, errors, co
     {q.type === 'contact' && <ContactFields q={q} value={value} set={set} errors={errors} />}
     {q.type === 'schedule' && <Booking q={q} value={value} set={set} contact={contact} preview={preview} />}
     {q.type === 'photo' && <PhotoAnswer q={q} value={value} set={set} upload={onUploadPhoto} />}
+  </div>;
+}
+
+/* The fun result at the end: "What kind of meal planner are you?" → "You're a Sunday Prepper". */
+function ResultCard({ title, type }: { title?: string; type: ResultType }) {
+  return <div className="rs-result">
+    {title && <small>{title}</small>}
+    <h2>You’re {/^(a|an|the)\s/i.test(type.name) ? '' : /^[aeiou]/i.test(type.name) ? 'an ' : 'a '}{type.name}</h2>
+    {type.image && <img src={type.image} alt="" />}
+    {type.blurb && <p>{type.blurb}</p>}
   </div>;
 }
 
@@ -420,12 +484,13 @@ export default function ParticipantPage({ id }: { id: string }) {
     if (draft) { setStudy(draft); document.title = `Test: ${draft.title}`; return; }
     call<{ study: Study }>('get', { id }).then(d => { setStudy(d.study); document.title = test ? `Test: ${d.study.title}` : d.study.title; }, e => setError(e instanceof Error ? e.message : 'Could not open this study.'));
   }, [id]);
-  const inline = draft ? { questions: draft.questions, goal: draft.goal, followupBudget: draft.followupBudget } : undefined;
+  const inline = draft ? { questions: draft.questions, goal: draft.goal, followupBudget: draft.followupBudget, ending: draft.ending } : undefined;
   return <main className={`rs-page ${study?.theme?.background ? 'has-theme' : ''} ${test ? 'is-test' : ''}`} style={study?.theme?.background ? { '--rs-bg': study.theme.background } as React.CSSProperties : undefined}>
     {test && <div className="rs-testbar" role="status">Test mode · answers aren’t saved to Results{draft ? ' · using your latest edits' : ''}</div>}
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part) => call('submit', { id, answers, ms, followups, others, part, test })}
+      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part, ending) => call('submit', { id, answers, ms, followups, others, part, ending, test })}
+          onEnding={context => call<{ recap?: string; type?: string }>('ending', { id, context, ...(inline ? { test: true, study: inline } : {}) }, !!inline)}
           onExtend={(saved, answers, ms, followups, others) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others, test })}
           onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used, ...(inline ? { test: true, study: inline } : {}) }, !!inline); return r.question || null; }}
           onUploadPhoto={async (q, file) => {

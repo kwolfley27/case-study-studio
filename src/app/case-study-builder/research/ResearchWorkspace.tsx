@@ -6,7 +6,7 @@ import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
 import { SurveyRunner } from './SurveyRunner';
-import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, testLink, fmtMs, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, type ContactKey, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
+import { ACCENTS, BACKGROUNDS, duplicateQuestion, aggregate, BOOKED, call, CONTACT_FIELDS, contactModes, getPasscode, isCalendly, testLink, fmtMs, splitPrompt, estimateMinutes, answerWords, letterQuestions, aboutYouQuestions, groupQuestions, groupLabel, participantName, filterByGroups, bucketCount, AGE_RANGES, canFollowUp, isChoice, hasOptions, lintQuestion, DEFAULT_FOLLOWUP_BUDGET, NeedsPasscode, newQuestion, newStudy, newUsability, newInterview, npsQuestion, participantLink, QUESTION_TYPES, readDrafts, recruitQuestions, setPasscode, susQuestions, susScore, writeDrafts, moreQuestion, sectionEnd, sectionMore, isScreen, type ContactKey, type Ending, type ResultType, type FieldMode, type Question, type QuestionResult, type Response, type Study } from './research';
 import { createSection, type CaseStudySection } from '../model';
 import './research.css';
 
@@ -92,7 +92,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
       {qs.some(q => q.bonus) && <p className="rw-note" style={{ margin: '-4px 0 0' }}>Everyone gets the short version. At the end they’re offered the bonus round, and their short answers are already saved. Mark a question “Bonus round” to move it there.</p>}
       <div className="rw-viewswitch" role="tablist" aria-label="Question view"><button type="button" role="tab" aria-selected={!mapView} onClick={() => setMapView(false)}>List</button><button type="button" role="tab" aria-selected={mapView} onClick={() => setMapView(true)}>Map</button></div>
       {mapView ? <SurveyMap study={study} onPick={i => { setPreviewAt(i); setMapView(false); requestAnimationFrame(() => document.querySelectorAll('.rw-q')[i]?.scrollIntoView({ block: 'center', behavior: 'smooth' })); }} /> : <>
-      {qs.map((q, i) => <div key={q.id} className={`rw-q ${previewAt === i ? 'is-on' : ''}`} onFocusCapture={() => setPreviewAt(i)} onClick={() => setPreviewAt(i)}>
+      {qs.map((q, i) => <div key={q.id} className={`rw-q ${previewAt === i ? 'is-on' : ''} ${q.type === 'section' ? 'is-section' : ''}`} onFocusCapture={() => setPreviewAt(i)} onClick={() => setPreviewAt(i)}>
         <div className="rw-q-head">
           <span className="rw-q-num">{i + 1}</span>
           <select value={q.type} aria-label="Question type" disabled={!!q.preset && (q.preset.startsWith('sus-') || q.preset === 'nps' || q.preset === 'name')} onChange={e => { const t = e.target.value as Question['type']; const base = newQuestion(t); setQ(i, { type: t, options: base.options, min: base.min, max: base.max, minLabel: base.minLabel, maxLabel: base.maxLabel, contact: base.contact, url: t === 'schedule' ? q.url ?? '' : undefined, ...(t === 'contact' || t === 'schedule' ? { prompt: base.prompt, required: base.required } : {}) }); }}>{QUESTION_TYPES.map(([t, l]) => <option key={t} value={t}>{l}</option>)}</select>
@@ -106,9 +106,10 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
             <button type="button" aria-label="Delete question" onClick={() => removeQ(i)}><X size={13} /></button>
           </span>
         </div>
-        <textarea className="rw-prompt" rows={2} value={q.prompt} readOnly={q.preset?.startsWith('sus-')} onChange={e => setQ(i, { prompt: e.target.value })} aria-label={`Question ${i + 1}`} />
+        {q.type === 'section' && <small className="rw-note rw-section-note">Section title. People see it on its own screen as “Part 2 of 5”, and above each of its questions.</small>}
+        <textarea className="rw-prompt" rows={q.type === 'section' ? 1 : 2} value={q.prompt} readOnly={q.preset?.startsWith('sus-')} onChange={e => setQ(i, { prompt: e.target.value })} aria-label={`Question ${i + 1}`} />
         {q.type === 'note' && <textarea className="rw-input rw-note-body" value={q.hint ?? ''} placeholder="What people should know before the next questions. Leave a blank line between paragraphs. A paragraph starting with “For example” is shown as an example." aria-label={`Screen ${i + 1} text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
-        {q.type !== 'note' && !q.preset?.startsWith('sus-') && <input className="rw-input rw-hint-input" value={q.hint ?? ''} placeholder={splitPrompt({ prompt: q.prompt }).sub ? 'Helper text: the part in brackets above already shows small and gray' : 'Helper text (optional): shows smaller and lighter, e.g. “For example, …”'} aria-label={`Question ${i + 1} helper text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
+        {q.type !== 'note' && !q.preset?.startsWith('sus-') && <input className="rw-input rw-hint-input" value={q.hint ?? ''} placeholder={q.type === 'section' ? 'One line under the title (optional), e.g. “A few questions about how you plan meals.”' : splitPrompt({ prompt: q.prompt }).sub ? 'Helper text: the part in brackets above already shows small and gray' : 'Helper text (optional): shows smaller and lighter, e.g. “For example, …”'} aria-label={`Question ${i + 1} helper text`} onChange={e => setQ(i, { hint: e.target.value || undefined })} />}
         {(() => { const lints = lintQuestion(q); return lints.length > 0 && <div className="rw-lints">{lints.map((l, k) => <p key={k} className={`rw-lint ${l.level === 'tip' ? 'is-tip' : ''}`}><b>{l.level === 'warn' ? 'Check' : 'Tip'}</b>{l.text}</p>)}</div>; })()}
         {hasOptions(q) && <div className="rw-opts">
           {(q.options ?? []).map((o, k) => <div key={k} className="rw-opt">{q.optionImages ? <OptionImage study={study} src={q.optionImages[k]} label={o} onChange={src => { const imgs = [...(q.optionImages ?? [])]; imgs[k] = src; setQ(i, { optionImages: imgs }); }} /> : q.type === 'rank' ? <span className="rw-rank-num">{k + 1}</span> : <span className={`rs-mark ${q.type === 'multi' ? 'is-box' : ''}`} aria-hidden="true" />}<input value={o} aria-label={`Option ${k + 1}`} onChange={e => setQ(i, { options: q.options!.map((x, n) => n === k ? e.target.value : x) })} /><button type="button" aria-label={`Remove option ${k + 1}`} onClick={() => setQ(i, { options: q.options!.filter((_, n) => n !== k), optionImages: q.optionImages?.filter((_, n) => n !== k) })}><X size={12} /></button></div>)}
@@ -142,10 +143,14 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
           {!!q.followups && <input className="rw-input" value={q.probe ?? ''} placeholder="What to dig into (optional), e.g. If they don’t meal prep, ask what stops them. If they want to, ask why: money, time, health?" aria-label="What the AI should dig into" onChange={e => setQ(i, { probe: e.target.value || undefined })} />}
           {!!q.followups && <small className="rw-note">After they answer, AI asks about what they actually said, one question at a time. It stops early when there’s nothing worth asking.</small>}
         </div>}
-        <ShowIfEditor qs={qs} i={i} setQ={setQ} />
-        <div className="rw-row">{q.type !== 'schedule' && q.type !== 'note' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
+        {q.type !== 'section' && <ShowIfEditor qs={qs} i={i} setQ={setQ} />}
+        {q.type === 'section' && (() => { const k = sectionMore(qs, i); return <div className="rw-row">
+          <label className="rw-req" title="An optional open question at the end of this section, so people can add anything the questions missed"><input type="checkbox" checked={k >= 0} onChange={e => { if (e.target.checked) { const n = [...qs]; n.splice(sectionEnd(qs, i) + 1, 0, moreQuestion(q)); update({ questions: n }); } else update({ questions: qs.filter((_, x) => x !== k) }); }} /> End with “Anything else about {q.prompt.trim().toLowerCase() || 'this'}?”</label>
+          <label className="rw-req" title="Moves this section and all its questions to the bonus round"><input type="checkbox" checked={!!q.bonus} onChange={e => { const end = sectionEnd(qs, i); update({ questions: qs.map((x, n) => n >= i && n <= end ? { ...x, bonus: e.target.checked || undefined } : x) }); }} /> Bonus round (whole section)</label>
+        </div>; })()}
+        {q.type !== 'section' && <div className="rw-row">{q.type !== 'schedule' && q.type !== 'note' && <label className="rw-req"><input type="checkbox" checked={!!q.required} onChange={e => setQ(i, { required: e.target.checked })} /> Required</label>}
           {!q.preset?.startsWith('sus-') && q.preset !== 'name' && q.preset !== 'about' && <label className="rw-req" title="Only asked if they choose to keep going after the short version"><input type="checkbox" checked={!!q.bonus} onChange={e => setQ(i, { bonus: e.target.checked || undefined })} /> Bonus round</label>}
-          {(q.type === 'single' || q.type === 'multi') && !q.preset?.startsWith('sus-') && <label className="rw-req" title="Each answer becomes a group (bucket) you can filter and compare in Results"><input type="checkbox" checked={!!q.group} onChange={e => setQ(i, { group: e.target.checked || undefined })} /> Use answers as groups</label>}</div>
+          {(q.type === 'single' || q.type === 'multi') && !q.preset?.startsWith('sus-') && <label className="rw-req" title="Each answer becomes a group (bucket) you can filter and compare in Results"><input type="checkbox" checked={!!q.group} onChange={e => setQ(i, { group: e.target.checked || undefined })} /> Use answers as groups</label>}</div>}
       </div>)}
       </>}
       <div className="rw-addbar">
@@ -159,12 +164,37 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
         <button type="button" disabled={qs.some(q => q.preset === 'letter')} onClick={() => add(letterQuestions())}><strong>Love it / can’t stand it</strong><small>Two open questions: one food thing they’d never give up, and one they struggle with or can’t stand. The breakup letter shows what to fix; the love letter shows what to keep. Best mid-survey, once people have warmed up.</small></button>
         <button type="button" disabled={hasRecruit} onClick={() => add(recruitQuestions())}><strong>Recruit for interviews</strong><small>“Open to a follow-up interview?” Yes / Maybe / No. Yes and Maybe then get contact info and your Calendly link.</small></button>
       </div>
+      <EndingEditor study={study} update={update} onFocus={() => setPreviewAt(qs.length)} />
       <label className="rw-field"><span>Thank-you message</span><input value={study.thanks ?? ''} onChange={e => update({ thanks: e.target.value })} onFocus={() => setPreviewAt(qs.length)} /></label>
     </div>
     <div className="rw-preview" aria-label="Live preview">
       <div className="rw-phone"><SurveyRunner study={study} preview startAt={previewAt} /></div>
       <small>Live preview · what participants see</small>
       <a className="csb-quiet-button rw-testbtn" href={testLink(study.id)} target="_blank" rel="noreferrer" title="Runs your latest edits with real AI follow-ups. Nothing is saved to Results."><ExternalLink size={13} /> Test it for real</a>
+    </div>
+  </div>;
+}
+
+/* ---------- The end: recap their answers, and a fun result ("What kind of meal planner are you?") ---------- */
+function EndingEditor({ study, update, onFocus }: { study: Study; update: (p: Partial<Study>) => void; onFocus: () => void }) {
+  const e: Ending = study.ending ?? {};
+  const set = (patch: Partial<Ending>) => { const next = { ...e, ...patch }; update({ ending: next.recap || next.title || next.types?.length ? next : undefined }); };
+  const types = e.types ?? [];
+  const setType = (k: number, patch: Partial<ResultType>) => set({ types: types.map((t, n) => n === k ? { ...t, ...patch } : t) });
+  return <div className="rw-ending" onFocusCapture={onFocus} onClick={onFocus}>
+    <p className="rw-kicker">At the end</p>
+    <label className="rw-req"><input type="checkbox" checked={!!e.recap} onChange={ev => set({ recap: ev.target.checked || undefined })} /> Recap their answers</label>
+    <small className="rw-note" style={{ marginTop: -6 }}>AI sums up what they said in 2–3 sentences and asks “Did we get that right?” Corrections show in Results.</small>
+    <div className="rw-ending-result">
+      <label className="rw-field"><span>Result question <em className="rw-private">a fun result they see when they finish</em></span><input value={e.title ?? ''} placeholder="What kind of meal planner are you?" onChange={ev => set({ title: ev.target.value || undefined })} /></label>
+      {types.map((t, k) => <div key={k} className="rw-type">
+        <div className="rw-type-head"><input value={t.name} placeholder={['Sunday Prepper', 'Daily Decider', 'Tracker Who Quit'][k % 3]} aria-label={`Result ${k + 1} name`} onChange={ev => setType(k, { name: ev.target.value })} /><button type="button" className="rw-icon" aria-label={`Remove result ${k + 1}`} onClick={() => set({ types: types.filter((_, n) => n !== k) })}><X size={12} /></button></div>
+        <textarea className="rw-input" rows={2} value={t.blurb ?? ''} placeholder="What they see, e.g. “You plan the week on Sunday and it shows. Your fridge is a well-oiled machine.”" aria-label={`Result ${k + 1} description`} onChange={ev => setType(k, { blurb: ev.target.value || undefined })} />
+        <input className="rw-input" value={t.who ?? ''} placeholder="Who fits (private, helps the AI pick), e.g. preps 3+ times a week" aria-label={`Who fits result ${k + 1}`} onChange={ev => setType(k, { who: ev.target.value || undefined })} />
+        {t.image !== undefined ? <ImageField study={study} label="Picture" value={t.image} onChange={v => setType(k, { image: v })} onRemove={() => setType(k, { image: undefined })} /> : <div className="rw-q-extra"><button type="button" onClick={() => setType(k, { image: '' })}><ImagePlus size={11} /> Picture</button></div>}
+      </div>)}
+      <button type="button" className="rw-add-opt" disabled={types.length >= 8} onClick={() => set({ types: [...types, { name: '' }] })}>+ Add a result</button>
+      {types.length > 0 && <small className="rw-note">AI picks the result that fits each person from their answers. It’s shown after they’ve answered everything, so it can’t change their answers.</small>}
     </div>
   </div>;
 }
@@ -414,6 +444,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
       <button type="button" className="csb-quiet-button" onClick={load}>Refresh</button>
     </div>
     <Groups study={s} all={all} picks={picks} setPicks={setPicks} />
+    <EndingResults study={s} responses={responses} />
     {all.length > 0 && <details className="rw-res rw-routes"><summary><h4>Routes through the survey<small>{Object.keys(picks).length ? 'for this group · ' : ''}how many people took each path</small></h4></summary><SurveyMap study={s} responses={responses} /></details>}
     {!responses.length ? <p className="rw-empty">{all.length ? 'No one in this group yet.' : 'No responses yet. Share the link from the Share tab.'}</p> : <>
       <div className="rw-addrow">
@@ -546,6 +577,20 @@ function Groups({ study, all, picks, setPicks }: { study: Study; all: Response[]
   </div>;
 }
 
+/* How the end of the survey went: result types, and whether the recap was right (with corrections). */
+function EndingResults({ study, responses }: { study: Study; responses: Response[] }) {
+  const got = responses.filter(r => r.ending);
+  if (!got.length) return null;
+  const types = (study.ending?.types ?? []).map(t => ({ name: t.name, n: got.filter(r => r.ending?.type === t.name).length }));
+  const yes = got.filter(r => r.ending?.ok === 'yes').length, no = got.filter(r => r.ending?.ok === 'no');
+  return <div className="rw-res">
+    <h4>At the end<small>{got.length} people</small></h4>
+    {types.some(t => t.n) && <div className="rw-bars">{types.map(t => { const pct = Math.round(t.n / got.length * 100); return <div key={t.name}><span>{t.name}</span><i><b style={{ width: `${pct}%` }} /></i><em>{t.n}</em></div>; })}<small>{study.ending?.title || 'Result'}</small></div>}
+    {(yes + no.length) > 0 && <p className="rw-note">Recap: {yes} said it was right, {no.length} corrected it.</p>}
+    {no.length > 0 && <ul className="rw-quotes">{no.map(r => <li key={r.id}><small className="rw-note">We said: {r.ending?.recap}</small>{r.ending?.fix ? <span>“{r.ending.fix}”</span> : <em className="rw-note">No details given</em>}</li>)}</ul>}
+  </div>;
+}
+
 /* Every response, newest first, with Delete (for test runs that slipped in before test links existed). */
 function ResponseList({ study, responses, onRemoved }: { study: Study; responses: Response[]; onRemoved: () => void }) {
   const [open, setOpen] = useState(false);
@@ -559,7 +604,7 @@ function ResponseList({ study, responses, onRemoved }: { study: Study; responses
   return <div className="rw-res rw-resplist">
     <button type="button" className="rw-resplist-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}><h4>All responses<small>{responses.length} · {open ? 'hide' : 'show'}</small></h4></button>
     {open && <ul>{sorted.map(r => <li key={r.id}>
-      <span><b>{new Date(r.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</b> · {fmtMs(r.ms)}{r.part === 'core' ? ' · short version' : ''}<em>{groupLabel(study, r) || 'No groups'}</em></span>
+      <span><b>{new Date(r.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</b> · {fmtMs(r.ms)}{r.part === 'core' ? ' · short version' : ''}{r.ending?.type ? ` · ${r.ending.type}` : ''}<em>{groupLabel(study, r) || 'No groups'}</em></span>
       <button type="button" className="csb-quiet-button" disabled={busy === r.id} onClick={() => void remove(r)}>{busy === r.id ? 'Deleting…' : 'Delete'}</button>
     </li>)}</ul>}
   </div>;
