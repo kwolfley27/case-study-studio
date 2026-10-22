@@ -266,6 +266,10 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
 
 function QuestionView({ q, section, index, total, value, set, other, setOther, errors, contact, preview, onUploadPhoto, onDone }: { section?: string; onDone?: () => void; q: Question; other: string; setOther: (t: string) => void; index: number; total: number; value: unknown; set: (v: unknown) => void; errors: Partial<Record<ContactKey, string>>; contact?: Partial<Record<ContactKey, string>>; preview?: boolean; onUploadPhoto?: UploadPhoto }) {
   const list = Array.isArray(value) ? value as string[] : [];
+  if (q.type === 'meme') return <div className="rs-q rs-meme">
+    {q.image ? <img src={q.image} alt={q.prompt || 'A meme'} /> : <div className="rs-meme-empty">Add a picture in the builder</div>}
+    {q.prompt.trim() && <p>{q.prompt}</p>}
+  </div>;
   if (q.type === 'section') return <div className="rs-q rs-section">
     <small className="rs-section-part">{section}</small>
     {q.image && <img className="rs-qimg" src={q.image} alt="" />}

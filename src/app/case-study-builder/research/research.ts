@@ -3,7 +3,7 @@ import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 /* Your own research tool: studies, questions, scoring and the server calls. */
 
-export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note' | 'section';
+export type QuestionType = 'single' | 'multi' | 'scale' | 'nps' | 'text' | 'long' | 'contact' | 'schedule' | 'photo' | 'rank' | 'note' | 'section' | 'meme';
 export type ContactKey = 'name' | 'email' | 'phone';
 export type FieldMode = 'off' | 'optional' | 'required';
 /** Show a question only when an earlier choice question was answered with one of these options. */
@@ -102,7 +102,7 @@ export function estimateMinutes(qs: Question[], followupBudget = DEFAULT_FOLLOWU
   let min = 0, fuSlots = 0;
   const branches = new Map<string, Map<string, number>>(); // source question → condition → minutes
   for (const q of qs) {
-    let m = q.type === 'long' ? 0.75 : q.type === 'text' ? 0.3 : q.type === 'photo' ? 0.6 : q.type === 'rank' ? 0.35 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : q.type === 'note' ? 0.15 : q.type === 'section' ? 0.05 : q.type === 'multi' ? 0.2 : 0.15;
+    let m = q.type === 'long' ? 0.75 : q.type === 'text' ? 0.3 : q.type === 'photo' ? 0.6 : q.type === 'rank' ? 0.35 : q.type === 'contact' || q.type === 'schedule' ? 0.5 : q.type === 'note' ? 0.15 : q.type === 'section' || q.type === 'meme' ? 0.05 : q.type === 'multi' ? 0.2 : 0.15;
     if (!q.required && (q.type === 'long' || q.type === 'photo')) m *= 0.5;
     if (q.followups) fuSlots += Math.min(3, q.followups);
     if (q.showIf?.questionId) {
@@ -130,6 +130,7 @@ export const QUESTION_TYPES: Array<[QuestionType, string, string]> = [
   ['photo', 'Show me (photo)', 'Upload a screenshot or photo'],
   ['note', 'Intro screen', 'A screen with no answer, to set up what comes next'],
   ['section', 'Section', 'Starts a new part, like “Meal prep”, with a title screen'],
+  ['meme', 'Meme break', 'Just a picture between questions, to break things up'],
 ];
 
 export const CONTACT_FIELDS: Array<[ContactKey, string]> = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
@@ -171,8 +172,9 @@ export const BOOKED = 'Booked a time', OPENED = 'Opened the booking link';
 
 const qid = () => crypto.randomUUID().slice(0, 8);
 export const newQuestion = (type: QuestionType): Question => ({
-  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo' && type !== 'note' && type !== 'section',
-  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.', note: 'A quick change of pace', section: 'Meal prep' }[type],
+  id: qid(), type, required: type !== 'long' && type !== 'text' && type !== 'schedule' && type !== 'photo' && type !== 'note' && type !== 'section' && type !== 'meme',
+  prompt: { single: 'Which best describes you?', multi: 'Which of these do you use?', scale: 'How easy was it to book a class?', nps: 'How likely are you to recommend this to a friend?', text: 'In a few words, what was hardest?', rank: 'Rank these from best to worst.', long: 'Tell us about the last time you booked a class.', contact: 'How can we reach you?', schedule: 'Pick a time for a 25–30 minute chat', photo: 'Show us: add a screenshot or photo of your last grocery list.', note: 'A quick change of pace', section: 'Meal prep', meme: '' }[type],
+  ...(type === 'meme' ? { image: '' } : {}),
   ...(type === 'contact' ? { contact: { ...DEFAULT_CONTACT } } : {}),
   ...(type === 'schedule' ? { url: '' } : {}),
   ...(type === 'single' || type === 'multi' || type === 'rank' ? { options: ['Option one', 'Option two', 'Option three'] } : {}),
@@ -268,7 +270,7 @@ export function aggregate(study: Study, responses: Response[]): QuestionResult[]
       return { q, kind: 'nps', answered: vals.length, score: Math.round(((p - d) / t) * 100), promoters: p, passives: pa, detractors: d };
     }
     if (q.type === 'contact') return { q, kind: 'contact', answered: vals.length };
-    if (q.type === 'note' || q.type === 'section') return { q, kind: 'note', answered: 0 };
+    if (q.type === 'note' || q.type === 'section' || q.type === 'meme') return { q, kind: 'note', answered: 0 };
     if (q.type === 'photo') return { q, kind: 'photo', answered: vals.length };
     if (q.type === 'rank') {
       const items = (q.options ?? []).map(label => { const pos = vals.map(v => (v as string[]).indexOf(label)).filter(i => i >= 0); return { label, avg: pos.length ? pos.reduce((a, b) => a + b + 1, 0) / pos.length : 0, firsts: pos.filter(i => i === 0).length }; });
@@ -351,7 +353,7 @@ export const fmtMs = (ms: number) => { const s = Math.round(ms / 1000); return `
 
 /* ---------- Sections ---------- */
 /** Screens with no answer. */
-export const isScreen = (q: Question) => q.type === 'note' || q.type === 'section';
+export const isScreen = (q: Question) => q.type === 'note' || q.type === 'section' || q.type === 'meme';
 /** The section each question belongs to (the last section title at or before it), by question id. */
 export function sectionOf(qs: Question[]) {
   const out = new Map<string, Question | undefined>(); let cur: Question | undefined;
