@@ -201,16 +201,13 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
           {t.cover && <img className="rs-cover" src={t.cover} alt="" />}
           <h1>{study.title}</h1>
           {study.intro && <p>{study.intro}</p>}
-          {(() => { const parts = study.questions.filter(x => x.type === 'section' && !x.bonus); return parts.length > 1 && <ol className="rs-parts" aria-label="What we’ll cover">{parts.map(x => <li key={x.id}>{x.prompt}</li>)}</ol>; })()}
+          <p className="rs-anon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg><span><strong>Completely anonymous.</strong> We never ask for your name.</span></p>
           {resume ? <div className="rs-resume">
             <strong>Pick up where you left off?</strong>
             <span>Your answers so far are saved on this device.</span>
             <div className="rs-offer-actions"><button type="button" className="rs-primary" onClick={() => pickUp(resume)}>Continue</button><button type="button" className="rs-ghost" onClick={() => { forget(); setResume(null); }}>Start over</button></div>
           </div> : <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>}
-          {(() => { const talk = study.questions.some(x => x.type === 'long'); const ai = study.questions.some(x => x.followups); return <div className="rs-meta">
-            <span>About {estimateMinutes(preview ? study.questions.filter(x => !x.bonus) : hasBonus ? coreQs : visible, study.followupBudget)} min{talk ? ' · Talk or type' : ''} · Anonymous</span>
-            {ai && <span>An AI may ask a quick follow-up about what you say.</span>}
-          </div>; })()}
+          {study.questions.some(x => x.type === 'long') && <div className="rs-meta"><span>Talk or type your answers</span></div>}
         </div>}
         {q && !fuItem && !endPhase && <>{condition && <p className="rs-condition">{condition}</p>}{fuNote && <p className="rs-condition">{fuNote}</p>}{preview && q.bonus && <p className="rs-condition">Bonus round: only if they choose to keep going after the short version</p>}<QuestionView q={q} index={step} total={n} section={sectionLabel(q)} value={value} set={set} other={others[q.id] ?? ''} setOther={t => { setOthers(o => ({ ...o, [q.id]: t })); setFuDone(d => ({ ...d, [q.id]: false })); if (fu[q.id]?.length) setFu(f => { const { [q.id]: _gone, ...rest } = f; return rest; }); }} errors={touched ? fieldErrors : {}} contact={contact} preview={preview} onUploadPhoto={onUploadPhoto} onDone={preview ? undefined : () => void next()} /></>}
         {q && fuItem && !endPhase && <div className="rs-q">
