@@ -17,7 +17,7 @@ type AskEnding = (context: Array<{ q: string; a: string }>) => Promise<{ recap?:
 type Extend = (saved: Saved, answers: Record<string, unknown>, ms: number, followups: Record<string, FollowUp[]>, others: Record<string, string>, early?: boolean) => Promise<unknown>;
 
 
-export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, onUploadPhoto, onEnding, startAt }: { study: Study; preview?: boolean; onSubmit?: Submit; onExtend?: Extend; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; onEnding?: AskEnding; startAt?: number }) {
+export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, onUploadPhoto, onEnding, startAt, saveKey }: { /** Where to keep their progress in this browser, so closing the tab doesn't lose it. */ saveKey?: string; study: Study; preview?: boolean; onSubmit?: Submit; onExtend?: Extend; onFollowUp?: AskFollowUp; onUploadPhoto?: UploadPhoto; onEnding?: AskEnding; startAt?: number }) {
   const [step, setStep] = useState(startAt ?? -1); // -1 intro, 0..n-1 questions, n thanks
   const [sub, setSub] = useState<number | null>(null); // which follow-up of the current question is showing
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -39,12 +39,24 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
   const [endPhase, setEndPhase] = useState<null | 'loading' | 'recap' | 'fix' | 'early'>(null);
   const [endAns, setEndAns] = useState<EndingAnswer | null>(null);
   const result: ResultType | undefined = preview ? types[0] : types.find(t => t.name === endAns?.type);
+  useEffect(() => {
+    if (!saveKey || preview || resume) return;
+    if (finished) { forget(); return; }
+    if (step < 0 || !Object.keys(answers).length) return;
+    try { localStorage.setItem(saveKey, JSON.stringify({ at: Date.now(), step, answers, fu, others, bonusMode, saved, ms: Date.now() - started.current } satisfies Progress)); } catch { /* storage full or blocked: nothing to do */ }
+  }, [step, answers, fu, others, bonusMode, saved, finished]);
+  const pickUp = (p: Progress) => { setAnswers(p.answers); setFu(p.fu ?? {}); setOthers(p.others ?? {}); setBonusMode(!!p.bonusMode); setSaved(p.saved ?? null); started.current = Date.now() - (p.ms || 0); setResume(null); setSub(null); setStep(p.step); };
   const hasBonus = !preview && !!onExtend && study.questions.some(x => x.bonus);
+  /* Save as they go: answers stay in this browser until they submit, so an accidental close doesn't lose anything. */
+  type Progress = { at: number; step: number; answers: Record<string, unknown>; fu: Record<string, FollowUp[]>; others: Record<string, string>; bonusMode: boolean; saved: Saved | null; ms: number };
+  const [resume, setResume] = useState<Progress | null>(() => { if (!saveKey || preview) return null; try { const p = JSON.parse(localStorage.getItem(saveKey) || 'null') as Progress | null; return p && Date.now() - p.at < 14 * 864e5 && p.step >= 0 && Object.keys(p.answers).length ? p : null; } catch { return null; } });
+  const forget = () => { try { if (saveKey) localStorage.removeItem(saveKey); } catch { /* ignore */ } };
   useEffect(() => { if (startAt !== undefined) { setStep(startAt); setSub(null); } }, [startAt]);
   const visible = study.questions.filter(q => isShown(q, answers));
   const coreQs = visible.filter(x => !x.bonus), bonusQs = visible.filter(x => x.bonus);
   const qs = preview ? study.questions : hasBonus ? (bonusMode ? [...coreQs, ...bonusQs] : coreQs) : visible;
   const n = qs.length;
+  useEffect(() => { if (!preview && (step > n || (step === n && !finished && !saved))) setStep(Math.max(0, n - 1)); }, [n]);
   const q = step >= 0 && step < n ? qs[step] : null;
   const value = q ? answers[q.id] : undefined;
   const answered = !!q && hasValue(value);
@@ -189,7 +201,12 @@ export function SurveyRunner({ study, preview, onSubmit, onExtend, onFollowUp, o
           {t.cover && <img className="rs-cover" src={t.cover} alt="" />}
           <h1>{study.title}</h1>
           {study.intro && <p>{study.intro}</p>}
-          <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>
+          {(() => { const parts = study.questions.filter(x => x.type === 'section' && !x.bonus); return parts.length > 1 && <ol className="rs-parts" aria-label="What we’ll cover">{parts.map(x => <li key={x.id}>{x.prompt}</li>)}</ol>; })()}
+          {resume ? <div className="rs-resume">
+            <strong>Pick up where you left off?</strong>
+            <span>Your answers so far are saved on this device.</span>
+            <div className="rs-offer-actions"><button type="button" className="rs-primary" onClick={() => pickUp(resume)}>Continue</button><button type="button" className="rs-ghost" onClick={() => { forget(); setResume(null); }}>Start over</button></div>
+          </div> : <button type="button" className="rs-primary" onClick={() => void next()} disabled={!n}>Start</button>}
           {(() => { const talk = study.questions.some(x => x.type === 'long'); const ai = study.questions.some(x => x.followups); return <div className="rs-meta">
             <span>About {estimateMinutes(preview ? study.questions.filter(x => !x.bonus) : hasBonus ? coreQs : visible, study.followupBudget)} min{talk ? ' · Talk or type' : ''} · Anonymous</span>
             {ai && <span>An AI may ask a quick follow-up about what you say.</span>}
@@ -532,7 +549,7 @@ export default function ParticipantPage({ id }: { id: string }) {
     {test && <div className="rs-testbar" role="status">Test mode · answers aren’t saved to Results{draft ? ' · using your latest edits' : ''}</div>}
     {error ? <div className="rs-intro"><h1>Sorry</h1><p>{error}</p></div>
       : !study ? <div className="rs-loading">Loading…</div>
-      : <SurveyRunner study={study} onSubmit={(answers, ms, followups, others, part, ending, early) => call('submit', { id, answers, ms, followups, others, part, ending, early, test })}
+      : <SurveyRunner study={study} saveKey={`csb-progress-${id}${test ? '-test' : ''}`} onSubmit={(answers, ms, followups, others, part, ending, early) => call('submit', { id, answers, ms, followups, others, part, ending, early, test })}
           onEnding={context => call<{ recap?: string; type?: string }>('ending', { id, context, ...(inline ? { test: true, study: inline } : {}) }, !!inline)}
           onExtend={(saved, answers, ms, followups, others, early) => call('extend', { id, ref: saved.ref, token: saved.token, answers, ms, followups, others, early, test })}
           onFollowUp={async (q, answer, history, context, used) => { const r = await call<{ question?: string; done?: boolean }>('followup', { id, questionId: q.id, answer, history, context, used, ...(inline ? { test: true, study: inline } : {}) }, !!inline); return r.question || null; }}

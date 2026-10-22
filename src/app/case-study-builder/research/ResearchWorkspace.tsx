@@ -79,7 +79,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
   const hasRecruit = qs.some(q => q.preset === 'recruit');
   const duplicate = (i: number) => { const n = [...qs]; n.splice(i + 1, 0, duplicateQuestion(qs[i])); update({ questions: n }); setPreviewAt(i + 1); };
   const hasSus = qs.some(q => q.preset?.startsWith('sus-'));
-  return <div className="rw-build">
+  return <div className={`rw-build ${mapView ? 'is-map' : ''}`}>
     <div className="rw-editor">
       <label className="rw-field"><span>Survey title</span><input value={study.title} onChange={e => update({ title: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
       <label className="rw-field"><span>Welcome message</span><textarea rows={2} value={study.intro ?? ''} onChange={e => update({ intro: e.target.value })} onFocus={() => setPreviewAt(-1)} /></label>
@@ -92,7 +92,7 @@ function Builder({ study, update, previewAt, setPreviewAt }: { study: Study; upd
       <p className="rw-kicker">Questions · {qs.length}{qs.some(q => q.bonus) ? ` · short version about ${estimateMinutes(qs.filter(q => !q.bonus), study.followupBudget)} min, bonus round about ${estimateMinutes(qs.filter(q => q.bonus), Math.max(1, Math.round((study.followupBudget ?? DEFAULT_FOLLOWUP_BUDGET) / 2)))} more` : ''}</p>
       {qs.some(q => q.bonus) && <p className="rw-note" style={{ margin: '-4px 0 0' }}>Everyone gets the short version. At the end they’re offered the bonus round, and their short answers are already saved. Mark a question “Bonus round” to move it there.</p>}
       <div className="rw-viewswitch" role="tablist" aria-label="Question view"><button type="button" role="tab" aria-selected={!mapView} onClick={() => setMapView(false)}>List</button><button type="button" role="tab" aria-selected={mapView} onClick={() => setMapView(true)}>Map</button></div>
-      {mapView ? <SurveyMap study={study} onPick={i => { setPreviewAt(i); setMapView(false); requestAnimationFrame(() => document.querySelectorAll('.rw-q')[i]?.scrollIntoView({ block: 'center', behavior: 'smooth' })); }} /> : <>
+      {mapView ? <SurveyMap study={study} onChange={list => update({ questions: list })} onPick={i => { setPreviewAt(i); setMapView(false); requestAnimationFrame(() => document.querySelectorAll('.rw-q')[i]?.scrollIntoView({ block: 'center', behavior: 'smooth' })); }} /> : <>
       {qs.map((q, i) => <div key={q.id} className={`rw-q ${previewAt === i ? 'is-on' : ''} ${q.type === 'section' ? 'is-section' : ''}`} onFocusCapture={() => setPreviewAt(i)} onClick={() => setPreviewAt(i)}>
         <div className="rw-q-head">
           <span className="rw-q-num">{i + 1}</span>
