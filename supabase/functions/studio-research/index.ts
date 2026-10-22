@@ -101,7 +101,7 @@ Deno.serve(async (request) => {
       let study = await readJson<Study>(`studies/${cleanId(body.id)}.json`);
       // Owner test runs can use unpublished edits (sent inline); everyone else gets the published study.
       const inline = body.test && owner() && body.study && typeof body.study === 'object' ? body.study as { questions?: Question[]; goal?: string; followupBudget?: number } : null;
-      if (inline && Array.isArray(inline.questions)) study = { ...(study ?? { id: cleanId(body.id), kind: 'survey', title: 'Test', status: 'open', questions: [] } as Study), status: 'open', goal: text(inline.goal, 2000) || study?.goal, followupBudget: Number(inline.followupBudget) || study?.followupBudget, questions: inline.questions.slice(0, 90).map(q => ({ id: cleanId(q.id), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).slice(0, 30) : undefined, followups: Number(q.followups) || undefined, probe: q.probe ? text(q.probe, 600) : undefined, followIf: Array.isArray(q.followIf) ? q.followIf.map(o => text(o, 200)) : undefined })) };
+      if (inline && Array.isArray(inline.questions)) study = { ...(study ?? { id: cleanId(body.id), kind: 'survey', title: 'Test', status: 'open', questions: [] } as Study), status: 'open', goal: text(inline.goal, 2000) || study?.goal, followupBudget: Number(inline.followupBudget) || study?.followupBudget, questions: inline.questions.slice(0, 150).map(q => ({ id: cleanId(q.id), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).slice(0, 30) : undefined, followups: Number(q.followups) || undefined, probe: q.probe ? text(q.probe, 600) : undefined, followIf: Array.isArray(q.followIf) ? q.followIf.map(o => text(o, 200)) : undefined })) };
       if (!study || study.status !== 'open' || study.kind === 'usability') return reply({ done: true });
       const q = study.questions.find(x => x.id === cleanId(body.questionId));
       const history = (Array.isArray(body.history) ? body.history : []).slice(0, 3).map((h: { q?: unknown; a?: unknown }) => ({ q: text(h?.q, 300), a: text(h?.a, 3000) }));
@@ -241,7 +241,7 @@ Deno.serve(async (request) => {
         followupBudget: Number(s.followupBudget) >= 0 && s.followupBudget != null ? Math.min(20, Math.round(Number(s.followupBudget))) : undefined,
         ending: cleanEnding(s.ending),
         theme: s.theme ? { accent: color(s.theme.accent), background: color(s.theme.background), cover: httpsUrl(s.theme.cover) || undefined } : undefined,
-        questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 90).filter(q => QUESTION_TYPES.has(q.type)).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined,
+        questions: (Array.isArray(s.questions) ? s.questions : []).slice(0, 150).filter(q => QUESTION_TYPES.has(q.type)).map(q => ({ id: cleanId(q.id) || crypto.randomUUID().slice(0, 8), type: q.type, prompt: text(q.prompt, 500), options: Array.isArray(q.options) ? q.options.map(o => text(o, 200)).filter(Boolean).slice(0, 30) : undefined, min: q.min, max: q.max, minLabel: text(q.minLabel, 60), maxLabel: text(q.maxLabel, 60), required: !!q.required, preset: q.preset ? text(q.preset, 20) : undefined,
           contact: q.type === 'contact' ? Object.fromEntries(CONTACT_KEYS.map(k => [k, fieldMode(q, k)])) as Record<ContactKey, FieldMode> : undefined,
           url: q.type === 'schedule' && /^https:\/\//.test(String(q.url ?? '')) ? text(q.url, 500) : undefined,
           hint: q.hint ? text(q.hint, 500) : undefined,
@@ -380,7 +380,7 @@ async function notion(path: string, init: RequestInit = {}) {
   return r.json();
 }
 const notionPageId = (url: string) => { const m = url.replace(/-/g, '').match(/([0-9a-f]{32})(?:[?#]|$)/i); return m ? m[1] : ''; };
-const propName = (q: Question, i: number) => `${String(i + 1).padStart(2, '0')} ${q.prompt}`.slice(0, 90).replace(/[.,]+$/, '');
+const propName = (q: Question, i: number) => `${String(i + 1).padStart(2, '0')} ${q.prompt}`.slice(0, 150).replace(/[.,]+$/, '');
 function propSchema(q: Question) {
   if (q.type === 'schedule') return { select: { options: [{ name: 'Booked a time', color: 'green' }, { name: 'Opened the booking link', color: 'gray' }] } };
   if (q.type === 'single') return { select: { options: (q.options ?? []).slice(0, 100).map(name => ({ name: name.replace(/,/g, ' ').slice(0, 100) })) } };
