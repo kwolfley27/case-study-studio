@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { MessagesSquare, ArrowDown, ArrowUp, BarChart3, Copy, CopyPlus, ExternalLink, ImagePlus, Link2, ListChecks, PenLine, Plus, Smartphone, Sparkles, Trash2, X } from 'lucide-react';
 import { uploadToStudio } from '../media';
 import { SurveyMap } from './SurveyMap';
+import { QuestionViz, CompareScales, hasViz, Bars } from './ResultsViz';
 import { authHeaders } from '../auth';
 import { projectId } from '../../../utils/supabase/info';
 import { UsabilityBuilder, UsabilityResults, UsabilityRun } from './Usability';
@@ -450,6 +451,7 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
     </div>
     <Groups study={s} all={all} picks={picks} setPicks={setPicks} />
     <EndingResults study={s} responses={responses} />
+    {responses.length > 0 && <CompareScales study={s} results={results} />}
     {all.length > 0 && <details className="rw-res rw-routes"><summary><h4>Routes through the survey<small>{Object.keys(picks).length ? 'for this group · ' : ''}how many people took each path</small></h4></summary><SurveyMap study={s} responses={responses} /></details>}
     {!responses.length ? <p className="rw-empty">{all.length ? 'No one in this group yet.' : 'No responses yet. Share the link from the Share tab.'}</p> : <>
       <div className="rw-addrow">
@@ -461,19 +463,16 @@ function Results({ study, onAddSections }: { study: Study; onAddSections: (s: Ca
       <Synthesis study={s} responses={responses} onAddSections={onAddSections} filterNote={Object.values(picks).join(' + ')} />
       <FollowUps study={s} responses={responses} />
       <ResponseList study={s} responses={all} onRemoved={load} />
-      {results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact' && r.kind !== 'note' && r.q.preset !== 'name').map(r => <div key={r.q.id} className="rw-res">
-        <h4>{r.q.prompt}<small>{r.answered} answered</small></h4>
-        {r.kind === 'choice' && <div className="rw-bars">{r.options.map(o => { const pct = r.answered ? Math.round(o.count / r.answered * 100) : 0; return <div key={o.label}><span>{o.label}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}{r.q.type === 'multi' && <small>Choose-all question: percentages add up to more than 100%.</small>}</div>}
-        {r.kind === 'scale' && <div className="rw-bars">{r.dist.map((c, k) => { const pct = r.answered ? Math.round(c / r.answered * 100) : 0; return <div key={k}><span>{(r.q.min ?? 1) + k}</span><i><b style={{ width: `${pct}%` }} /></i><em>{pct}%</em></div>; })}<small>Average {r.mean.toFixed(1)} of {r.q.max ?? 5}</small></div>}
+      {(() => { const sec = new Map<string, string>(); let cur = ''; for (const q of s.questions) { if (q.type === 'section') cur = q.prompt; sec.set(q.id, cur); } let last = ''; return results.filter(r => !r.q.preset?.startsWith('sus-') && r.kind !== 'contact' && r.kind !== 'note' && r.q.preset !== 'name').map(r => { const name = sec.get(r.q.id) ?? ''; const head = name && name !== last ? (last = name, <h3 key={`sec-${r.q.id}`} className="rv-section">{name}</h3>) : null; return <Fragment key={r.q.id}>{head}<div className="rw-res">
+        {hasViz(r) ? <QuestionViz r={r} responses={responses} /> : <h4>{r.q.prompt}<small>{r.answered} answered</small></h4>}
         {r.kind === 'choice' && (() => { const typed = new Map<string, { label: string; n: number }>(); for (const rs of responses) { const t = rs.others?.[r.q.id]?.trim(); if (t) { const k = t.toLowerCase(); typed.set(k, { label: typed.get(k)?.label ?? t, n: (typed.get(k)?.n ?? 0) + 1 }); } } return typed.size > 0 && <div className="rw-others">Typed for Other: {[...typed.values()].sort((a, b) => b.n - a.n).map(x => <span key={x.label}>{x.label}<b>{x.n}</b></span>)}</div>; })()}
         {r.kind === 'rank' && (() => { const typed = [...new Set(responses.map(rs => rs.others?.[r.q.id]?.trim()).filter(Boolean))]; return typed.length > 0 && <div className="rw-others">Typed for Other: {typed.map(t => <span key={t}>{t}</span>)}</div>; })()}
-        {r.kind === 'rank' && <div className="rw-rank-res">{r.items.map((it, k) => <div key={it.label}><b>{k + 1}</b><span>{it.label}</span><em>avg {it.avg ? it.avg.toFixed(1) : '—'} · #1 for {it.firsts}</em></div>)}<small className="rw-note">Ordered by average position (1 = best). Each person saw the options shuffled.</small></div>}
         {r.kind === 'photo' && <div className="rw-results-photos">{responses.flatMap(rs => (rs.photoUrls?.[r.q.id] ?? []).map((u, k) => <a key={`${rs.id}-${k}`} href={u} target="_blank" rel="noreferrer"><img src={u} alt="Participant photo" loading="lazy" /></a>))}{!r.answered && <p className="rw-empty">No photos yet.</p>}</div>}
         {r.kind === 'schedule' && <div className="rw-nps"><strong>{r.booked}</strong><span>booked a time{r.answered > r.booked ? ` · ${r.answered - r.booked} opened the link but didn’t finish in the survey` : ''}</span></div>}
         {r.kind === 'nps' && <div className="rw-nps"><strong>{r.score > 0 ? '+' : ''}{r.score}</strong><span>{r.promoters} promoters · {r.passives} passives · {r.detractors} detractors</span></div>}
         {r.kind === 'text' && <ul className="rw-quotes">{entries(r.q.id).map(e => <li key={e.key}><label><input type="checkbox" checked={!!picked[e.key]} onChange={ev => setPicked(p => ({ ...p, [e.key]: ev.target.checked }))} /> “{e.text}”</label>{(e.name || e.who) && <span className="rw-who">{[e.name, e.who].filter(Boolean).join(' · ')}</span>}
           {e.fu.length > 0 && <ul className="rw-fu-list">{e.fu.map(f => <li key={f.key}><small>AI follow-up: {f.q}</small><label><input type="checkbox" checked={!!picked[f.key]} onChange={ev => setPicked(p => ({ ...p, [f.key]: ev.target.checked }))} /> “{f.text}”</label></li>)}</ul>}</li>)}</ul>}
-      </div>)}
+      </div></Fragment>; }); })()}
       {sus && <div className="rw-res"><h4>System Usability Scale<small>{sus.n} complete</small></h4><div className="rw-nps"><strong>{Math.round(sus.score)}</strong><span>{sus.grade}. The average product scores 68.</span></div></div>}
     </>}
   </div>;
@@ -592,7 +591,7 @@ function EndingResults({ study, responses }: { study: Study; responses: Response
   const yes = got.filter(r => r.ending?.ok === 'yes').length, no = got.filter(r => r.ending?.ok === 'no');
   return <div className="rw-res">
     <h4>At the end<small>{got.length} people</small></h4>
-    {types.some(t => t.n) && <div className="rw-bars">{types.map(t => { const pct = Math.round(t.n / got.length * 100); return <div key={t.name}><span>{t.name}</span><i><b style={{ width: `${pct}%` }} /></i><em>{t.n}</em></div>; })}<small>{study.ending?.title || 'Result'}</small></div>}
+    {types.some(t => t.n) && <><small className="rw-note">{study.ending?.title || 'Result'}</small><Bars rows={types.map(t => ({ label: t.name, count: t.n }))} of={got.length} /></>}
     {(yes + no.length) > 0 && <p className="rw-note">Recap: {yes} said it was right, {no.length} corrected it.</p>}
     {no.length > 0 && <ul className="rw-quotes">{no.map(r => <li key={r.id}><small className="rw-note">We said: {r.ending?.recap}</small>{r.ending?.fix ? <span>“{r.ending.fix}”</span> : <em className="rw-note">No details given</em>}</li>)}</ul>}
   </div>;
