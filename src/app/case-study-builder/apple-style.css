@@ -4018,3 +4018,23 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-abf-table .csb-editable-text,.csb-abf-table td,.csb-abf-table tbody th{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}
 .csb-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.csb-abf-more,.csb-abf-more svg{transition:none}}
+
+/* A/B quick view: room to breathe, fewer small labels, the numbers lead */
+.csb-ab-results .csb-ab-verdict+.csb-abf{margin-top:clamp(24px,3.2cqw,32px)!important;padding-top:clamp(28px,3.6cqw,36px)!important}
+.csb-abf-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin-bottom:16px}
+.csb-abf-head .csb-abf-title{margin:0;font-size:var(--ts-title,17px);font-weight:600;color:var(--t-ink,#1c1917)}
+.csb-abf-head .csb-abf-legend{font-size:var(--ts-meta,14px);color:var(--t-muted,#6f6961)}
+.csb-abf-plot{height:clamp(120px,16cqw,160px)}
+.csb-abf-ticks{margin-top:8px}
+.csb-abf-stats{margin:clamp(32px,4.4cqw,44px) 0 0!important;gap:20px 0!important}
+.csb-abf-stats>div{display:flex;flex-direction:column-reverse;justify-content:flex-end;gap:6px;padding:0 clamp(16px,2.4cqw,28px);border-left:1px solid var(--t-line,#d6d3d1)}
+.csb-abf-stats>div:first-child{padding-left:0;border-left:0}
+.csb-abf-stats dd{margin:0!important;font-size:clamp(26px,3.4cqw,34px)!important;line-height:1.1!important;font-weight:300!important;letter-spacing:-.02em!important}
+.csb-abf-stats dt{font-size:var(--ts-meta,14px);line-height:1.45}
+@container (max-width:560px){.csb-abf-stats{gap:20px!important}.csb-abf-stats>div{padding:0 0 0 0;border-left:0}.csb-abf-stats>div+div{padding-top:20px;border-top:1px solid var(--t-line2,#ebe8e4)}}
+.csb-abf-summary{margin-top:clamp(28px,3.6cqw,36px)!important;max-width:34em!important;font-size:17px!important;line-height:1.65!important;color:#44403b!important}
+.csb-abf-more{margin-top:clamp(20px,2.6cqw,28px)!important}
+.csb-abf-details .csb-abf-table{margin-top:clamp(24px,3cqw,32px)!important}
+.csb-abf-details .csb-abf-explain{margin-top:clamp(24px,3cqw,32px)!important}
+.csb-abf-stats dd{white-space:nowrap}
+@container (min-width:561px){.csb-abf-stats{grid-template-columns:repeat(3,auto)!important;justify-content:start}.csb-abf-stats>div{padding-right:clamp(28px,4cqw,48px)}.csb-abf-stats>div+div{padding-left:clamp(28px,4cqw,48px)}}
