@@ -240,6 +240,26 @@ function HeroFacts({ study, editorMode }: { study: BuilderStudy; editorMode: boo
   return <div className="csb-hero-facts">{facts.map((f, i) => <div key={i} className={!f.value.trim() ? "is-empty" : ""}><small><EditableText field={`facts.${i}.label`} value={f.label} /></small><strong><EditableText field={`facts.${i}.value`} value={f.value} /></strong></div>)}</div>;
 }
 
+/* What you see is what gets published: while editing, the page is laid out at the published column width
+   (so every line breaks exactly where it will on the page) and scaled down to fit between the panels.
+   Skipped in the phone preview. */
+const PAGE_COLUMN = 920;
+function usePageScale(ref: React.RefObject<HTMLElement | null>, on: boolean) {
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    if (!on) { el.removeAttribute('data-page-scale'); el.style.removeProperty('--edit-zoom'); return; }
+    const fit = () => {
+      const room = el.clientWidth;
+      if (room < 600) { el.removeAttribute('data-page-scale'); el.style.removeProperty('--edit-zoom'); return; }
+      el.setAttribute('data-page-scale', '');
+      el.style.setProperty('--edit-zoom', String(Math.min(1, (room - 32) / PAGE_COLUMN)));
+    };
+    fit();
+    const ro = new ResizeObserver(fit); ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, on]);
+}
+
 export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, editorMode = false, onEditSection, onEditStudy, onUploadMedia, onSetPrototype, bare = false, forceMotion = false }: { bare?: boolean; forceMotion?: boolean; study: BuilderStudy; selectedSectionId?: string | null; onSelectSection?: (id: string | null) => void; onEditSection?: (id:string,field:string,value:string)=>void; onEditStudy?: (field:string,value:string)=>void; onUploadMedia?: (sectionId:string,index:number,file:File)=>void; onSetPrototype?: (sectionId:string,link:string)=>void; editorMode?: boolean }) {
   const showNav = !bare && study.showNav !== false;
   useEffect(() => { if (study.brand?.display) loadFont(study.brand.display); if (study.brand?.text) loadFont(study.brand.text); }, [study.brand?.display, study.brand?.text]);
@@ -247,6 +267,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
   const articleRef = useRef<HTMLElement>(null);
   useSolidElements(articleRef, study.gradOffEls, !!(study.accentGradient && study.accent2));
   useScrollAffordance(articleRef, !editorMode);
+  usePageScale(articleRef, editorMode);
   return <StudyMeta.Provider value={{ slug: study.slug, published: !!(study as { publishedAt?: string }).publishedAt || !editorMode, title: study.title }}><MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article ref={articleRef} data-devices-page={study.deviceStyle === "frameless" ? "frameless" : undefined} className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} data-grad={study.accentGradient && study.accent2 ? "" : undefined} data-nograd={study.accentGradient && study.gradientOff?.length ? study.gradientOff.join(" ") : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent, ...(study.accentGradient && study.accent2 ? { "--csb-accent-fill": `linear-gradient(120deg, ${study.accent}, ${study.accent2})`, "--csb-accent-grad-v": `linear-gradient(to top, ${study.accent}, ${study.accent2})` } : {}) } as React.CSSProperties}>
     {study.accentGradient && study.accent2 && <svg className="csb-grad-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><linearGradient id="csb-accent-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style={{ stopColor: "var(--csb-accent)" }} /><stop offset="1" style={{ stopColor: "var(--csb-accent-2)" }} /></linearGradient></defs></svg>}
     {showNav && <SideNav study={study} editorMode={editorMode} onEditSection={onEditSection} />}
