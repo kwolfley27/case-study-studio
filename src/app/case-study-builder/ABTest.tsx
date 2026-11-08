@@ -240,7 +240,10 @@ function FullResults({ full }: { full: ABFull }) {
   const summary = `${a.name}: ${a.posterior || a.observed}. ${b.name}: ${b.posterior || b.observed}. The two curves largely overlap.`;
   const cell = (path: string, v: string) => <EditableText field={`deep:abtest.full.${path}`} value={v} />;
   return <div className="csb-abf">
-    <p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>
+    <div className="csb-abf-head">
+      <p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>
+      {ok && <span className="csb-abf-legend"><span><i className="is-a" />{a.name}</span><span><i className="is-b" />{b.name}</span></span>}
+    </div>
     {ok && <figure className="csb-abf-chart">
       <div className="csb-abf-plot" ref={plotRef}>
         {ticks.map(t => <i key={t} className="csb-abf-grid" style={{ left: `${X(t)}%` }} aria-hidden="true" />)}
@@ -250,10 +253,6 @@ function FullResults({ full }: { full: ABFull }) {
         </motion.svg>
       </div>
       <div className="csb-abf-ticks" aria-hidden="true">{ticks.map((t, k) => <span key={t} className={k === 0 ? 'is-first' : k === ticks.length - 1 ? 'is-last' : ''} style={{ left: `${X(t)}%` }}>{t.toFixed(dec)}</span>)}</div>
-      <figcaption>
-        <span className="csb-abf-axis"><EditableText field="deep:abtest.full.axis" value={full.axis} /></span>
-        <span className="csb-abf-legend"><span><i className="is-a" />{a.name}</span><span><i className="is-b" />{b.name}</span></span>
-      </figcaption>
     </figure>}
     <dl className="csb-abf-stats">
       <div><dt>Observed, A vs B</dt><dd>{pct(a.observed)} vs {pct(b.observed)}</dd></div>
