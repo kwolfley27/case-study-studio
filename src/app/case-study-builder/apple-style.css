@@ -3821,3 +3821,11 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-pm-hint{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--t-muted,#6f6961)}
 .csb-pm-note-input{grid-column:1/-1;width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #e5e5ea;font:inherit;font-size:12.5px;line-height:1.45;color:#1c1917;resize:vertical}
 
+
+/* Problem statement flip: short statements, so a short scroll. The question matches the statement's size. */
+.csb-canvas .csb-doc-main .csb-psf{height:110vh}
+.csb-canvas .csb-doc-main .csb-psf-face.is-front{min-height:clamp(140px,18cqw,200px)}
+.csb-canvas .csb-doc-main .csb-psf-bubble p{font-size:clamp(24px,3cqw,32px);line-height:1.32;font-weight:400;letter-spacing:-.02em}
+.csb-canvas .csb-doc-main .csb-psf-bubble{max-width:720px}
+.csb-canvas .csb-doc-main .csb-psf-ask{font-size:clamp(15px,1.6cqw,17px)}
+@container (max-width:620px){.csb-canvas .csb-doc-main .csb-psf{height:100vh}}
