@@ -124,6 +124,8 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   const bubble = useTransform(p, [.45, .97], [0, 1]);
   const bubbleY = useTransform(p, [.45, .97], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
+  // The card's background fades away as the question arrives, so the bubble ends up on the page itself.
+  const cardBg = useTransform(p, [.38, .78], [1, 0]);
   // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
   const bubbleRef = useRef<HTMLDivElement>(null);
   const [autoInk, setAutoInk] = useState('#fdfcfc');
@@ -139,6 +141,7 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   return <div className={`csb-psf ${picture ? 'has-pic' : ''}`} ref={scene}>
     <div className="csb-psf-stick" ref={stick}>
       <motion.div className="csb-psf-card is-fade">
+        <motion.div className="csb-psf-bg" aria-hidden="true" style={{ opacity: cardBg }} />
         <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p></motion.div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>

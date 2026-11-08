@@ -3891,9 +3891,12 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){background:none!important;box-shadow:none!important;border-radius:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(24px,3cqw,36px)!important;margin-block:0!important}
 /* the card reaches into the section's side padding, so the statement lines up with the label */
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-card{border-radius:24px;margin-inline:0;width:auto;padding:clamp(28px,4cqw,44px) clamp(20px,3.2cqw,32px)}
-.csb-canvas .csb-doc-main .csb-variant-tinted .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-surface,#f5f3f1)}
-.csb-canvas .csb-doc-main .csb-variant-dark .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-night,#161411)}
-.csb-canvas .csb-doc-main .csb-variant-light .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)}
+.csb-psf-bg{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.csb-psf-card.is-fade>.csb-psf-face{position:relative}
+.csb-canvas .csb-doc-main .csb-variant-tinted .csb-psf:not(.is-static) .csb-psf-bg{background:var(--t-surface,#f5f3f1)}
+/* On dark, the card stays: a light bubble needs the dark behind it */
+.csb-canvas .csb-doc-main .csb-variant-dark .csb-psf:not(.is-static) .csb-psf-bg{background:var(--t-night,#161411);opacity:1!important}
+.csb-canvas .csb-doc-main .csb-variant-light .csb-psf:not(.is-static) .csb-psf-bg{background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)}
 .csb-canvas .csb-doc-main .csb-variant-dark:has(.csb-psf:not(.is-static)) .csb-section-intro .csb-eyebrow{color:var(--t-muted,#6f6961)!important}
 
 /* Section rhythm: a heading sits close to its own text, sections sit clearly apart, and paragraphs keep
