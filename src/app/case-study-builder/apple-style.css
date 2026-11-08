@@ -3821,8 +3821,3 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-pm-hint{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--t-muted,#6f6961)}
 .csb-pm-note-input{grid-column:1/-1;width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #e5e5ea;font:inherit;font-size:12.5px;line-height:1.45;color:#1c1917;resize:vertical}
 
-/* Problem statement, free text: optional short headline above your own words */
-.csb-ps-free-title{display:block;margin-bottom:.4em;font-size:1em;line-height:1.2;font-weight:400;letter-spacing:-.02em;color:var(--t-ink,#0f0e0d)}
-.csb-ps-free-title:has(.csb-editable-text:empty){display:none}
-.csb-canvas-editable .csb-ps-free-title:has(.csb-editable-text:empty){display:block;opacity:.6}
-.csb-variant-dark .csb-ps-free-title{color:#fdfcfc}
