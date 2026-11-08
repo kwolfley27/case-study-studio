@@ -3913,7 +3913,7 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 /* How might we bubble: its text starts on the same left edge as the statement and the rest of the page.
    The bubble sits inside the card with room around it, sized to its text up to a comfortable line length. */
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-hmw{justify-items:start!important}
-.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-bubble{max-width:max(min(84%,560px),min(100%,320px))!important;width:fit-content;margin-inline:0;padding-inline:clamp(24px,3.4cqw,36px)!important;box-sizing:border-box}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-bubble{max-width:max(min(84%,560px),min(100%,320px))!important;width:fit-content;margin-inline:calc(-1 * clamp(20px,3.2cqw,32px)) 0;padding-inline:clamp(24px,3.4cqw,36px)!important;box-sizing:border-box}
 /* The space after the card matches the space between other sections */
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){padding-bottom:clamp(36px,5.6cqw,52px)!important}
 
