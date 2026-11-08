@@ -3829,3 +3829,10 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-psf-bubble{max-width:720px}
 .csb-canvas .csb-doc-main .csb-psf-ask{font-size:clamp(15px,1.6cqw,17px)}
 @container (max-width:620px){.csb-canvas .csb-doc-main .csb-psf{height:100vh}}
+
+/* Problem statement while editing: statement, then the question, no flip and no fade */
+.csb-psf.is-static .csb-psf-face{grid-area:auto}
+.csb-canvas-editable .csb-psf.is-static .csb-psf-face{opacity:1!important;filter:none!important;transform:none!important}
+.csb-canvas-editable .csb-psf.is-static .csb-psf-bubble{opacity:1!important;transform:none!important}
+.csb-canvas-editable .csb-psf.is-static{gap:12px}.csb-canvas-editable .csb-psf.is-static .csb-psf-face{min-height:0;padding:clamp(20px,3cqw,32px) 0}
+.csb-canvas .csb-doc-main .csb-psf.is-static{height:auto}.csb-canvas-editable .csb-doc-main .csb-psf.is-static .csb-psf-face.is-front{min-height:0}
