@@ -21,7 +21,9 @@ export type ABMetric = { label: string; kind: 'rate' | 'number' | 'votes'; a: st
 export type ABMarker = { x: number; y: number; w: number; h: number; note: string; metric?: number };
 /** Full results: each version's estimate drawn as a curve, the results table, and a plain-language explanation. */
 export type ABArm = { name: string; users: string; observed: string; posterior: string; spread: string };
-export type ABFull = { on: boolean; title: string; axis: string; arms: [ABArm, ABArm]; lift: string; win: string; low: string; high: string; explain: string; summary?: string };
+export type ABFull = { on: boolean; title: string; axis: string; arms: [ABArm, ABArm]; lift: string; win: string; low: string; high: string; explain: string; summary?: string;
+  /** How the quick view shows the observed averages: as a percentage (share of people), per 100 people, or as typed. */
+  observedAs?: 'percent' | 'per100' | 'raw'; observedLabel?: string };
 export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; method?: string; showMarkers?: boolean; full?: ABFull };
 export const blankFull = (a = 'A', b = 'B'): ABFull => ({ on: true, title: 'What the test measured', axis: 'Per user average', arms: [{ name: `${a} (control)`, users: '', observed: '', posterior: '', spread: '0.02' }, { name: b, users: '', observed: '', posterior: '', spread: '0.02' }], lift: '', win: '', low: '', high: '', explain: 'Explain in a sentence or two what the curves and numbers mean.', summary: 'One sentence: what the result means.' });
 
@@ -215,7 +217,7 @@ function MetricRow({ m, index, highlight, delay, neutral = false }: { m: ABMetri
 const normal = (x: number, m: number, sd: number) => Math.exp(-0.5 * ((x - m) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
 function niceStep(range: number) { const raw = range / 7; const p = 10 ** Math.floor(Math.log10(raw)); const f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
 // Quick-view numbers: a share like 0.2624 reads as 26.2%; percentages are rounded for a glance.
-const pct = (v: string) => { const n = num(v); return n > 0 && n <= 1 ? `${fmt(n * 100)}%` : v; };
+const pct = (v: string, as: ABFull['observedAs'] = 'percent') => { const n = num(v); if (as === 'raw' || !(n > 0 && n <= 1)) return v; return as === 'per100' ? fmt(n * 100) : `${fmt(n * 100)}%`; };
 const whole = (v: string) => { const n = num(v.replace('−', '-')); return v.trim() ? `${Math.round(n)}%` : '–'; };
 const one = (v: string, plus = false) => { const n = num(v.replace('−', '-')); if (!v.trim()) return '–'; const r = Math.round(n * 10) / 10; return `${r < 0 ? '−' : plus && r > 0 ? '+' : ''}${Math.abs(r)}%`; };
 let fullSeq = 0;
@@ -255,7 +257,7 @@ function FullResults({ full }: { full: ABFull }) {
       <div className="csb-abf-ticks" aria-hidden="true">{ticks.map((t, k) => <span key={t} className={k === 0 ? 'is-first' : k === ticks.length - 1 ? 'is-last' : ''} style={{ left: `${X(t)}%` }}>{t.toFixed(dec)}</span>)}</div>
     </figure>}
     <dl className="csb-abf-stats">
-      <div><dt>Observed, A vs B</dt><dd>{pct(a.observed)} vs {pct(b.observed)}</dd></div>
+      <div><dt><EditableText field="deep:abtest.full.observedLabel" value={full.observedLabel ?? (full.observedAs === 'per100' ? 'Per 100 people, A vs B' : 'Observed, A vs B')} /></dt><dd>{pct(a.observed, full.observedAs)} vs {pct(b.observed, full.observedAs)}</dd></div>
       <div><dt>Chance B is better</dt><dd>{whole(full.win)}</dd></div>
       <div><dt>Likely range of the lift</dt><dd>{one(full.low)} to {one(full.high, true)}</dd></div>
     </dl>
@@ -358,6 +360,9 @@ export function ABTestControls({ section, onChange }: { section: CaseStudySectio
       <div className="csb-field"><span className="csb-field-label">Curve width</span>
         <div className="csb-ab-ctl-line">{([0, 1] as const).map(i => <label key={i} className="csb-abf-spread"><span>{i ? 'B' : 'A'}</span><input type="number" inputMode="decimal" step="0.001" min="0.001" aria-label={`Curve width for ${i ? 'B' : 'A'}`} value={data.full!.arms[i].spread} onChange={e => set({ full: { ...data.full!, arms: data.full!.arms.map((arm, k) => k === i ? { ...arm, spread: e.target.value } : arm) as [ABArm, ABArm] } })} /></label>)}</div>
         <p className="csb-field-note">How spread out each curve is (standard deviation). Match it to your original chart.</p></div>
+      <div className="csb-field"><span className="csb-field-label">Show the observed numbers as</span>
+        <div className="csb-segment" role="group" aria-label="Show the observed numbers as">{([['percent', 'Percent'], ['per100', 'Per 100 people'], ['raw', 'As typed']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(data.full!.observedAs ?? 'percent') === v} onClick={() => set({ full: { ...data.full!, observedAs: v } })}>{l}</button>)}</div>
+        <p className="csb-field-note">Percent for a share of people (0.26 → 26%). Per 100 people for an average count (0.26 → 26). Edit the label on the page.</p></div>
     </>}
   </>;
 }
