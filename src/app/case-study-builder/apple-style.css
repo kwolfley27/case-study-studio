@@ -3851,3 +3851,23 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 /* With a picture the card is taller, so the flip gets more scroll room before the question arrives */
 .csb-canvas .csb-doc-main .csb-psf.has-pic{height:170vh}
 @container (max-width:620px){.csb-canvas .csb-doc-main .csb-psf.has-pic{height:160vh}}
+
+/* Problem picture spotlight: the rest dims, the part gets a ring and a short label */
+.csb-ps-pic-frame{position:relative}
+.csb-ps-dim{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.csb-ps-ring{position:absolute;z-index:3;border-radius:10px;box-shadow:0 0 0 2px var(--csb-accent,#c8553d),0 0 0 7px color-mix(in srgb,var(--csb-accent,#c8553d) 22%,transparent);pointer-events:none}
+.csb-ps-label{position:absolute;z-index:4;margin-top:12px;padding:6px 12px;border-radius:9999px;background:#0f0e0d;color:#fdfcfc;font-size:14px;line-height:1.3;font-weight:500;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.csb-ps-label.is-above{margin-top:0;margin-bottom:12px}
+.csb-ps-label .csb-editable-text{color:inherit}
+.csb-ps-pic-tools{display:flex;gap:8px;margin-top:10px}
+.csb-ps-pic-tools button{min-height:32px;padding:6px 14px;border-radius:9999px;border:1px solid var(--t-line2,#ebe8e4);background:var(--t-paper,#fdfcfc);color:var(--t-ink,#0f0e0d);font-size:13px;cursor:pointer}
+.csb-ps-pic-tools button[aria-pressed=true]{background:#0f0e0d;color:#fdfcfc;border-color:#0f0e0d}
+.csb-ps-pic-tools button:focus-visible{outline:2px solid var(--csb-accent,#c8553d);outline-offset:2px}
+@media (max-width:620px){.csb-ps-label{font-size:12.5px;padding:5px 10px;margin-top:8px}}
+.csb-ps-label .csb-editable-text{white-space:nowrap;display:inline}
+
+/* Editor matches the published page: same column width, scaled to fit (see usePageScale) */
+.csb-canvas.csb-canvas-editable[data-page-scale] .csb-doc-main{width:920px!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important;padding-inline:16px!important;box-sizing:border-box;zoom:var(--edit-zoom,1)}
+/* Editable text flows like the published text (inline, not a block of its own), so lines break the same */
+.csb-canvas.csb-canvas-editable .csb-editable-text{display:inline;max-width:none}
+.csb-canvas.csb-canvas-editable .csb-editable-text:empty{display:inline-block;min-width:3ch}

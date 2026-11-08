@@ -26,8 +26,39 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   const editing = !!useContext(EditingContext).edit;
   // Optional picture under the statement (item 5), e.g. the original design. Click it to paste a frame or image.
   const pic = section.items[5];
+  const edit = useContext(EditingContext).edit;
+  const [drawing, setDrawing] = useState(false);
+  const [draft, setDraft] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  // Spotlight: drag a box around one part of the picture (e.g. the license chip); the rest dims and the box gets a ring and a label.
+  const spot = pic?.spots?.[0];
+  const setSpots = (spots: NonNullable<typeof pic>['spots']) => edit?.('json:items', JSON.stringify(section.items.map((it, i) => i === 5 ? { ...it, spots } : it)));
+  const draw = (event: React.PointerEvent) => {
+    event.preventDefault(); event.stopPropagation();
+    const r = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const sx = (event.clientX - r.left) / r.width, sy = (event.clientY - r.top) / r.height; let box = { x: sx, y: sy, w: 0, h: 0 };
+    const move = (e: PointerEvent) => { const ex = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), ey = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)); box = { x: Math.min(sx, ex), y: Math.min(sy, ey), w: Math.abs(ex - sx), h: Math.abs(ey - sy) }; setDraft(box); };
+    const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); setDraft(null); setDrawing(false); if (box.w > .02 && box.h > .02) setSpots([{ ...box, note: spot?.note || 'License chip' }]); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up);
+  };
+  const labelRight = spot ? spot.x + spot.w / 2 > .6 : false;
+  const labelAbove = spot ? spot.y + spot.h > .82 : false;
   const picture = pic && !pic.hidden && (pic.image || editing) ? <figure className="csb-ps-pic">
-      <div className={`csb-ps-pic-frame ${pic.image ? 'has-image' : ''}`} data-image-slot={`${section.id}:5`}>{pic.image ? <Media src={pic.image} alt={pic.title || 'The original design'} loading="lazy" /> : <span className="csb-ps-pic-empty"><strong>Add a picture, like the original design</strong><small>Click to paste a Figma frame, an image or a GIF</small></span>}</div>
+      <div className={`csb-ps-pic-frame ${pic.image ? 'has-image' : ''}`} data-image-slot={`${section.id}:5`}>
+        {pic.image ? <Media src={pic.image} alt={pic.title || 'The original design'} loading="lazy" draggable={false} /> : <span className="csb-ps-pic-empty"><strong>Add a picture, like the original design</strong><small>Click to paste a Figma frame, an image or a GIF</small></span>}
+        {pic.image && spot && !drawing && <>
+          <motion.svg className="csb-ps-dim" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" initial={reduce ? false : { opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: .6 }} transition={{ duration: .6, delay: .2, ease: [0.22, 1, 0.36, 1] }}>
+            <defs><mask id={`ps-m-${section.id}`}><rect width="100" height="100" fill="#fff" /><rect x={spot.x * 100} y={spot.y * 100} width={spot.w * 100} height={spot.h * 100} rx="1.2" fill="#000" /></mask></defs>
+            <rect width="100" height="100" fill="#0c0b0a" fillOpacity=".55" mask={`url(#ps-m-${section.id})`} />
+          </motion.svg>
+          <motion.span className="csb-ps-ring" aria-hidden="true" style={{ left: `${spot.x * 100}%`, top: `${spot.y * 100}%`, width: `${spot.w * 100}%`, height: `${spot.h * 100}%` }} initial={reduce ? false : { opacity: 0, scale: 1.04 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: .6 }} transition={{ duration: .5, delay: .35 }} />
+          {(spot.note || editing) && <motion.span className={`csb-ps-label ${labelRight ? 'is-right' : ''} ${labelAbove ? 'is-above' : ''}`} style={labelRight ? { right: `${(1 - spot.x - spot.w) * 100}%`, ...(labelAbove ? { bottom: `${(1 - spot.y) * 100}%` } : { top: `${(spot.y + spot.h) * 100}%` }) } : { left: `${spot.x * 100}%`, ...(labelAbove ? { bottom: `${(1 - spot.y) * 100}%` } : { top: `${(spot.y + spot.h) * 100}%` }) }} initial={reduce ? false : { opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .6 }} transition={{ duration: .5, delay: .5 }}><EditableText field="deep:items.5.spots.0.note" value={spot.note || ''} /></motion.span>}
+        </>}
+        {drawing && <div className="csb-sc-draw" data-no-slot onPointerDown={draw} onClick={e => e.stopPropagation()}><span>Drag a box around the part to point out</span>{draft && <i style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }} />}</div>}
+      </div>
+      {editing && pic.image && <div className="csb-ps-pic-tools" data-no-slot onClick={e => e.stopPropagation()}>
+        <button type="button" aria-pressed={drawing} onClick={() => setDrawing(!drawing)}>{drawing ? 'Cancel' : spot ? 'Redraw spotlight' : '+ Spotlight a part'}</button>
+        {spot && !drawing && <button type="button" onClick={() => setSpots([])}>Remove spotlight</button>}
+      </div>}
       {(pic.title || editing) && <figcaption><EditableText field="items.5.title" value={pic.title || ''} /></figcaption>}
     </figure> : null;
   const [who, need, why, hmw, success] = section.items;
@@ -93,7 +124,6 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   const bubble = useTransform(p, [.32, .62], [0, 1]);
   const bubbleY = useTransform(p, [.32, .62], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
-  const hint = useTransform(p, [0, .04, .1], [1, 1, 0]);
   // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
   const bubbleRef = useRef<HTMLDivElement>(null);
   const [autoInk, setAutoInk] = useState('#fdfcfc');
@@ -109,7 +139,7 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   return <div className={`csb-psf ${picture ? 'has-pic' : ''}`} ref={scene}>
     <div className="csb-psf-stick" ref={stick}>
       <motion.div className="csb-psf-card is-fade">
-        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p>{picture}<motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Keep scrolling</motion.span></motion.div>
+        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p>{picture}</motion.div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
