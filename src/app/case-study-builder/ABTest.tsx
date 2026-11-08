@@ -23,7 +23,9 @@ export type ABMarker = { x: number; y: number; w: number; h: number; note: strin
 export type ABArm = { name: string; users: string; observed: string; posterior: string; spread: string };
 export type ABFull = { on: boolean; title: string; axis: string; arms: [ABArm, ABArm]; lift: string; win: string; low: string; high: string; explain: string; summary?: string;
   /** How the quick view shows the observed averages: as a percentage (share of people), per 100 people, or as typed. */
-  observedAs?: 'percent' | 'per100' | 'raw'; observedLabel?: string };
+  observedAs?: 'percent' | 'per100' | 'raw'; observedLabel?: string;
+  /** Show a button that opens the full table and longer explanation (off unless turned on). */
+  showDetails?: boolean };
 export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; method?: string; showMarkers?: boolean; full?: ABFull };
 export const blankFull = (a = 'A', b = 'B'): ABFull => ({ on: true, title: 'What the test measured', axis: 'Per user average', arms: [{ name: `${a} (control)`, users: '', observed: '', posterior: '', spread: '0.02' }, { name: b, users: '', observed: '', posterior: '', spread: '0.02' }], lift: '', win: '', low: '', high: '', explain: 'Explain in a sentence or two what the curves and numbers mean.', summary: 'One sentence: what the result means.' });
 
@@ -262,6 +264,7 @@ function FullResults({ full }: { full: ABFull }) {
       <div><dt>Likely range of the lift</dt><dd>{one(full.low)} to {one(full.high, true)}</dd></div>
     </dl>
     <p className="csb-abf-summary"><EditableText field="deep:abtest.full.summary" value={full.summary ?? ''} /></p>
+    {full.showDetails && <>
     <button type="button" className="csb-abf-more" aria-expanded={open} aria-controls={detailsId} data-no-slot onClick={e => { e.stopPropagation(); setOpen(!open); }}>
       {open ? 'Hide the full results' : 'Show the full results'}
       <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" style={{ transform: open ? 'rotate(180deg)' : undefined }}><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -284,6 +287,7 @@ function FullResults({ full }: { full: ABFull }) {
       </div>
       <p className="csb-abf-explain"><EditableText field="deep:abtest.full.explain" value={full.explain} /></p>
     </motion.div>}</AnimatePresence>
+    </>}
   </div>;
 }
 
@@ -356,10 +360,11 @@ export function ABTestControls({ section, onChange }: { section: CaseStudySectio
     <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Full results</p>
     <label className="csb-check-field"><input type="checkbox" checked={!!data.full?.on} onChange={e => set({ full: e.target.checked ? { ...(data.full ?? blankFull(a?.title || 'A', b?.title || 'B')), on: true } : data.full ? { ...data.full, on: false } : undefined })} /> Show curves, results table and explanation</label>
     {data.full?.on && <>
-      <p className="csb-field-note">The page shows a quick view (curves, three key numbers, one sentence) with a button to open the full table and explanation. It replaces the metric bars. Type the numbers into the table on the page.</p>
+      <p className="csb-field-note">The page shows the curves, three key numbers and one sentence, in place of the metric bars. Turn on the button below to also let readers open the full table, where you type the numbers.</p>
       <div className="csb-field"><span className="csb-field-label">Curve width</span>
         <div className="csb-ab-ctl-line">{([0, 1] as const).map(i => <label key={i} className="csb-abf-spread"><span>{i ? 'B' : 'A'}</span><input type="number" inputMode="decimal" step="0.001" min="0.001" aria-label={`Curve width for ${i ? 'B' : 'A'}`} value={data.full!.arms[i].spread} onChange={e => set({ full: { ...data.full!, arms: data.full!.arms.map((arm, k) => k === i ? { ...arm, spread: e.target.value } : arm) as [ABArm, ABArm] } })} /></label>)}</div>
         <p className="csb-field-note">How spread out each curve is (standard deviation). Match it to your original chart.</p></div>
+      <label className="csb-check-field"><input type="checkbox" checked={!!data.full!.showDetails} onChange={e => set({ full: { ...data.full!, showDetails: e.target.checked } })} /> Add a button to open the full table and explanation</label>
       <div className="csb-field"><span className="csb-field-label">Show the observed numbers as</span>
         <div className="csb-segment" role="group" aria-label="Show the observed numbers as">{([['percent', 'Percent'], ['per100', 'Per 100 people'], ['raw', 'As typed']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(data.full!.observedAs ?? 'percent') === v} onClick={() => set({ full: { ...data.full!, observedAs: v } })}>{l}</button>)}</div>
         <p className="csb-field-note">Percent for a share of people (0.26 → 26%). Per 100 people for an average count (0.26 → 26). Edit the label on the page.</p></div>
