@@ -3891,9 +3891,12 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){background:none!important;box-shadow:none!important;border-radius:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(24px,3cqw,36px)!important;margin-block:0!important}
 /* the card reaches into the section's side padding, so the statement lines up with the label */
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-card{border-radius:24px;margin-inline:0;width:auto;padding:clamp(28px,4cqw,44px) clamp(20px,3.2cqw,32px)}
-.csb-canvas .csb-doc-main .csb-variant-tinted .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-surface,#f5f3f1)}
-.csb-canvas .csb-doc-main .csb-variant-dark .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-night,#161411)}
-.csb-canvas .csb-doc-main .csb-variant-light .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)}
+.csb-psf-bg{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.csb-psf-card.is-fade>.csb-psf-face{position:relative}
+.csb-canvas .csb-doc-main .csb-variant-tinted .csb-psf:not(.is-static) .csb-psf-bg{background:var(--t-surface,#f5f3f1)}
+/* On dark, the card stays: a light bubble needs the dark behind it */
+.csb-canvas .csb-doc-main .csb-variant-dark .csb-psf:not(.is-static) .csb-psf-bg{background:var(--t-night,#161411);opacity:1!important}
+.csb-canvas .csb-doc-main .csb-variant-light .csb-psf:not(.is-static) .csb-psf-bg{background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)}
 .csb-canvas .csb-doc-main .csb-variant-dark:has(.csb-psf:not(.is-static)) .csb-section-intro .csb-eyebrow{color:var(--t-muted,#6f6961)!important}
 
 /* Section rhythm: a heading sits close to its own text, sections sit clearly apart, and paragraphs keep
@@ -3908,9 +3911,9 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-narrative .csb-section-intro{margin-bottom:14px!important}
 
 /* How might we bubble: its text starts on the same left edge as the statement and the rest of the page.
-   The bubble reaches out into the card's padding (like the card reaches into the section's) and spans the card. */
-.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-hmw{justify-items:stretch!important}
-.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-bubble{--bp:clamp(18px,2.8cqw,30px);max-width:none!important;width:calc(100% + 2 * var(--bp));margin-inline:calc(-1 * var(--bp));padding-inline:var(--bp)!important;box-sizing:border-box}
+   The bubble sits inside the card with room around it, sized to its text up to a comfortable line length. */
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-hmw{justify-items:start!important}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-bubble{max-width:max(min(84%,560px),min(100%,320px))!important;width:fit-content;margin-inline:0;padding-inline:clamp(24px,3.4cqw,36px)!important;box-sizing:border-box}
 /* The space after the card matches the space between other sections */
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){padding-bottom:clamp(36px,5.6cqw,52px)!important}
 
@@ -3925,8 +3928,8 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-story-section:not(.csb-variant-dark) :is(.csb-research-card p,.csb-flow-step p,.csb-comparison-panel p,.csb-metric p,.csb-findings p,.csb-detail dd,.csb-editorial-statement p){color:#57534e!important}
 .csb-canvas .csb-doc-main .csb-editorial-statement p{max-width:40em}
 /* While editing (no transition), the bubble has the same width as on the page, so the question wraps the same */
-.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-hmw{justify-items:stretch!important}
-.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-bubble{--bp:clamp(18px,2.8cqw,30px);max-width:none!important;width:calc(100% + 2 * var(--bp));margin-inline:calc(-1 * var(--bp));padding-inline:var(--bp)!important;box-sizing:border-box}
+.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-hmw{justify-items:start!important}
+.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-bubble{max-width:max(min(84%,560px),min(100%,320px))!important;width:fit-content;margin-inline:0;padding-inline:clamp(24px,3.4cqw,36px)!important;box-sizing:border-box}
 
 /* A/B test: clear add spots for each screen while editing */
 .csb-ab-adders{position:absolute;inset:0;z-index:6;display:grid;grid-template-columns:1fr 1fr}
