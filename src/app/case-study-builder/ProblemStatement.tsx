@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { useContext, useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'motion/react';
-import { EditableText } from './EditableText';
+import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
 import { ResearchVisual } from './ResearchVisuals';
@@ -58,7 +58,9 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
    back = a speech bubble asking "How might we…?". Rotation follows the scroll, so it
    turns back if you scroll up. Reduced motion shows the two faces one after the other. */
 function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, success }: { bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
-  const reduce = useReducedMotion();
+  // While editing, both faces stay still and fully visible so the text can be typed into; the flip plays in Preview and on the page.
+  const editing = !!useContext(EditingContext).edit;
+  const reduce = useReducedMotion() || editing;
   const scene = useRef<HTMLDivElement>(null);
   const stick = useRef<HTMLDivElement>(null);
   // 0 when the card first pins, 1 when it lets go.
