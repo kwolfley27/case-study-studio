@@ -3877,3 +3877,10 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-run{height:55vh}
 .csb-canvas .csb-doc-main .csb-psf.has-pic:not(.is-static) .csb-psf-stick{top:max(64px,8vh)}
 .csb-psf-stick>.csb-ps-pic{margin-top:0}
+
+/* Problem statement: sits right under its label, pins near the top, and keeps a comfortable line length */
+.csb-canvas .csb-doc-main .csb-kind-problem .csb-section-intro{margin-bottom:clamp(14px,2cqw,20px)!important}
+.csb-canvas .csb-doc-main .csb-psf-face.is-front{min-height:0!important;place-items:start!important;align-content:start}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-stick,.csb-canvas .csb-doc-main .csb-psf.has-pic:not(.is-static) .csb-psf-stick{top:max(64px,10vh)}
+.csb-canvas .csb-doc-main .csb-psf .csb-ps-sentence,.csb-canvas .csb-doc-main .csb-ps-sentence{max-width:25em}
+.csb-canvas .csb-doc-main .csb-psf-bubble{max-width:min(100%,680px)}
