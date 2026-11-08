@@ -93,7 +93,6 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   const bubble = useTransform(p, [.32, .62], [0, 1]);
   const bubbleY = useTransform(p, [.32, .62], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
-  const hint = useTransform(p, [0, .04, .1], [1, 1, 0]);
   // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
   const bubbleRef = useRef<HTMLDivElement>(null);
   const [autoInk, setAutoInk] = useState('#fdfcfc');
@@ -109,7 +108,7 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   return <div className={`csb-psf ${picture ? 'has-pic' : ''}`} ref={scene}>
     <div className="csb-psf-stick" ref={stick}>
       <motion.div className="csb-psf-card is-fade">
-        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p>{picture}<motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Keep scrolling</motion.span></motion.div>
+        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p>{picture}</motion.div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
