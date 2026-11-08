@@ -19,7 +19,11 @@ import type { CaseStudySection } from './model';
 
 export type ABMetric = { label: string; kind: 'rate' | 'number' | 'votes'; a: string; b: string; unit?: string; of?: string; better?: 'higher' | 'lower' };
 export type ABMarker = { x: number; y: number; w: number; h: number; note: string; metric?: number };
-export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; method?: string; showMarkers?: boolean };
+/** Full results: each version's estimate drawn as a curve, the results table, and a plain-language explanation. */
+export type ABArm = { name: string; users: string; observed: string; posterior: string; spread: string };
+export type ABFull = { on: boolean; title: string; axis: string; arms: [ABArm, ABArm]; lift: string; win: string; low: string; high: string; explain: string };
+export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; method?: string; showMarkers?: boolean; full?: ABFull };
+export const blankFull = (a = 'A', b = 'B'): ABFull => ({ on: true, title: 'What the test measured', axis: 'Per user average', arms: [{ name: `${a} (control)`, users: '', observed: '', posterior: '', spread: '0.02' }, { name: b, users: '', observed: '', posterior: '', spread: '0.02' }], lift: '', win: '', low: '', high: '', explain: 'Explain in a sentence or two what the curves and numbers mean.' });
 
 export const defaultABTest = (): ABTestData => ({
   mode: 'wipe', showMarkers: true, result: 'b',
@@ -207,6 +211,62 @@ function MetricRow({ m, index, highlight, delay, neutral = false }: { m: ABMetri
   </motion.div>;
 }
 
+/* ---------- Full results: curves, table, explanation ---------- */
+const normal = (x: number, m: number, sd: number) => Math.exp(-0.5 * ((x - m) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+function niceStep(range: number) { const raw = range / 7; const p = 10 ** Math.floor(Math.log10(raw)); const f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
+function FullResults({ full }: { full: ABFull }) {
+  const reduce = useReducedMotion();
+  const plotRef = useRef<HTMLDivElement>(null);
+  const seen = useInView(plotRef, { once: true, amount: .5 });
+  // Curves are drawn in a 0–100 box stretched to the chart's size (strokes stay crisp); the axis labels are
+  // ordinary text placed by percentage, so they stay readable at any width.
+  const arms = full.arms.map(a => ({ m: num(a.posterior) || num(a.observed), sd: Math.max(.0005, num(a.spread) || .02) }));
+  const ok = arms.every(a => a.m > 0);
+  const lo0 = Math.min(...arms.map(a => a.m - 4 * a.sd)), hi0 = Math.max(...arms.map(a => a.m + 4 * a.sd));
+  const step = niceStep(hi0 - lo0); const lo = Math.floor(lo0 / step) * step, hi = Math.ceil(hi0 / step) * step;
+  const peak = Math.max(...arms.map(a => normal(a.m, a.m, a.sd)));
+  const X = (v: number) => (v - lo) / (hi - lo) * 100, Y = (d: number) => 4 + (1 - d / peak) * 96;
+  const path = (a: { m: number; sd: number }) => Array.from({ length: 161 }, (_, i) => { const v = lo + (hi - lo) * i / 160; return `${i ? 'L' : 'M'}${X(v).toFixed(2)},${Y(normal(v, a.m, a.sd)).toFixed(2)}`; }).join(' ');
+  const ticks: number[] = []; for (let v = lo; v <= hi + step / 2; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+  const dec = Math.max(0, -Math.floor(Math.log10(step)));
+  const [a, b] = full.arms;
+  const summary = `${a.name}: ${a.posterior || a.observed}. ${b.name}: ${b.posterior || b.observed}. The two curves largely overlap.`;
+  const cell = (path: string, v: string) => <EditableText field={`deep:abtest.full.${path}`} value={v} />;
+  return <div className="csb-abf">
+    <p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>
+    {ok && <figure className="csb-abf-chart">
+      <div className="csb-abf-plot" ref={plotRef}>
+        {ticks.map(t => <i key={t} className="csb-abf-grid" style={{ left: `${X(t)}%` }} aria-hidden="true" />)}
+        {/* Revealed left to right (a line-draw animation breaks on stretched, non-scaling strokes) */}
+        <motion.svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={summary} initial={reduce ? false : { clipPath: 'inset(-10% 100% -10% 0%)' }} animate={seen || reduce ? { clipPath: 'inset(-10% 0% -10% 0%)' } : { clipPath: 'inset(-10% 100% -10% 0%)' }} transition={{ duration: reduce ? 0 : 1.3, ease: [0.22, 1, 0.36, 1] }}>
+          {arms.map((arm, i) => <path key={i} className={`csb-abf-curve ${i ? 'is-b' : 'is-a'}`} d={path(arm)} vectorEffect="non-scaling-stroke" />)}
+        </motion.svg>
+      </div>
+      <div className="csb-abf-ticks" aria-hidden="true">{ticks.map((t, k) => <span key={t} className={k === 0 ? 'is-first' : k === ticks.length - 1 ? 'is-last' : ''} style={{ left: `${X(t)}%` }}>{t.toFixed(dec)}</span>)}</div>
+      <figcaption>
+        <span className="csb-abf-axis"><EditableText field="deep:abtest.full.axis" value={full.axis} /></span>
+        <span className="csb-abf-legend"><span><i className="is-a" />{a.name}</span><span><i className="is-b" />{b.name}</span></span>
+      </figcaption>
+    </figure>}
+    <div className="csb-abf-table" tabIndex={0} role="region" aria-label="Test results table">
+      <table>
+        <thead><tr><th scope="col">Version</th><th scope="col">Number of users</th><th scope="col">Observed per user average</th><th scope="col">Posterior per user average</th><th scope="col">Average posterior lift</th><th scope="col">Win probability</th><th scope="col">95% credible interval</th></tr></thead>
+        <tbody>
+          {full.arms.map((arm, i) => <tr key={i}>
+            <th scope="row">{cell(`arms.${i}.name`, arm.name)}</th>
+            <td>{cell(`arms.${i}.users`, arm.users)}</td>
+            <td>{cell(`arms.${i}.observed`, arm.observed)}</td>
+            <td>{cell(`arms.${i}.posterior`, arm.posterior)}</td>
+            {i === 0 ? <><td aria-label="Not applicable">–</td><td aria-label="Not applicable">–</td><td aria-label="Not applicable">–</td></> : <>
+              <td>{cell('lift', full.lift)}</td><td>{cell('win', full.win)}</td><td>[{cell('low', full.low)}, {cell('high', full.high)}]</td></>}
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+    <p className="csb-abf-explain"><EditableText field="deep:abtest.full.explain" value={full.explain} /></p>
+  </div>;
+}
+
 export function ABTest({ section, editorMode }: { section: CaseStudySection; editorMode: boolean }) {
   const data: ABTestData = { ...defaultABTest(), ...(section.abtest ?? {}) };
   const [active, setActive] = useState<number | null>(null);
@@ -216,9 +276,10 @@ export function ABTest({ section, editorMode }: { section: CaseStudySection; edi
   return <div className={`csb-ab is-${data.mode ?? 'wipe'}`}>
     {data.mode === 'side' ? <Side section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} /> : <Wipe section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} />}
     {(data.markers.length > 0 && data.showMarkers !== false) && <ol className="csb-ab-changes">{data.markers.map((m, i) => <li key={i} className={active === i ? 'is-active' : ''} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)}><span className="csb-ab-num">{i + 1}</span><EditableText field={`abtest.markers.${i}.note`} value={m.note} /></li>)}</ol>}
-    {data.metrics.length > 0 && <div className="csb-ab-results">
+    {(data.metrics.length > 0 || data.full?.on) && <div className="csb-ab-results">
       <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}>{resultLabel}</span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>
-      <div className="csb-ab-metrics" style={{ '--ab-cols': Math.min(3, data.metrics.length) } as React.CSSProperties}>{data.metrics.map((m, i) => <MetricRow key={i} m={m} index={i} highlight={activeMetric === i} delay={i * .12} neutral={result === 'none'} />)}</div>
+      {data.metrics.length > 0 && <div className="csb-ab-metrics" style={{ '--ab-cols': Math.min(3, data.metrics.length) } as React.CSSProperties}>{data.metrics.map((m, i) => <MetricRow key={i} m={m} index={i} highlight={activeMetric === i} delay={i * .12} neutral={result === 'none'} />)}</div>}
+      {data.full?.on && <FullResults full={data.full} />}
     </div>}
   </div>;
 }
@@ -272,5 +333,13 @@ export function ABTestControls({ section, onChange }: { section: CaseStudySectio
     </div>)}
     {data.metrics.length < 3 && <button type="button" className="csb-jm-add" onClick={() => set({ metrics: [...data.metrics, { label: 'New metric', kind: 'rate', a: '20', b: '25', better: 'higher' }] })}>+ Add metric</button>}
     <p className="csb-field-note">Edit the test details line (method, sample, confidence) on the page.</p>
+    <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Full results</p>
+    <label className="csb-check-field"><input type="checkbox" checked={!!data.full?.on} onChange={e => set({ full: e.target.checked ? { ...(data.full ?? blankFull(a?.title || 'A', b?.title || 'B')), on: true } : data.full ? { ...data.full, on: false } : undefined })} /> Show curves, results table and explanation</label>
+    {data.full?.on && <>
+      <p className="csb-field-note">Type the numbers into the table on the page. The curves are drawn from each version's posterior average.</p>
+      <div className="csb-field"><span className="csb-field-label">Curve width</span>
+        <div className="csb-ab-ctl-line">{([0, 1] as const).map(i => <label key={i} className="csb-abf-spread"><span>{i ? 'B' : 'A'}</span><input type="number" inputMode="decimal" step="0.001" min="0.001" aria-label={`Curve width for ${i ? 'B' : 'A'}`} value={data.full!.arms[i].spread} onChange={e => set({ full: { ...data.full!, arms: data.full!.arms.map((arm, k) => k === i ? { ...arm, spread: e.target.value } : arm) as [ABArm, ABArm] } })} /></label>)}</div>
+        <p className="csb-field-note">How spread out each curve is (standard deviation). Match it to your original chart.</p></div>
+    </>}
   </>;
 }
