@@ -3895,3 +3895,14 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-variant-dark .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-night,#161411)}
 .csb-canvas .csb-doc-main .csb-variant-light .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)}
 .csb-canvas .csb-doc-main .csb-variant-dark:has(.csb-psf:not(.is-static)) .csb-section-intro .csb-eyebrow{color:var(--t-muted,#6f6961)!important}
+
+/* Section rhythm: a heading sits close to its own text, sections sit clearly apart, and paragraphs keep
+   a comfortable line length (about 70 characters). */
+.csb-canvas .csb-doc-main .csb-story-section .csb-section-intro{margin-bottom:clamp(20px,2.6cqw,28px)!important}
+.csb-canvas .csb-doc-main .csb-story-section.csb-kind-narrative .csb-section-intro{margin-bottom:16px!important}
+.csb-canvas .csb-doc-main .csb-kind-narrative .csb-editorial-statement{margin-top:0!important;padding-top:0!important}
+.csb-canvas .csb-doc-main .csb-kind-narrative .csb-editorial-statement p{margin-top:0!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-variant-tinted):not(.csb-variant-dark){padding-block:clamp(36px,5.6cqw,52px)!important}
+.csb-canvas .csb-doc-main .csb-editorial-statement p,.csb-canvas .csb-doc-main .csb-section-intro .csb-section-body{max-width:40em}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-details) .csb-section-intro h2:last-child{margin-bottom:0!important}
+.csb-canvas .csb-doc-main .csb-story-section.csb-kind-narrative .csb-section-intro{margin-bottom:14px!important}
