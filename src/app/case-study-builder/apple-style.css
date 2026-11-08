@@ -3927,3 +3927,16 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 /* While editing (no transition), the bubble has the same width as on the page, so the question wraps the same */
 .csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-hmw{justify-items:stretch!important}
 .csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-bubble{--bp:clamp(18px,2.8cqw,30px);max-width:none!important;width:calc(100% + 2 * var(--bp));margin-inline:calc(-1 * var(--bp));padding-inline:var(--bp)!important;box-sizing:border-box}
+
+/* A/B test: clear add spots for each screen while editing */
+.csb-ab-adders{position:absolute;inset:0;z-index:6;display:grid;grid-template-columns:1fr 1fr}
+.csb-ab-adder{display:grid;place-content:center;gap:6px;padding:16px;text-align:center;cursor:pointer;background:var(--t-surface,#f5f3f1);border:1.5px dashed var(--t-line,#d6d3d1);color:var(--t-body,#67615a);transition:background-color .15s ease-out,border-color .15s ease-out}
+.csb-ab-adder+.csb-ab-adder{border-left-style:solid;border-left-color:var(--t-line2,#ebe8e4)}
+.csb-ab-adder:first-child{border-radius:20px 0 0 20px}.csb-ab-adder:last-child{border-radius:0 20px 20px 0}
+.csb-ab-adder:hover,.csb-ab-adder:focus-visible{background:color-mix(in srgb,var(--csb-accent,#c8553d) 6%,var(--t-surface,#f5f3f1));border-color:var(--csb-accent,#c8553d);outline:none}
+.csb-ab-adder strong{font-size:17px;font-weight:600;color:var(--t-ink,#1c1917)}
+.csb-ab-adder span{font-size:14px;color:var(--t-muted,#6f6961)}
+.csb-ab-adder.has-image{background:transparent;border-color:transparent;opacity:0}
+.csb-ab-adder.has-image:hover,.csb-ab-adder.has-image:focus-visible{opacity:1;background:rgba(15,14,13,.55);border-color:transparent}
+.csb-ab-adder.has-image strong,.csb-ab-adder.has-image span{color:#fdfcfc}
+@media (prefers-reduced-motion:reduce){.csb-ab-adder{transition:none}}

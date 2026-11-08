@@ -156,6 +156,12 @@ function Wipe({ section, data, editorMode, active, setActive }: { section: CaseS
       </div>
       <span className="csb-ab-tag is-a" style={{ opacity: p > 12 ? 1 : 0 }}>A</span>
       <span className="csb-ab-tag is-b" style={{ opacity: p < 88 ? 1 : 0 }}>B</span>
+      {/* While editing, an empty screen gets a clear spot of its own: left half for A, right half for B. */}
+      {editorMode && (!a?.image || !b?.image) && <div className="csb-ab-adders">
+        {([0, 1] as const).map(i => { const it = section.items[i]; const label = i ? 'B' : 'A'; return <div key={i} className={`csb-ab-adder ${it?.image ? 'has-image' : ''}`} data-image-slot={`${section.id}:${i}`} role="button" tabIndex={0} aria-label={`${it?.image ? 'Change' : 'Add'} screen ${label}`} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e.currentTarget as HTMLElement).click(); } }}>
+          <strong>{it?.image ? `Change screen ${label}` : `Add screen ${label}`}</strong><span>{i ? (b?.title || 'New design') : (a?.title || 'Original')} · click, paste or drop</span>
+        </div>; })}
+      </div>}
     </div>
   </div>;
 }
