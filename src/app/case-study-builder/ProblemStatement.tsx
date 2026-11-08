@@ -35,7 +35,12 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   const marker = section.options?.markStyle !== 'underline';
   const band = marker ? '58%' : '2px';
   const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className={`csb-ps-mark ${marker ? 'is-marker' : ''} ${markColor === 'accent' ? 'is-acc' : ''}`} initial={reduce ? false : { backgroundSize: `0% ${band}` }} whileInView={{ backgroundSize: `100% ${band}` }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
-  const sentence = <>
+  // Free text: write the statement in your own words (optional short headline above it).
+  const free = section.options?.layout === 'free';
+  const sentence = free ? <>
+      <span className="csb-ps-free-title"><EditableText field="options.freeTitle" value={String(section.options?.freeTitle ?? '')} /></span>
+      <EditableText field="options.freeText" value={String(section.options?.freeText ?? '')} />
+    </> : <>
       {mark(0, who?.detail || '')}{' '}
       <EditableText field="items.1.title" value={connector(need?.title, 'need')} />{' '}
       {mark(1, need?.detail || '')}{' '}
@@ -46,11 +51,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement bubbleBg={section.options?.bubble ? String(section.options.bubble) : undefined} bubbleInk={section.options?.bubbleInk ? String(section.options.bubbleInk) : undefined} sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
-      {mark(0, who?.detail || '')}{' '}
-      <EditableText field="items.1.title" value={connector(need?.title, 'need')} />{' '}
-      {mark(1, need?.detail || '')}{' '}
-      <EditableText field="items.2.title" value={connector(why?.title, 'because')} />{' '}
-      {mark(2, why?.detail || '')}.
+      {sentence}
     </motion.p>
     {extras}
   </div>;
