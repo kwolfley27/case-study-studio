@@ -3890,7 +3890,7 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
    the section keeps its normal background. */
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){background:none!important;box-shadow:none!important;border-radius:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(24px,3cqw,36px)!important;margin-block:0!important}
 /* the card reaches into the section's side padding, so the statement lines up with the label */
-.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-card{border-radius:24px;margin-inline:calc(-1 * clamp(20px,4cqw,40px));width:auto;padding:clamp(28px,4cqw,44px) clamp(20px,4cqw,40px)}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-card{border-radius:24px;margin-inline:0;width:auto;padding:clamp(28px,4cqw,44px) clamp(20px,3.2cqw,32px)}
 .csb-canvas .csb-doc-main .csb-variant-tinted .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-surface,#f5f3f1)}
 .csb-canvas .csb-doc-main .csb-variant-dark .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-night,#161411)}
 .csb-canvas .csb-doc-main .csb-variant-light .csb-psf:not(.is-static) .csb-psf-card{background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)}
@@ -4038,3 +4038,6 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-abf-details .csb-abf-explain{margin-top:clamp(24px,3cqw,32px)!important}
 .csb-abf-stats dd{white-space:nowrap}
 @container (min-width:561px){.csb-abf-stats{grid-template-columns:repeat(3,auto)!important;justify-content:start}.csb-abf-stats>div{padding-right:clamp(28px,4cqw,48px)}.csb-abf-stats>div+div{padding-left:clamp(28px,4cqw,48px)}}
+
+/* Tinted and dark section cards line up with the text column of the sections around them */
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-variant-tinted,.csb-variant-dark):not(.csb-kind-annotated):not(:has(.csb-psf:not(.is-static))){margin-inline:clamp(20px,4cqw,40px)!important;padding-inline:clamp(20px,3.2cqw,32px)!important}
