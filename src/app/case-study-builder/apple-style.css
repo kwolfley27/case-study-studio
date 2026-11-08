@@ -3906,3 +3906,10 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-editorial-statement p,.csb-canvas .csb-doc-main .csb-section-intro .csb-section-body{max-width:40em}
 .csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-details) .csb-section-intro h2:last-child{margin-bottom:0!important}
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-narrative .csb-section-intro{margin-bottom:14px!important}
+
+/* How might we bubble: its text starts on the same left edge as the statement and the rest of the page.
+   The bubble reaches out into the card's padding (like the card reaches into the section's) and spans the card. */
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-hmw{justify-items:stretch!important}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-bubble{--bp:clamp(18px,2.8cqw,30px);max-width:none!important;width:calc(100% + 2 * var(--bp));margin-inline:calc(-1 * var(--bp));padding-inline:var(--bp)!important;box-sizing:border-box}
+/* The space after the card matches the space between other sections */
+.csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){padding-bottom:clamp(36px,5.6cqw,52px)!important}
