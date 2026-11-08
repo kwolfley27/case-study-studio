@@ -3998,3 +3998,23 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-abf-table th,.csb-abf-table td{white-space:nowrap}
 .csb-abf-table thead th{white-space:normal;min-width:84px}
 .csb-abf-table thead th:first-child{min-width:0}
+
+/* A/B full results: quick view first, details on demand */
+.csb-ab-results .csb-abf:first-child,.csb-ab-verdict+.csb-abf{margin-top:clamp(16px,2cqw,20px);padding-top:clamp(16px,2cqw,20px)}
+.csb-abf-title{margin-bottom:8px;font-size:var(--ts-meta,14px);font-weight:500;color:var(--t-muted,#6f6961)}
+.csb-abf-plot{height:clamp(110px,15cqw,150px)}
+.csb-abf-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 24px;margin:clamp(18px,2.4cqw,24px) 0 0}
+.csb-abf-stats>div{min-width:0}
+.csb-abf-stats dt{font-size:var(--ts-meta,14px);line-height:1.4;color:var(--t-muted,#6f6961)}
+.csb-abf-stats dd{margin:4px 0 0;font-size:clamp(20px,2.4cqw,24px);line-height:1.2;font-weight:500;letter-spacing:-.01em;color:var(--t-ink,#1c1917);font-variant-numeric:tabular-nums}
+@container (max-width:560px){.csb-abf-stats{grid-template-columns:1fr}}
+.csb-abf-summary{margin:clamp(16px,2cqw,20px) 0 0;max-width:40em;font-size:var(--ts-body,16px);line-height:var(--ts-body-lh,1.75);color:#57534e}
+.csb-abf-more{display:inline-flex;align-items:center;gap:8px;min-height:36px;margin-top:16px;padding:8px 16px;border-radius:9999px;border:1px solid var(--t-line,#d6d3d1);background:var(--t-paper,#fdfcfc);color:var(--t-ink,#1c1917);font:500 14px/1 var(--brand-body,"Inter",ui-sans-serif,system-ui,sans-serif);cursor:pointer;transition:background-color .15s ease-out}
+.csb-abf-more:hover{background:color-mix(in srgb,var(--t-ink,#1c1917) 4%,var(--t-paper,#fdfcfc))}
+.csb-abf-more:focus-visible{outline:2px solid var(--csb-accent,#c8553d);outline-offset:2px}
+.csb-abf-more svg{transition:transform .25s ease-out}
+.csb-abf-details{overflow:hidden}
+.csb-abf-details .csb-abf-table{margin-top:20px}
+.csb-abf-table .csb-editable-text,.csb-abf-table td,.csb-abf-table tbody th{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}
+.csb-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.csb-abf-more,.csb-abf-more svg{transition:none}}
