@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState, useLayoutEffect } from 'react'
 import { motion, useMotionValue, useTransform } from 'motion/react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
+import { Media } from './Media';
 import type { CaseStudySection } from './model';
 import { ResearchVisual } from './ResearchVisuals';
 
@@ -22,6 +23,13 @@ const connector = (title: string | undefined, fallback: string) => {
 
 export function ProblemStatement({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
+  const editing = !!useContext(EditingContext).edit;
+  // Optional picture under the statement (item 5), e.g. the original design. Click it to paste a frame or image.
+  const pic = section.items[5];
+  const picture = pic && !pic.hidden && (pic.image || editing) ? <figure className="csb-ps-pic">
+      <div className={`csb-ps-pic-frame ${pic.image ? 'has-image' : ''}`} data-image-slot={`${section.id}:5`}>{pic.image ? <Media src={pic.image} alt={pic.title || 'The original design'} loading="lazy" /> : <span className="csb-ps-pic-empty"><strong>Add a picture, like the original design</strong><small>Click to paste a Figma frame, an image or a GIF</small></span>}</div>
+      {(pic.title || editing) && <figcaption><EditableText field="items.5.title" value={pic.title || ''} /></figcaption>}
+    </figure> : null;
   const [who, need, why, hmw, success] = section.items;
   const extras = ((hmw && !hmw.hidden) || (success && !success.hidden)) ? <div className="csb-ps-extras">
       {hmw && !hmw.hidden && <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .6, delay: .6 }}><small><EditableText field="items.3.title" value={hmw.title || 'How might we'} /></small><p><EditableText field="items.3.detail" value={hmw.detail} /></p></motion.div>}
@@ -45,11 +53,12 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
       {mark(2, why?.detail || '')}.
     </>;
   // With a "How might we" question the statement sits on a card that turns over as you scroll.
-  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement bubbleBg={section.options?.bubble ? String(section.options.bubble) : undefined} bubbleInk={section.options?.bubbleInk ? String(section.options.bubbleInk) : undefined} sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
+  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement picture={picture} bubbleBg={section.options?.bubble ? String(section.options.bubble) : undefined} bubbleInk={section.options?.bubbleInk ? String(section.options.bubbleInk) : undefined} sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
       {sentence}
     </motion.p>
+    {picture}
     {extras}
   </div>;
 }
@@ -57,7 +66,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
 /* The flip: a tall scroll scene with a sticky card. Front = the problem statement,
    back = a speech bubble asking "How might we…?". Rotation follows the scroll, so it
    turns back if you scroll up. Reduced motion shows the two faces one after the other. */
-function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, success }: { bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
+function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, success }: { picture?: React.ReactNode; bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
   // While editing, both faces stay still and fully visible so the text can be typed into; the flip plays in Preview and on the page.
   const editing = !!useContext(EditingContext).edit;
   const reduce = useReducedMotion() || editing;
@@ -96,11 +105,11 @@ function FlipStatement({ bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, suc
     </motion.div>
   </div>;
   const successRow = success && <div className="csb-psf-success"><span><EditableText field="items.4.title" value={success.title || "We'll know it worked when"} /></span><p><EditableText field="items.4.detail" value={success.detail} /></p></div>;
-  if (reduce) return <div className="csb-psf is-static"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p></div><div className="csb-psf-face is-back">{back}</div>{successRow}</div>;
-  return <div className="csb-psf" ref={scene}>
+  if (reduce) return <div className="csb-psf is-static"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p>{picture}</div><div className="csb-psf-face is-back">{back}</div>{successRow}</div>;
+  return <div className={`csb-psf ${picture ? 'has-pic' : ''}`} ref={scene}>
     <div className="csb-psf-stick" ref={stick}>
       <motion.div className="csb-psf-card is-fade">
-        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p><motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Keep scrolling</motion.span></motion.div>
+        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p>{picture}<motion.span className="csb-psf-hint" style={{ opacity: hint }} aria-hidden="true">Keep scrolling</motion.span></motion.div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
