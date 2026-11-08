@@ -35,12 +35,9 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   const marker = section.options?.markStyle !== 'underline';
   const band = marker ? '58%' : '2px';
   const mark = (index: number, value: string) => <motion.mark style={{ '--ps-mark': markVar } as React.CSSProperties} className={`csb-ps-mark ${marker ? 'is-marker' : ''} ${markColor === 'accent' ? 'is-acc' : ''}`} initial={reduce ? false : { backgroundSize: `0% ${band}` }} whileInView={{ backgroundSize: `100% ${band}` }} viewport={{ once: true, amount: .8 }} transition={{ duration: .8, delay: .25 + index * .35, ease: [0.22, 1, 0.36, 1] }}><EditableText field={`items.${index}.detail`} value={value} /></motion.mark>;
-  // Free text: write the statement in your own words (optional short headline above it).
+  // Free text: one box, the statement in your own words.
   const free = section.options?.layout === 'free';
-  const sentence = free ? <>
-      <span className="csb-ps-free-title"><EditableText field="options.freeTitle" value={String(section.options?.freeTitle ?? '')} /></span>
-      <EditableText field="options.freeText" value={String(section.options?.freeText ?? '')} />
-    </> : <>
+  const sentence = free ? <EditableText field="options.freeText" value={String(section.options?.freeText ?? '')} /> : <>
       {mark(0, who?.detail || '')}{' '}
       <EditableText field="items.1.title" value={connector(need?.title, 'need')} />{' '}
       {mark(1, need?.detail || '')}{' '}
