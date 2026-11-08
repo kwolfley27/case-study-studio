@@ -201,7 +201,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
 function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; editorMode: boolean; onEditSection?: (id: string, field: string, value: string) => void }) {
   const ref = useRef<HTMLElement>(null);
   const items = study.sections.filter(section => !section.hideFromNav && !section.hidden);
-  const [active, setActive] = useState<string | null>(items[0]?.id ?? null);
+  const [active, setActive] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   useEffect(() => {
     const nav = ref.current; if (!nav) return;
@@ -209,12 +209,15 @@ function SideNav({ study, editorMode, onEditSection }: { study: BuilderStudy; ed
     const target: HTMLElement | Window = root ?? window;
     const update = () => {
       const top = root ? root.getBoundingClientRect().top : 0;
-      const line = top + (root ? root.clientHeight : window.innerHeight) * 0.35;
+      const line = top + (root ? root.clientHeight : window.innerHeight) * 0.22;
       let current: string | null = null;
       for (const section of items) { const el = document.getElementById(`builder-section-${section.id}`); if (el && el.getBoundingClientRect().top <= line) current = section.id; }
-      setActive(current ?? items[0]?.id ?? null);
-      const first = document.getElementById(`builder-section-${study.sections[0]?.id}`);
-      setRevealed(!!first && first.getBoundingClientRect().top <= top + (root ? root.clientHeight : window.innerHeight) * 0.7);
+      // At the very bottom of the page the last section can't scroll up to the line, so it counts as reached.
+      const sc = root ?? document.scrollingElement; const atEnd = !!sc && sc.scrollTop > 0 && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4;
+      if (atEnd && current !== null) current = items[items.length - 1].id;
+      // Nothing is highlighted, and the menu stays hidden, until you reach the first section.
+      setActive(current);
+      setRevealed(current !== null);
     };
     update();
     target.addEventListener("scroll", update, { passive: true });
