@@ -3762,11 +3762,11 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-details) .csb-section-intro h2{font-weight:max(var(--brand-weight,650),650)!important}
 .csb-canvas .csb-doc-main .csb-findings h3{font-weight:650!important}
 
-/* ── Column centered in the space beside the menu (like the original site) ──
-   With the side menu showing, the reading column is centered in the room to the
-   right of the menu instead of on the whole window, so the page doesn't crowd left. */
+/* ── Column centered on the page ──
+   With the side menu showing, the reading column is always centered on the whole window.
+   On narrower windows it gets a little narrower so it stays centered and clears the menu. */
 @container csbview (min-width:1241px){
-  .csb-canvas.has-side-nav .csb-doc-main{--nav-room:220px;margin-left:calc(var(--nav-room) + max(0px,(100% - var(--nav-room) - 920px) / 2));margin-right:0;width:min(920px,calc(100% - var(--nav-room) - 24px));max-width:none}
+  .csb-canvas.has-side-nav .csb-doc-main{--nav-room:240px;width:min(920px,calc(100% - 2 * var(--nav-room)));margin-left:calc((100% - min(920px,100% - 2 * var(--nav-room))) / 2);margin-right:0;max-width:none}
 }
 /* Weight and color closer to the original: slightly larger, darker title; darker body text */
 .csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-details) .csb-section-intro h2{font-size:clamp(22px,2.7cqw,26px)!important}
@@ -3836,3 +3836,18 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas-editable .csb-psf.is-static .csb-psf-bubble{opacity:1!important;transform:none!important}
 .csb-canvas-editable .csb-psf.is-static{gap:12px}.csb-canvas-editable .csb-psf.is-static .csb-psf-face{min-height:0;padding:clamp(20px,3cqw,32px) 0}
 .csb-canvas .csb-doc-main .csb-psf.is-static{height:auto}.csb-canvas-editable .csb-doc-main .csb-psf.is-static .csb-psf-face.is-front{min-height:0}
+
+/* Problem statement: optional picture under the statement (e.g. the original design) */
+.csb-ps-pic{margin:clamp(20px,3cqw,32px) 0 0;width:100%;max-width:760px}
+.csb-ps-pic-frame{border-radius:14px;overflow:hidden;background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px var(--t-line2,#ebe8e4),0 12px 32px rgba(0,0,0,.05)}
+.csb-ps-pic-frame:not(.has-image){background:none;box-shadow:none}
+.csb-ps-pic-frame img,.csb-ps-pic-frame video{display:block;width:100%;height:auto;max-height:min(52vh,460px);object-fit:contain}
+.csb-ps-pic-empty{display:grid;place-content:center;gap:6px;min-height:clamp(150px,20cqw,220px);padding:24px;border:1px dashed var(--t-line,#d6d3d1);border-radius:14px;text-align:center;cursor:pointer;color:var(--t-body,#67615a)}
+.csb-ps-pic-empty strong{font-size:16px;font-weight:500;color:var(--t-ink,#0f0e0d)}
+.csb-ps-pic-empty small{font-size:14px;color:var(--t-muted,#6f6961)}
+.csb-ps-pic figcaption{margin-top:10px;font-size:14px;line-height:1.5;color:var(--t-muted,#6f6961);text-align:left}
+.csb-variant-dark .csb-ps-pic-empty strong{color:#fdfcfc}.csb-variant-dark .csb-ps-pic-empty,.csb-variant-dark .csb-ps-pic figcaption{color:#a59f97}
+.csb-story-section .csb-ps-pic{background:none!important;box-shadow:none!important;padding:0!important;min-height:0!important;height:auto!important;aspect-ratio:auto!important;border-radius:0}
+/* With a picture the card is taller, so the flip gets more scroll room before the question arrives */
+.csb-canvas .csb-doc-main .csb-psf.has-pic{height:170vh}
+@container (max-width:620px){.csb-canvas .csb-doc-main .csb-psf.has-pic{height:160vh}}
