@@ -3829,3 +3829,14 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-psf-bubble{max-width:720px}
 .csb-canvas .csb-doc-main .csb-psf-ask{font-size:clamp(15px,1.6cqw,17px)}
 @container (max-width:620px){.csb-canvas .csb-doc-main .csb-psf{height:100vh}}
+
+/* Editable text works like a text box: a visible box on hover, a clear ring while typing, full-width for
+   headings and paragraphs, and faint outlines on everything editable in the selected section.
+   The box is drawn with outline and shadow (no padding), so editing never shifts the layout. */
+.csb-canvas-editable .csb-editable-text{position:relative;border-radius:6px;outline:1px dashed transparent;outline-offset:5px;transition:outline-color .15s ease-out,box-shadow .15s ease-out;min-width:3ch;caret-color:var(--csb-accent,#c8553d)}
+.csb-canvas-editable .csb-editable-text[data-block]{display:block}
+.csb-canvas-editable .is-selected .csb-editable-text{outline-color:color-mix(in srgb,currentColor 24%,transparent)}
+.csb-canvas-editable .csb-editable-text:hover{outline-style:solid;outline-color:color-mix(in srgb,currentColor 30%,transparent)}
+.csb-canvas-editable .csb-editable-text:focus,.csb-canvas-editable .csb-editable-text:focus:hover{outline:1.5px solid var(--csb-accent,#c8553d);outline-offset:5px;box-shadow:0 0 0 5px color-mix(in srgb,var(--csb-accent,#c8553d) 5%,transparent),0 0 0 9px color-mix(in srgb,var(--csb-accent,#c8553d) 14%,transparent)}
+.csb-canvas-editable .csb-editable-text:empty:before{content:'Type here';opacity:.45;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.csb-canvas-editable .csb-editable-text{transition:none}}

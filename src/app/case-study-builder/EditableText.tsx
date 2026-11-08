@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useRef } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';
 
 /** Token-based text styles a designer can apply to any editable field. */
 export type TextStyle = { tone?: 'ink' | 'muted' | 'accent' | 'accent2'; size?: 's' | 'l' | 'xl'; weight?: 'light' | 'regular' | 'bold' };
@@ -16,18 +16,43 @@ export function noOrphan(text: string): string {
   }).join('\n');
 }
 
+/** Paragraph-like fields take new lines with Enter; short fields (titles, labels, numbers) finish with Enter. */
+const MULTILINE = /(^|\.)(body|detail|freeText|quote|quoteNote|finding|findingNote|thoughts|actions|pains|opportunities|touchpoints|caption|summary|notes?|description|text)$/i;
+/** The text a person sees in the box, line breaks included (whatever the browser put in for them). */
+const readText = (el: HTMLElement) => (el.childElementCount ? el.innerText : el.textContent || '').replace(/\u00A0/g, ' ');
+
 export function EditableText({ value, field, children }: { value: string; field: string; children?: React.ReactNode }) {
   const { edit, styles } = useContext(EditingContext);
   if (edit) installTextBoxFix();
   const ref = useRef<HTMLSpanElement>(null);
+  const [block, setBlock] = useState(false);
   const style = styles?.[field];
   const tokens = style ? { 'data-tone': style.tone, 'data-size': style.size, 'data-weight': style.weight } : {};
-  useLayoutEffect(() => { if (ref.current && document.activeElement !== ref.current && ref.current.textContent !== value) ref.current.textContent = value; }, [value, !!edit]);
+  const multiline = MULTILINE.test(field);
+  useLayoutEffect(() => { if (ref.current && document.activeElement !== ref.current && readText(ref.current) !== value) ref.current.textContent = value; }, [value, !!edit]);
+  // A field that is the only thing in its heading or paragraph becomes a full-width box, so the whole line is clickable.
+  useLayoutEffect(() => { const el = ref.current; if (!el?.parentElement) return; const parent = el.parentElement; const inline = /^inline/.test(getComputedStyle(parent).display) || parent.matches('mark, a, em, strong, b, i, span'); const alone = !inline && [...parent.childNodes].every(n => n === el || (n.nodeType === 3 && !n.textContent?.trim())); setBlock(alone); }, [!!edit]);
   if (!edit) { const shown = children ?? noOrphan(value); return style && (style.tone || style.size || style.weight) ? <span className="csb-ts" {...tokens}>{shown}</span> : <>{shown}</>; }
-  return <span ref={ref} className="csb-editable-text csb-ts" data-field={field} {...tokens} contentEditable suppressContentEditableWarning role="textbox" aria-label={`Edit ${field.replace(/items\.\d+\./, 'item ')}`} aria-multiline="true" tabIndex={0}
-    onInput={e => edit(field, e.currentTarget.textContent || '')}
-    onKeyDown={e => { if (e.key === 'Escape') { e.currentTarget.blur(); } if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
-    onPaste={e => { e.preventDefault(); const text = e.clipboardData.getData('text/plain'); const selection = window.getSelection(); if (!selection?.rangeCount) return; const range = selection.getRangeAt(0); range.deleteContents(); const node = document.createTextNode(text); range.insertNode(node); range.setStartAfter(node); range.collapse(true); selection.removeAllRanges(); selection.addRange(range); edit(field, e.currentTarget.textContent || ''); }} />;
+  const commit = (el: HTMLElement) => edit(field, readText(el));
+  return <span ref={ref} className="csb-editable-text csb-ts" data-field={field} data-block={block ? '' : undefined} data-multiline={multiline ? '' : undefined} {...tokens} contentEditable suppressContentEditableWarning role="textbox" aria-label={`Edit ${field.replace(/items\.\d+\./, 'item ')}`} aria-multiline={multiline} tabIndex={0} spellCheck
+    onInput={e => commit(e.currentTarget)}
+    onKeyDown={e => {
+      if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.blur(); return; }
+      if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+      e.preventDefault();
+      // Cmd/Ctrl+Enter always finishes. In a paragraph, Enter (or Shift+Enter anywhere) starts a new line.
+      if (e.metaKey || e.ctrlKey || (!multiline && !e.shiftKey)) { e.currentTarget.blur(); return; }
+      const el = e.currentTarget; const sel = getSelection();
+      const atEnd = !!sel?.rangeCount && (() => { const r = sel.getRangeAt(0).cloneRange(); r.selectNodeContents(el); r.setStart(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset); return !r.toString().length; })();
+      // A line break at the very end needs a second one to show the caret on the new line;
+      // the caret then sits between them, and the spare one is trimmed when you finish.
+      if (atEnd && !readText(el).endsWith('\n')) { document.execCommand('insertText', false, '\n\n'); (getSelection() as Selection & { modify?: (a: string, d: string, g: string) => void })?.modify?.('move', 'backward', 'character'); }
+      else document.execCommand('insertText', false, '\n');
+      commit(el);
+    }}
+    onBlur={e => { const el = e.currentTarget; const t = readText(el); const trimmed = t.replace(/\n+$/, ''); if (trimmed !== t) { el.textContent = trimmed; edit(field, trimmed); } }}
+    onPaste={e => { e.preventDefault(); const text = e.clipboardData.getData('text/plain').replace(/\r\n?/g, '\n'); document.execCommand('insertText', false, multiline ? text : text.replace(/\s*\n\s*/g, ' ')); commit(e.currentTarget); }}
+    onDrop={e => { e.preventDefault(); const text = e.dataTransfer.getData('text/plain'); if (text) { document.execCommand('insertText', false, text); commit(e.currentTarget); } }} />;
 }
 
 /*
