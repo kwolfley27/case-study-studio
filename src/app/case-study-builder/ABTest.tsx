@@ -176,9 +176,11 @@ function Side({ section, data, editorMode, active, setActive }: { section: CaseS
   </div>;
 }
 
-function MetricRow({ m, index, highlight, delay }: { m: ABMetric; index: number; highlight: boolean; delay: number }) {
+function MetricRow({ m, index, highlight, delay, neutral = false }: { m: ABMetric; index: number; highlight: boolean; delay: number; neutral?: boolean }) {
   const reduce = useReducedMotion();
-  const lift = liftOf(m);
+  // With no clear winner, a difference is shown as it was measured, without calling it better or worse.
+  const measured = liftOf(m);
+  const lift = neutral ? { ...measured, good: null } : measured;
   const a = num(m.a), b = num(m.b);
   // Bars start at zero width, which an in-view check can't see, so the row drives them.
   const rowRef = useRef<HTMLDivElement>(null);
@@ -201,7 +203,7 @@ function MetricRow({ m, index, highlight, delay }: { m: ABMetric; index: number;
         {lift.good !== null && m.kind !== 'votes' && <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d={num(m.b) >= num(m.a) ? 'M6 10V2M2.5 5.5 6 2l3.5 3.5' : 'M6 2v8M2.5 6.5 6 10l3.5-3.5'} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
         {lift.big}</span></div>
     {bars}
-    {lift.small && <small className="csb-ab-sub">{lift.small}{m.kind !== 'votes' && lift.good !== null ? ` · ${lift.good ? 'better' : 'worse'}` : ''}</small>}
+    {(lift.small || neutral) && <small className="csb-ab-sub">{lift.small}{neutral && m.kind !== 'votes' ? `${lift.small ? ' · ' : ''}no clear difference` : m.kind !== 'votes' && lift.good !== null ? ` · ${lift.good ? 'better' : 'worse'}` : ''}</small>}
   </motion.div>;
 }
 
@@ -216,7 +218,7 @@ export function ABTest({ section, editorMode }: { section: CaseStudySection; edi
     {(data.markers.length > 0 && data.showMarkers !== false) && <ol className="csb-ab-changes">{data.markers.map((m, i) => <li key={i} className={active === i ? 'is-active' : ''} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)}><span className="csb-ab-num">{i + 1}</span><EditableText field={`abtest.markers.${i}.note`} value={m.note} /></li>)}</ol>}
     {data.metrics.length > 0 && <div className="csb-ab-results">
       <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}>{resultLabel}</span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>
-      <div className="csb-ab-metrics" style={{ '--ab-cols': Math.min(3, data.metrics.length) } as React.CSSProperties}>{data.metrics.map((m, i) => <MetricRow key={i} m={m} index={i} highlight={activeMetric === i} delay={i * .12} />)}</div>
+      <div className="csb-ab-metrics" style={{ '--ab-cols': Math.min(3, data.metrics.length) } as React.CSSProperties}>{data.metrics.map((m, i) => <MetricRow key={i} m={m} index={i} highlight={activeMetric === i} delay={i * .12} neutral={result === 'none'} />)}</div>
     </div>}
   </div>;
 }
