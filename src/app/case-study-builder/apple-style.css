@@ -3940,3 +3940,21 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-ab-adder.has-image:hover,.csb-ab-adder.has-image:focus-visible{opacity:1;background:rgba(15,14,13,.55);border-color:transparent}
 .csb-ab-adder.has-image strong,.csb-ab-adder.has-image span{color:#fdfcfc}
 @media (prefers-reduced-motion:reduce){.csb-ab-adder{transition:none}}
+
+/* Annotated screen (desktop): the section and its title, label and intro stay on the page column like every
+   other section. Only the screen with its notes reaches a little wider (up to 1160px), centered, so the notes
+   have room. On narrower windows it stays inside the column. */
+.csb-canvas .csb-doc-main .csb-story-section.csb-kind-annotated:has(.csb-apple-annotated.is-desktop){margin-inline:0!important;padding-inline:clamp(20px,4cqw,40px)!important}
+.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop{--ann-w:min(1160px,100vw - 2 * 240px);margin-inline:min(0px,(100% - var(--ann-w)) / 2)!important;grid-template-columns:minmax(150px,220px) minmax(0,1fr) minmax(150px,220px)!important;gap:clamp(16px,2cqw,28px)!important}
+.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotation-side h3{font-size:var(--ts-title,17px)!important}
+.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotation-side p{font-size:15px!important;line-height:1.55!important}
+/* Narrow screens: the screen first, then the numbered notes in one column under it (no overlap) */
+@container (max-width:700px){
+  .csb-canvas .csb-doc-main .csb-apple-annotated,.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop{grid-template-columns:1fr!important;margin-inline:0!important;gap:20px!important}
+  .csb-canvas .csb-doc-main .csb-apple-annotated .csb-apple-annotated-phone{order:-1;width:100%;max-width:340px;justify-self:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone{max-width:none;min-height:0}
+  .csb-canvas .csb-doc-main .csb-apple-annotation-side{min-height:0!important}
+  .csb-canvas .csb-doc-main .csb-apple-annotation-side>div{position:static!important;top:auto!important}
+  .csb-canvas .csb-doc-main .csb-apple-annotation-side p{max-width:none!important}
+  .csb-canvas .csb-doc-main .csb-annot-lines{display:none}
+}
