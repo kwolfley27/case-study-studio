@@ -3776,11 +3776,11 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 /* No orphans (browsers that support it; the published page also glues the last two words) */
 .csb-canvas :is(p,h1,h2,h3,h4,li,blockquote,figcaption,dd){text-wrap:pretty}
 
-/* Side menu shows from the start (like the original site), so the column it's
-   centered beside never looks off-center. A short fade on page load only. */
-.csb-side-nav ol,.csb-side-nav.is-revealed ol{opacity:1;transform:none;pointer-events:auto;animation:csb-nav-in .6s cubic-bezier(.22,1,.36,1) .15s both}
-@keyframes csb-nav-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.csb-side-nav ol{animation:none}}
+/* Side menu appears when you reach the first section (the page is centered on its own, so nothing shifts).
+   It slides in from the left; with reduced motion it only fades. Always shown while editing. */
+.csb-side-nav ol{opacity:0;transform:translateX(-10px);pointer-events:none;transition:opacity .5s ease-out,transform .5s cubic-bezier(.22,1,.36,1)}
+.csb-side-nav.is-revealed ol{opacity:1;transform:none;pointer-events:auto}
+@media (prefers-reduced-motion:reduce){.csb-side-nav ol{transform:none!important;transition:opacity .3s ease-out}}
 
 /* Problem statement (scroll flip): on the same left edge as the heading, sized with the page */
 .csb-canvas .csb-doc-main .csb-psf{max-width:none;margin:0;height:160vh}
