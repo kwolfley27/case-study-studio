@@ -216,6 +216,8 @@ const normal = (x: number, m: number, sd: number) => Math.exp(-0.5 * ((x - m) / 
 function niceStep(range: number) { const raw = range / 7; const p = 10 ** Math.floor(Math.log10(raw)); const f = raw / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; }
 function FullResults({ full }: { full: ABFull }) {
   const reduce = useReducedMotion();
+  const plotRef = useRef<HTMLDivElement>(null);
+  const seen = useInView(plotRef, { once: true, amount: .5 });
   // Curves are drawn in a 0–100 box stretched to the chart's size (strokes stay crisp); the axis labels are
   // ordinary text placed by percentage, so they stay readable at any width.
   const arms = full.arms.map(a => ({ m: num(a.posterior) || num(a.observed), sd: Math.max(.0005, num(a.spread) || .02) }));
@@ -233,11 +235,12 @@ function FullResults({ full }: { full: ABFull }) {
   return <div className="csb-abf">
     <p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>
     {ok && <figure className="csb-abf-chart">
-      <div className="csb-abf-plot">
+      <div className="csb-abf-plot" ref={plotRef}>
         {ticks.map(t => <i key={t} className="csb-abf-grid" style={{ left: `${X(t)}%` }} aria-hidden="true" />)}
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={summary}>
-          {arms.map((arm, i) => <motion.path key={i} className={`csb-abf-curve ${i ? 'is-b' : 'is-a'}`} d={path(arm)} vectorEffect="non-scaling-stroke" initial={reduce ? false : { pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true, amount: .5 }} transition={{ duration: 1.2, delay: i * .2, ease: [0.22, 1, 0.36, 1] }} />)}
-        </svg>
+        {/* Revealed left to right (a line-draw animation breaks on stretched, non-scaling strokes) */}
+        <motion.svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={summary} initial={reduce ? false : { clipPath: 'inset(-10% 100% -10% 0%)' }} animate={seen || reduce ? { clipPath: 'inset(-10% 0% -10% 0%)' } : { clipPath: 'inset(-10% 100% -10% 0%)' }} transition={{ duration: reduce ? 0 : 1.3, ease: [0.22, 1, 0.36, 1] }}>
+          {arms.map((arm, i) => <path key={i} className={`csb-abf-curve ${i ? 'is-b' : 'is-a'}`} d={path(arm)} vectorEffect="non-scaling-stroke" />)}
+        </motion.svg>
       </div>
       <div className="csb-abf-ticks" aria-hidden="true">{ticks.map((t, k) => <span key={t} className={k === 0 ? 'is-first' : k === ticks.length - 1 ? 'is-last' : ''} style={{ left: `${X(t)}%` }}>{t.toFixed(dec)}</span>)}</div>
       <figcaption>
