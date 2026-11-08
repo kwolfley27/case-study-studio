@@ -25,7 +25,9 @@ export function EndMore({ study, editorMode, selected, onSelect }: { study: Buil
     const next = cards.map((c, i) => i === k ? { title: s.title, subtitle: [s.client, s.role].filter(Boolean).join(' · '), image: s.heroImage, url: s.publishedAt ? publicPageUrl(s.slug) : c.url, accent: s.accent } : c);
     save(next);
   };
-  return <footer id="builder-section-__end" className={`csb-canvas-end ${selected ? 'is-selected' : ''}`} onClick={editorMode ? onSelect : undefined}>
+  // Turned off: nothing on the page; in the editor it stays, faded, so it can be selected and turned back on.
+  if (study.showEnd === false && !editorMode) return null;
+  return <footer id="builder-section-__end" data-hidden-label={study.showEnd === false ? 'Hidden from the page' : undefined} className={`csb-canvas-end ${study.showEnd === false ? 'is-hidden-end' : ''} ${selected ? 'is-selected' : ''}`} onClick={editorMode ? onSelect : undefined}>
     <span className="csb-end-thanks"><EditableText field="endThanks" value={study.endThanks || 'Thank you for reading.'} /></span>
     {shown.length > 0 && <div className="csb-more">
       <p className="csb-more-label">More case studies</p>
@@ -58,6 +60,8 @@ export function EndControls({ study, update }: { study: BuilderStudy; update: (p
   const save = (next: MoreStudy[]) => update({ moreStudies: next });
   const set = (k: number, patch: Partial<MoreStudy>) => save(cards.map((c, i) => i === k ? { ...c, ...patch } : c));
   return <div className="csb-connection-section csb-fc-ctl">
+    <label className="csb-check-field"><input type="checkbox" checked={study.showEnd !== false} onChange={e => update({ showEnd: e.target.checked })} /> Show the ending on the page</label>
+    {study.showEnd !== false && <>
     <label className="csb-field"><span>Closing line</span><input value={study.endThanks ?? 'Thank you for reading.'} onChange={e => update({ endThanks: e.target.value })} /></label>
     <label className="csb-check-field"><input type="checkbox" checked={study.showMore !== false} onChange={e => update({ showMore: e.target.checked })} /> Show “More case studies”</label>
     {study.showMore !== false && <>
@@ -73,6 +77,7 @@ export function EndControls({ study, update }: { study: BuilderStudy; update: (p
         {library.length > 0 && <select value="" aria-label="Fill from one of your case studies" onChange={e => { const s = library.find(x => x.id === e.target.value); if (s) set(k, { title: s.title, subtitle: [s.client, s.role].filter(Boolean).join(' · '), image: s.heroImage, url: s.publishedAt ? publicPageUrl(s.slug) : c.url, accent: s.accent }); }}><option value="">Fill from one of your case studies…</option>{library.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select>}
       </div>)}
       {cards.length < 3 && <button type="button" className="csb-quiet-button" onClick={() => save([...cards, { title: '' }])}><Plus size={13} /> Add card</button>}
+    </>}
     </>}
   </div>;
 }

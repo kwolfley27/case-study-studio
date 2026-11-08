@@ -138,6 +138,8 @@ export interface BuilderStudy {
   endThanks?: string;
   /** Show the More case studies cards (default on). */
   showMore?: boolean;
+  /** Show the ending at all: thank-you line, cards and footer (default on). */
+  showEnd?: boolean;
   /** Caption under the hero image (Title reveal header). */
   heroCaption?: string;
   /** Motion level: expressive (default) or calm. */

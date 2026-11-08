@@ -4056,3 +4056,7 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 /* Frameless: no browser bar on the desktop screen either, just the rounded screen */
 [data-devices=frameless] .csb-apple-annotated-chrome{display:none}
 [data-devices=frameless] .csb-apple-annotated.is-desktop .csb-apple-annotated-phone{border-radius:14px}
+
+/* Ending turned off: faded in the editor with a label, not on the page */
+.csb-canvas-end.is-hidden-end{opacity:.38;position:relative}
+.csb-canvas-end.is-hidden-end::before{content:attr(data-hidden-label);position:absolute;z-index:5;top:14px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:#fdfcfc;color:#44403b;font-size:12px}
