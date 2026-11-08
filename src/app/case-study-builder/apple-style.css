@@ -4043,4 +4043,16 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 @container (min-width:561px){.csb-abf-stats{grid-template-columns:repeat(3,auto)!important;justify-content:start}.csb-abf-stats>div{padding-right:clamp(28px,4cqw,48px)}.csb-abf-stats>div+div{padding-left:clamp(28px,4cqw,48px)}}
 
 /* Tinted and dark section cards line up with the text column of the sections around them */
-html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-variant-tinted,.csb-variant-dark):not(.csb-kind-annotated):not(:has(.csb-psf:not(.is-static))){margin-inline:clamp(20px,4cqw,40px)!important;padding-inline:clamp(20px,3.2cqw,32px)!important}
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-variant-tinted,.csb-variant-dark):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty))):not(:has(.csb-psf:not(.is-static))){margin-inline:clamp(20px,4cqw,40px)!important;padding-inline:clamp(20px,3.2cqw,32px)!important}
+
+/* Annotated desktop screen with notes on one side only: drop the empty column so the screen and its notes fit the text column (and its card) */
+.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop>.csb-apple-annotation-side:empty{display:none!important}
+@container (min-width:701px){
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:has(>.csb-apple-annotation-side:first-child:empty){grid-template-columns:minmax(0,1fr) minmax(170px,240px)!important;margin-inline:0!important}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:has(>.csb-apple-annotation-side:nth-child(3):empty){grid-template-columns:minmax(170px,240px) minmax(0,1fr)!important;margin-inline:0!important}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:has(>.csb-apple-annotation-side:first-child:empty):has(>.csb-apple-annotation-side:nth-child(3):empty){grid-template-columns:minmax(0,1fr)!important}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:has(>.csb-apple-annotation-side:empty) .csb-apple-annotated-phone{align-self:start;min-height:0!important}
+}
+/* Frameless: no browser bar on the desktop screen either, just the rounded screen */
+[data-devices=frameless] .csb-apple-annotated-chrome{display:none}
+[data-devices=frameless] .csb-apple-annotated.is-desktop .csb-apple-annotated-phone{border-radius:14px}
