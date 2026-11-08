@@ -66,7 +66,6 @@
 .csb-metric:last-child .csb-metric-number{color:var(--csb-accent)}
 .csb-metric h3{font-size:19px;line-height:1.25;margin:20px 0 5px;color:var(--t-surface,#f5f3f1)}
 .csb-metric p{max-width:290px;color:var(--t-muted,#6f6961);font-size:17px;line-height:1.4}
-.csb-kind-metrics .csb-section-inner:after{content:"Opportunity estimate · verify every figure and source";display:block;text-align:center;color:var(--t-muted,#6f6961);font-size:12px;margin-top:110px}
 
 .csb-flow{grid-template-columns:repeat(4,minmax(0,1fr));gap:28px}
 .csb-flow:before,.csb-flow-line{top:0;background:var(--t-line,#d6d3d1);height:1px}
