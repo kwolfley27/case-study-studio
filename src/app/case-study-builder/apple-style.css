@@ -3871,3 +3871,9 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 /* Editable text flows like the published text (inline, not a block of its own), so lines break the same */
 .csb-canvas.csb-canvas-editable .csb-editable-text{display:inline;max-width:none}
 .csb-canvas.csb-canvas-editable .csb-editable-text:empty{display:inline-block;min-width:3ch}
+
+/* Flip: the scene is just the card plus a short run, and lets go as soon as the question has arrived */
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static),.csb-canvas .csb-doc-main .csb-psf.has-pic:not(.is-static){height:auto}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-run{height:55vh}
+.csb-canvas .csb-doc-main .csb-psf.has-pic:not(.is-static) .csb-psf-stick{top:max(64px,8vh)}
+.csb-psf-stick>.csb-ps-pic{margin-top:0}
