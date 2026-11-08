@@ -3913,3 +3913,17 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-bubble{--bp:clamp(18px,2.8cqw,30px);max-width:none!important;width:calc(100% + 2 * var(--bp));margin-inline:calc(-1 * var(--bp));padding-inline:var(--bp)!important;box-sizing:border-box}
 /* The space after the card matches the space between other sections */
 .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){padding-bottom:clamp(36px,5.6cqw,52px)!important}
+
+/* ── One type scale across sections (matching the editorial story text) ──
+   Item titles 17px semibold · body 16px / 28px · labels and evidence 14px.
+   Display moments keep their size: problem statement, How might we, quotes, metric numbers, insight headlines. */
+.csb-canvas .csb-doc-main{--ts-title:17px;--ts-body:16px;--ts-body-lh:1.75;--ts-meta:14px}
+.csb-canvas .csb-doc-main :is(.csb-research-card h3,.csb-flow-step h3,.csb-comparison-panel h3,.csb-metric h3,.csb-findings h3,.csb-kind-annotated h3){font-size:var(--ts-title)!important;line-height:1.35!important;font-weight:600!important;letter-spacing:-.01em!important}
+.csb-canvas .csb-doc-main :is(.csb-research-card p,.csb-flow-step p,.csb-comparison-panel p,.csb-metric p,.csb-findings p,.csb-kind-annotated .csb-apple-annotated p:not(.csb-annot-hint),.csb-detail dd,.csb-editorial-statement p){font-size:var(--ts-body)!important;line-height:var(--ts-body-lh)!important;font-weight:400!important;letter-spacing:0!important}
+.csb-canvas .csb-doc-main :is(.csb-research-evidence,.csb-comparison-top span,.csb-detail dt){font-size:var(--ts-meta)!important;line-height:1.5!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-variant-dark) :is(.csb-research-card h3,.csb-flow-step h3,.csb-comparison-panel h3,.csb-metric h3,.csb-findings h3,.csb-kind-annotated h3){color:var(--t-ink,#1c1917)!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-variant-dark) :is(.csb-research-card p,.csb-flow-step p,.csb-comparison-panel p,.csb-metric p,.csb-findings p,.csb-detail dd,.csb-editorial-statement p){color:#57534e!important}
+.csb-canvas .csb-doc-main .csb-editorial-statement p{max-width:40em}
+/* While editing (no transition), the bubble has the same width as on the page, so the question wraps the same */
+.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-hmw{justify-items:stretch!important}
+.csb-canvas .csb-doc-main .csb-psf.is-static .csb-psf-bubble{--bp:clamp(18px,2.8cqw,30px);max-width:none!important;width:calc(100% + 2 * var(--bp));margin-inline:calc(-1 * var(--bp));padding-inline:var(--bp)!important;box-sizing:border-box}
