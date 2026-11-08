@@ -4060,3 +4060,11 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 /* Ending turned off: faded in the editor with a label, not on the page */
 .csb-canvas-end.is-hidden-end{opacity:.38;position:relative}
 .csb-canvas-end.is-hidden-end::before{content:attr(data-hidden-label);position:absolute;z-index:5;top:14px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:#fdfcfc;color:#44403b;font-size:12px}
+
+.csb-end-off{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px auto 40px;padding:10px 16px;border-top:1px solid var(--t-line2,#ebe8e4);color:var(--t-body,#67615a);font-size:14px}
+.csb-end-off button{min-height:32px;padding:0 14px;border:1px solid var(--t-line,#d6d3d1);border-radius:999px;background:#fdfcfc;color:#000;font:inherit;cursor:pointer}
+.csb-end-off button:hover{background:var(--t-surface,#f5f3f1)}
+.csb-end-off button:focus-visible{outline:2px solid #000;outline-offset:2px}
+/* A/B quick-view numbers: smaller and a little heavier, so they read at a glance */
+.csb-canvas .csb-abf-stats dd{font-size:clamp(20px,2.2cqw,24px)!important;line-height:1.25!important;font-weight:500!important;letter-spacing:-.005em!important;color:var(--t-ink,#1c1917)}
+.csb-canvas .csb-abf-stats>div{gap:4px}
