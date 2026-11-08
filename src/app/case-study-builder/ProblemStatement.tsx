@@ -110,19 +110,19 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
     const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
     let frame = 0;
     const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
-      const pin = box.top + box.height * .24; const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
+      const stickTop = stick.current ? parseFloat(getComputedStyle(stick.current).top) : NaN; const pin = box.top + (Number.isFinite(stickTop) ? stickTop : box.height * .24); const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
       p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
     const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
     measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
     return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
   }, [p]);
   // The statement settles back and softens; then the question arrives like a message.
-  const frontOpacity = useTransform(p, [.08, .4], [1, 0]);
-  const frontY = useTransform(p, [.08, .4], [0, -28]);
-  const frontScale = useTransform(p, [.08, .4], [1, .96]);
-  const frontBlur = useTransform(p, [.08, .4], ['blur(0px)', 'blur(8px)']);
-  const bubble = useTransform(p, [.32, .62], [0, 1]);
-  const bubbleY = useTransform(p, [.32, .62], [36, 0]);
+  const frontOpacity = useTransform(p, [.08, .5], [1, 0]);
+  const frontY = useTransform(p, [.08, .5], [0, -28]);
+  const frontScale = useTransform(p, [.08, .5], [1, .96]);
+  const frontBlur = useTransform(p, [.08, .5], ['blur(0px)', 'blur(8px)']);
+  const bubble = useTransform(p, [.45, .97], [0, 1]);
+  const bubbleY = useTransform(p, [.45, .97], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
   // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
   const bubbleRef = useRef<HTMLDivElement>(null);
@@ -139,9 +139,11 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   return <div className={`csb-psf ${picture ? 'has-pic' : ''}`} ref={scene}>
     <div className="csb-psf-stick" ref={stick}>
       <motion.div className="csb-psf-card is-fade">
-        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p>{picture}</motion.div>
+        <motion.div className="csb-psf-face is-front" style={{ opacity: frontOpacity, y: frontY, scale: frontScale, filter: frontBlur }}><p className="csb-ps-sentence">{sentence}</p></motion.div>
         <div className="csb-psf-face is-back">{back}</div>
       </motion.div>
+      {/* The picture stays put under the card, so the card is only as tall as the text and the question doesn't float in empty space */}
+      {picture}
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
     </div>
     <div className="csb-psf-run" aria-hidden="true" />
