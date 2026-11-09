@@ -4097,3 +4097,16 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted:not(.csb-kind-problem):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty))):has(>.csb-section-inner>:nth-child(2)){background:none!important;box-shadow:none!important;border-radius:0!important;margin-inline:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(36px,5.6cqw,52px)!important}
 html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted:not(.csb-kind-problem):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty)))>.csb-section-inner>:last-child:not(:first-child){background:var(--t-surface,#f5f3f1);border-radius:24px;padding:clamp(20px,3.2cqw,32px)}
 .csb-canvas .csb-doc-main .csb-kind-columns .csb-research{margin-top:clamp(28px,3.6cqw,40px)}
+
+/* A/B full results: title first, the result pill and method under it, no empty band above */
+.csb-canvas .csb-ab-results .csb-abf:first-child{margin-top:0!important;padding-top:0!important;border-top:0!important}
+.csb-abf-head{align-items:flex-start!important}
+.csb-abf-titles{display:grid;gap:12px;min-width:0}
+.csb-abf-titles .csb-ab-verdict small{font:400 var(--ts-meta,14px)/1.5 Inter,system-ui,sans-serif;color:var(--t-muted,#6f6961)}
+.csb-abf-head .csb-abf-legend{padding-top:2px}
+
+/* Problem card: the change from statement to question plays by itself in view, so the card sits in the page flow
+   (no pinned scene, no tall scroll runway, no empty space under it) */
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static){height:auto!important;padding-bottom:0!important}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-stick{position:relative!important;top:auto!important;min-height:0!important}
+.csb-canvas .csb-abf-head{margin-bottom:clamp(20px,2.6cqw,28px)!important}
