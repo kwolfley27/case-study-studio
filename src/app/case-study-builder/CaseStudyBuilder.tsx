@@ -50,6 +50,7 @@ import { QuotesControls } from "./Quotes";
 import { InsightsControls } from "./Insights";
 import { IterationsControls } from "./Iterations";
 import { EndControls } from "./EndMore";
+import { ColumnsControls } from "./ResearchVisuals";
 import { FigJamPull } from "./FigJamPull";
 import { PublishDialog } from "./Publish";
 import { Globe } from "lucide-react";
@@ -424,7 +425,7 @@ export default function CaseStudyBuilder({ account }: { account: Account }) {
         <button onClick={() => setView(lastEditView.current)}><X size={14} /> Exit preview</button></div>}
       <aside className="csb-panel csb-panel-right" aria-label="Design settings"><PanelResizer side="right" width={panelW.right} onWidth={panelW.setRight} /><button className="csb-panel-hide" onClick={() => setRightOpen(false)} aria-label="Hide design panel" title="Hide ( ] )"><PanelRight size={15} /></button><div className="csb-panel-scroll"><p className="csb-panel-kicker">{selected ? "Design" : "Page settings"}</p><h2 className="csb-panel-title">{selectedId === "__end" ? "Ending" : selected ? componentNames[selected.kind] : "Project introduction"}</h2><p className="csb-panel-subtitle">{selectedId === "__end" ? "The close of the page: your thank-you line and links to your other case studies." : selected ? "Click any text or image on the page to change it. These settings shape how the section looks." : "Click the title, summary, details or hero image on the page to edit them."}</p>{selectedId === "__end" ? <EndControls study={study} update={updateStudy} /> : selected ? <div className="csb-insp">
         <div className="csb-insp-basics"><SectionBasics study={study} section={selected} onChange={updateSection} onChangeOther={(id, patch) => setStudy(previous => ({ ...previous, sections: previous.sections.map(x => x.id === id ? { ...x, ...patch } : x) }))} /></div>
-        <LayoutControls section={selected} onChange={updateSection} />
+        <LayoutControls section={selected} onChange={updateSection} /><ColumnsControls section={selected} onChange={updateSection} />
         {selected.kind === "built" && <BuiltControls section={selected} onChange={next => updateSection({ built: next.built })} notify={text => setMessage({ text })} />}
         <PersonaControls section={selected} onChange={updateSection} />
         <RecordingControls section={selected} onChange={updateSection} />
