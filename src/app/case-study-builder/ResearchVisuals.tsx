@@ -1,9 +1,11 @@
-import { MessageSquare, Hand, Puzzle, Layers } from 'lucide-react';
+import { MessageSquare, Hand, Puzzle, Layers, Clock, Hourglass, Bell, Send, MousePointerClick, Lock, Ruler, LayoutTemplate, CircleCheck, Info, Mail, RefreshCw, ShieldCheck, Target, Lightbulb, Users, Eye, Search, Sparkles, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
 import { EditableText as Text } from './EditableText';
 const icons=[MessageSquare,Hand,Puzzle,Layers];
+/* Icons you can pick per column card (stored by name on the item). */
+export const COLUMN_ICONS:Record<string,LucideIcon>={Message:MessageSquare,Clock,Hourglass,Bell,Send,Click:MousePointerClick,Mail,'Follow up':RefreshCw,Check:CircleCheck,Info,Eye,Search,Lock,Ruler,Layout:LayoutTemplate,Layers,Puzzle,Shield:ShieldCheck,Target,Idea:Lightbulb,People:Users,Hand,Spark:Sparkles};
 function Radar({values}:{values:string}) {
  const reduce=useReducedMotion(); const numbers=values.split(',').slice(0,6).map(v=>Math.min(5,Math.max(0,Number(v)||0)));
  const points=(scale:number)=>Array.from({length:6},(_,i)=>{const a=i*Math.PI/3-Math.PI/2;return `${100+Math.cos(a)*70*scale},${100+Math.sin(a)*70*scale}`}).join(' ');
@@ -12,5 +14,22 @@ function Radar({values}:{values:string}) {
 }
 export function ResearchVisual({section}:{section:CaseStudySection}) {
  const reduce=useReducedMotion();
- return <>{section.kind==='competitors'&&<div className="csb-radar-criteria"><strong>Criteria 1–6 · Scores 0–5</strong><Text field="criteria" value={section.criteria||"Usability, Accessibility, Personalization, Integration, Guidance, Value"}/></div>}<div className={`csb-research csb-research-${section.kind}`} style={{'--columns':section.columns||3} as React.CSSProperties}>{section.items.map((item,index)=>{const Icon=icons[index%4];return <motion.div key={index} className="csb-research-card" initial={reduce?false:section.kind==='problem'?{opacity:.12}:{opacity:0,y:18}} whileInView={section.kind==='problem'?{opacity:1}:{opacity:1,y:0}} viewport={{once:true,amount:.6}} transition={section.kind==='problem'?{delay:index*.45,duration:.8}:{delay:index*.08}}>{section.kind==='columns'&&<span className="csb-research-icon"><Icon size={25} strokeWidth={1.3}/></span>}{section.kind==='problem'&&<small>0{index+1}</small>}<h3><Text field={`items.${index}.title`} value={item.title}/></h3>{section.kind==='competitors'&&<Radar values={item.value||''}/>}<p><Text field={`items.${index}.detail`} value={item.detail}/></p>{['columns','gap','competitors'].includes(section.kind)&&<div className="csb-research-evidence">{section.kind==='gap'&&<span aria-hidden="true">↓</span>}<Text field={`items.${index}.value`} value={item.value||''}/></div>}</motion.div>})}{section.kind==='gap'&&<motion.div className="csb-gap-conclusion" initial={reduce?false:{opacity:0,y:28,scale:.96}} whileInView={{opacity:1,y:0,scale:1}} viewport={{once:true,amount:.5}} transition={{delay:section.items.length*.08+.45,duration:.8,ease:[0.22,1,0.36,1]}}><motion.span initial={reduce?false:{y:-10,opacity:0}} whileInView={{y:0,opacity:1}} viewport={{once:true}} transition={{delay:section.items.length*.08+.3,duration:.5}}>↓</motion.span><strong>Shared unmet need</strong><p><Text field="body" value={section.body}/></p></motion.div>}</div></>;
+ return <>{section.kind==='competitors'&&<div className="csb-radar-criteria"><strong>Criteria 1–6 · Scores 0–5</strong><Text field="criteria" value={section.criteria||"Usability, Accessibility, Personalization, Integration, Guidance, Value"}/></div>}<div className={`csb-research csb-research-${section.kind}`} style={{'--columns':section.columns||3} as React.CSSProperties}>{section.items.map((item,index)=>{const Icon=(item.icon&&COLUMN_ICONS[item.icon])||icons[index%4];return <motion.div key={index} className="csb-research-card" initial={reduce?false:section.kind==='problem'?{opacity:.12}:{opacity:0,y:18}} whileInView={section.kind==='problem'?{opacity:1}:{opacity:1,y:0}} viewport={{once:true,amount:.6}} transition={section.kind==='problem'?{delay:index*.45,duration:.8}:{delay:index*.08}}>{section.kind==='columns'&&!section.options?.noIcons&&<span className="csb-research-icon"><Icon size={25} strokeWidth={1.3}/></span>}{section.kind==='problem'&&<small>0{index+1}</small>}<h3><Text field={`items.${index}.title`} value={item.title}/></h3>{section.kind==='competitors'&&<Radar values={item.value||''}/>}<p><Text field={`items.${index}.detail`} value={item.detail}/></p>{['columns','gap','competitors'].includes(section.kind)&&!(section.kind==='columns'&&section.options?.noEvidence)&&<div className="csb-research-evidence">{section.kind==='gap'&&<span aria-hidden="true">↓</span>}<Text field={`items.${index}.value`} value={item.value||''}/></div>}</motion.div>})}{section.kind==='gap'&&<motion.div className="csb-gap-conclusion" initial={reduce?false:{opacity:0,y:28,scale:.96}} whileInView={{opacity:1,y:0,scale:1}} viewport={{once:true,amount:.5}} transition={{delay:section.items.length*.08+.45,duration:.8,ease:[0.22,1,0.36,1]}}><motion.span initial={reduce?false:{y:-10,opacity:0}} whileInView={{y:0,opacity:1}} viewport={{once:true}} transition={{delay:section.items.length*.08+.3,duration:.5}}>↓</motion.span><strong>Shared unmet need</strong><p><Text field="body" value={section.body}/></p></motion.div>}</div></>;
+}
+
+/* Panel controls for the three-column cards: icons on or off and which icon each card shows, and the Measured by line. */
+export function ColumnsControls({section,onChange}:{section:CaseStudySection;onChange:(patch:Partial<CaseStudySection>)=>void}){
+  if(section.kind!=='columns')return null;
+  const o=section.options??{};
+  const setOpt=(patch:Record<string,boolean>)=>onChange({options:{...o,...patch}});
+  return <div className="csb-layout-controls">
+    <div className="csb-inspector-divider"/>
+    <p className="csb-panel-kicker">Cards</p>
+    <label className="csb-check-field"><input type="checkbox" checked={!o.noIcons} onChange={e=>setOpt({noIcons:!e.target.checked})}/> Show icons</label>
+    {!o.noIcons&&section.items.map((item,i)=><div className="csb-field" key={i}><label htmlFor={`csb-col-icon-${i}`}>Icon for {item.title||`card ${i+1}`}</label>
+      <select id={`csb-col-icon-${i}`} value={item.icon&&COLUMN_ICONS[item.icon]?item.icon:''} onChange={e=>onChange({items:section.items.map((it,k)=>k===i?{...it,icon:e.target.value||undefined}:it)})}>
+        <option value="">Default</option>{Object.keys(COLUMN_ICONS).map(n=><option key={n} value={n}>{n}</option>)}
+      </select></div>)}
+    <label className="csb-check-field"><input type="checkbox" checked={!o.noEvidence} onChange={e=>setOpt({noEvidence:!e.target.checked})}/> Show “Measured by”</label>
+  </div>;
 }
