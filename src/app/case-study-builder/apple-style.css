@@ -4105,10 +4105,9 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-abf-titles .csb-ab-verdict small{font:400 var(--ts-meta,14px)/1.5 Inter,system-ui,sans-serif;color:var(--t-muted,#6f6961)}
 .csb-abf-head .csb-abf-legend{padding-top:2px}
 
-/* Problem card: the change from statement to question plays by itself in view, so the card sits in the page flow
-   (no pinned scene, no tall scroll runway, no empty space under it) */
-.csb-canvas .csb-doc-main .csb-psf:not(.is-static){height:auto!important;padding-bottom:0!important}
-.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-stick{position:relative!important;top:auto!important;min-height:0!important}
+/* Problem card: still follows the scroll, but over a short run, so there's little empty space under it while it plays */
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-run{height:22vh!important}
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-stick{top:max(64px,22vh)!important}
 .csb-canvas .csb-abf-head{margin-bottom:clamp(20px,2.6cqw,28px)!important}
 
 /* Annotated desktop screen size: Small / Medium shrink the screen; the notes stay right beside it and the pair is centred */
@@ -4124,3 +4123,6 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
   .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-m .csb-apple-annotated-phone{max-width:85%!important;justify-self:center}
   .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-s .csb-apple-annotated-phone{max-width:70%!important;justify-self:center}
 }
+
+/* Annotated screen with corners turned off: a square screen, for screenshots with their own edges */
+.csb-canvas .csb-apple-annotated.is-square .csb-apple-annotated-phone,.csb-canvas .csb-apple-annotated.is-square .csb-apple-annotated-phone>:not(.csb-annot-pin){border-radius:0!important}
