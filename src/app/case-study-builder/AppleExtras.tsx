@@ -287,7 +287,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
       const ph = phone.current;
       const screenBox = { left: outer.left + ph.clientLeft, top: outer.top + ph.clientTop, width: ph.clientWidth, height: ph.clientHeight, right: outer.left + ph.clientLeft + ph.clientWidth };
       const stacked = getComputedStyle(wrap.current!).getPropertyValue('--annot-stacked').trim() === '1';
-      if (stacked) { setTops([]); setPaths([]); return; }
+      if (stacked) { sideRefs.current.forEach(el => { if (el) el.style.minHeight = ''; }); setTops([]); setPaths([]); return; }
       const next: number[] = [];
       for (const side of [0, 1]) {
         const ids = points.map((_, k) => k).filter(k => sideOf(k) === side && anchors.current[k]);
@@ -296,6 +296,9 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
         want.sort((p, q) => p.y - q.y);
         let floor = -Infinity;
         for (const w of want) { const y = Math.max(w.y, floor); next[w.k] = y; floor = y + w.h + 28; }
+        // Labels are placed level with their dots, so a low dot can push its label past the screen's bottom.
+        // Let the side grow to hold it, so the label stays inside the section (and its card).
+        if (sideEl) { const need = want.reduce((m, w) => Math.max(m, next[w.k] + w.h), 0); const px = `${Math.ceil(need)}px`; if (sideEl.style.minHeight !== px) sideEl.style.minHeight = px; }
       }
       setTops(next);
       setPaths(points.map(([x, y], k) => {
