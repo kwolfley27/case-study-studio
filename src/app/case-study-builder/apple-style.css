@@ -4114,9 +4114,9 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 @container (min-width:701px){
   .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-m{--ann-sw:400px}
   .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-s{--ann-sw:300px}
-  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s):has(>.csb-apple-annotation-side:first-child:empty){grid-template-columns:minmax(0,var(--ann-sw)) minmax(170px,240px)!important;justify-content:center}
-  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s):has(>.csb-apple-annotation-side:nth-child(3):empty){grid-template-columns:minmax(170px,240px) minmax(0,var(--ann-sw))!important;justify-content:center}
-  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s):not(:has(>.csb-apple-annotation-side:empty)){grid-template-columns:minmax(150px,220px) minmax(0,var(--ann-sw)) minmax(150px,220px)!important;justify-content:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s,.is-size-c):has(>.csb-apple-annotation-side:first-child:empty){grid-template-columns:minmax(0,var(--ann-sw)) minmax(170px,240px)!important;justify-content:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s,.is-size-c):has(>.csb-apple-annotation-side:nth-child(3):empty){grid-template-columns:minmax(170px,240px) minmax(0,var(--ann-sw))!important;justify-content:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s,.is-size-c):not(:has(>.csb-apple-annotation-side:empty)){grid-template-columns:minmax(150px,220px) minmax(0,var(--ann-sw)) minmax(150px,220px)!important;justify-content:center}
 }
 /* Phones: a smaller screen is narrower but still centred above its notes */
 @container (max-width:700px){
@@ -4157,3 +4157,20 @@ html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!import
 /* When there's no room for the menu, the same back link sits top-left instead */
 .csb-embed-back{position:fixed;z-index:20;top:20px;left:20px}
 @media (min-width:1241px){.csb-embed-back{display:none}}
+
+/* Annotated screen: a resize handle on its bottom-right corner while editing */
+.csb-annot-resize{position:absolute;right:-7px;bottom:-7px;z-index:6;width:16px;height:16px;border-radius:50%;background:#fdfcfc;box-shadow:0 0 0 1.5px var(--t-ink,#1c1917),0 2px 6px rgba(0,0,0,.18);cursor:nwse-resize;touch-action:none}
+.csb-annot-resize::after{content:"";position:absolute;inset:-6px}
+.csb-annot-resize:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:3px}
+.csb-apple-annotated.is-desktop .csb-apple-annotated-phone{position:relative}
+/* More room between the screen and its notes */
+@container (min-width:701px){.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop{gap:clamp(28px,3.6cqw,48px)!important}}
+
+/* A/B results header: more air between the title, the result and the chart */
+.csb-canvas .csb-abf-titles{gap:16px}
+.csb-canvas .csb-abf-head{margin-bottom:clamp(32px,4cqw,44px)!important;row-gap:14px}
+.csb-canvas .csb-abf-head .csb-abf-title{line-height:1.35}
+
+/* Back to all work: an arrow and label above the side menu, set apart from the section list */
+.csb-side-nav-back{display:inline-flex!important;align-items:center;gap:8px;width:auto!important;height:auto!important;min-height:32px;padding:4px 12px 4px 8px!important;margin-left:0!important;top:52px!important;font:500 13px/1 Inter,system-ui,sans-serif;letter-spacing:0;color:var(--t-body,#67615a)}
+.csb-side-nav-back span{white-space:nowrap}
