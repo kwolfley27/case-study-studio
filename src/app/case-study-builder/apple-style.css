@@ -4091,3 +4091,8 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 .csb-canvas .csb-carousel-card figcaption div{gap:2px}
 .csb-canvas .csb-carousel-card figcaption strong{font-size:var(--ts-meta,14px);font-weight:600;letter-spacing:0;color:var(--t-ink,#1c1917)}
 .csb-canvas .csb-carousel-card figcaption span{font-size:var(--ts-meta,14px);line-height:1.5;color:var(--t-body,#67615a)}
+
+/* Cream (tinted) sections: the eyebrow, title and text sit on the page in line with every other section,
+   and the cream card wraps only the visual underneath, its edges on the same column. */
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted:not(.csb-kind-problem):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty))):has(>.csb-section-inner>:nth-child(2)){background:none!important;box-shadow:none!important;border-radius:0!important;margin-inline:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(36px,5.6cqw,52px)!important}
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted:not(.csb-kind-problem):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty)))>.csb-section-inner>:last-child:not(:first-child){background:var(--t-surface,#f5f3f1);border-radius:24px;padding:clamp(20px,3.2cqw,32px)}
