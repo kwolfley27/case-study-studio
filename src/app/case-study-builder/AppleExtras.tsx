@@ -336,7 +336,8 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   };
   const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''} style={tops[k] !== undefined ? { top: tops[k] } : undefined}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
 
-  return <div className={`csb-apple-annotated ${desktop ? 'is-desktop' : ''} ${edit ? 'is-editing' : ''}`} ref={wrap}>
+  const size = desktop && (section.options?.screenSize === 's' || section.options?.screenSize === 'm') ? ` is-size-${section.options.screenSize}` : '';
+  return <div className={`csb-apple-annotated ${desktop ? 'is-desktop' : ''}${size} ${edit ? 'is-editing' : ''}`} ref={wrap}>
     <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[0] = el; }}>{notes.map((item, i) => sideOf(i) === 0 ? note(item, i) : null)}</div>
     <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
       {edit && screen?.figmaUrl && <button type="button" className="csb-annot-pull" data-no-slot onClick={async e => { e.stopPropagation(); const b = e.currentTarget; b.disabled = true; b.textContent = 'Pulling from Figma…'; try { const { pullFigmaFrame } = await import('./ImageSlots'); edit('items.0.image', await pullFigmaFrame(screen.figmaUrl!)); b.textContent = 'Pulled from Figma'; } catch (err) { b.disabled = false; b.textContent = err instanceof Error ? err.message : 'Could not pull'; } }}>{screen.image?.startsWith('data:') ? 'Refresh from Figma' : 'Pull frame from Figma'}</button>}
