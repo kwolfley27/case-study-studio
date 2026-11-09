@@ -26,7 +26,7 @@ export type ABFull = { on: boolean; title: string; axis: string; arms: [ABArm, A
   observedAs?: 'percent' | 'per100' | 'raw'; observedLabel?: string;
   /** Show a button that opens the full table and longer explanation (off unless turned on). */
   showDetails?: boolean };
-export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; method?: string; showMarkers?: boolean; full?: ABFull };
+export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; resultLabel?: string; method?: string; showMarkers?: boolean; full?: ABFull };
 export const blankFull = (a = 'A', b = 'B'): ABFull => ({ on: true, title: 'What the test measured', axis: 'Per user average', arms: [{ name: `${a} (control)`, users: '', observed: '', posterior: '', spread: '0.02' }, { name: b, users: '', observed: '', posterior: '', spread: '0.02' }], lift: '', win: '', low: '', high: '', explain: 'Explain in a sentence or two what the curves and numbers mean.', summary: 'One sentence: what the result means.' });
 
 export const defaultABTest = (): ABTestData => ({
@@ -296,12 +296,14 @@ export function ABTest({ section, editorMode }: { section: CaseStudySection; edi
   const [active, setActive] = useState<number | null>(null);
   const activeMetric = active !== null ? data.markers[active]?.metric : undefined;
   const result = data.result ?? 'b';
-  const resultLabel = result === 'b' ? `${section.items[1]?.title || 'B'} won` : result === 'a' ? `${section.items[0]?.title || 'A'} held` : 'No clear winner';
+  const defaultLabel = result === 'b' ? `${section.items[1]?.title || 'B'} won` : result === 'a' ? `${section.items[0]?.title || 'A'} held` : 'No clear winner';
+  // The pill's wording can be written to suit the story ("Shipped the clearer design"); the outcome still sets its colour.
+  const resultLabel = data.resultLabel?.trim() || defaultLabel;
   return <div className={`csb-ab is-${data.mode ?? 'wipe'}`}>
     {data.mode === 'side' ? <Side section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} /> : <Wipe section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} />}
     {(data.markers.length > 0 && data.showMarkers !== false) && <ol className="csb-ab-changes">{data.markers.map((m, i) => <li key={i} className={active === i ? 'is-active' : ''} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)}><span className="csb-ab-num">{i + 1}</span><EditableText field={`abtest.markers.${i}.note`} value={m.note} /></li>)}</ol>}
     {(data.metrics.length > 0 || data.full?.on) && <div className="csb-ab-results">
-      <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}>{resultLabel}</span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>
+      <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}><EditableText field="abtest.resultLabel" value={resultLabel} /></span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>
       {data.metrics.length > 0 && !data.full?.on && <div className="csb-ab-metrics" style={{ '--ab-cols': Math.min(3, data.metrics.length) } as React.CSSProperties}>{data.metrics.map((m, i) => <MetricRow key={i} m={m} index={i} highlight={activeMetric === i} delay={i * .12} neutral={result === 'none'} />)}</div>}
       {data.full?.on && <FullResults full={data.full} />}
     </div>}
@@ -346,6 +348,7 @@ export function ABTestControls({ section, onChange }: { section: CaseStudySectio
     <p className="csb-field-note">Drag a box on the page to move it; drag its corner to resize.</p>
     <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Results</p>
     <div className="csb-field"><label htmlFor="csb-ab-result">Outcome</label><select id="csb-ab-result" value={data.result ?? 'b'} onChange={e => set({ result: e.target.value as ABTestData['result'] })}><option value="b">B won</option><option value="a">A held (B didn't win)</option><option value="none">No clear winner</option></select></div>
+    <div className="csb-field"><label htmlFor="csb-ab-result-label">Outcome wording</label><input id="csb-ab-result-label" value={data.resultLabel ?? ''} placeholder={data.result === 'a' ? 'A held' : data.result === 'none' ? 'No clear winner' : 'B won'} onChange={e => set({ resultLabel: e.target.value || undefined })} /><p className="csb-field-note">Optional. Write the result your way, for example "Shipped the clearer design".</p></div>
     {data.metrics.map((m, i) => <div key={i} className="csb-ab-ctl-metric">
       <div className="csb-ab-ctl-line"><input aria-label={`Metric ${i + 1} name`} value={m.label} onChange={e => setMetric(i, { label: e.target.value })} /><button type="button" aria-label={`Remove metric ${i + 1}`} onClick={() => set({ metrics: data.metrics.filter((_, k) => k !== i), markers: data.markers.map(mk => mk.metric === i ? { ...mk, metric: undefined } : mk.metric !== undefined && mk.metric > i ? { ...mk, metric: mk.metric - 1 } : mk) })}>×</button></div>
       <div className="csb-segment" role="group" aria-label={`Metric ${i + 1} type`}>{([['rate', '%'], ['number', 'Number'], ['votes', 'People']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={m.kind === v} onClick={() => setMetric(i, { kind: v, ...(v === 'votes' ? { a: m.kind === 'votes' ? m.a : '1', b: m.kind === 'votes' ? m.b : '4', of: m.of || '5' } : {}) })}>{l}</button>)}</div>

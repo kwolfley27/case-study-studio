@@ -27,6 +27,11 @@ export function EndMore({ study, editorMode, selected, onSelect }: { study: Buil
   };
   // Turned off: nothing on the page; in the editor it stays, faded, so it can be selected and turned back on.
   if (study.showEnd === false && !editorMode) return null;
+  // In the editor, a hidden ending shrinks to one slim line you can click to bring it back.
+  if (study.showEnd === false) return <footer id="builder-section-__end" className={`csb-end-off ${selected ? 'is-selected' : ''}`}>
+    <span>Ending hidden from the page</span>
+    <button type="button" onClick={e => { e.stopPropagation(); edit?.('json:showEnd', 'true'); }}>Show it again</button>
+  </footer>;
   return <footer id="builder-section-__end" data-hidden-label={study.showEnd === false ? 'Hidden from the page' : undefined} className={`csb-canvas-end ${study.showEnd === false ? 'is-hidden-end' : ''} ${selected ? 'is-selected' : ''}`} onClick={editorMode ? onSelect : undefined}>
     <span className="csb-end-thanks"><EditableText field="endThanks" value={study.endThanks || 'Thank you for reading.'} /></span>
     {shown.length > 0 && <div className="csb-more">
