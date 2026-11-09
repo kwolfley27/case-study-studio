@@ -4132,3 +4132,11 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone:has(>img){min-height:0!important}
 /* The numbered dots stay round whatever the screen's corners (frameless screens pass their radius down to everything inside) */
 .csb-canvas .csb-apple-annotated .csb-apple-annotated-phone>.csb-annot-pin.csb-annot-pin.csb-annot-pin.csb-annot-pin{border-radius:50%!important}
+
+/* Inside katelynwolfley.design: a back arrow at the top of the side menu, always visible (the section list appears once you reach it) */
+.csb-side-nav-back{position:absolute;top:56px;left:clamp(24px,2.6vw,44px);display:grid;place-items:center;width:36px;height:36px;margin-left:2px;border:0;border-radius:999px;background:none;color:var(--t-body,#67615a);cursor:pointer;transition:background-color .15s,color .15s}
+.csb-side-nav-back:hover{background:var(--t-surface,#f5f3f1);color:var(--t-ink,#1c1917)}
+.csb-side-nav-back:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:2px}
+/* When there's no room for the menu, the same back link sits top-left instead */
+.csb-embed-back{position:fixed;z-index:20;top:20px;left:20px}
+@media (min-width:1241px){.csb-embed-back{display:none}}
