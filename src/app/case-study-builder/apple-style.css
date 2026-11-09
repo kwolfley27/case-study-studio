@@ -4124,3 +4124,6 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
   .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-m .csb-apple-annotated-phone{max-width:85%!important;justify-self:center}
   .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-s .csb-apple-annotated-phone{max-width:70%!important;justify-self:center}
 }
+
+/* Annotated screen with corners turned off: a square screen, for screenshots with their own edges */
+.csb-canvas .csb-apple-annotated.is-square .csb-apple-annotated-phone,.csb-canvas .csb-apple-annotated.is-square .csb-apple-annotated-phone>:not(.csb-annot-pin){border-radius:0!important}
