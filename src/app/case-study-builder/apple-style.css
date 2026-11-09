@@ -4126,3 +4126,9 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 
 /* Annotated screen with corners turned off: a square screen, for screenshots with their own edges */
 .csb-canvas .csb-apple-annotated.is-square .csb-apple-annotated-phone,.csb-canvas .csb-apple-annotated.is-square .csb-apple-annotated-phone>:not(.csb-annot-pin){border-radius:0!important}
+
+/* Annotated desktop screen: always as tall as its image (never stretched to the notes column, which grows to fit low notes) */
+.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone{align-self:start!important}
+.csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone:has(>img){min-height:0!important}
+/* The numbered dots stay round whatever the screen's corners (frameless screens pass their radius down to everything inside) */
+.csb-canvas .csb-apple-annotated .csb-apple-annotated-phone>.csb-annot-pin.csb-annot-pin.csb-annot-pin.csb-annot-pin{border-radius:50%!important}
