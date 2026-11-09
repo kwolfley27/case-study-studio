@@ -4150,3 +4150,10 @@ html.csb-presenting .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .c
 html.csb-presenting .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone>img{max-height:calc(56vh / var(--present-zoom,1));width:auto!important;max-width:100%}
 /* No back or portfolio links on slides */
 html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!important}
+/* Inside katelynwolfley.design: a back arrow at the top of the side menu, always visible (the section list appears once you reach it) */
+.csb-side-nav-back{position:absolute;top:56px;left:clamp(24px,2.6vw,44px);display:grid;place-items:center;width:36px;height:36px;margin-left:2px;border:0;border-radius:999px;background:none;color:var(--t-body,#67615a);cursor:pointer;transition:background-color .15s,color .15s}
+.csb-side-nav-back:hover{background:var(--t-surface,#f5f3f1);color:var(--t-ink,#1c1917)}
+.csb-side-nav-back:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:2px}
+/* When there's no room for the menu, the same back link sits top-left instead */
+.csb-embed-back{position:fixed;z-index:20;top:20px;left:20px}
+@media (min-width:1241px){.csb-embed-back{display:none}}
