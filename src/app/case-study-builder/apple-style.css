@@ -4132,3 +4132,21 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone:has(>img){min-height:0!important}
 /* The numbered dots stay round whatever the screen's corners (frameless screens pass their radius down to everything inside) */
 .csb-canvas .csb-apple-annotated .csb-apple-annotated-phone>.csb-annot-pin.csb-annot-pin.csb-annot-pin.csb-annot-pin{border-radius:50%!important}
+
+/* Present mode: the problem card is one slide, in the page column (no pinned scroll scene), and plays on its own */
+html.csb-presenting .csb-canvas .csb-doc-main .csb-psf:not(.is-static){height:auto!important;padding-bottom:0!important}
+html.csb-presenting .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-stick{position:relative!important;top:auto!important;min-height:0!important}
+html.csb-presenting .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-run{display:none!important}
+html.csb-presenting .csb-canvas .csb-doc-main .csb-story-section.csb-kind-problem:has(.csb-psf:not(.is-static)){margin-inline:0!important;padding-inline:clamp(20px,4cqw,40px)!important;background:none!important}
+
+/* Present mode zooms the page column, and zoomed containers report a smaller width to their own container queries,
+   so slides fell back to phone layouts (stacked columns, notes under the screen). While presenting, layouts follow
+   the full screen instead. */
+html.csb-presenting .csb-doc-main{container-type:normal!important}
+/* Slides fit on one screen: tall screenshots are capped to the screen's height */
+html.csb-presenting .csb-canvas .csb-doc-main .csb-carousel-image{height:calc(32vh / var(--present-zoom,1))!important}
+html.csb-presenting .csb-canvas .csb-doc-main .csb-carousel{margin-top:calc(2vh / var(--present-zoom,1))!important}
+html.csb-presenting .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone{width:fit-content!important;max-width:100%!important;justify-self:center!important}
+html.csb-presenting .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop .csb-apple-annotated-phone>img{max-height:calc(56vh / var(--present-zoom,1));width:auto!important;max-width:100%}
+/* No back or portfolio links on slides */
+html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!important}
