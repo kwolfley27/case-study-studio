@@ -95,7 +95,7 @@ export function ScreenCarousel({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const track = useRef<HTMLDivElement>(null);
   const scrollBy = (direction: number) => { const el = track.current; if (!el) return; const card = el.querySelector<HTMLElement>('.csb-carousel-card'); el.scrollBy({ left: direction * ((card?.offsetWidth ?? 600) + 24), behavior: reduce ? 'auto' : 'smooth' }); };
-  return <div className="csb-carousel">
+  return <div className={`csb-carousel ${section.options?.squareCorners ? 'is-square' : ''}`}>
     <div className="csb-carousel-nav">
       <button type="button" aria-label="Previous screen" onClick={event => { event.stopPropagation(); scrollBy(-1); }}><ChevronLeft size={18} /></button>
       <button type="button" aria-label="Next screen" onClick={event => { event.stopPropagation(); scrollBy(1); }}><ChevronRight size={18} /></button>
