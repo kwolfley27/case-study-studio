@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { motion, useMotionValue, useTransform } from 'motion/react';
+import { motion, useMotionValue, useTransform, useInView, animate } from 'motion/react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import { Media } from './Media';
@@ -94,7 +94,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
   </div>;
 }
 
-/* The flip: a tall scroll scene with a sticky card. Front = the problem statement,
+/* The flip: a card in the page flow. Front = the problem statement,
    back = a speech bubble asking "How might we…?". Rotation follows the scroll, so it
    turns back if you scroll up. Reduced motion shows the two faces one after the other. */
 function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, success }: { picture?: React.ReactNode; bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
@@ -103,19 +103,17 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   const reduce = useReducedMotion() || editing;
   const scene = useRef<HTMLDivElement>(null);
   const stick = useRef<HTMLDivElement>(null);
-  // 0 when the card first pins, 1 when it lets go.
+  // 0 = the statement, 1 = the question. Plays on its own once the card is in view (no pinned scroll runway, so no empty space under it):
+  // the statement stays long enough to read, then softens away and the question arrives.
   const p = useMotionValue(0);
+  const seen = useInView(scene, { once: true, amount: .6 });
   useEffect(() => {
-    const el = scene.current; if (!el) return;
-    const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
-    let frame = 0;
-    const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
-      const stickTop = stick.current ? parseFloat(getComputedStyle(stick.current).top) : NaN; const pin = box.top + (Number.isFinite(stickTop) ? stickTop : box.height * .24); const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
-      p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
-    const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
-    measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
-    return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
-  }, [p]);
+    if (!seen) return;
+    const words = typeof sentence === 'string' ? sentence.split(/\s+/).length : 22;
+    const hold = Math.min(4.5, Math.max(2.2, words * .14));
+    const run = animate(p, 1, { delay: hold, duration: 1.8, ease: [0.22, 1, 0.36, 1] });
+    return () => run.stop();
+  }, [seen, p, sentence]);
   // The statement settles back and softens; then the question arrives like a message.
   const frontOpacity = useTransform(p, [.08, .5], [1, 0]);
   const frontY = useTransform(p, [.08, .5], [0, -28]);
@@ -149,6 +147,5 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
       {picture}
       {successRow && <motion.div style={{ opacity: bubble, width: '100%', display: 'grid', justifyItems: 'center' }}>{successRow}</motion.div>}
     </div>
-    <div className="csb-psf-run" aria-hidden="true" />
   </div>;
 }

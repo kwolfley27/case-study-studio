@@ -223,7 +223,7 @@ const pct = (v: string, as: ABFull['observedAs'] = 'percent') => { const n = num
 const whole = (v: string) => { const n = num(v.replace('−', '-')); return v.trim() ? `${Math.round(n)}%` : '–'; };
 const one = (v: string, plus = false) => { const n = num(v.replace('−', '-')); if (!v.trim()) return '–'; const r = Math.round(n * 10) / 10; return `${r < 0 ? '−' : plus && r > 0 ? '+' : ''}${Math.abs(r)}%`; };
 let fullSeq = 0;
-function FullResults({ full }: { full: ABFull }) {
+function FullResults({ full, verdict }: { full: ABFull; verdict?: React.ReactNode }) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [detailsId] = useState(() => `csb-abf-details-${++fullSeq}`);
@@ -245,7 +245,7 @@ function FullResults({ full }: { full: ABFull }) {
   const cell = (path: string, v: string) => <EditableText field={`deep:abtest.full.${path}`} value={v} />;
   return <div className="csb-abf">
     <div className="csb-abf-head">
-      <p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>
+      <div className="csb-abf-titles"><p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>{verdict}</div>
       {ok && <span className="csb-abf-legend"><span><i className="is-a" />{a.name}</span><span><i className="is-b" />{b.name}</span></span>}
     </div>
     {ok && <figure className="csb-abf-chart">
@@ -299,13 +299,15 @@ export function ABTest({ section, editorMode }: { section: CaseStudySection; edi
   const defaultLabel = result === 'b' ? `${section.items[1]?.title || 'B'} won` : result === 'a' ? `${section.items[0]?.title || 'A'} held` : 'No clear winner';
   // The pill's wording can be written to suit the story ("Shipped the clearer design"); the outcome still sets its colour.
   const resultLabel = data.resultLabel?.trim() || defaultLabel;
+  // The result pill and method: above the bars, or under the chart's title when the full results are shown.
+  const verdict = <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}><EditableText field="abtest.resultLabel" value={resultLabel} /></span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>;
   return <div className={`csb-ab is-${data.mode ?? 'wipe'}`}>
     {data.mode === 'side' ? <Side section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} /> : <Wipe section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} />}
     {(data.markers.length > 0 && data.showMarkers !== false) && <ol className="csb-ab-changes">{data.markers.map((m, i) => <li key={i} className={active === i ? 'is-active' : ''} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)}><span className="csb-ab-num">{i + 1}</span><EditableText field={`abtest.markers.${i}.note`} value={m.note} /></li>)}</ol>}
     {(data.metrics.length > 0 || data.full?.on) && <div className="csb-ab-results">
-      <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}><EditableText field="abtest.resultLabel" value={resultLabel} /></span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>
+      {!data.full?.on && verdict}
       {data.metrics.length > 0 && !data.full?.on && <div className="csb-ab-metrics" style={{ '--ab-cols': Math.min(3, data.metrics.length) } as React.CSSProperties}>{data.metrics.map((m, i) => <MetricRow key={i} m={m} index={i} highlight={activeMetric === i} delay={i * .12} neutral={result === 'none'} />)}</div>}
-      {data.full?.on && <FullResults full={data.full} />}
+      {data.full?.on && <FullResults full={data.full} verdict={verdict} />}
     </div>}
   </div>;
 }
