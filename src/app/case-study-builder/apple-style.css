@@ -4068,3 +4068,15 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 /* A/B quick-view numbers: smaller and a little heavier, so they read at a glance */
 .csb-canvas .csb-abf-stats dd{font-size:clamp(20px,2.2cqw,24px)!important;line-height:1.25!important;font-weight:500!important;letter-spacing:-.005em!important;color:var(--t-ink,#1c1917)}
 .csb-canvas .csb-abf-stats>div{gap:4px}
+
+/* Carousel: each card takes the shape of its image (a tall menu stays tall, a desktop screen stays wide),
+   all at one shared height, so nothing gets cropped. Very wide images are capped and shown whole. */
+.csb-canvas .csb-doc-main .csb-carousel-track{grid-auto-columns:max-content!important;align-items:start}
+.csb-canvas .csb-doc-main .csb-carousel-card{width:max-content;max-width:min(720px,86cqw)}
+.csb-canvas .csb-doc-main .csb-carousel-image{aspect-ratio:auto!important;height:clamp(320px,52cqw,520px);display:flex;justify-content:center}
+.csb-canvas .csb-doc-main .csb-carousel-image img{width:auto!important;max-width:100%;height:100%!important;object-fit:contain!important;object-position:center!important}
+.csb-canvas .csb-doc-main .csb-carousel-image:has(.csb-carousel-empty){width:min(520px,78cqw)}
+.csb-canvas .csb-doc-main .csb-carousel-empty{width:100%}
+/* The caption wraps to the card's width instead of widening it */
+.csb-canvas .csb-doc-main .csb-carousel-card figcaption{width:0;min-width:100%;box-sizing:border-box}
+@container (max-width:700px){.csb-canvas .csb-doc-main .csb-carousel-image{height:clamp(300px,90cqw,440px)}}
