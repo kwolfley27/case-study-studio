@@ -4110,3 +4110,17 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static){height:auto!important;padding-bottom:0!important}
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-stick{position:relative!important;top:auto!important;min-height:0!important}
 .csb-canvas .csb-abf-head{margin-bottom:clamp(20px,2.6cqw,28px)!important}
+
+/* Annotated desktop screen size: Small / Medium shrink the screen; the notes stay right beside it and the pair is centred */
+@container (min-width:701px){
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-m{--ann-sw:400px}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-s{--ann-sw:300px}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s):has(>.csb-apple-annotation-side:first-child:empty){grid-template-columns:minmax(0,var(--ann-sw)) minmax(170px,240px)!important;justify-content:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s):has(>.csb-apple-annotation-side:nth-child(3):empty){grid-template-columns:minmax(170px,240px) minmax(0,var(--ann-sw))!important;justify-content:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop:is(.is-size-m,.is-size-s):not(:has(>.csb-apple-annotation-side:empty)){grid-template-columns:minmax(150px,220px) minmax(0,var(--ann-sw)) minmax(150px,220px)!important;justify-content:center}
+}
+/* Phones: a smaller screen is narrower but still centred above its notes */
+@container (max-width:700px){
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-m .csb-apple-annotated-phone{max-width:85%!important;justify-self:center}
+  .csb-canvas .csb-doc-main .csb-apple-annotated.is-desktop.is-size-s .csb-apple-annotated-phone{max-width:70%!important;justify-self:center}
+}
