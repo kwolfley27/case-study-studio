@@ -225,7 +225,7 @@ function SideNav({ study, editorMode, onEditSection, onBack }: { study: BuilderS
   }, [items.map(section => section.id).join()]);
   if (!items.length) return null;
   return <nav ref={ref} className={`csb-side-nav ${revealed || editorMode ? "is-revealed" : ""}`} aria-label="Case study sections">
-    {onBack && <button type="button" className="csb-side-nav-back" aria-label="Back to work" title="Back to work" onClick={onBack}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg></button>}
+    {onBack && <button type="button" className="csb-side-nav-back" onClick={onBack}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg><span>All work</span></button>}
     <p className="csb-side-nav-title">{study.client}</p>
     <ol>{items.map(section => <li key={section.id}>
       <EditingContext.Provider value={{ edit: editorMode ? (field, value) => onEditSection?.(section.id, field, value) : undefined, styles: section.textStyles }}>

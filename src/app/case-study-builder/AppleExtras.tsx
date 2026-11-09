@@ -336,12 +336,32 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   };
   const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={drag?.k === k ? 'is-active' : ''} style={tops[k] !== undefined ? { top: tops[k] } : undefined}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
 
-  const size = desktop && (section.options?.screenSize === 's' || section.options?.screenSize === 'm') ? ` is-size-${section.options.screenSize}` : '';
-  return <div className={`csb-apple-annotated ${desktop ? 'is-desktop' : ''}${size}${section.options?.squareCorners ? ' is-square' : ''} ${edit ? 'is-editing' : ''}`} ref={wrap}>
+  // Screen size: a width you dragged to (custom), or the Small / Medium presets.
+  const customW = desktop ? Number(section.options?.screenWidth) || 0 : 0;
+  const size = customW ? ' is-size-c' : desktop && (section.options?.screenSize === 's' || section.options?.screenSize === 'm') ? ` is-size-${section.options.screenSize}` : '';
+  // Drag the screen's corner (while editing) to any width; it saves when you let go.
+  const startResize = (event: React.PointerEvent) => {
+    if (!edit || !phone.current || !wrap.current) return;
+    event.preventDefault(); event.stopPropagation();
+    const handle = event.currentTarget as HTMLElement; handle.setPointerCapture(event.pointerId);
+    const el = wrap.current; const z = el.getBoundingClientRect().width / (el.offsetWidth || 1) || 1;
+    const startX = event.clientX; const startW = phone.current.offsetWidth; let w = startW;
+    el.classList.add('is-size-c');
+    const move = (e: PointerEvent) => { w = Math.round(Math.min(900, Math.max(200, startW + (e.clientX - startX) / z * 2))); el.style.setProperty('--ann-sw', `${w}px`); };
+    const up = () => { handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up); edit('options.screenWidth', String(w)); };
+    handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
+  };
+  const nudgeSize = (event: React.KeyboardEvent) => {
+    if (!edit || !phone.current || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+    event.preventDefault(); const w = Math.min(900, Math.max(200, (customW || phone.current.offsetWidth) + (event.key === 'ArrowRight' ? 1 : -1) * (event.shiftKey ? 40 : 10)));
+    edit('options.screenWidth', String(w));
+  };
+  return <div className={`csb-apple-annotated ${desktop ? 'is-desktop' : ''}${size}${section.options?.squareCorners ? ' is-square' : ''} ${edit ? 'is-editing' : ''}`} ref={wrap} style={customW ? { ['--ann-sw' as string]: `${customW}px` } : undefined}>
     <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[0] = el; }}>{notes.map((item, i) => sideOf(i) === 0 ? note(item, i) : null)}</div>
     <div className="csb-apple-annotated-phone" ref={phone} data-image-slot={`${section.id}:0`}>
       {edit && screen?.figmaUrl && <button type="button" className="csb-annot-pull" data-no-slot onClick={async e => { e.stopPropagation(); const b = e.currentTarget; b.disabled = true; b.textContent = 'Pulling from Figma…'; try { const { pullFigmaFrame } = await import('./ImageSlots'); edit('items.0.image', await pullFigmaFrame(screen.figmaUrl!)); b.textContent = 'Pulled from Figma'; } catch (err) { b.disabled = false; b.textContent = err instanceof Error ? err.message : 'Could not pull'; } }}>{screen.image?.startsWith('data:') ? 'Refresh from Figma' : 'Pull frame from Figma'}</button>}
       {desktop ? <span className="csb-apple-annotated-chrome" aria-hidden="true"><i /><i /><i /></span> : <span className="csb-apple-annotated-island" />}
+      {edit && desktop && <span className="csb-annot-resize" data-no-slot role="slider" tabIndex={0} aria-label="Screen width. Drag, or use the left and right arrow keys" aria-valuemin={200} aria-valuemax={900} aria-valuenow={customW || undefined} title="Drag to resize" onPointerDown={startResize} onKeyDown={nudgeSize} onClick={e => e.stopPropagation()} />}
       {screen?.image ? <Media src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>{desktop ? 'Desktop page' : 'Designed screen'}</strong><span>{desktop ? 'Paste a Figma frame link or drop a full-page screenshot' : '700 × 1440 · designed media'}</span></div>}
       {points.map(([x, y], k) => <span key={k} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
         role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
