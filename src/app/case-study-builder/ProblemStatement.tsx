@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { motion, useMotionValue, useTransform } from 'motion/react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import { Media } from './Media';
@@ -112,9 +112,20 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
     const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
       const stickTop = stick.current ? parseFloat(getComputedStyle(stick.current).top) : NaN; const pin = box.top + (Number.isFinite(stickTop) ? stickTop : box.height * .24); const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
       p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
-    const on = () => { if (!frame) frame = requestAnimationFrame(measure); };
-    measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
-    return () => { scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
+    // Present mode shows one section per screen, so there's no scroll to follow: once this slide is on screen,
+    // the statement shows for a moment and then turns into the question; leaving the slide resets it.
+    const presenting = () => document.documentElement.classList.contains('csb-presenting');
+    let run: { stop: () => void } | null = null; let shown = false;
+    const io = new IntersectionObserver(([entry]) => {
+      if (!presenting()) return;
+      const on = entry.intersectionRatio > .55;
+      if (on && !shown) { shown = true; run?.stop(); p.set(0); run = animate(p, 1, { delay: 1.2, duration: 1.6, ease: [0.22, 1, 0.36, 1] }); }
+      else if (!on && shown && entry.intersectionRatio < .1) { shown = false; run?.stop(); p.set(0); }
+    }, { threshold: [0, .1, .55, .8] });
+    io.observe(el);
+    const on = () => { if (presenting()) return; if (!frame) frame = requestAnimationFrame(measure); };
+    if (!presenting()) measure(); scroller.addEventListener('scroll', on, { passive: true }); window.addEventListener('resize', on);
+    return () => { io.disconnect(); run?.stop(); scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
   }, [p]);
   // The statement settles back and softens; then the question arrives like a message.
   const frontOpacity = useTransform(p, [.08, .5], [1, 0]);
