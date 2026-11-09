@@ -4083,3 +4083,11 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 
 /* Carousel with corners turned off: square cards and screens, for screenshots that have their own edges */
 .csb-canvas .csb-carousel.is-square :is(.csb-carousel-card,.csb-carousel-image,.csb-carousel-image img){border-radius:0!important}
+
+/* Carousel: the caption is plain text under the image, not a panel attached to the screen */
+.csb-canvas .csb-carousel-card{border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;overflow:visible}
+.csb-canvas .csb-carousel-image{border-radius:20px;overflow:hidden}
+.csb-canvas .csb-carousel-card figcaption{display:block;padding:14px 2px 0;border-top:0!important}
+.csb-canvas .csb-carousel-card figcaption div{gap:2px}
+.csb-canvas .csb-carousel-card figcaption strong{font-size:var(--ts-meta,14px);font-weight:600;letter-spacing:0;color:var(--t-ink,#1c1917)}
+.csb-canvas .csb-carousel-card figcaption span{font-size:var(--ts-meta,14px);line-height:1.5;color:var(--t-body,#67615a)}
