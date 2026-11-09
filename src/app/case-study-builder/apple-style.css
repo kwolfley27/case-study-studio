@@ -4080,3 +4080,6 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section:is(.csb-v
 /* The caption wraps to the card's width instead of widening it */
 .csb-canvas .csb-doc-main .csb-carousel-card figcaption{width:0;min-width:100%;box-sizing:border-box}
 @container (max-width:700px){.csb-canvas .csb-doc-main .csb-carousel-image{height:clamp(300px,90cqw,440px)}}
+
+/* Carousel with corners turned off: square cards and screens, for screenshots that have their own edges */
+.csb-canvas .csb-carousel.is-square :is(.csb-carousel-card,.csb-carousel-image,.csb-carousel-image img){border-radius:0!important}
