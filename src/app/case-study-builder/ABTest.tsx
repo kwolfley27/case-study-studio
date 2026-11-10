@@ -26,7 +26,7 @@ export type ABFull = { on: boolean; title: string; axis: string; arms: [ABArm, A
   observedAs?: 'percent' | 'per100' | 'raw'; observedLabel?: string;
   /** Show a button that opens the full table and longer explanation (off unless turned on). */
   showDetails?: boolean };
-export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; resultLabel?: string; method?: string; showMarkers?: boolean; full?: ABFull };
+export type ABTestData = { mode?: 'wipe' | 'side'; markers: ABMarker[]; metrics: ABMetric[]; result?: 'b' | 'a' | 'none'; resultLabel?: string; divider?: 'white' | 'ink' | 'accent'; method?: string; showMarkers?: boolean; full?: ABFull };
 export const blankFull = (a = 'A', b = 'B'): ABFull => ({ on: true, title: 'What the test measured', axis: 'Per user average', arms: [{ name: `${a} (control)`, users: '', observed: '', posterior: '', spread: '0.02' }, { name: b, users: '', observed: '', posterior: '', spread: '0.02' }], lift: '', win: '', low: '', high: '', explain: 'Explain in a sentence or two what the curves and numbers mean.', summary: 'One sentence: what the result means.' });
 
 export const defaultABTest = (): ABTestData => ({
@@ -301,7 +301,7 @@ export function ABTest({ section, editorMode }: { section: CaseStudySection; edi
   const resultLabel = data.resultLabel?.trim() || defaultLabel;
   // The result pill and method: above the bars, or under the chart's title when the full results are shown.
   const verdict = <div className="csb-ab-verdict"><span className={`csb-ab-pill is-${result}`}><EditableText field="abtest.resultLabel" value={resultLabel} /></span><small><EditableText field="abtest.method" value={data.method || ''} /></small></div>;
-  return <div className={`csb-ab is-${data.mode ?? 'wipe'}`}>
+  return <div className={`csb-ab is-${data.mode ?? 'wipe'} has-divider-${data.divider ?? 'white'}`}>
     {data.mode === 'side' ? <Side section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} /> : <Wipe section={section} data={data} editorMode={editorMode} active={active} setActive={setActive} />}
     {(data.markers.length > 0 && data.showMarkers !== false) && <ol className="csb-ab-changes">{data.markers.map((m, i) => <li key={i} className={active === i ? 'is-active' : ''} onPointerEnter={() => setActive(i)} onPointerLeave={() => setActive(null)}><span className="csb-ab-num">{i + 1}</span><EditableText field={`abtest.markers.${i}.note`} value={m.note} /></li>)}</ol>}
     {(data.metrics.length > 0 || data.full?.on) && <div className="csb-ab-results">
@@ -346,6 +346,7 @@ export function ABTestControls({ section, onChange }: { section: CaseStudySectio
       <button type="button" aria-label={`Remove change ${i + 1}`} onClick={() => set({ markers: data.markers.filter((_, k) => k !== i) })}>×</button>
     </div>)}
     <button type="button" className="csb-jm-add" onClick={() => set({ markers: [...data.markers, { x: .35, y: .4, w: .3, h: .15, note: `Describe change ${data.markers.length + 1}` }], showMarkers: true })}>+ Mark a change by hand</button>
+    {(data.mode ?? 'wipe') === 'wipe' && <div className="csb-field"><span className="csb-field-label">Slider colour</span><div className="csb-segment" role="group" aria-label="Slider colour">{([['white', 'White'], ['ink', 'Black'], ['accent', 'Accent']] as const).map(([v, l]) => <button key={v} type="button" aria-pressed={(data.divider ?? 'white') === v} onClick={() => set({ divider: v })}>{l}</button>)}</div></div>}
     {data.markers.length > 0 && <label className="csb-check-field"><input type="checkbox" checked={data.showMarkers !== false} onChange={e => set({ showMarkers: e.target.checked })} /> Show numbered changes</label>}
     <p className="csb-field-note">Drag a box on the page to move it; drag its corner to resize.</p>
     <div className="csb-inspector-divider" /><p className="csb-panel-kicker">Results</p>
