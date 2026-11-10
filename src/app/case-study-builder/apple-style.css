@@ -4174,3 +4174,25 @@ html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!import
 /* Back to all work: an arrow and label above the side menu, set apart from the section list */
 .csb-side-nav-back{display:inline-flex!important;align-items:center;gap:8px;width:auto!important;height:auto!important;min-height:32px;padding:4px 12px 4px 8px!important;margin-left:0!important;top:52px!important;font:500 13px/1 Inter,system-ui,sans-serif;letter-spacing:0;color:var(--t-body,#67615a)}
 .csb-side-nav-back span{white-space:nowrap}
+
+/* Carousel: optional soft shadow so white screens lift off the background.
+   The track gets room on every side so the shadow isn't clipped, without moving the cards. */
+.csb-canvas .csb-carousel.has-shadow .csb-carousel-image{box-shadow:0 0 0 1px rgba(40,32,24,.05),0 2px 4px rgba(40,32,24,.06),0 14px 32px -10px rgba(40,32,24,.26)!important}
+.csb-canvas .csb-carousel.has-shadow .csb-carousel-track{padding:8px 24px 32px!important;margin-inline:-24px;scroll-padding-inline:24px}
+.csb-variant-dark .csb-carousel.has-shadow .csb-carousel-image{box-shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -8px rgba(0,0,0,.55)!important}
+/* Phones: the numbers in the dark circles above each note stay white (the editorial theme was greying them) */
+@container (max-width:700px){
+  .csb-canvas .csb-apple-annotated .csb-apple-annotation-side>div small{color:#fdfcfc!important}
+  /* Notes sit under the screen here, so there's nothing to resize */
+  .csb-annot-resize{display:none!important}
+}
+/* The resize handle stays round on square, frameless screens */
+.csb-canvas .csb-apple-annotated .csb-apple-annotated-phone>.csb-annot-resize.csb-annot-resize.csb-annot-resize.csb-annot-resize{border-radius:50%!important}
+/* Labelled rows on phones: the number sits above its title and the text uses the full width (no indented column) */
+@container (max-width:560px){
+  .csb-canvas .csb-doc-main .csb-kind-rows .csb-research-card{grid-template-columns:1fr!important;row-gap:6px!important}
+  .csb-canvas .csb-doc-main .csb-kind-rows .csb-research-card>small{grid-column:1!important;grid-row:auto!important;margin:0!important;font-size:13px;line-height:1.4}
+  .csb-canvas .csb-doc-main .csb-kind-rows .csb-research-card>:not(small){grid-column:1!important}
+  .csb-canvas .csb-doc-main .csb-kind-rows .csb-research-card>p{margin-top:4px!important}
+}
+.csb-canvas .csb-carousel.has-shadow .csb-carousel-card figcaption{padding-top:20px}
