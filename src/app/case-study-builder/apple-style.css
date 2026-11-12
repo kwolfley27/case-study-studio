@@ -4225,3 +4225,9 @@ html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!import
 .csb-canvas .csb-doc-main>.csb-canvas-end .csb-more-label.csb-more-label{color:#a8a29e!important;letter-spacing:0!important}
 /* In the editor the footer stays inside the preview column */
 .csb-canvas-editable .csb-doc-main>.csb-canvas-end{width:auto;margin-left:0!important}
+
+/* Section labels in sentence case (no all-caps, no wide tracking): "Why it mattered", not "WHY IT MATTERED".
+   The first letter is capitalised for you, so "original menu design" shows as "Original menu design". */
+.csb-canvas .csb-doc-main :is(.csb-eyebrow,.csb-section-intro .csb-eyebrow *){text-transform:none!important;letter-spacing:0!important}
+.csb-canvas .csb-doc-main .csb-eyebrow:not(.csb-hero .csb-eyebrow){font-size:14px!important;font-weight:500!important;line-height:1.4!important}
+.csb-canvas .csb-doc-main .csb-eyebrow::first-letter,.csb-side-nav a::first-letter{text-transform:uppercase}
