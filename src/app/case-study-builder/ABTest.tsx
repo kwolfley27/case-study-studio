@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, animate, motion, useInView, useMotionValue, useMotionValueEvent } from 'motion/react';
+import { AnimatePresence, animate, motion, useInView, useMotionValue, useMotionValueEvent, useTransform } from 'motion/react';
 import { EditableText, EditingContext } from './EditableText';
 import { useReducedMotion } from './MotionKit';
 import type { CaseStudySection } from './model';
@@ -133,15 +133,18 @@ function Wipe({ section, data, editorMode, active, setActive }: { section: CaseS
   const pos = useMotionValue(reduce || editorMode ? 50 : 100); // % of the screen showing A, from the left
   const [view, setView] = useState<'a' | 'b' | 'compare'>('compare');
   const [p, setP] = useState(pos.get());
+  const touched = useRef(false); const [hint, setHint] = useState(false);
   useMotionValueEvent(pos, 'change', setP);
   useEffect(() => {
     if (!inView || reduce || editorMode) return;
-    const run = async () => { await animate(pos, 0, { duration: 1.4, ease: [0.65, 0, 0.35, 1], delay: .3 }); await animate(pos, 50, { duration: .9, ease: [0.22, 1, 0.36, 1], delay: .5 }); };
+    // Sweep to show both versions, settle in the middle, then a small nudge so it's clear the handle can be dragged.
+    const run = async () => { await animate(pos, 0, { duration: 1.4, ease: [0.65, 0, 0.35, 1], delay: .3 }); await animate(pos, 50, { duration: .9, ease: [0.22, 1, 0.36, 1], delay: .5 });
+      if (touched.current) return; setHint(true); await animate(pos, 43, { duration: .45, ease: [0.4, 0, 0.2, 1], delay: .5 }); if (!touched.current) await animate(pos, 50, { duration: .55, ease: [0.22, 1, 0.36, 1] }); setTimeout(() => setHint(false), 1400); };
     void run();
   }, [inView]);
   const choose = (next: 'a' | 'b' | 'compare') => { setView(next); animate(pos, next === 'a' ? 100 : next === 'b' ? 0 : 50, { duration: reduce ? 0 : .6, ease: [0.22, 1, 0.36, 1] }); };
   const dragHandle = (event: React.PointerEvent) => {
-    event.preventDefault(); event.stopPropagation();
+    event.preventDefault(); event.stopPropagation(); touched.current = true; setHint(false);
     const rect = ref.current!.getBoundingClientRect(); setView('compare');
     const move = (e: PointerEvent) => pos.set(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
     move(event.nativeEvent); const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
@@ -158,7 +161,7 @@ function Wipe({ section, data, editorMode, active, setActive }: { section: CaseS
       <Screen section={section} index={0} label="A" />
       <div className="csb-ab-top" style={{ clipPath: `inset(0 0 0 ${p}%)` }}><Screen section={section} index={1} label="B" />{showMarkers && <Markers data={data} active={active} setActive={setActive} editable={editorMode} />}</div>
       <div className="csb-ab-divider" style={{ left: `${p}%`, opacity: p <= .5 || p >= 99.5 ? 0 : 1 }} aria-hidden="true" />
-      <div className="csb-ab-handle" data-no-slot role="slider" tabIndex={0} aria-label="Drag to compare A and B" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(100 - p)} style={{ left: `${p}%`, opacity: p <= .5 || p >= 99.5 ? 0 : 1 }}
+      <div className={`csb-ab-handle ${hint ? 'is-hinting' : ''}`} data-no-slot role="slider" tabIndex={0} aria-label="Drag to compare A and B" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(100 - p)} style={{ left: `${p}%`, opacity: p <= .5 || p >= 99.5 ? 0 : 1 }}
         onPointerDown={dragHandle} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === 'ArrowLeft') pos.set(Math.max(0, p - 5)); if (e.key === 'ArrowRight') pos.set(Math.min(100, p + 5)); }}>
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
@@ -237,7 +240,18 @@ function FullResults({ full, verdict }: { full: ABFull; verdict?: React.ReactNod
   const step = niceStep(hi0 - lo0); const lo = Math.floor(lo0 / step) * step, hi = Math.ceil(hi0 / step) * step;
   const peak = Math.max(...arms.map(a => normal(a.m, a.m, a.sd)));
   const X = (v: number) => (v - lo) / (hi - lo) * 100, Y = (d: number) => 4 + (1 - d / peak) * 96;
-  const path = (a: { m: number; sd: number }) => Array.from({ length: 161 }, (_, i) => { const v = lo + (hi - lo) * i / 160; return `${i ? 'L' : 'M'}${X(v).toFixed(2)},${Y(normal(v, a.m, a.sd)).toFixed(2)}`; }).join(' ');
+  // k: 0 = a flat line on the baseline, 1 = the full curve. The curves rise into shape when the chart comes into view.
+  const path = (a: { m: number; sd: number }, k = 1) => Array.from({ length: 161 }, (_, i) => { const v = lo + (hi - lo) * i / 160; return `${i ? 'L' : 'M'}${X(v).toFixed(2)},${Y(normal(v, a.m, a.sd) * k).toFixed(2)}`; }).join(' ');
+  const kA = useMotionValue(reduce ? 1 : 0), kB = useMotionValue(reduce ? 1 : 0);
+  const armA = arms[0] ?? { m: 0, sd: .02 }, armB = arms[1] ?? { m: 0, sd: .02 };
+  const dA = useTransform(kA, k => ok ? path(armA, k) : ''), dB = useTransform(kB, k => ok ? path(armB, k) : '');
+  useEffect(() => {
+    if (reduce) { kA.set(1); kB.set(1); return; }
+    if (!seen) return;
+    const ease = [0.22, 1, 0.36, 1] as const;
+    const a1 = animate(kA, 1, { duration: 1.3, ease, delay: .1 }); const b1 = animate(kB, 1, { duration: 1.3, ease, delay: .32 });
+    return () => { a1.stop(); b1.stop(); };
+  }, [seen, reduce]);
   const ticks: number[] = []; for (let v = lo; v <= hi + step / 2; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
   const dec = Math.max(0, -Math.floor(Math.log10(step)));
   const [a, b] = full.arms;
@@ -254,9 +268,10 @@ function FullResults({ full, verdict }: { full: ABFull; verdict?: React.ReactNod
       <div className="csb-abf-plot" ref={plotRef}>
         {ticks.map(t => <i key={t} className="csb-abf-grid" style={{ left: `${X(t)}%` }} aria-hidden="true" />)}
         {/* Revealed left to right (a line-draw animation breaks on stretched, non-scaling strokes) */}
-        <motion.svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={summary} initial={reduce ? false : { clipPath: 'inset(-10% 100% -10% 0%)' }} animate={seen || reduce ? { clipPath: 'inset(-10% 0% -10% 0%)' } : { clipPath: 'inset(-10% 100% -10% 0%)' }} transition={{ duration: reduce ? 0 : 1.3, ease: [0.22, 1, 0.36, 1] }}>
-          {arms.map((arm, i) => <path key={i} className={`csb-abf-curve ${i ? 'is-b' : 'is-a'}`} d={path(arm)} vectorEffect="non-scaling-stroke" />)}
-        </motion.svg>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={summary}>
+          <motion.path className="csb-abf-curve is-a" d={dA} vectorEffect="non-scaling-stroke" />
+          <motion.path className="csb-abf-curve is-b" d={dB} vectorEffect="non-scaling-stroke" />
+        </svg>
       </div>
       <div className="csb-abf-ticks" aria-hidden="true">{ticks.map((t, k) => <span key={t} className={k === 0 ? 'is-first' : k === ticks.length - 1 ? 'is-last' : ''} style={{ left: `${X(t)}%` }}>{t.toFixed(dec)}</span>)}</div>
     </figure>}

@@ -4316,3 +4316,35 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 @container (min-width:701px){
   html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-variant-tinted .csb-apple-annotated.is-desktop:not(:has(>.csb-apple-annotation-side:empty)){margin-inline:0!important;grid-template-columns:minmax(130px,1fr) minmax(0,var(--ann-sw,1.6fr)) minmax(130px,1fr)!important;justify-content:center}
 }
+
+/* Note and dot light up together on hover; the other notes step back */
+.csb-apple-annotation-side>div,.csb-annot-lines path{transition:opacity .25s ease-out}
+.csb-apple-annotated.has-hot .csb-apple-annotation-side>div:not(.is-hot){opacity:.4}
+.csb-apple-annotated.has-hot .csb-annot-lines path:not(.is-hot){opacity:.25!important}
+.csb-annot-lines path.is-hot{stroke:var(--t-ink,#1c1917)!important;stroke-width:1.5}
+.csb-annot-pin{transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s}
+.csb-annot-pin.is-hot{transform:scale(1.25);box-shadow:0 0 0 4px rgba(253,252,252,.9),0 0 0 6px rgba(0,0,0,.18)!important}
+@media (prefers-reduced-motion:reduce){.csb-annot-pin,.csb-apple-annotation-side>div,.csb-annot-lines path{transition:none}}
+/* A/B handle: a soft ring while it nudges, so it reads as something you can drag */
+.csb-ab-handle.is-hinting{animation:csb-ab-hint 1.4s ease-out 1}
+@keyframes csb-ab-hint{0%{box-shadow:0 0 0 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.16)}100%{box-shadow:0 0 0 16px rgba(0,0,0,0),0 2px 6px rgba(0,0,0,.16)}}
+
+.csb-bigstat{font-variant-numeric:tabular-nums}
+
+/* ── Try it yourself ── */
+.csb-try{display:grid;gap:16px}
+.csb-try-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.csb-try-hint{margin:0;font-size:14px;line-height:1.5;color:var(--t-body,#67615a)}
+.csb-try-frame{position:relative;overflow:hidden;border-radius:16px;background:var(--t-paper,#fdfcfc);box-shadow:0 0 0 1px rgba(40,32,24,.06),0 14px 32px -12px rgba(40,32,24,.22)}
+.csb-try-frame img{display:block;width:100%;height:auto}
+.csb-try-frame .csb-carousel-empty{min-height:320px}
+.csb-try-spot{position:absolute;z-index:3;width:44px;height:44px;margin:-22px 0 0 -22px;border:0;border-radius:50%;background:none;cursor:pointer;display:grid;place-items:center}
+.csb-try-spot span{width:18px;height:18px;border-radius:50%;background:var(--csb-accent,#5ca3ff);box-shadow:0 0 0 4px rgba(253,252,252,.95),0 2px 8px rgba(0,0,0,.25)}
+.csb-try-spot::before{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid var(--csb-accent,#5ca3ff);opacity:0;animation:csb-try-ping 2.2s ease-out infinite}
+@keyframes csb-try-ping{0%{transform:scale(.6);opacity:.7}80%,100%{transform:scale(1.6);opacity:0}}
+.csb-try-spot:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:2px}
+.csb-try-spot.is-editing{cursor:grab}
+.csb-try-toast{position:absolute;z-index:4;left:50%;bottom:16px;transform:translateX(-50%);max-width:calc(100% - 32px);padding:10px 16px;border-radius:999px;background:#161411;color:#fdfcfc;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 8px 24px -8px rgba(0,0,0,.45)}
+.csb-try-edit{margin:0;font-size:13px;color:var(--t-body,#67615a)}.csb-try-edit span{font-weight:600}
+@media (prefers-reduced-motion:reduce){.csb-try-spot::before{animation:none;opacity:.5;transform:scale(1.2)}}
+.csb-canvas .csb-doc-main .csb-try{max-width:640px}

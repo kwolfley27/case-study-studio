@@ -48,6 +48,7 @@ import { WorkTimeline } from "./WorkTimeline";
 import { ScreenRecording } from "./ScreenRecording";
 import { ProjectDetails } from "./ProjectDetails";
 import { ImmersiveHero } from "./ImmersiveHero";
+import { TryIt } from "./TryIt";
 import { DeviceFrame, HeroFramePicker } from "./DeviceFrame";
 import { ProblemStatement } from "./ProblemStatement";
 import { EmpathyMap } from "./EmpathyMap";
@@ -147,6 +148,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "screenRecording": return <ScreenRecording section={section} editorMode={editorMode} />;
     case "interviews": return <Interviews section={section} editorMode={editorMode} />;
     case "carousel": return <ScreenCarousel section={section} />;
+    case "tryIt": return <TryIt section={section} />;
     case "prototype": return <PrototypeEmbed section={section} editorMode={editorMode} onSetLink={onSetPrototype} />;
     case "persona": return <Persona section={section} />;
     case "journey": return <Journey section={section} />;
@@ -197,7 +199,7 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     default: {
       // "Pull out the key number": the first number in the text (34%, 1.2x, 3,500…) shown large beside the words, so it lands in a second.
       const stat = section.options?.bigStat ? (section.body || "").match(/[$€£]?\d[\d.,]*\s?(?:%|x|×|k|K|M)?/)?.[0]?.trim() : undefined;
-      if (stat) return <Enter className="csb-editorial-statement has-bigstat"><strong className="csb-bigstat" aria-hidden="true">{stat}</strong><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
+      if (stat) return <Enter className="csb-editorial-statement has-bigstat"><CountUp className="csb-bigstat" text={stat} /><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
       return <Enter className={`csb-editorial-statement ${(section.body || "").length > 240 ? "is-reading" : ""}`}><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
     }
   }
@@ -360,4 +362,31 @@ function useReadingFocus(ref: React.RefObject<HTMLElement | null>, on: boolean) 
     update(); scroller.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
     return () => { scroller.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (frame) cancelAnimationFrame(frame); main.classList.remove("has-reading-focus"); current?.classList.remove("is-in-focus"); };
   }, [ref, on]);
+}
+
+/* A big number that counts up once when it scrolls into view (34% → 0…34%). Shows the final number straight away
+   with reduced motion, in the editor, and for screen readers. */
+function CountUp({ text, className }: { text: string; className?: string }) {
+  const ref = useRef<HTMLElement>(null);
+  const editing = !!useContext(EditingContext).edit;
+  const m = text.match(/^([^\d]*)([\d.,]+)(.*)$/);
+  const target = m ? parseFloat(m[2].replace(/,/g, "")) : NaN;
+  const decimals = m && m[2].includes(".") ? m[2].split(".")[1].length : 0;
+  const [shown, setShown] = useState(text);
+  useEffect(() => {
+    const el = ref.current; if (!el || !m || !Number.isFinite(target) || editing) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0; let started = false;
+    const fmt = (v: number) => `${m[1]}${v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${m[3]}`;
+    setShown(fmt(0));
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting || started) return; started = true; io.disconnect();
+      const t0 = performance.now(); const dur = 1100;
+      const tick = (t: number) => { const k = Math.min(1, (t - t0) / dur); const eased = 1 - Math.pow(1 - k, 3); setShown(fmt(target * eased)); if (k < 1) raf = requestAnimationFrame(tick); };
+      raf = requestAnimationFrame(tick);
+    }, { threshold: .6 });
+    io.observe(el);
+    return () => { io.disconnect(); cancelAnimationFrame(raf); setShown(text); };
+  }, [text, editing]);
+  return <strong ref={ref} className={className}><span aria-hidden="true">{shown}</span><span className="csb-sr-only">{text}</span></strong>;
 }

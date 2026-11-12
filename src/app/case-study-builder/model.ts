@@ -1,4 +1,4 @@
-export type SectionKind = "photo" | "brand" | "flowRace" | "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "flowRace" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
+export type SectionKind = "tryIt" | "photo" | "brand" | "flowRace" | "built" | "screenTrio" | "gifBoard" | "interviewQs" | "floatDevices" | "isoShowcase" | "screenGroups" | "iterations" | "insights" | "typeSpec" | "barChart" | "scrollSite" | "jtbd" | "userFlow" | "flowDiff" | "flowCompare" | "flowRace" | "featureCompare" | "positioning" | "roadmap" | "taskSuccess" | "showcase" | "screenFocus" | "screenStory" | "screenStrip" | "affinity" | "aeiou" | "abtest" | "coverHero" | "details" | "rows" | "empathy" | "timeline" | "screenRecording" | "prototype" | "findings" | "interviews" | "carousel" | "wireframes" | "fullMedia" | "survey" | "narrative" | "metrics" | "flow" | "quotes" | "comparison" | "gallery" | "methods" | "columns" | "problem" | "competitors" | "gap" | "persona" | "journey" | "issueFlow" | "annotated";
 
 export interface SurveyQuestion {
   sourceName: string;
@@ -159,7 +159,7 @@ export const componentNames: Record<SectionKind, string> = {
   built: "Built from a picture",
   flowRace: "Recorded flows",
   coverHero: "Title reveal hero",
-  abtest: "A/B test",
+  abtest: "A/B test", tryIt: "Try it",
   taskSuccess: "Task success",
   roadmap: "Roadmap",
   flowCompare: "Flow comparison",
@@ -194,6 +194,7 @@ export const componentNames: Record<SectionKind, string> = {
   findings: "Numbered findings",
   interviews: "Interview highlights",
   carousel: "Screen carousel",
+  tryIt: "Try it yourself",
   wireframes: "Linked wireframe showcase",
   fullMedia: "Full width image / GIF",
   survey: "Survey results",
@@ -250,6 +251,7 @@ export const componentDescriptions: Record<SectionKind, string> = {
   findings: "A numbered list of problems or findings, one idea per row.",
   interviews: "Pick a participant to see their summary, a finding and a quote.",
   carousel: "Large screens in a horizontal scroller with arrows.",
+  tryIt: "Before and after screens with a button readers can click to feel the difference.",
   wireframes: "Import Figma screens into staggered iPhone mockups, then refresh by frame ID.",
   fullMedia: "Show an image or animated GIF edge to edge at its natural proportions.",
   survey: "Live charts from a survey you run in Research, or from Google Forms responses.",
@@ -332,6 +334,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     findings: "What kept coming up",
     interviews: "Interview highlights",
     carousel: "Screens I explored",
+    tryIt: "Try it yourself",
     wireframes: "From wireframes to a clear direction",
     fullMedia: "See the work in detail",
     survey: "User research & key insights",
@@ -415,6 +418,7 @@ export const createSection = (kind: SectionKind): CaseStudySection => ({
     prototype: [{ title: "Prototype", detail: "Add a note on what to try, like: tap Edit to see the new access notice." }],
     findings: ["The first finding", "The second finding", "The third finding", "The fourth finding"].map(title => ({ title, detail: "One or two sentences of evidence: what you saw, how often, and why it matters." })),
     interviews: [["Participant one", "Role or context"], ["Participant two", "Role or context"], ["Participant three", "Role or context"]].map(([title, value]) => ({ title, value, detail: "A one-sentence summary of this conversation and what it revealed.", finding: "The most important thing you learned from this person.", findingNote: "Why it matters for the design.", quote: "A short verbatim quote from the interview.", quoteNote: "What this quote shows." })),
+    tryIt: [{ title: "Before", detail: "Nothing changes. It asks you to unlock access again.", value: "Try clicking the highlighted button", image: "", point: "70,88" }, { title: "After", detail: "Follow-up sent to your admin.", value: "Now try the new version", image: "", point: "70,88" }],
     carousel: ["Screen one", "Screen two", "Screen three", "Screen four"].map(title => ({ title, detail: "Why this screen was explored, kept or shelved.", image: "" })),
     wireframes: Array.from({length:4}, (_, i) => ({title:`Screen ${i+1}`, detail:"Add a caption explaining this step.", image:""})),
     fullMedia: [{ title: "Visual detail", detail: "Add a caption about what this shows.", image: "" }],
