@@ -4231,3 +4231,43 @@ html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!import
 .csb-canvas .csb-doc-main :is(.csb-eyebrow,.csb-section-intro .csb-eyebrow *){text-transform:none!important;letter-spacing:0!important}
 .csb-canvas .csb-doc-main .csb-eyebrow:not(.csb-hero .csb-eyebrow){font-size:14px!important;font-weight:500!important;line-height:1.4!important}
 .csb-canvas .csb-doc-main .csb-eyebrow::first-letter,.csb-side-nav a::first-letter{text-transform:uppercase}
+
+/* ── Evolution strip ── one screen in full, then the changed part of each other screen, in order */
+.csb-evo{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(24px,4cqw,48px);align-items:start;margin-top:clamp(24px,4cqw,40px)}
+.csb-evo figure{margin:0}
+.csb-evo-full{position:sticky;top:clamp(24px,8vh,96px)}
+.csb-evo-shot{position:relative;overflow:hidden;border-radius:16px;background:var(--t-paper,#fdfcfc)}
+.csb-evo-shot img{display:block;width:100%;height:auto}
+.csb-evo-crop{position:relative;overflow:hidden}
+.csb-evo-crop img{position:absolute;left:0;bottom:0;width:100%;height:auto}
+.csb-evo.is-square .csb-evo-shot{border-radius:0}
+.csb-evo.has-shadow .csb-evo-shot{box-shadow:0 0 0 1px rgba(40,32,24,.05),0 2px 4px rgba(40,32,24,.06),0 14px 32px -10px rgba(40,32,24,.24)}
+.csb-evo-steps{list-style:none;margin:0;padding:0;display:grid;gap:clamp(28px,3.4cqw,40px)}
+.csb-evo figcaption{display:flex;gap:12px;align-items:flex-start;padding-top:14px}
+.csb-evo figcaption small{flex:none;display:grid;place-items:center;width:22px;height:22px;margin-top:-1px;border-radius:50%;background:var(--t-ink,#1c1917);color:#fdfcfc;font:500 12px/1 Inter,system-ui,sans-serif}
+.csb-evo figcaption div{display:grid;gap:2px;min-width:0}
+.csb-evo figcaption strong{font-size:14px;font-weight:600;line-height:1.4;color:var(--t-ink,#1c1917)}
+.csb-evo figcaption span{font-size:14px;line-height:1.5;color:var(--t-body,#67615a)}
+.csb-evo .csb-carousel-empty{min-height:220px;padding:24px}
+.csb-evo .csb-carousel-empty.is-strip{min-height:96px}
+@container (max-width:700px){.csb-evo{grid-template-columns:1fr}.csb-evo-full{position:static}}
+/* Inside a cream card: no extra top margin */
+.csb-canvas .csb-doc-main .csb-variant-tinted .csb-evo{margin-top:0}
+
+/* Big number beside its sentence ("Why it mattered") */
+.csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:clamp(20px,3.6cqw,40px);align-items:start;max-width:none}
+.csb-canvas .csb-doc-main .csb-bigstat{display:block;margin-top:-.08em;font-size:clamp(56px,8cqw,88px);line-height:.95;font-weight:300;letter-spacing:-.04em;color:var(--t-ink,#1c1917);font-variant-numeric:tabular-nums}
+.csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat p{max-width:36em;margin:0}
+@container (max-width:560px){.csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat{grid-template-columns:1fr;gap:12px}}
+/* A/B takeaway sits under the title and result, before the chart */
+.csb-canvas .csb-abf-summary.is-lead{margin:0 0 clamp(24px,3cqw,32px)!important;max-width:40em}
+
+.csb-readtime{font-weight:400;color:var(--t-body,#67615a)}
+/* Big screens, read at arm's length: body text one step up */
+@media (min-width:1600px){.csb-canvas .csb-doc-main{--ts-body:17px}}
+/* Phones: a thin reading-progress line at the top stands in for the side menu */
+.csb-progress{position:fixed;z-index:30;top:0;left:0;right:0;height:3px;transform-origin:0 50%;background:var(--csb-accent-fill,var(--csb-accent,#5ca3ff));pointer-events:none}
+@media (min-width:1241px){.csb-progress{display:none}}
+html.csb-presenting .csb-progress{display:none}
+.csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat{margin-top:clamp(20px,2.6cqw,28px)}
+.csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat p{white-space:pre-line}

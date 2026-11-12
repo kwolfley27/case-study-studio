@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { CaseStudyCanvas } from "./CaseStudyCanvas";
 import { PresentMode } from "./PresentMode";
@@ -32,5 +32,18 @@ export default function PublishedCaseStudy({ slug, embed = false }: { slug: stri
     return () => controller.abort();
   }, [slug]);
   if (!study) return <main className="csb-app" style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}><div style={{ maxWidth: 480, textAlign: "center" }}><a href="https://katelynwolfley.design" style={{ color: "#497e72", fontSize: 13 }}>← Back to portfolio</a><h1 style={{ fontSize: 28, letterSpacing: "-.04em", margin: "26px 0 10px" }}>{error ? "Case study unavailable" : "Loading case study…"}</h1>{error && <p style={{ color: "#6d7672", lineHeight: 1.55 }}>{error}</p>}</div></main>;
-  return <main className="csb-app csb-published"><a href="#story" className="csb-skip" onClick={e => { e.preventDefault(); const sec = document.querySelector<HTMLElement>('[id^="builder-section-"]'); const h = sec?.querySelector<HTMLElement>("h2") ?? sec; if (!h) return; h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); sec?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Skip to the story</a>{!embed && <div className="csb-portfolio-link" style={{ position: "fixed", zIndex: 20, top: 20, left: 20 }}><a href="https://katelynwolfley.design" className="csb-quiet-button" style={{ textDecoration: "none" }}>← Portfolio</a></div>}{!presenting && <button type="button" className="csb-quiet-button csb-present-open" onClick={() => setPresenting(true)}>Present</button>}{embed && <button type="button" className="csb-quiet-button csb-embed-back" onClick={backToSite}>← All work</button>}<CaseStudyCanvas study={study} onBack={embed ? backToSite : undefined} />{presenting && <PresentMode scroller={() => document.scrollingElement as HTMLElement} onExit={() => setPresenting(false)} />}</main>;
+  return <main className="csb-app csb-published"><a href="#story" className="csb-skip" onClick={e => { e.preventDefault(); const sec = document.querySelector<HTMLElement>('[id^="builder-section-"]'); const h = sec?.querySelector<HTMLElement>("h2") ?? sec; if (!h) return; h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); sec?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Skip to the story</a>{!embed && <div className="csb-portfolio-link" style={{ position: "fixed", zIndex: 20, top: 20, left: 20 }}><a href="https://katelynwolfley.design" className="csb-quiet-button" style={{ textDecoration: "none" }}>← Portfolio</a></div>}{!presenting && <button type="button" className="csb-quiet-button csb-present-open" onClick={() => setPresenting(true)}>Present</button>}{embed && <button type="button" className="csb-quiet-button csb-embed-back" onClick={backToSite}>← All work</button>}<ReadingProgress /><CaseStudyCanvas study={study} onBack={embed ? backToSite : undefined} />{presenting && <PresentMode scroller={() => document.scrollingElement as HTMLElement} onExit={() => setPresenting(false)} />}</main>;
+}
+
+/* A thin line along the top that fills as you read. Shown on phones and small windows, where there's no side menu. */
+function ReadingProgress() {
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let frame = 0;
+    const update = () => { frame = 0; const sc = document.scrollingElement; if (!sc || !bar.current) return; const max = sc.scrollHeight - sc.clientHeight; bar.current.style.transform = `scaleX(${max > 0 ? Math.min(1, sc.scrollTop / max) : 0})`; };
+    const on = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update(); window.addEventListener("scroll", on, { passive: true }); window.addEventListener("resize", on);
+    return () => { window.removeEventListener("scroll", on); window.removeEventListener("resize", on); if (frame) cancelAnimationFrame(frame); };
+  }, []);
+  return <div ref={bar} className="csb-progress" role="presentation" style={{ transform: "scaleX(0)" }} />;
 }

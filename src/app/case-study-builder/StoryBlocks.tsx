@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Media } from './Media';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -90,8 +90,50 @@ export function InterviewsControls({ section, onChange }: { section: CaseStudySe
   </div>;
 }
 
+/* Evolution strip: one screen in full for context, then only the part that changed (the bottom of each
+   other screen, cropped) in order, each with its caption. The whole progression reads in one glance. */
+function CroppedStrip({ src, alt, keep }: { src: string; alt: string; keep: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ratio, setRatio] = useState<number | null>(null);
+  useEffect(() => {
+    const img = ref.current?.querySelector('img'); if (!img) return;
+    const read = () => { if (img.naturalWidth) setRatio(img.naturalHeight / img.naturalWidth); };
+    if (img.complete) read(); img.addEventListener('load', read); return () => img.removeEventListener('load', read);
+  }, [src]);
+  // Show the bottom `keep` share of the image: the frame is that tall, and the image is pulled up to its bottom edge.
+  return <div ref={ref} className="csb-evo-crop" style={ratio ? { aspectRatio: `1 / ${(ratio * keep).toFixed(4)}` } : undefined}><Media src={src} alt={alt} loading="lazy" /></div>;
+}
+function EvolutionStrip({ section }: { section: CaseStudySection }) {
+  const reduce = useReducedMotion();
+  const items = visibleItems(section).map((item, index) => ({ item, index }));
+  if (!items.length) return null;
+  const fullLast = section.options?.evoFull === 'last';
+  const full = fullLast ? items[items.length - 1] : items[0];
+  const steps = items.filter(x => x !== full);
+  const keep = Math.min(.9, Math.max(.1, Number(section.options?.evoKeep) || .3));
+  const caption = (index: number, n?: number) => <figcaption>{n !== undefined && <small aria-hidden="true">{n}</small>}<div><strong><EditableText field={`items.${index}.title`} value={section.items[index].title} /></strong><span><EditableText field={`items.${index}.detail`} value={section.items[index].detail} /></span></div></figcaption>;
+  const enter = (i: number) => reduce ? {} : { initial: { opacity: 0, y: 16 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: .4 }, transition: { duration: .6, delay: i * .08, ease } };
+  return <div className={`csb-evo ${section.options?.squareCorners ? 'is-square' : ''} ${section.options?.shadow ? 'has-shadow' : ''} ${fullLast ? 'is-full-last' : ''}`}>
+    <motion.figure className="csb-evo-full" {...enter(0)}>
+      <div className="csb-evo-shot" data-image-slot={`${section.id}:${full.index}`}>{full.item.image ? <Media src={full.item.image} alt={full.item.title} loading="lazy" /> : <div className="csb-carousel-empty"><strong>Full screen</strong><span>Click to add an image or Figma frame</span></div>}</div>
+      {caption(full.index, fullLast ? items.length : 1)}
+    </motion.figure>
+    <ol className="csb-evo-steps">
+      {steps.map(({ item, index }, k) => <motion.li key={index} {...enter(k + 1)}>
+        <figure>
+          <div className="csb-evo-shot" data-image-slot={`${section.id}:${index}`}>{item.image ? <CroppedStrip src={item.image} alt={item.title} keep={keep} /> : <div className="csb-carousel-empty is-strip"><strong>Step {k + (fullLast ? 1 : 2)}</strong><span>Click to add the screen; only its bottom shows</span></div>}</div>
+          {caption(index, k + (fullLast ? 1 : 2))}
+        </figure>
+      </motion.li>)}
+    </ol>
+  </div>;
+}
+
 /* Screen carousel — large screens in a horizontal, snapping scroller with arrows. */
 export function ScreenCarousel({ section }: { section: CaseStudySection }) {
+  return section.options?.layout === 'evolution' ? <EvolutionStrip section={section} /> : <CarouselTrack section={section} />;
+}
+function CarouselTrack({ section }: { section: CaseStudySection }) {
   const reduce = useReducedMotion();
   const track = useRef<HTMLDivElement>(null);
   const scrollBy = (direction: number) => { const el = track.current; if (!el) return; const card = el.querySelector<HTMLElement>('.csb-carousel-card'); el.scrollBy({ left: direction * ((card?.offsetWidth ?? 600) + 24), behavior: reduce ? 'auto' : 'smooth' }); };

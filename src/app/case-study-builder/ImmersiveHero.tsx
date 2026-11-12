@@ -1,3 +1,4 @@
+import { ReadTime } from './CaseStudyCanvas';
 import { HeroSpot } from './HeroSpot';
 import { useRef } from 'react';
 import { motion, useTransform } from 'motion/react';
@@ -24,7 +25,7 @@ export function ImmersiveHero({ study, editorMode }: { study: BuilderStudy; edit
   const titleScale = useTransform(progress, v => reduce ? 1 : 1 - Math.min(1, Math.max(0, (v - .3) / .5)) * .06);
   return <header className={`csb-hx csb-hx-bg-${hero.bg} csb-hx-frame-${hero.frame}`} style={hero.bg === 'image' && hero.bgImage ? { backgroundImage: `url(${hero.bgImage})` } : undefined}>
     <motion.div className="csb-hx-title" style={{ opacity: titleOpacity, scale: titleScale }}>
-      <p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p>
+      <p className="csb-eyebrow"><EditableText field="client" value={study.client} /><ReadTime study={study} /></p>
       <h1><EditableText field="title" value={study.title} /></h1>
       <p className="csb-hx-summary"><EditableText field="summary" value={study.summary} /></p>
     </motion.div>
