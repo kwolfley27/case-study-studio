@@ -32,7 +32,7 @@ import { AEIOUBoard } from "./AEIOU";
 import { AffinityDiagram } from "./AffinityDiagram";
 import { FocusCarousel, ScreenFilmstrip, ScreenStory } from "./Screens";
 import { ComponentShowcase } from "./Showcase";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "motion/react";
 import { MotionPrefs, useExpressive, useReducedMotion, useScrollProgress } from "./MotionKit";
 import { ArrowDownRight, ArrowUpRight, FileUp, MoveRight } from "lucide-react";
@@ -88,7 +88,9 @@ function AnimatedValue({ value, duration = 1000, delay = 0 }: { value: string; d
 function SectionIntro({ section, index }: { section: CaseStudySection; index: number }) {
   const hidden = introHidden(section);
   const o = { hideEyebrow: hidden.eyebrow, hideTitle: hidden.title, hideBody: hidden.body };
-  const showBody = section.kind !== "narrative" && !o.hideBody;
+  // On the page, an empty intro text takes no space (it only shows as a placeholder while editing).
+  const editing = !!useContext(EditingContext).edit;
+  const showBody = section.kind !== "narrative" && !o.hideBody && (editing || !!(section.body || "").trim());
   if (o.hideEyebrow && o.hideTitle && !showBody) return null;
   return <div className="csb-section-intro"><span className="csb-section-index">{String(index + 1).padStart(2, "0")}</span><div>{!o.hideEyebrow && <p className="csb-eyebrow"><EditableText field="eyebrow" value={section.eyebrow} /></p>}{!o.hideTitle && <h2><EditableText field="title" value={section.title} /></h2>}{showBody && <p className="csb-section-body"><EditableText field="body" value={section.body} /></p>}</div></div>;
 }

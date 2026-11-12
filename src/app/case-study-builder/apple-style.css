@@ -4290,3 +4290,20 @@ html.csb-presenting .csb-doc-main.has-reading-focus>.csb-story-section{opacity:1
 .csb-canvas .csb-doc-main .csb-kind-columns .csb-research-card h3{margin:0 0 8px!important}
 .csb-canvas .csb-doc-main .csb-kind-columns .csb-research-card p{margin:0!important}
 .csb-canvas .csb-doc-main .csb-kind-columns .csb-research-evidence{margin-top:16px!important;text-align:left!important}
+
+/* ── Vertical rhythm, one set of steps for every section ──
+   label → title 12 · title → intro text 16 · heading block → content 32 (24 on phones) · section to section ~104 (72 on phones) */
+.csb-canvas .csb-doc-main{--sp-label:12px;--sp-body:16px;--sp-content:32px}
+@container (max-width:560px){.csb-canvas .csb-doc-main{--sp-content:24px}}
+.csb-canvas .csb-doc-main .csb-story-section .csb-section-intro .csb-eyebrow{margin:0 0 var(--sp-label)!important}
+.csb-canvas .csb-doc-main .csb-story-section .csb-section-intro h2{margin:0!important}
+.csb-canvas .csb-doc-main .csb-story-section .csb-section-intro .csb-section-body{margin:var(--sp-body) 0 0!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-problem) .csb-section-intro{margin-bottom:var(--sp-content)!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-problem)>.csb-section-inner>.csb-section-intro+*{margin-top:0!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-problem)>.csb-section-inner>.csb-section-intro+*>:first-child:is(.csb-research,.csb-carousel,.csb-evo,.csb-editorial-statement){margin-top:0!important}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-kind-problem) :is(.csb-research,.csb-carousel,.csb-evo){margin-top:0!important}
+.csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat{margin-top:0!important}
+/* (rhythm) the title's own bottom margin was adding 22px above the intro text */
+.csb-canvas.csb-canvas .csb-doc-main.csb-doc-main .csb-story-section .csb-section-intro h2{margin:0!important}
+/* (rhythm) cream sections whose heading sits on the page don't add extra margin, so section-to-section stays even */
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted:not(.csb-kind-problem):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty))):has(>.csb-section-inner>:nth-child(2)){margin-block:0!important}
