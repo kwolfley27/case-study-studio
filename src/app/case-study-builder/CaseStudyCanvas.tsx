@@ -343,24 +343,27 @@ function useReadingFocus(ref: React.RefObject<HTMLElement | null>, on: boolean) 
     const root = ref.current; if (!on || !root) return;
     const main = root.querySelector<HTMLElement>(".csb-doc-main"); if (!main) return;
     const scroller: HTMLElement | Window = root.closest(".csb-preview-viewport") as HTMLElement | null ?? window;
-    let frame = 0; let current: Element | null = null;
+    let frame = 0; let current: Element[] = [];
     const update = () => {
       frame = 0;
       const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
-      const line = box.top + box.height * .42;
+      // Everything inside the reading band (20%–80% of the screen) stays fully clear, so a section never dims while
+      // its last lines are still being read; only what has scrolled well past, or hasn't arrived yet, softens.
+      const top = box.top + box.height * .2, bottom = box.top + box.height * .8;
       const sections = Array.from(main.querySelectorAll<HTMLElement>(":scope > .csb-story-section:not(.is-hidden-section), :scope > .csb-canvas-end"));
-      let next: Element | null = null;
-      for (const s of sections) { const r = s.getBoundingClientRect(); if (r.top <= line && r.bottom > line) { next = s; break; } }
-      // Before the first section (the header) nothing is softened; at the very end the last section counts as read.
+      let next = sections.filter(s => { const r = s.getBoundingClientRect(); return r.bottom > top && r.top < bottom; });
       const sc = scroller instanceof Window ? document.scrollingElement : scroller;
-      if (!next && sc && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4) next = sections[sections.length - 1] ?? null;
-      if (next === current) return;
-      current?.classList.remove("is-in-focus"); next?.classList.add("is-in-focus"); current = next;
-      main.classList.toggle("has-reading-focus", !!next);
+      if (sc && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4 && sections.length) next = Array.from(new Set([...next, sections[sections.length - 1]]));
+      // Before the first section (the header) nothing is softened.
+      const firstTop = sections[0]?.getBoundingClientRect().top ?? 0;
+      const active = firstTop < bottom;
+      current.forEach(s => { if (!next.includes(s)) s.classList.remove("is-in-focus"); });
+      next.forEach(s => s.classList.add("is-in-focus")); current = next;
+      main.classList.toggle("has-reading-focus", active && next.length > 0);
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
     update(); scroller.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
-    return () => { scroller.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (frame) cancelAnimationFrame(frame); main.classList.remove("has-reading-focus"); current?.classList.remove("is-in-focus"); };
+    return () => { scroller.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (frame) cancelAnimationFrame(frame); main.classList.remove("has-reading-focus"); current.forEach(s => s.classList.remove("is-in-focus")); };
   }, [ref, on]);
 }
 

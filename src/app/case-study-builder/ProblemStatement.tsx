@@ -111,11 +111,12 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
     let frame = 0;
     const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
       const stickTop = stick.current ? parseFloat(getComputedStyle(stick.current).top) : NaN; const pin = box.top + (Number.isFinite(stickTop) ? stickTop : box.height * .24);
-      // The change plays while the card rises into its reading spot (from about 60% down the screen to where it pins),
-      // so the question has fully arrived by the time it settles, and holds there briefly before the next section comes up.
-      const cardTop = stick.current ? stick.current.getBoundingClientRect().top : r.top;
-      const start = Math.max(pin + 160, box.top + box.height * .6);
-      p.set(Math.min(1, Math.max(0, (start - cardTop) / (start - pin || 1)))); };
+      // The statement stays fully readable while it rises and settles; the change only plays once the card has pinned
+      // and you keep scrolling through the short run under it, so nothing fades before it can be read.
+      const runEl = el.querySelector<HTMLElement>('.csb-psf-run'); const sh = stick.current?.offsetHeight ?? 0;
+      if (!runEl) return; const rr = runEl.getBoundingClientRect(); const run = Math.max(1, rr.height);
+      // Pinned from the moment the run's top meets the card's bottom; p climbs as the run scrolls underneath.
+      p.set(Math.min(1, Math.max(0, (pin + sh - rr.top) / run))); };
     // Present mode shows one section per screen, so there's no scroll to follow: once this slide is on screen,
     // the statement shows for a moment and then turns into the question; leaving the slide resets it.
     const presenting = () => document.documentElement.classList.contains('csb-presenting');
@@ -132,15 +133,15 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
     return () => { io.disconnect(); run?.stop(); scroller.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (frame) cancelAnimationFrame(frame); };
   }, [p]);
   // The statement settles back and softens; then the question arrives like a message.
-  const frontOpacity = useTransform(p, [.08, .5], [1, 0]);
-  const frontY = useTransform(p, [.08, .5], [0, -28]);
-  const frontScale = useTransform(p, [.08, .5], [1, .96]);
-  const frontBlur = useTransform(p, [.08, .5], ['blur(0px)', 'blur(8px)']);
-  const bubble = useTransform(p, [.45, .97], [0, 1]);
-  const bubbleY = useTransform(p, [.45, .97], [36, 0]);
+  const frontOpacity = useTransform(p, [.2, .55], [1, 0]);
+  const frontY = useTransform(p, [.2, .55], [0, -28]);
+  const frontScale = useTransform(p, [.2, .55], [1, .96]);
+  const frontBlur = useTransform(p, [.2, .55], ['blur(0px)', 'blur(4px)']);
+  const bubble = useTransform(p, [.5, .95], [0, 1]);
+  const bubbleY = useTransform(p, [.5, .95], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
   // The card's background fades away as the question arrives, so the bubble ends up on the page itself.
-  const cardBg = useTransform(p, [.38, .78], [1, 0]);
+  const cardBg = useTransform(p, [.45, .8], [1, 0]);
   // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
   const bubbleRef = useRef<HTMLDivElement>(null);
   const [autoInk, setAutoInk] = useState('#fdfcfc');
