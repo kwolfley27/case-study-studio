@@ -276,6 +276,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
   const articleRef = useRef<HTMLElement>(null);
   useSolidElements(articleRef, study.gradOffEls, !!(study.accentGradient && study.accent2));
   useScrollAffordance(articleRef, !editorMode);
+  useReadingFocus(articleRef, !editorMode && !bare && study.focusMode !== false);
   usePageScale(articleRef, editorMode);
   return <StudyMeta.Provider value={{ slug: study.slug, published: !!(study as { publishedAt?: string }).publishedAt || !editorMode, title: study.title }}><MotionPrefs.Provider value={{ force: forceMotion, level: study.motion ?? "expressive" }}><article ref={articleRef} data-devices-page={study.deviceStyle === "frameless" ? "frameless" : undefined} className={`csb-motion-${study.motion ?? "expressive"} csb-canvas csb-theme-${study.theme ?? "editorial"} ${editorMode ? "csb-canvas-editable" : ""} ${showNav ? "has-side-nav" : ""}`} data-brand={study.brand ? "" : undefined} data-grad={study.accentGradient && study.accent2 ? "" : undefined} data-nograd={study.accentGradient && study.gradientOff?.length ? study.gradientOff.join(" ") : undefined} style={{ ...brandStyleVars(study.brand), "--csb-accent": study.accent, "--csb-accent-2": study.accent2 || study.accent, ...(study.accentGradient && study.accent2 ? { "--csb-accent-fill": `linear-gradient(120deg, ${study.accent}, ${study.accent2})`, "--csb-accent-grad-v": `linear-gradient(to top, ${study.accent}, ${study.accent2})` } : {}) } as React.CSSProperties}>
     {study.accentGradient && study.accent2 && <svg className="csb-grad-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><linearGradient id="csb-accent-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style={{ stopColor: "var(--csb-accent)" }} /><stop offset="1" style={{ stopColor: "var(--csb-accent-2)" }} /></linearGradient></defs></svg>}
@@ -329,4 +330,32 @@ export function readMinutes(study: BuilderStudy) {
 }
 export function ReadTime({ study }: { study: BuilderStudy }) {
   return <span className="csb-readtime"> · {readMinutes(study)} min read</span>;
+}
+
+/* Reading focus: the section crossing the reading line (a little above the middle of the screen) is in full focus;
+   the ones above and below soften, so the eye lands on one thing at a time. Off in the editor and in present mode. */
+function useReadingFocus(ref: React.RefObject<HTMLElement | null>, on: boolean) {
+  useEffect(() => {
+    const root = ref.current; if (!on || !root) return;
+    const main = root.querySelector<HTMLElement>(".csb-doc-main"); if (!main) return;
+    const scroller: HTMLElement | Window = root.closest(".csb-preview-viewport") as HTMLElement | null ?? window;
+    let frame = 0; let current: Element | null = null;
+    const update = () => {
+      frame = 0;
+      const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
+      const line = box.top + box.height * .42;
+      const sections = Array.from(main.querySelectorAll<HTMLElement>(":scope > .csb-story-section:not(.is-hidden-section), :scope > .csb-canvas-end"));
+      let next: Element | null = null;
+      for (const s of sections) { const r = s.getBoundingClientRect(); if (r.top <= line && r.bottom > line) { next = s; break; } }
+      // Before the first section (the header) nothing is softened; at the very end the last section counts as read.
+      const sc = scroller instanceof Window ? document.scrollingElement : scroller;
+      if (!next && sc && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4) next = sections[sections.length - 1] ?? null;
+      if (next === current) return;
+      current?.classList.remove("is-in-focus"); next?.classList.add("is-in-focus"); current = next;
+      main.classList.toggle("has-reading-focus", !!next);
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update(); scroller.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
+    return () => { scroller.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (frame) cancelAnimationFrame(frame); main.classList.remove("has-reading-focus"); current?.classList.remove("is-in-focus"); };
+  }, [ref, on]);
 }

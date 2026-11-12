@@ -4271,3 +4271,12 @@ html.csb-presenting :is(.csb-embed-back,.csb-portfolio-link){display:none!import
 html.csb-presenting .csb-progress{display:none}
 .csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat{margin-top:clamp(20px,2.6cqw,28px)}
 .csb-canvas .csb-doc-main .csb-editorial-statement.has-bigstat p{white-space:pre-line}
+
+/* Problem card: a short hold once the question has arrived, before the next section scrolls up */
+.csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-run{height:30vh!important}
+
+/* Reading focus: sections away from the reading line soften; the one being read is in full focus */
+.csb-doc-main.has-reading-focus>:is(.csb-story-section,.csb-canvas-end){transition:opacity .6s cubic-bezier(.22,1,.36,1),filter .6s cubic-bezier(.22,1,.36,1)}
+.csb-doc-main.has-reading-focus>.csb-story-section:not(.is-in-focus){opacity:.38;filter:saturate(.6)}
+@media (prefers-reduced-motion:reduce){.csb-doc-main.has-reading-focus>:is(.csb-story-section,.csb-canvas-end){transition:none}}
+html.csb-presenting .csb-doc-main.has-reading-focus>.csb-story-section{opacity:1!important;filter:none!important}
