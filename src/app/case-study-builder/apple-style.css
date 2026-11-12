@@ -4348,3 +4348,8 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-try-edit{margin:0;font-size:13px;color:var(--t-body,#67615a)}.csb-try-edit span{font-weight:600}
 @media (prefers-reduced-motion:reduce){.csb-try-spot::before{animation:none;opacity:.5;transform:scale(1.2)}}
 .csb-canvas .csb-doc-main .csb-try{max-width:640px}
+
+/* Text sections never sit in a cream box: written sections are plain, left-aligned text on the page, like every
+   other case study. Cream cards are only for visuals (screens, carousels, charts). */
+.csb-canvas .csb-doc-main .csb-story-section.csb-kind-narrative.csb-variant-tinted{background:none!important;box-shadow:none!important;border-radius:0!important;margin-inline:0!important;margin-block:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(36px,5.6cqw,52px)!important}
+.csb-canvas .csb-doc-main .csb-story-section.csb-kind-narrative.csb-variant-tinted>.csb-section-inner>:last-child{background:none!important;padding:0!important;border-radius:0!important}
