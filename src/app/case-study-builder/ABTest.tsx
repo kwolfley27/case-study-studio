@@ -248,6 +248,8 @@ function FullResults({ full, verdict }: { full: ABFull; verdict?: React.ReactNod
       <div className="csb-abf-titles"><p className="csb-abf-title"><EditableText field="deep:abtest.full.title" value={full.title} /></p>{verdict}</div>
       {ok && <span className="csb-abf-legend"><span><i className="is-a" />{a.name}</span><span><i className="is-b" />{b.name}</span></span>}
     </div>
+    {/* The takeaway comes first, so the chart backs it up rather than being a puzzle to solve */}
+    {(full.summary || '').trim() && <p className="csb-abf-summary is-lead"><EditableText field="deep:abtest.full.summary" value={full.summary ?? ''} /></p>}
     {ok && <figure className="csb-abf-chart">
       <div className="csb-abf-plot" ref={plotRef}>
         {ticks.map(t => <i key={t} className="csb-abf-grid" style={{ left: `${X(t)}%` }} aria-hidden="true" />)}
@@ -263,7 +265,6 @@ function FullResults({ full, verdict }: { full: ABFull; verdict?: React.ReactNod
       <div><dt>Chance B is better</dt><dd>{whole(full.win)}</dd></div>
       <div><dt>Likely range of the lift</dt><dd>{one(full.low)} to {one(full.high, true)}</dd></div>
     </dl>
-    <p className="csb-abf-summary"><EditableText field="deep:abtest.full.summary" value={full.summary ?? ''} /></p>
     {full.showDetails && <>
     <button type="button" className="csb-abf-more" aria-expanded={open} aria-controls={detailsId} data-no-slot onClick={e => { e.stopPropagation(); setOpen(!open); }}>
       {open ? 'Hide the full results' : 'Show the full results'}

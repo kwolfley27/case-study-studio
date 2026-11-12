@@ -192,7 +192,12 @@ function SectionVisual({ section, editorMode, onUploadMedia, onSetPrototype }: {
     case "gallery": return <Gallery section={section} />;
     case "built": return <BuiltView section={section} editorMode={editorMode} />;
     case "flowRace": return <FlowRace section={section} editorMode={editorMode} />;
-    default: return <Enter className={`csb-editorial-statement ${(section.body || "").length > 240 ? "is-reading" : ""}`}><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
+    default: {
+      // "Pull out the key number": the first number in the text (34%, 1.2x, 3,500…) shown large beside the words, so it lands in a second.
+      const stat = section.options?.bigStat ? (section.body || "").match(/[$€£]?\d[\d.,]*\s?(?:%|x|×|k|K|M)?/)?.[0]?.trim() : undefined;
+      if (stat) return <Enter className="csb-editorial-statement has-bigstat"><strong className="csb-bigstat" aria-hidden="true">{stat}</strong><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
+      return <Enter className={`csb-editorial-statement ${(section.body || "").length > 240 ? "is-reading" : ""}`}><span className="csb-editorial-glyph">✳</span><p>{<EditableText field="body" value={section.body} />}</p></Enter>;
+    }
   }
 }
 
@@ -279,7 +284,7 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     <div className="csb-doc-main">
     {!coverFirst && !bare && study.hero?.style === "reveal" && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><RevealHeader study={study} editorMode={editorMode} /></EditingContext.Provider>}
     {!coverFirst && !bare && !(study.hero?.style === "immersive" || study.hero?.style === "reveal") && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><header className="csb-hero" onClick={editorMode?()=>onSelectSection?.(null):undefined}>
-      <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
+      <div className="csb-hero-copy"><p className="csb-eyebrow"><EditableText field="client" value={study.client} /><ReadTime study={study} /></p><h1><EditableText field="title" value={study.title} /></h1><p><EditableText field="summary" value={study.summary} /></p></div>
       <HeroFramePicker value={study.hero?.frame ?? "none"} />
       <div className="csb-hero-visual">
       {study.hero?.frame && study.hero.frame !== "none" ? <div className="csb-hero-device"><DeviceFrame frame={study.hero.frame} image={study.heroImage} alt={`${study.title} hero visual`} slot="hero" hint={editorMode ? "Click to add your screen" : undefined} /></div>
@@ -306,4 +311,22 @@ export function CaseStudyCanvas({ study, selectedSectionId, onSelectSection, edi
     {!bare && <EditingContext.Provider value={{edit:editorMode?onEditStudy:undefined}}><EndMore study={study} editorMode={editorMode} selected={selectedSectionId === "__end"} onSelect={() => onSelectSection?.("__end")} /></EditingContext.Provider>}
     </div>
   </article></MotionPrefs.Provider></StudyMeta.Provider>;
+}
+
+/* "5 min read": words in the visible text at ~230 a minute, plus a few seconds per picture. Helps a reader decide to commit. */
+export function readMinutes(study: BuilderStudy) {
+  const words: string[] = [study.title, study.summary];
+  let pictures = 0;
+  for (const s of study.sections) {
+    if (s.hidden) continue;
+    words.push(s.title, s.body || "");
+    for (const it of s.items) { if ((it as { hidden?: boolean }).hidden) continue; words.push(it.title || "", it.detail || ""); if (it.image) pictures++; }
+    const full = (s as { abtest?: { full?: { summary?: string; title?: string } } }).abtest?.full;
+    if (full) words.push(full.title || "", full.summary || "");
+  }
+  const count = words.join(" ").split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(count / 230 + pictures * 10 / 60));
+}
+export function ReadTime({ study }: { study: BuilderStudy }) {
+  return <span className="csb-readtime"> · {readMinutes(study)} min read</span>;
 }
