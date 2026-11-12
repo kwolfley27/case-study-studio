@@ -4307,3 +4307,12 @@ html.csb-presenting .csb-doc-main.has-reading-focus>.csb-story-section{opacity:1
 .csb-canvas.csb-canvas .csb-doc-main.csb-doc-main .csb-story-section .csb-section-intro h2{margin:0!important}
 /* (rhythm) cream sections whose heading sits on the page don't add extra margin, so section-to-section stays even */
 html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted:not(.csb-kind-problem):not(:has(.csb-apple-annotated.is-desktop > .csb-apple-annotation-side:not(:empty) ~ .csb-apple-annotation-side:not(:empty))):has(>.csb-section-inner>:nth-child(2)){margin-block:0!important}
+
+/* Cream cards all share the same left and right edges (the text column).
+   An annotated screen with notes on both sides now does too: its heading sits on the page like every other
+   section, and the screen and both note columns fit inside the cream card instead of widening it. */
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted.csb-kind-annotated:has(.csb-apple-annotated.is-desktop){background:none!important;box-shadow:none!important;border-radius:0!important;margin-inline:0!important;margin-block:0!important;padding-inline:clamp(20px,4cqw,40px)!important;padding-block:clamp(36px,5.6cqw,52px)!important}
+html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-variant-tinted.csb-kind-annotated:has(.csb-apple-annotated.is-desktop)>.csb-section-inner>:last-child:not(:first-child){background:var(--t-surface,#f5f3f1);border-radius:24px;padding:clamp(20px,3.2cqw,32px)}
+@container (min-width:701px){
+  html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-variant-tinted .csb-apple-annotated.is-desktop:not(:has(>.csb-apple-annotation-side:empty)){margin-inline:0!important;grid-template-columns:minmax(130px,1fr) minmax(0,var(--ann-sw,1.6fr)) minmax(130px,1fr)!important;justify-content:center}
+}
