@@ -110,8 +110,12 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
     const scroller: HTMLElement | Window = el.closest('.csb-preview-viewport') as HTMLElement | null ?? window;
     let frame = 0;
     const measure = () => { frame = 0; const r = el.getBoundingClientRect(); const box = scroller instanceof Window ? { top: 0, height: window.innerHeight } : scroller.getBoundingClientRect();
-      const stickTop = stick.current ? parseFloat(getComputedStyle(stick.current).top) : NaN; const pin = box.top + (Number.isFinite(stickTop) ? stickTop : box.height * .24); const travel = r.height - (stick.current?.getBoundingClientRect().height ?? 0);
-      p.set(Math.min(1, Math.max(0, (pin - r.top) / (travel || 1)))); };
+      const stickTop = stick.current ? parseFloat(getComputedStyle(stick.current).top) : NaN; const pin = box.top + (Number.isFinite(stickTop) ? stickTop : box.height * .24);
+      // The change plays while the card rises into its reading spot (from about 60% down the screen to where it pins),
+      // so the question has fully arrived by the time it settles, and holds there briefly before the next section comes up.
+      const cardTop = stick.current ? stick.current.getBoundingClientRect().top : r.top;
+      const start = Math.max(pin + 160, box.top + box.height * .6);
+      p.set(Math.min(1, Math.max(0, (start - cardTop) / (start - pin || 1)))); };
     // Present mode shows one section per screen, so there's no scroll to follow: once this slide is on screen,
     // the statement shows for a moment and then turns into the question; leaving the slide resets it.
     const presenting = () => document.documentElement.classList.contains('csb-presenting');

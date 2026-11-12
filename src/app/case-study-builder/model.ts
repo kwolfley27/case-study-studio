@@ -140,6 +140,8 @@ export interface BuilderStudy {
   showMore?: boolean;
   /** Show the ending at all: thank-you line, cards and footer (default on). */
   showEnd?: boolean;
+  /** Soften the sections around the one being read (default on). */
+  focusMode?: boolean;
   /** Caption under the hero image (Title reveal header). */
   heroCaption?: string;
   /** Motion level: expressive (default) or calm. */

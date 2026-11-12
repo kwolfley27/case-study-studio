@@ -119,6 +119,7 @@ export function ProjectSettings({ study, update, pickBgImage, onPickGradient }: 
     <section>
       <h3>Page</h3>
       <p className="csb-ps-label">Device mockups</p>
+      <Seg label="Reading focus" value={study.focusMode === false ? 'off' : 'on'} onChange={v => update({ focusMode: v === 'on' })} options={[{ v: 'on', l: 'On', hint: 'Softens the sections around the one being read' }, { v: 'off', l: 'Off', hint: 'Every section stays at full strength' }]} />
       <Seg label="Device mockups" value={study.deviceStyle ?? 'framed'} onChange={deviceStyle => update({ deviceStyle })} options={[{ v: 'framed', l: 'With hardware', hint: 'Phones, laptops and tablets with their bezels' }, { v: 'frameless', l: 'Frameless', hint: 'Just the rounded screen with a soft shadow' }]} />
       <label className="csb-ps-switch"><span>Side menu</span><input type="checkbox" role="switch" checked={study.showNav !== false} onChange={e => update({ showNav: e.target.checked })} /><i aria-hidden="true" /></label>
       <label className="csb-ps-address"><span className="csb-ps-label">Page address</span>
