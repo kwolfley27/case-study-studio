@@ -112,7 +112,8 @@ function EvolutionStrip({ section }: { section: CaseStudySection }) {
   const steps = items.filter(x => x !== full);
   const keep = Math.min(.9, Math.max(.1, Number(section.options?.evoKeep) || .3));
   const caption = (index: number, n?: number) => <figcaption>{n !== undefined && <small aria-hidden="true">{n}</small>}<div><strong><EditableText field={`items.${index}.title`} value={section.items[index].title} /></strong><span><EditableText field={`items.${index}.detail`} value={section.items[index].detail} /></span></div></figcaption>;
-  const enter = (i: number) => reduce ? {} : { initial: { opacity: 0, y: 16 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: .4 }, transition: { duration: .6, delay: i * .08, ease } };
+  // Each step settles in a beat after the one before, so the changes read like a sequence.
+  const enter = (i: number) => reduce ? {} : { initial: { opacity: 0, y: 22 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: .5, margin: '0px 0px -8% 0px' }, transition: { duration: .7, delay: Math.min(i, 4) * .14, ease } };
   return <div className={`csb-evo ${section.options?.squareCorners ? 'is-square' : ''} ${section.options?.shadow ? 'has-shadow' : ''} ${fullLast ? 'is-full-last' : ''}`}>
     <motion.figure className="csb-evo-full" {...enter(0)}>
       <div className="csb-evo-shot" data-image-slot={`${section.id}:${full.index}`}>{full.item.image ? <Media src={full.item.image} alt={full.item.title} loading="lazy" /> : <div className="csb-carousel-empty"><strong>Full screen</strong><span>Click to add an image or Figma frame</span></div>}</div>
