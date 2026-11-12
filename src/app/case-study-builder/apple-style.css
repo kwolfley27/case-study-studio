@@ -4280,3 +4280,13 @@ html.csb-presenting .csb-progress{display:none}
 .csb-doc-main.has-reading-focus>.csb-story-section:not(.is-in-focus){opacity:.38;filter:saturate(.6)}
 @media (prefers-reduced-motion:reduce){.csb-doc-main.has-reading-focus>:is(.csb-story-section,.csb-canvas-end){transition:none}}
 html.csb-presenting .csb-doc-main.has-reading-focus>.csb-story-section{opacity:1!important;filter:none!important}
+
+/* Three-column cards: left-aligned like the heading above them (centred paragraphs are slow to read),
+   with the icon, title and text grouped tightly and clear space between the columns */
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research{gap:clamp(28px,4cqw,48px)!important;margin-top:clamp(28px,3.6cqw,40px)!important;align-items:start}
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research-card{display:flex!important;flex-direction:column;align-items:flex-start;gap:0;text-align:left!important;padding:0!important}
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research-icon{display:grid!important;place-items:center;justify-content:center;width:40px!important;height:40px!important;margin:0 0 16px!important;border-radius:12px;background:var(--t-surface,#f5f3f1)!important}
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research-icon svg{width:20px;height:20px}
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research-card h3{margin:0 0 8px!important}
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research-card p{margin:0!important}
+.csb-canvas .csb-doc-main .csb-kind-columns .csb-research-evidence{margin-top:16px!important;text-align:left!important}
