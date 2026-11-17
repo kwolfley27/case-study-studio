@@ -68,20 +68,26 @@ function AnimatedValue({ value, duration = 1000, delay = 0 }: { value: string; d
   const visible = useInView(ref, { once: true });
   const reduce = useReducedMotion();
   const match = value.match(/^([^\d]*)(\d+(?:\.\d+)?)(.*)$/);
-  const [number, setNumber] = useState(reduce || !match ? match?.[2] ?? value : "0");
+  // The real figure is what's on the page by default. It only counts up once it's actually on screen, and a timer
+  // makes sure it always lands on the real figure, even if animation frames are paused (background tab, a jump link).
+  const [number, setNumber] = useState(match?.[2] ?? value);
   useEffect(() => {
-    if (!visible || !match || reduce) return;
-    const target = Number(match[2]);
-    const decimals = (match[2].split(".")[1] ?? "").length;
+    if (!match) return;
+    const final = match[2];
+    // Ranges like "5–7 min" stay still: counting only the first number would read as a different range.
+    if (!visible || reduce || /^\s*[–-]\s*\d/.test(match[3])) { setNumber(final); return; }
+    const target = Number(final);
+    const decimals = (final.split(".")[1] ?? "").length;
     let frame = 0;
     const started = performance.now() + delay;
     const tick = (now: number) => {
       const progress = Math.min(1, Math.max(0, (now - started) / duration));
-      setNumber((target * (1 - Math.pow(1 - progress, 3))).toFixed(decimals));
+      setNumber(progress >= 1 ? final : (target * (1 - Math.pow(1 - progress, 3))).toFixed(decimals));
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    const done = window.setTimeout(() => { cancelAnimationFrame(frame); setNumber(final); }, delay + duration + 120);
+    return () => { cancelAnimationFrame(frame); window.clearTimeout(done); setNumber(final); };
   }, [visible, value, reduce]);
   return <span ref={ref}>{match ? <>{match[1]}{number}{match[3]}</> : value}</span>;
 }
@@ -381,15 +387,17 @@ function CountUp({ text, className }: { text: string; className?: string }) {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     let raf = 0; let started = false;
     const fmt = (v: number) => `${m[1]}${v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${m[3]}`;
-    setShown(fmt(0));
+    // Shows the real figure until the count actually starts on screen; a timer always lands it on the real figure.
+    let done = 0;
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting || started) return; started = true; io.disconnect();
       const t0 = performance.now(); const dur = 1100;
-      const tick = (t: number) => { const k = Math.min(1, (t - t0) / dur); const eased = 1 - Math.pow(1 - k, 3); setShown(fmt(target * eased)); if (k < 1) raf = requestAnimationFrame(tick); };
+      const tick = (t: number) => { const k = Math.min(1, (t - t0) / dur); const eased = 1 - Math.pow(1 - k, 3); setShown(k >= 1 ? text : fmt(target * eased)); if (k < 1) raf = requestAnimationFrame(tick); };
       raf = requestAnimationFrame(tick);
+      done = window.setTimeout(() => { cancelAnimationFrame(raf); setShown(text); }, dur + 150);
     }, { threshold: .6 });
     io.observe(el);
-    return () => { io.disconnect(); cancelAnimationFrame(raf); setShown(text); };
+    return () => { io.disconnect(); cancelAnimationFrame(raf); window.clearTimeout(done); setShown(text); };
   }, [text, editing]);
   return <strong ref={ref} className={className}><span aria-hidden="true">{shown}</span><span className="csb-sr-only">{text}</span></strong>;
 }
