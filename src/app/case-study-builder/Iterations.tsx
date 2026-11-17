@@ -28,11 +28,11 @@ export function Iterations({ section }: { section: CaseStudySection }) {
       {stat && <p className="csb-it-stat"><EditableText field="options.stat" value={stat} /></p>}
       <div className="csb-it-track" role="tablist" aria-label="Versions">
         <span className="csb-it-line" aria-hidden="true"><motion.i initial={false} animate={{ scaleX: items.length > 1 ? at / (items.length - 1) : 1 }} transition={{ duration: .5, ease: [0.22, 1, 0.36, 1] }} /></span>
-        {items.map((x, i) => <button key={i} type="button" role="tab" aria-selected={i === at} className={i === at ? 'is-on' : i < at ? 'is-past' : ''} onClick={() => go(i)} title={x.title}><span>{`v${i + 1}`}</span></button>)}
+        {items.map((x, i) => <button key={i} type="button" role="tab" aria-selected={i === at} className={i === at ? 'is-on' : i < at ? 'is-past' : ''} onClick={() => go(i)} title={x.title}><span>{x.tag?.trim() || `v${i + 1}`}</span></button>)}
       </div>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={at} className="csb-it-copy" initial={expressive ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} exit={expressive ? { opacity: 0, y: -8 } : undefined} transition={{ duration: .3, ease: [0.22, 1, 0.36, 1] }}>
-          <p className="csb-it-count">Version {at + 1} of {items.length}</p>
+          <p className="csb-it-count">{items.some(x => x.tag?.trim()) ? `${at + 1} of ${items.length}` : `Version ${at + 1} of ${items.length}`}</p>
           <h3><EditableText field={`items.${at}.title`} value={it.title} /></h3>
           <p className="csb-it-detail"><EditableText field={`items.${at}.detail`} value={it.detail} /></p>
           {(it.value || at > 0) && <p className="csb-it-why"><span>Prompted by</span> <EditableText field={`items.${at}.value`} value={it.value || 'What you learned that led to this change'} /></p>}
