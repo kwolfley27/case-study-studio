@@ -4356,3 +4356,14 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 
 /* Problem statement: the statement holds while you read it; the run under the pinned card is where it turns into the question. */
 .csb-canvas .csb-doc-main .csb-psf:not(.is-static) .csb-psf-run{height:45vh!important}
+
+/* Metrics, calmer hierarchy: the number leads but doesn't shout, everything reads left to right in one column edge,
+   each figure sits on a hairline, and the supporting text is a size down so it reads as a caption, not a second headline. */
+.csb-canvas .csb-doc-main .csb-metric-grid{gap:clamp(24px,4cqw,48px);padding-top:0;align-items:start}
+.csb-canvas .csb-doc-main .csb-metric{text-align:left;border-top:1px solid var(--t-line,#e7e5e4);padding-top:20px}
+.csb-canvas .csb-doc-main .csb-metric-number{display:block;font-size:clamp(36px,4.2cqw,52px)!important;line-height:1.05;font-weight:300!important;letter-spacing:-.03em!important;white-space:nowrap}
+.csb-canvas .csb-doc-main .csb-story-section:not(.csb-variant-dark) .csb-metric .csb-metric-number,.csb-canvas .csb-doc-main .csb-story-section:not(.csb-variant-dark) .csb-metric:last-child .csb-metric-number{color:var(--t-ink,#1c1917)}
+.csb-canvas .csb-doc-main .csb-metric .csb-metric-bar{display:none}
+.csb-canvas .csb-doc-main .csb-metric h3{font-size:16px!important;line-height:1.4!important;margin:16px 0 6px!important}
+.csb-canvas .csb-doc-main .csb-metric p{font-size:15px!important;line-height:1.6!important;max-width:34ch;margin:0}
+@container (max-width:700px){.csb-canvas .csb-doc-main .csb-metric-grid{grid-template-columns:1fr;gap:28px}}
