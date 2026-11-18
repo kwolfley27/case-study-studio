@@ -3693,7 +3693,7 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-brand-text{margin:0;font-size:16px;line-height:1.7;color:var(--t-body,#67615a)}
 .csb-brand-notes{list-style:none;margin:-4px 0 0;padding:0;display:grid;gap:6px;font-size:14px;line-height:1.5;color:var(--t-body,#67615a)}
 .csb-brand-subs{display:grid;gap:14px;padding-top:20px;border-top:1px solid var(--csb-rule,var(--t-line2,#e7e5e4))}
-.csb-brand-label{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t-muted,#6f6961)}
+.csb-brand-label{margin:0;font-size:13px;font-weight:500;letter-spacing:0;color:var(--t-muted,#6f6961)}
 .csb-brand-sub-row{display:flex;flex-wrap:wrap;gap:14px}
 .csb-brand-sub{display:grid;place-items:center;width:72px;height:72px;padding:12px;box-sizing:border-box;border:1px solid var(--csb-rule,var(--t-line2,#e7e5e4));border-radius:18px;background:#fff;color:var(--t-muted,#6f6961);overflow:hidden;cursor:default}
 .csb-brand-sub.is-dark{background:#1c1c1e;border-color:#1c1c1e;color:#a59f97}
