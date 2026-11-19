@@ -4381,3 +4381,11 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-psf.is-sticker.is-still .csb-psf-stick{position:static}
 .csb-psf.is-sticker .csb-psf-stick{gap:clamp(44px,5cqw,64px);padding-bottom:48px}
 @container (max-width:620px){.csb-psf.is-sticker .csb-psf-hmw{right:-6px;max-width:86%}.csb-psf.is-sticker .csb-psf-face.is-front{min-height:0;padding-bottom:150px}}
+
+/* Annotated screen, one by one: each note (dot + label) arrives in turn. */
+.csb-apple-annotation-side>div.is-waiting{opacity:0;transform:translateY(10px);pointer-events:none}
+.csb-apple-annotation-side>div.is-in{opacity:1;transform:none;transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1),top .35s cubic-bezier(.22,1,.36,1)}
+.csb-annot-pin.is-waiting{opacity:0;scale:.4}
+.csb-annot-pin.is-in{opacity:1;scale:1;transition:opacity .35s ease-out,scale .45s cubic-bezier(.22,1,.36,1)}
+/* The phone keeps its column's width; tall notes beside it can't stretch it wider via its aspect ratio. */
+.csb-apple-annotated:not(.is-desktop) .csb-apple-annotated-phone{align-self:start;width:100%;height:auto;min-width:0}

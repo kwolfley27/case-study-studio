@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useContext, useLayoutEffect, useRef, useState } from 'react';
 import { Media } from './Media';
 import { motion, useMotionValue, useMotionValueEvent, useSpring, useTransform } from 'motion/react';
 import { useExpressive, useReducedMotion, useScrollProgress } from './MotionKit';
@@ -268,6 +268,21 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
   const [drag, setDrag] = useState<{ k: number; point: [number, number] } | null>(null);
   // Hovering a note lights up its dot and line (and the other way round), so it's obvious what each note points at.
   const [hot, setHot] = useState<number | null>(null);
+  // One by one: the notes (dot, line, label) appear in turn as the screen comes into view.
+  const oneByOne = section.options?.reveal === 'one' && !edit && !reduce;
+  const [shown, setShown] = useState(oneByOne ? 0 : 99);
+  useEffect(() => {
+    if (!oneByOne) { setShown(99); return; }
+    const el = wrap.current; if (!el) return; let timers: number[] = [];
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting || timers.length) return;
+      timers = notes.map((_, k) => window.setTimeout(() => setShown(k + 1), 500 + k * 900));
+      io.disconnect();
+    }, { threshold: .45 });
+    io.observe(el);
+    return () => { io.disconnect(); timers.forEach(t => window.clearTimeout(t)); };
+  }, [oneByOne, notes.length]);
+  const on = (k: number) => k < shown;
   const [paths, setPaths] = useState<string[]>([]);
   const [tops, setTops] = useState<number[]>([]);
   const sideRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -336,7 +351,7 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
     const next = ({ ArrowLeft: [x - step, y], ArrowRight: [x + step, y], ArrowUp: [x, y - step], ArrowDown: [x, y + step] } as Record<string, number[]>)[event.key];
     if (!next || !edit) return; event.preventDefault(); edit(`items.${k + 1}.point`, `${Math.min(98, Math.max(2, next[0]))},${Math.min(98, Math.max(2, next[1]))}`);
   };
-  const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={`${drag?.k === k ? 'is-active' : ''} ${hot === k ? 'is-hot' : ''}`} style={tops[k] !== undefined ? { top: tops[k] } : undefined} onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot(null)}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
+  const note = (item: CaseStudySection['items'][number], k: number) => <div key={k} ref={el => { anchors.current[k] = el; }} className={`${drag?.k === k ? 'is-active' : ''} ${hot === k ? 'is-hot' : ''} ${oneByOne ? (on(k) ? 'is-in' : 'is-waiting') : ''}`} style={tops[k] !== undefined ? { top: tops[k] } : undefined} onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot(null)}><small>{k + 1}</small><h3><EditableText field={`items.${k + 1}.title`} value={item.title} /></h3><p><EditableText field={`items.${k + 1}.detail`} value={item.detail} /></p></div>;
 
   // Screen size: a width you dragged to (custom), or the Small / Medium presets.
   const customW = desktop ? Number(section.options?.screenWidth) || 0 : 0;
@@ -365,12 +380,14 @@ export function AnnotatedScreen({ section }: { section: CaseStudySection }) {
       {desktop ? <span className="csb-apple-annotated-chrome" aria-hidden="true"><i /><i /><i /></span> : <span className="csb-apple-annotated-island" />}
       {edit && desktop && <span className="csb-annot-resize" data-no-slot role="slider" tabIndex={0} aria-label="Screen width. Drag, or use the left and right arrow keys" aria-valuemin={200} aria-valuemax={900} aria-valuenow={customW || undefined} title="Drag to resize" onPointerDown={startResize} onKeyDown={nudgeSize} onClick={e => e.stopPropagation()} />}
       {screen?.image ? <Media src={screen.image} alt={screen.title || 'Designed screen'} /> : <div className="csb-apple-annotated-empty"><strong>{desktop ? 'Desktop page' : 'Designed screen'}</strong><span>{desktop ? 'Paste a Figma frame link or drop a full-page screenshot' : '700 × 1440 · designed media'}</span></div>}
-      {points.map(([x, y], k) => <span key={k} onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot(null)} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''} ${hot === k ? 'is-hot' : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
+      {points.map(([x, y], k) => <span key={k} onPointerEnter={() => setHot(k)} onPointerLeave={() => setHot(null)} className={`csb-annot-pin ${drag?.k === k ? 'is-dragging' : ''} ${hot === k ? 'is-hot' : ''} ${oneByOne ? (on(k) ? 'is-in' : 'is-waiting') : ''}`} style={{ left: `${x}%`, top: `${y}%` }}
         role={edit ? 'slider' : undefined} tabIndex={edit ? 0 : undefined} aria-label={edit ? `Move pointer ${k + 1} (${notes[k]?.title}). Drag, or use arrow keys` : undefined}
         onPointerDown={startDrag(k)} onKeyDown={nudge(k)} onClick={event => edit && event.stopPropagation()}><b>{k + 1}</b></span>)}
     </div>
     <div className="csb-apple-annotation-side" ref={el => { sideRefs.current[1] = el; }}>{notes.map((item, i) => sideOf(i) === 1 ? note(item, i) : null)}</div>
-    <svg className="csb-annot-lines" aria-hidden="true">{paths.map((d, k) => d && <motion.path key={k} className={hot === k ? 'is-hot' : ''} d={d} initial={reduce ? false : { pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 1 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .9, delay: .3 + k * .1, ease: [0.22, 1, 0.36, 1] }} />)}</svg>
+    <svg className="csb-annot-lines" aria-hidden="true">{paths.map((d, k) => d && (oneByOne
+      ? <motion.path key={k} className={hot === k ? 'is-hot' : ''} d={d} initial={{ pathLength: 0, opacity: 0 }} animate={on(k) ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }} transition={{ duration: .6, ease: [0.22, 1, 0.36, 1] }} />
+      : <motion.path key={k} className={hot === k ? 'is-hot' : ''} d={d} initial={reduce ? false : { pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 1 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .9, delay: .3 + k * .1, ease: [0.22, 1, 0.36, 1] }} />))}</svg>
     {edit && <p className="csb-annot-hint">Drag a dot to the spot it describes; its label follows.</p>}
   </div>;
 }
