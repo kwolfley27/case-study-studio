@@ -3704,7 +3704,7 @@ html body .csb-psf-bubble :is(p,p *,.csb-psf-ask,.csb-psf-ask *):not([data-tone]
 .csb-brand-font p{margin:0;font-size:14px;color:var(--t-body,#67615a)}
 .csb-brand-card.is-type .csb-brand-text{margin-top:10px}
 .csb-brand-colors{display:grid;gap:14px}
-.csb-brand-swatches{display:grid;grid-template-columns:repeat(min(var(--n),4),minmax(0,1fr));gap:clamp(12px,2cqw,20px)}
+.csb-brand-swatches{display:grid;grid-template-columns:repeat(min(var(--n),6),minmax(0,1fr));gap:clamp(12px,2cqw,20px)}
 .csb-brand-swatch{display:flex;flex-direction:column;justify-content:flex-end;gap:2px;padding:16px 18px;border-radius:18px;min-height:84px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 .csb-brand-colors.is-primary .csb-brand-swatches{grid-template-columns:repeat(min(var(--n),3),minmax(0,1fr))}
 .csb-brand-colors.is-primary .csb-brand-swatch{min-height:clamp(120px,16cqw,180px)}
