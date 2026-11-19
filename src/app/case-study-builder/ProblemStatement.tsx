@@ -84,7 +84,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
       {mark(2, why?.detail || '')}.
     </>;
   // With a "How might we" question the statement sits on a card that turns over as you scroll.
-  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement picture={picture} bubbleBg={section.options?.bubble ? String(section.options.bubble) : undefined} bubbleInk={section.options?.bubbleInk ? String(section.options.bubbleInk) : undefined} sentence={sentence} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
+  if (hmw && !hmw.hidden && section.options?.flip !== false) return <FlipStatement picture={picture} bubbleBg={section.options?.bubble ? String(section.options.bubble) : undefined} bubbleInk={section.options?.bubbleInk ? String(section.options.bubbleInk) : undefined} sentence={sentence} sticker={section.options?.hmwStyle === 'sticker'} hmwTitle={hmw.title || 'How might we'} hmwDetail={hmw.detail} success={success && !success.hidden ? success : undefined} />;
   return <div className="csb-ps">
     <motion.p className="csb-ps-sentence" initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .5 }} transition={{ duration: .7, ease: [0.22, 1, 0.36, 1] }}>
       {sentence}
@@ -97,7 +97,7 @@ export function ProblemStatement({ section }: { section: CaseStudySection }) {
 /* The flip: a tall scroll scene with a sticky card. Front = the problem statement,
    back = a speech bubble asking "How might we…?". Rotation follows the scroll, so it
    turns back if you scroll up. Reduced motion shows the two faces one after the other. */
-function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDetail, success }: { picture?: React.ReactNode; bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
+function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, sticker, hmwTitle, hmwDetail, success }: { picture?: React.ReactNode; bubbleBg?: string; bubbleInk?: string; sentence: React.ReactNode; sticker?: boolean; hmwTitle: string; hmwDetail: string; success?: { title: string; detail: string } }) {
   // While editing, both faces stay still and fully visible so the text can be typed into; the flip plays in Preview and on the page.
   const editing = !!useContext(EditingContext).edit;
   const reduce = useReducedMotion() || editing;
@@ -140,6 +140,10 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   const bubble = useTransform(p, [.5, .95], [0, 1]);
   const bubbleY = useTransform(p, [.5, .95], [36, 0]);
   const bubbleScale = useTransform(bubble, [0, 1], [.9, 1]);
+  // Sticker: the statement stays put, and the question is pressed onto its bottom right corner at a slight tilt.
+  const stickOpacity = useTransform(p, [.22, .32], [0, 1]);
+  const stickScale = useTransform(p, [.22, .4], [1.25, 1]);
+  const stickRotate = useTransform(p, [.22, .4], [-12, -4]);
   // The card's background fades away as the question arrives, so the bubble ends up on the page itself.
   const cardBg = useTransform(p, [.45, .8], [1, 0]);
   // Text on the bubble follows the bubble's real colour: white on dark or mid tones, near-black on light ones.
@@ -147,12 +151,20 @@ function FlipStatement({ picture, bubbleBg, bubbleInk, sentence, hmwTitle, hmwDe
   const [autoInk, setAutoInk] = useState('#fdfcfc');
   useLayoutEffect(() => { const el = bubbleRef.current; if (!el || !bubbleBg) return; const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g); if (!m) return; const [r, g, b] = m.slice(0, 3).map(v => { const c = +v / 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }); setAutoInk(.2126 * r + .7152 * g + .0722 * b > .5 ? '#141414' : '#fdfcfc'); }, [bubbleBg]);
   const back = <div className="csb-psf-hmw">
-    <motion.div ref={bubbleRef} className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || autoInk } : {}), ...(reduce ? {} : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
+    <motion.div ref={bubbleRef} className="csb-psf-bubble" style={{ ...(bubbleBg ? { background: bubbleBg, color: bubbleInk || autoInk } : {}), ...(reduce ? (sticker ? { rotate: -4 } : {}) : sticker ? { opacity: stickOpacity, scale: stickScale, rotate: stickRotate } : { opacity: bubble, y: bubbleY, scale: bubbleScale }) }}>
       <span className="csb-psf-ask"><EditableText field="items.3.title" value={/\?$/.test(hmwTitle.trim()) ? hmwTitle : hmwTitle.replace(/[.…]*$/, '…')} /></span>
       <p><EditableText field="items.3.detail" value={hmwDetail} /></p>
     </motion.div>
   </div>;
   const successRow = success && <div className="csb-psf-success"><span><EditableText field="items.4.title" value={success.title || "We'll know it worked when"} /></span><p><EditableText field="items.4.detail" value={success.detail} /></p></div>;
+  if (sticker) return <div className={`csb-psf is-sticker ${reduce ? 'is-still' : ''}`} ref={reduce ? undefined : scene}>
+    <div className="csb-psf-stick" ref={stick}>
+      <div className="csb-psf-card"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p></div>{back}</div>
+      {picture}
+      {successRow}
+    </div>
+    {!reduce && <div className="csb-psf-run" aria-hidden="true" />}
+  </div>;
   if (reduce) return <div className="csb-psf is-static"><div className="csb-psf-face is-front"><p className="csb-ps-sentence">{sentence}</p>{picture}</div><div className="csb-psf-face is-back">{back}</div>{successRow}</div>;
   return <div className={`csb-psf ${picture ? 'has-pic' : ''}`} ref={scene}>
     <div className="csb-psf-stick" ref={stick}>

@@ -4367,3 +4367,17 @@ html:not(.csb-presenting) .csb-canvas .csb-doc-main .csb-story-section.csb-varia
 .csb-canvas .csb-doc-main .csb-metric h3{font-size:16px!important;line-height:1.4!important;margin:16px 0 6px!important}
 .csb-canvas .csb-doc-main .csb-metric p{font-size:15px!important;line-height:1.6!important;max-width:34ch;margin:0}
 @container (max-width:700px){.csb-canvas .csb-doc-main .csb-metric-grid{grid-template-columns:1fr;gap:28px}}
+
+/* "How might we" as a sticker: the statement stays, and the question is pressed onto its bottom right corner at a tilt. */
+.csb-psf.is-sticker .csb-psf-card{display:block;position:relative;width:100%;max-width:820px}
+.csb-psf.is-sticker .csb-psf-face.is-front{min-height:clamp(260px,32cqw,380px);padding:clamp(32px,5cqw,56px) clamp(28px,5cqw,56px) clamp(130px,14cqw,160px);border-radius:28px;background:var(--t-paper,#fdfcfc)!important;box-shadow:0 0 0 1px var(--t-line2,#ebe8e4)!important;place-items:start;text-align:left;transform:none;backface-visibility:visible}
+.csb-psf.is-sticker .csb-ps-sentence{text-align:left;font-size:clamp(24px,3cqw,36px)}
+.csb-psf.is-sticker .csb-psf-hmw{position:absolute;right:clamp(-22px,-2cqw,-10px);bottom:clamp(14px,2cqw,24px);width:auto;max-width:min(420px,72%);display:block;z-index:2}
+.csb-psf.is-sticker .csb-psf-bubble{max-width:none;gap:8px;padding:clamp(18px,2.2cqw,24px) clamp(20px,2.6cqw,28px);border-radius:24px;transform-origin:70% 70%;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 34px rgba(0,0,0,.14)}
+.csb-psf.is-sticker .csb-psf-bubble::after{display:none}
+.csb-psf.is-sticker .csb-psf-bubble p{font-size:clamp(18px,2cqw,24px);line-height:1.3}
+.csb-psf.is-sticker .csb-psf-ask{font-size:14px;opacity:.75;color:inherit}
+.csb-psf.is-sticker.is-still{padding-bottom:48px}
+.csb-psf.is-sticker.is-still .csb-psf-stick{position:static}
+.csb-psf.is-sticker .csb-psf-stick{gap:clamp(44px,5cqw,64px);padding-bottom:48px}
+@container (max-width:620px){.csb-psf.is-sticker .csb-psf-hmw{right:-6px;max-width:86%}.csb-psf.is-sticker .csb-psf-face.is-front{min-height:0;padding-bottom:150px}}
