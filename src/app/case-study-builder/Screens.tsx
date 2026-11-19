@@ -197,7 +197,8 @@ export function ScreenStory({ section }: { section: CaseStudySection }) {
     <div className="csb-sc-steps" ref={list}>{steps.map(s => <StoryStep key={`${s.screen}-${s.spot}`} section={section} step={s} />)}</div>
     <div className="csb-sc-sticky">
       <AnimatePresence mode="popLayout" initial={false}>
-        <motion.div key={cur.screen} className="csb-sc-story-screen" initial={reduce ? false : { opacity: 0, scale: .98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .98 }} transition={{ duration: .45, ease: [0.22, 1, 0.36, 1] }}>
+        {/* The new screen fades in on top while the old one stays solid underneath, so the page never shows through mid-change (no flashing). */}
+        <motion.div key={cur.screen} className="csb-sc-story-screen" style={{ zIndex: 1 }} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1, zIndex: 1 }} exit={{ opacity: .99, zIndex: 0, transition: { duration: .45 } }} transition={{ duration: .4, ease: [0.22, 1, 0.36, 1] }}>
           <Screen section={section} index={cur.screen} spot={cur.spot} side="below" drawing={drawing} outlines={!!edit} onDrawn={box => { addSpot(section, edit, cur.screen, box); setDrawing(false); }} />
         </motion.div>
       </AnimatePresence>
